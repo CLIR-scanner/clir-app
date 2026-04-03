@@ -21,8 +21,8 @@ export default function App() {
         {isInitialized ? (
           <RootNavigator />
         ) : (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background }}>
-            <ActivityIndicator size="large" color={Colors.primary} />
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}>
+            <ActivityIndicator size="large" color="#fff" />
           </View>
         )}
       </SafeAreaProvider>
