@@ -124,7 +124,8 @@ export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
   Signup: undefined;
-  Survey: undefined;
+  /** Signup에서 수집한 기본 정보를 Survey로 전달 */
+  Survey: { name: string; email: string; password: string };
   Login: undefined;
 };
 
