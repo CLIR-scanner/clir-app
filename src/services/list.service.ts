@@ -53,11 +53,15 @@ export async function toggleShoppingItemPurchased(
   shoppingItemId: string
 ): Promise<ShoppingItem> {
   await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
-  // Mock: 첫 번째 제품으로 isPurchased: true 상태 반환
-  const product = mockProductMap['prod-003'];
+  // Mock: shoppingItemId 기반으로 제품을 결정적으로 선택 (Real API 연동 시 서버가 현재 상태를 반환)
+  const productIds = Object.keys(mockProductMap);
+  const hash = shoppingItemId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const productId = productIds[hash % productIds.length];
+  const product = mockProductMap[productId];
+  if (!product) throw new Error(`제품을 찾을 수 없습니다: ${productId}`);
   return {
     id: shoppingItemId,
-    productId: 'prod-003',
+    productId,
     userId,
     isPurchased: true,
     addedAt: new Date(),

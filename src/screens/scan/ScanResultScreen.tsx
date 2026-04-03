@@ -12,7 +12,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { ScanStackParamList, Product, Ingredient } from '../../types';
+import { ScanStackParamList, Product, Ingredient, RiskLevel } from '../../types';
 import { getProductById } from '../../services/scan.service';
 import { useUserStore } from '../../store/user.store';
 import { useScanStore } from '../../store/scan.store';
@@ -32,7 +32,7 @@ function particle(word: string, withBatchim: string, withoutBatchim: string): st
   return (code - 0xac00) % 28 === 0 ? withoutBatchim : withBatchim;
 }
 
-const VERDICT_COPY: Record<string, (name: string, allergies: string) => string> = {
+const VERDICT_COPY: Record<RiskLevel, (name: string, allergies: string) => string> = {
   danger: (name, a) =>
     `${name}에 알러지 유발 성분이 포함되어 있습니다.\n프로필(${a})에 위험한 성분이 감지됐어요.`,
   caution: (name, a) =>
