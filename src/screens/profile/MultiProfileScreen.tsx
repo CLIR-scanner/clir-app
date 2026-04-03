@@ -61,14 +61,20 @@ export default function MultiProfileScreen({ navigation }: Props) {
 
         {/* 오른쪽 영역 — 활성 표시 또는 편집 버튼 */}
         {isActive && <Text style={styles.activeCheck}>✓</Text>}
-        {/* W2 수정: 메인 프로필 편집은 설정 화면(Personal/Personalization) 경유 —
-            멀티프로필만 MultiProfileDetail로 직접 편집 가능 */}
+        {/* 멀티프로필 비활성: MultiProfileDetail로 편집 */}
         {!isActive && !isMain && (
           <TouchableOpacity
             style={styles.editBtnWrap}
-            onPress={() => navigation.navigate('MultiProfileDetail', { profileId: profile.id })}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            onPress={() => navigation.navigate('MultiProfileDetail', { profileId: profile.id })}>
             <Text style={styles.editBtn}>편집</Text>
+          </TouchableOpacity>
+        )}
+        {/* 메인 프로필 비활성: 편집은 개인정보 설정 경유 — discoverability 보장 */}
+        {!isActive && isMain && (
+          <TouchableOpacity
+            style={styles.editBtnWrap}
+            onPress={() => navigation.navigate('Personal')}>
+            <Text style={styles.editBtn}>설정</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -161,7 +167,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 2,
     borderColor: 'transparent',
-    overflow: 'hidden',
+    // overflow:hidden 제거 — Android에서 hitSlop이 부모 클리핑에 의해 잘릴 수 있음
   },
   cardActive: { borderColor: Colors.primary, backgroundColor: '#F0F8FF' },
   cardPressArea: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },

@@ -15,6 +15,7 @@ export default function SplashScreen({ navigation }: Props) {
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // navigation은 마운트 시 한 번만 실행 — navigation 객체 identity 변화에 타이머를 재시작할 이유 없음
   }, []);
 
   return (
