@@ -23,7 +23,7 @@ export const useUserStore = create<UserStore>(set => ({
   },
 
   setUser: user =>
-    set({ currentUser: user, activeProfile: user }),
+    set({ currentUser: user, activeProfile: user, isInitialized: true }),
 
   switchProfile: profileId =>
     set(state => {

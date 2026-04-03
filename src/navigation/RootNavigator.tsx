@@ -1,22 +1,22 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { useUserStore } from '../store/user.store';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
 export default function RootNavigator() {
+  const isInitialized = useUserStore(s => s.isInitialized);
+  const currentUserId = useUserStore(s => s.currentUser.id);
+
+  // 인증 상태 기반 조건부 렌더링:
+  // isInitialized가 false → 초기화 중 (App.tsx의 ActivityIndicator가 처리)
+  // isInitialized가 true + id 있음 → 로그인 상태 → MainNavigator
+  // isInitialized가 true + id 없음(guest) → 미로그인 → AuthNavigator
+  const isLoggedIn = isInitialized && currentUserId !== '';
+
   return (
     <NavigationContainer>
-      {/* TODO: Phase 1 — 초기 화면을 인증 상태에 따라 분기할 것.
-           로그인 완료 시 'Main'으로, 미로그인 시 'Auth'로 navigate.
-           현재는 데모 목적으로 Main을 첫 화면으로 설정. */}
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Main" component={MainNavigator} />
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-      </Stack.Navigator>
+      {isLoggedIn ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

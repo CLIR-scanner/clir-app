@@ -21,6 +21,11 @@ type Props = {
   route: RouteProp<AuthStackParamList, 'Survey'>;
 };
 
+const SENSITIVITY_OPTIONS: { value: SensitivityLevel; label: string; emoji: string; desc: string }[] = [
+  { value: 'normal', label: Strings.sensitivityNormal, emoji: '✅', desc: Strings.sensitivityNormalDesc },
+  { value: 'strict', label: Strings.sensitivityStrict, emoji: '🛡️', desc: Strings.sensitivityStrictDesc },
+];
+
 const ALLERGEN_OPTIONS: { id: string; label: string; emoji: string }[] = [
   { id: 'ing-peanut',    label: '땅콩',         emoji: '🥜' },
   { id: 'ing-milk',      label: '유제품 (우유)', emoji: '🥛' },
@@ -62,7 +67,8 @@ export default function SurveyScreen({ navigation, route }: Props) {
         sensitivityLevel,
       });
       setUser(user);
-      navigation.getParent()?.navigate('Main' as never);
+      // setUser가 isInitialized: true + currentUser.id를 설정하면
+      // RootNavigator가 자동으로 MainNavigator로 전환함 — 명시적 navigate 불필요
     } catch {
       setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
@@ -117,10 +123,7 @@ export default function SurveyScreen({ navigation, route }: Props) {
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{Strings.sensitivityTitle}</Text>
 
         <View style={styles.sensitivityList}>
-          {([
-            { value: 'normal' as SensitivityLevel, label: Strings.sensitivityNormal, emoji: '✅', desc: Strings.sensitivityNormalDesc },
-            { value: 'strict' as SensitivityLevel, label: Strings.sensitivityStrict, emoji: '🛡️', desc: Strings.sensitivityStrictDesc },
-          ]).map((opt, idx) => {
+          {SENSITIVITY_OPTIONS.map((opt, idx) => {
             const selected = sensitivityLevel === opt.value;
             return (
               <TouchableOpacity

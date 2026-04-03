@@ -38,8 +38,8 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       const user = await login(email.trim(), password);
       setUser(user);
-      // Root navigator가 isInitialized를 감지해 Main으로 전환 (Phase 1 auth gate 구현 시 자동)
-      navigation.getParent()?.navigate('Main' as never);
+      // setUser가 isInitialized: true + currentUser.id를 설정하면
+      // RootNavigator가 자동으로 MainNavigator로 전환함 — 명시적 navigate 불필요
     } catch {
       setError('이메일 또는 비밀번호가 올바르지 않습니다.');
     } finally {

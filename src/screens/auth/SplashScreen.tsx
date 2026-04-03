@@ -14,7 +14,8 @@ export default function SplashScreen({ navigation }: Props) {
       navigation.replace('AuthHome');
     }, 1500);
     return () => clearTimeout(timer);
-  }, [navigation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View style={styles.container}>

@@ -23,12 +23,6 @@ export default function MultiProfileScreen({ navigation }: Props) {
   const activeProfile = useUserStore(s => s.activeProfile);
   const switchProfile = useUserStore(s => s.switchProfile);
 
-  const allProfiles: Profile[] = [currentUser, ...currentUser.multiProfiles];
-
-  const handleSwitch = (profileId: string) => {
-    switchProfile(profileId);
-  };
-
   const renderProfile = (profile: Profile, isMain: boolean) => {
     const isActive = activeProfile.id === profile.id;
     const allergyText =
@@ -37,39 +31,47 @@ export default function MultiProfileScreen({ navigation }: Props) {
         : '알러지 없음';
 
     return (
-      <TouchableOpacity
-        key={profile.id}
-        style={[styles.card, isActive && styles.cardActive]}
-        onPress={() => handleSwitch(profile.id)}
-        activeOpacity={0.7}>
-        <View style={[styles.avatar, isActive && styles.avatarActive]}>
-          <Text style={styles.avatarText}>
-            {profile.name ? profile.name[0].toUpperCase() : '?'}
-          </Text>
-        </View>
-        <View style={styles.info}>
-          <View style={styles.nameRow}>
-            <Text style={[styles.name, isActive && styles.nameActive]}>{profile.name}</Text>
-            {isMain && (
-              <View style={styles.mainBadge}>
-                <Text style={styles.mainBadgeText}>메인</Text>
-              </View>
-            )}
+      // W1 수정: 카드 전체를 TouchableOpacity로 감싸지 않고 View + 개별 터치 영역으로 분리
+      <View key={profile.id} style={[styles.card, isActive && styles.cardActive]}>
+        {/* 왼쪽 영역 — 탭 시 프로필 전환 */}
+        <TouchableOpacity
+          style={styles.cardPressArea}
+          onPress={() => switchProfile(profile.id)}
+          activeOpacity={0.6}>
+          <View style={[styles.avatar, isActive && styles.avatarActive]}>
+            <Text style={styles.avatarText}>
+              {profile.name ? profile.name[0].toUpperCase() : '?'}
+            </Text>
           </View>
-          <Text style={styles.allergy} numberOfLines={1}>{allergyText}</Text>
-          <Text style={styles.sensitivity}>
-            {profile.sensitivityLevel === 'strict' ? '🛡️ 엄격 모드' : '✅ 일반 모드'}
-          </Text>
-        </View>
+          <View style={styles.info}>
+            <View style={styles.nameRow}>
+              <Text style={[styles.name, isActive && styles.nameActive]}>{profile.name}</Text>
+              {isMain && (
+                <View style={styles.mainBadge}>
+                  <Text style={styles.mainBadgeText}>메인</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.allergy} numberOfLines={1}>{allergyText}</Text>
+            <Text style={styles.sensitivity}>
+              {profile.sensitivityLevel === 'strict' ? '🛡️ 엄격 모드' : '✅ 일반 모드'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* 오른쪽 영역 — 활성 표시 또는 편집 버튼 */}
         {isActive && <Text style={styles.activeCheck}>✓</Text>}
-        {!isActive && (
+        {/* W2 수정: 메인 프로필 편집은 설정 화면(Personal/Personalization) 경유 —
+            멀티프로필만 MultiProfileDetail로 직접 편집 가능 */}
+        {!isActive && !isMain && (
           <TouchableOpacity
+            style={styles.editBtnWrap}
             onPress={() => navigation.navigate('MultiProfileDetail', { profileId: profile.id })}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Text style={styles.editBtn}>편집</Text>
           </TouchableOpacity>
         )}
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -139,12 +141,7 @@ const styles = StyleSheet.create({
   addBtn: { fontSize: 16, color: Colors.primary, fontWeight: '600' },
 
   content: { padding: 16 },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-    marginBottom: 20,
-  },
+  subtitle: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18, marginBottom: 20 },
 
   sectionLabel: {
     fontSize: 12,
@@ -161,16 +158,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.card,
     borderRadius: 14,
-    padding: 16,
     marginBottom: 10,
-    gap: 14,
     borderWidth: 2,
     borderColor: 'transparent',
+    overflow: 'hidden',
   },
-  cardActive: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0F8FF',
-  },
+  cardActive: { borderColor: Colors.primary, backgroundColor: '#F0F8FF' },
+  cardPressArea: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
+
   avatar: {
     width: 48,
     height: 48,
@@ -194,7 +189,9 @@ const styles = StyleSheet.create({
   mainBadgeText: { fontSize: 11, color: Colors.primary, fontWeight: '600' },
   allergy: { fontSize: 12, color: Colors.textSecondary, marginBottom: 2 },
   sensitivity: { fontSize: 12, color: Colors.textSecondary },
-  activeCheck: { fontSize: 20, color: Colors.primary, fontWeight: '700' },
+
+  activeCheck: { fontSize: 20, color: Colors.primary, fontWeight: '700', paddingRight: 16 },
+  editBtnWrap: { paddingHorizontal: 16, paddingVertical: 20 },
   editBtn: { fontSize: 13, color: Colors.primary },
 
   emptyBox: { alignItems: 'center', paddingTop: 24, gap: 16 },
