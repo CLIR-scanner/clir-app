@@ -34,4 +34,16 @@ export const useUserStore = create<UserStore>(set => ({
       if (!multi) return {};
       return { activeProfile: multi };
     }),
+
+  updateActiveProfile: updates =>
+    set(state => {
+      const updatedProfile = { ...state.activeProfile, ...updates };
+      const isMainProfile = state.activeProfile.id === state.currentUser.id;
+      return {
+        activeProfile: updatedProfile,
+        currentUser: isMainProfile
+          ? { ...state.currentUser, ...updates }
+          : state.currentUser,
+      };
+    }),
 }));

@@ -93,6 +93,7 @@ export interface UserStore {
   initialize: () => Promise<void>;
   setUser: (user: User) => void;
   switchProfile: (profileId: string) => void;
+  updateActiveProfile: (updates: Partial<Profile>) => void;
 }
 
 export interface ScanStore {
@@ -137,6 +138,7 @@ export type MainTabParamList = {
 export type ScanStackParamList = {
   Scan: undefined;
   ScanResult: { productId: string };
+  ScanHistory: undefined;
 };
 
 export type SearchStackParamList = {

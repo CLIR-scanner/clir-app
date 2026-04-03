@@ -62,4 +62,20 @@ export const Strings = {
   recommendTitle: '추천',
   recommendWeekendPopular: '주말 인기 제품',
   recommendSimilarUsers: '비슷한 유저가 즐겨찾는 제품',
+
+  // Scan history
+  scanHistoryTitle: '스캔 이력',
+  scanHistoryEmpty: '아직 스캔한 제품이 없습니다.',
+
+  // Allergy settings
+  allergyTitle: '식이 제한 설정',
+  allergySubtitle: '알러지가 있는 성분을 선택하세요',
+  allergySaved: '저장되었습니다.',
+
+  // Sensitivity settings
+  sensitivityTitle: '민감도 설정',
+  sensitivityStrict: '엄격 모드',
+  sensitivityStrictDesc: 'may contain(혼입 가능) 성분도 위험으로 표시합니다.',
+  sensitivityNormal: '일반 모드',
+  sensitivityNormalDesc: '직접 포함된 성분만 위험·주의로 표시합니다.',
 };
