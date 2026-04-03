@@ -11,26 +11,34 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { ScanStackParamList, Product, Ingredient } from '../../types';
 import { getProductById } from '../../services/scan.service';
 import { useUserStore } from '../../store/user.store';
 import { useScanStore } from '../../store/scan.store';
 import { Colors } from '../../constants/colors';
 import { RISK_LABEL, RISK_EMOJI, RISK_COLOR, RISK_BG, allergenLabel } from '../../constants/risk';
+import { Strings } from '../../constants/strings';
 
 type Props = {
   navigation: NativeStackNavigationProp<ScanStackParamList, 'ScanResult'>;
   route: RouteProp<ScanStackParamList, 'ScanResult'>;
 };
 
+/** 한글 받침 여부에 따라 조사 선택 (받침 있음: withBatchim, 없음: withoutBatchim) */
+function particle(word: string, withBatchim: string, withoutBatchim: string): string {
+  const code = word.charCodeAt(word.length - 1);
+  if (code < 0xac00 || code > 0xd7a3) return withBatchim;
+  return (code - 0xac00) % 28 === 0 ? withoutBatchim : withBatchim;
+}
+
 const VERDICT_COPY: Record<string, (name: string, allergies: string) => string> = {
   danger: (name, a) =>
     `${name}에 알러지 유발 성분이 포함되어 있습니다.\n프로필(${a})에 위험한 성분이 감지됐어요.`,
   caution: (name, a) =>
-    `${name}은(는) 주의가 필요합니다.\n(${a}) 관련 성분 또는 흔적이 포함될 수 있어요.`,
+    `${name}${particle(name, '은', '는')} 주의가 필요합니다.\n(${a}) 관련 성분 또는 흔적이 포함될 수 있어요.`,
   safe: (name, _a) =>
-    `${name}은(는) 현재 프로필 기준으로 안전합니다.`,
+    `${name}${particle(name, '은', '는')} 현재 프로필 기준으로 안전합니다.`,
 };
 
 export default function ScanResultScreen({ navigation, route }: Props) {
@@ -117,7 +125,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>성분 분석 결과</Text>
+          <Text style={styles.headerTitle}>{Strings.scanResultTitle}</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -219,7 +227,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
         backdropComponent={renderBackdrop}
         handleIndicatorStyle={styles.sheetHandle}
         backgroundStyle={styles.sheetBg}>
-        <BottomSheetView style={styles.sheetContent}>
+        <BottomSheetScrollView contentContainerStyle={styles.sheetContent}>
           {selectedIngredient && (
             <>
               <View style={styles.sheetHeader}>
@@ -242,7 +250,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
                   {selectedIngredient.sources.map((url, idx) => (
                     <TouchableOpacity
                       key={idx}
-                      onPress={() => Linking.openURL(url)}
+                      onPress={() => Linking.openURL(url).catch(() => {})}
                       style={styles.sourceLink}>
                       <Text style={styles.sourceLinkText} numberOfLines={1}>
                         🔗 {url}
@@ -257,7 +265,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
               </TouchableOpacity>
             </>
           )}
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheet>
     </View>
   );
@@ -367,7 +375,7 @@ const styles = StyleSheet.create({
 
   sheetHandle: { backgroundColor: Colors.separator, width: 40 },
   sheetBg: { borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: Colors.card },
-  sheetContent: { flex: 1, padding: 24 },
+  sheetContent: { padding: 24, paddingBottom: 40 },
   sheetHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -399,7 +407,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 'auto',
+    marginTop: 32,
   },
   closeButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

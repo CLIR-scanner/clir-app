@@ -15,6 +15,7 @@ import { getDemoProducts } from '../../services/scan.service';
 import { useUserStore } from '../../store/user.store';
 import { Colors } from '../../constants/colors';
 import { RISK_LABEL, RISK_COLOR, allergenLabel } from '../../constants/risk';
+import { Strings } from '../../constants/strings';
 
 type Props = {
   navigation: NativeStackNavigationProp<ScanStackParamList, 'Scan'>;
@@ -47,7 +48,7 @@ export default function ScanScreen({ navigation }: Props) {
       <StatusBar barStyle="dark-content" />
 
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>CLIR 스캔</Text>
+        <Text style={styles.headerTitle}>{Strings.scanTitle}</Text>
         <Text style={styles.profileBadge}>👤 {activeProfile.name}</Text>
       </View>
 
