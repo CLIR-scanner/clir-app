@@ -45,12 +45,15 @@ export const useUserStore = create<UserStore>(set => ({
         activeProfile: updatedProfile,
         currentUser: isMainProfile
           ? { ...state.currentUser, ...updates }
-          : {
-              ...state.currentUser,
-              multiProfiles: state.currentUser.multiProfiles.map((p: Profile) =>
+          : (() => {
+              const updatedMulti = state.currentUser.multiProfiles.map((p: Profile) =>
                 p.id === state.activeProfile.id ? { ...p, ...updates } : p
-              ),
-            },
+              );
+              // activeProfile.id가 multiProfiles에 없으면 store 일관성이 깨짐 — 변경 중단
+              const found = updatedMulti.some((p: Profile) => p.id === state.activeProfile.id);
+              if (!found) return state.currentUser;
+              return { ...state.currentUser, multiProfiles: updatedMulti };
+            })(),
       };
     }),
 }));

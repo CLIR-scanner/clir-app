@@ -77,7 +77,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       .catch(e => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [productId, activeProfile.allergyProfile, currentUserId, addScanHistory]);
+  }, [productId, activeProfile.allergyProfile, currentUserId, addScanHistory, fromHistory]);
 
   const openIngredientDetail = useCallback((ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
