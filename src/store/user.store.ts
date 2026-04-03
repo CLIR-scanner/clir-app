@@ -1,30 +1,48 @@
-import {create} from 'zustand';
-import {User, Profile} from '../types';
-import {mockUser} from '../mocks/user.mock';
+import { create } from 'zustand';
+import { User, Profile, SensitivityLevel } from '../types';
+import { getCurrentUser } from '../services/auth.service';
+
+const GUEST_PROFILE: Profile = {
+  id: '',
+  name: '',
+  allergyProfile: [],
+  dietaryRestrictions: [],
+  sensitivityLevel: 'normal' as SensitivityLevel,
+};
 
 interface UserStore {
   currentUser: User;
   activeProfile: Profile;
+  isInitialized: boolean;
+  initialize: () => Promise<void>;
   setUser: (user: User) => void;
   switchProfile: (profileId: string) => void;
 }
 
+const GUEST_USER: User = { ...GUEST_PROFILE, email: '', language: 'ko', multiProfiles: [] };
+
 export const useUserStore = create<UserStore>(set => ({
-  currentUser: mockUser,
-  activeProfile: mockUser, // 기본: 본인 프로필
+  currentUser: GUEST_USER,
+  activeProfile: GUEST_PROFILE,
+  isInitialized: false,
+
+  initialize: async () => {
+    const user = await getCurrentUser();
+    set({ currentUser: user, activeProfile: user, isInitialized: true });
+  },
 
   setUser: user =>
-    set({currentUser: user, activeProfile: user}),
+    set({ currentUser: user, activeProfile: user }),
 
   switchProfile: profileId =>
     set(state => {
       if (profileId === state.currentUser.id) {
-        return {activeProfile: state.currentUser};
+        return { activeProfile: state.currentUser };
       }
-      const multi = state.currentUser.multiProfiles.find(p => p.id === profileId);
+      const multi = state.currentUser.multiProfiles.find((p: Profile) => p.id === profileId);
       if (!multi) {
         return {};
       }
-      return {activeProfile: multi};
+      return { activeProfile: multi };
     }),
 }));

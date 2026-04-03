@@ -75,11 +75,11 @@ export default function ScanResultScreen({navigation, route}: Props) {
   const snapPoints = useMemo(() => ['50%', '85%'], []);
 
   useEffect(() => {
-    getProductById(productId)
+    getProductById(productId, activeProfile.allergyProfile)
       .then(setProduct)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [productId]);
+  }, [productId, activeProfile.allergyProfile]);
 
   const openIngredientDetail = useCallback((ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);

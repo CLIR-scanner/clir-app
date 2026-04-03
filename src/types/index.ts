@@ -13,6 +13,8 @@ export interface Ingredient {
   description: string;
   riskLevel: RiskLevel;
   sources: string[];
+  /** may-contain 성분이 실제로 연관된 알러겐 ID (예: 'ing-may-peanut' → 'ing-peanut') */
+  relatedAllergenId?: string;
 }
 
 export interface Product {

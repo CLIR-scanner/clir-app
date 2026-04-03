@@ -43,6 +43,7 @@ export const mockIngredients: Record<string, Ingredient> = {
       '동일한 시설에서 땅콩을 처리하므로 극소량의 땅콩이 포함될 수 있습니다. 엄격한 알러지 환자는 주의가 필요합니다.',
     riskLevel: 'caution',
     sources: [],
+    relatedAllergenId: 'ing-peanut',
   },
   sugar: {
     id: 'ing-sugar',

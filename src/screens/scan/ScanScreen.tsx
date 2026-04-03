@@ -38,10 +38,11 @@ export default function ScanScreen({navigation}: Props) {
   const [scanning, setScanning] = useState<string | null>(null);
 
   useEffect(() => {
-    getDemoProducts()
+    setLoading(true);
+    getDemoProducts(activeProfile.allergyProfile)
       .then(setProducts)
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeProfile.allergyProfile]);
 
   const handleScan = async (product: Product) => {
     setScanning(product.id);
