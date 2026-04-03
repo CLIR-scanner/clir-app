@@ -2,7 +2,8 @@
 
 export type RiskLevel = 'safe' | 'caution' | 'danger';
 export type SensitivityLevel = 'strict' | 'normal';
-export type ScanResult = 'safe' | 'caution' | 'danger';
+/** RiskLevel의 alias — ScanHistory.result 필드에 사용 */
+export type ScanResult = RiskLevel;
 
 // ─── Domain Entities ──────────────────────────────────────────────────────────
 
@@ -137,7 +138,8 @@ export type MainTabParamList = {
 
 export type ScanStackParamList = {
   Scan: undefined;
-  ScanResult: { productId: string };
+  /** fromHistory: true 시 스캔 이력에 중복 추가하지 않음 */
+  ScanResult: { productId: string; fromHistory?: boolean };
   ScanHistory: undefined;
 };
 

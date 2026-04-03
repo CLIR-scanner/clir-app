@@ -116,7 +116,7 @@ export default function ProfileScreen({ navigation }: Props) {
             <View style={styles.sectionCard}>
               {section.rows.map((row, idx) => (
                 <TouchableOpacity
-                  key={row.label}
+                  key={`${section.title}-${idx}`}
                   style={[
                     styles.row,
                     idx < section.rows.length - 1 && styles.rowBorder,

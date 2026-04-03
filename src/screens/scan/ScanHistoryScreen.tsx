@@ -19,7 +19,7 @@ type Props = {
   navigation: NativeStackNavigationProp<ScanStackParamList, 'ScanHistory'>;
 };
 
-function formatDate(date: Date): string {
+function formatDate(date: Date | string): string {
   const d = new Date(date);
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
@@ -31,7 +31,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
   const renderItem = ({ item }: { item: ScanHistory }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('ScanResult', { productId: item.productId })}
+      onPress={() => navigation.navigate('ScanResult', { productId: item.productId, fromHistory: true })}
       activeOpacity={0.7}>
       <View style={styles.cardMain}>
         <View style={styles.cardInfo}>

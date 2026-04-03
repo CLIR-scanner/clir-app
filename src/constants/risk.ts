@@ -36,6 +36,7 @@ export const ALLERGEN_NAME_KO: Record<string, string> = {
   'ing-shellfish': '갑각류',
   'ing-tree-nut': '견과류',
   'ing-sesame': '참깨',
+  'ing-oat': '귀리',
 };
 
 /** 알러겐 ID 배열을 한국어 레이블 문자열로 변환 */

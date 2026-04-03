@@ -42,7 +42,7 @@ const VERDICT_COPY: Record<RiskLevel, (name: string, allergies: string) => strin
 };
 
 export default function ScanResultScreen({ navigation, route }: Props) {
-  const { productId } = route.params;
+  const { productId, fromHistory = false } = route.params;
   const activeProfile = useUserStore(s => s.activeProfile);
   const currentUserId = useUserStore(s => s.currentUser.id);
   const addScanHistory = useScanStore(s => s.addHistory);
@@ -61,14 +61,17 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       .then(data => {
         if (!cancelled) {
           setProduct(data);
-          addScanHistory({
-            id: `scan-${Date.now()}`,
-            productId: data.id,
-            userId: currentUserId,
-            scannedAt: new Date(),
-            result: data.riskLevel,
-            product: data,
-          });
+          // 이력에서 탭한 경우 중복 추가 방지
+          if (!fromHistory) {
+            addScanHistory({
+              id: `scan-${Date.now()}`,
+              productId: data.id,
+              userId: currentUserId,
+              scannedAt: new Date(),
+              result: data.riskLevel,
+              product: data,
+            });
+          }
         }
       })
       .catch(e => { if (!cancelled) setError(e.message); })

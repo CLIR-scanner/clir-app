@@ -37,13 +37,20 @@ export const useUserStore = create<UserStore>(set => ({
 
   updateActiveProfile: updates =>
     set(state => {
+      // 초기화 전(guest 상태) 에는 store를 변경하지 않음
+      if (!state.isInitialized) return {};
       const updatedProfile = { ...state.activeProfile, ...updates };
       const isMainProfile = state.activeProfile.id === state.currentUser.id;
       return {
         activeProfile: updatedProfile,
         currentUser: isMainProfile
           ? { ...state.currentUser, ...updates }
-          : state.currentUser,
+          : {
+              ...state.currentUser,
+              multiProfiles: state.currentUser.multiProfiles.map((p: Profile) =>
+                p.id === state.activeProfile.id ? { ...p, ...updates } : p
+              ),
+            },
       };
     }),
 }));
