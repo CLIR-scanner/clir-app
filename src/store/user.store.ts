@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, Profile, SensitivityLevel } from '../types';
+import { User, Profile, SensitivityLevel, UserStore } from '../types';
 import { getCurrentUser } from '../services/auth.service';
 
 const GUEST_PROFILE: Profile = {
@@ -9,15 +9,6 @@ const GUEST_PROFILE: Profile = {
   dietaryRestrictions: [],
   sensitivityLevel: 'normal' as SensitivityLevel,
 };
-
-interface UserStore {
-  currentUser: User;
-  activeProfile: Profile;
-  isInitialized: boolean;
-  initialize: () => Promise<void>;
-  setUser: (user: User) => void;
-  switchProfile: (profileId: string) => void;
-}
 
 const GUEST_USER: User = { ...GUEST_PROFILE, email: '', language: 'ko', multiProfiles: [] };
 
@@ -40,9 +31,7 @@ export const useUserStore = create<UserStore>(set => ({
         return { activeProfile: state.currentUser };
       }
       const multi = state.currentUser.multiProfiles.find((p: Profile) => p.id === profileId);
-      if (!multi) {
-        return {};
-      }
+      if (!multi) return {};
       return { activeProfile: multi };
     }),
 }));

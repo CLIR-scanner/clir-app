@@ -84,6 +84,33 @@ export interface SignupData {
   sensitivityLevel: SensitivityLevel;
 }
 
+// ─── Store Interfaces ─────────────────────────────────────────────────────────
+
+export interface UserStore {
+  currentUser: User;
+  activeProfile: Profile;
+  isInitialized: boolean;
+  initialize: () => Promise<void>;
+  setUser: (user: User) => void;
+  switchProfile: (profileId: string) => void;
+}
+
+export interface ScanStore {
+  history: ScanHistory[];
+  addHistory: (item: ScanHistory) => void;
+  clearHistory: () => void;
+}
+
+export interface ListStore {
+  favorites: FavoriteItem[];
+  shoppingItems: ShoppingItem[];
+  addFavorite: (item: FavoriteItem) => void;
+  removeFavorite: (id: string) => void;
+  addShoppingItem: (item: ShoppingItem) => void;
+  removeShoppingItem: (id: string) => void;
+  togglePurchased: (id: string) => void;
+}
+
 // ─── Navigation Param Lists ───────────────────────────────────────────────────
 
 export type RootStackParamList = {

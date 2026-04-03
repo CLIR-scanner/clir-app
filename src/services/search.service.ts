@@ -1,6 +1,7 @@
 // TODO: Real API 연동 시 이 파일의 구현부만 교체
 import { Product, Ingredient } from '../types';
 import { mockProducts } from '../mocks/product.mock';
+import { MOCK_RECENT_SEARCHES } from '../mocks/searchHistory.mock';
 
 export async function searchProducts(query: string, userId: string): Promise<Product[]> {
   await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
@@ -18,5 +19,5 @@ export async function searchProducts(query: string, userId: string): Promise<Pro
 
 export async function getRecentSearches(userId: string): Promise<string[]> {
   await new Promise<void>((resolve) => setTimeout(() => resolve(), 200));
-  return ['초콜릿', '귀리', '현미'];
+  return MOCK_RECENT_SEARCHES;
 }
