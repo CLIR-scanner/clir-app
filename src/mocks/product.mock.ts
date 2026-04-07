@@ -1,52 +1,61 @@
 import { Product } from '../types';
 import { mockIngredients as I } from './ingredient.mock';
 
-// ─── 안전 제품: 알러지 성분 없음 (alternatives 참조 순서상 먼저 선언) ──────────
-const safeProduct: Product = {
-  id: 'prod-003',
-  barcode: '8801122334455',
-  name: '현미 과자',
-  brand: 'Nature Snack',
-  ingredients: [I.rice, I.vegetableOil, I.salt, I.sugar],
+// ─── US Demo Products (Supabase seed 바코드와 동일) ──────────────────────────
+//
+// 바코드: Supabase seed 데이터와 동일하게 맞춤.
+// 백엔드 연동 전까지 이 mock이 스캔 결과를 반환.
+// 백엔드 연동 후 scanBarcode() 구현부 교체 시 mock은 자동으로 bypass됨.
+//
+// analyzeProductForProfile()이 ingredients[]에서 allergyProfile과 매칭하므로
+// allergen 성분은 반드시 ingredients 배열에 포함해야 함 (id가 'ing-*' 형태).
+
+// ─── Nature Valley Oats & Honey (안전 기준 제품 — alternatives 참조 순서상 먼저 선언) ──
+const natureValleyProduct: Product = {
+  id: 'seed-003',
+  barcode: '021130126026',
+  name: 'Nature Valley Oats & Honey',
+  brand: 'Nature Valley',
+  ingredients: [I.oat, I.wheat, I.sugar, I.honey, I.salt, I.mayContainSoy, I.mayContainTreenut],
   isSafe: true,
   riskLevel: 'safe',
-  riskIngredients: [],
-  mayContainIngredients: [],
+  riskIngredients: [I.wheat],
+  mayContainIngredients: [I.mayContainSoy, I.mayContainTreenut],
   alternatives: [],
 };
 
-// ─── 위험 제품: 땅콩 + 유제품 함유 ───────────────────────────────────────────
-const dangerProduct: Product = {
-  id: 'prod-001',
-  barcode: '8801234567890',
-  name: '견과류 초콜릿 바',
-  brand: 'Choco Farm',
-  ingredients: [I.cocoa, I.sugar, I.milk, I.peanut, I.vegetableOil],
+// ─── Reese's Peanut Butter Cups (위험: peanut + milk + soy 함유) ─────────────
+const reesesProduct: Product = {
+  id: 'seed-002',
+  barcode: '040000518495',
+  name: "Reese's Peanut Butter Cups",
+  brand: "Reese's",
+  ingredients: [I.peanut, I.milk, I.soy, I.sugar, I.cocoa, I.salt],
   isSafe: false,
   riskLevel: 'danger',
-  riskIngredients: [I.peanut, I.milk],
+  riskIngredients: [I.peanut, I.milk, I.soy],
   mayContainIngredients: [],
-  alternatives: [safeProduct],
+  alternatives: [natureValleyProduct],
 };
 
-// ─── 주의 제품: 밀 함유 + 땅콩 흔적 ─────────────────────────────────────────
-const cautionProduct: Product = {
-  id: 'prod-002',
-  barcode: '8809876543210',
-  name: '통귀리 쿠키',
-  brand: 'Healthy Bake',
-  ingredients: [I.oat, I.wheat, I.sugar, I.vegetableOil, I.salt, I.mayContainPeanut],
-  isSafe: false,
-  riskLevel: 'caution',
+// ─── Cheerios Original (주의: wheat 함유, milk 흔적) ────────────────────────
+const cheeriosProduct: Product = {
+  id: 'seed-001',
+  barcode: '016000275607',
+  name: 'Cheerios Original',
+  brand: 'General Mills',
+  ingredients: [I.oat, I.wheat, I.sugar, I.salt, I.mayContainMilk],
+  isSafe: true,
+  riskLevel: 'safe',
   riskIngredients: [I.wheat],
-  mayContainIngredients: [I.mayContainPeanut],
-  alternatives: [safeProduct],
+  mayContainIngredients: [I.mayContainMilk],
+  alternatives: [natureValleyProduct],
 };
 
-export const mockProducts: Product[] = [dangerProduct, cautionProduct, safeProduct];
+export const mockProducts: Product[] = [reesesProduct, cheeriosProduct, natureValleyProduct];
 
 export const mockProductMap: Record<string, Product> = {
-  'prod-001': dangerProduct,
-  'prod-002': cautionProduct,
-  'prod-003': safeProduct,
+  'seed-001': cheeriosProduct,
+  'seed-002': reesesProduct,
+  'seed-003': natureValleyProduct,
 };

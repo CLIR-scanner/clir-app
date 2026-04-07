@@ -25,6 +25,20 @@ export const RISK_BG: Record<RiskLevel, string> = {
   safe: Colors.safeBg,
 };
 
+/** 알러겐 선택 옵션 (MultiProfileAdd/Detail, PersonalizationAllergy 공용) */
+export const ALLERGEN_OPTIONS: { id: string; label: string; emoji: string }[] = [
+  { id: 'ing-peanut',    label: '땅콩',         emoji: '🥜' },
+  { id: 'ing-milk',      label: '유제품 (우유)', emoji: '🥛' },
+  { id: 'ing-wheat',     label: '밀 (글루텐)',   emoji: '🌾' },
+  { id: 'ing-egg',       label: '달걀',         emoji: '🥚' },
+  { id: 'ing-soy',       label: '대두 (콩)',     emoji: '🫘' },
+  { id: 'ing-fish',      label: '생선',         emoji: '🐟' },
+  { id: 'ing-shellfish', label: '갑각류',       emoji: '🦐' },
+  { id: 'ing-treenut',   label: '견과류',       emoji: '🌰' },
+  { id: 'ing-sesame',    label: '참깨',         emoji: '🌿' },
+  { id: 'ing-oat',       label: '귀리',         emoji: '🥣' },
+];
+
 /** 알러겐 ID → 한국어 이름 (프로필 표시용) */
 export const ALLERGEN_NAME_KO: Record<string, string> = {
   'ing-peanut': '땅콩',
@@ -34,7 +48,7 @@ export const ALLERGEN_NAME_KO: Record<string, string> = {
   'ing-soy': '대두',
   'ing-fish': '생선',
   'ing-shellfish': '갑각류',
-  'ing-tree-nut': '견과류',
+  'ing-treenut': '견과류',
   'ing-sesame': '참깨',
   'ing-oat': '귀리',
 };

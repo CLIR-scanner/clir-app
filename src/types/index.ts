@@ -4,6 +4,8 @@ export type RiskLevel = 'safe' | 'caution' | 'danger';
 export type SensitivityLevel = 'strict' | 'normal';
 /** RiskLevel의 alias — ScanHistory.result 필드에 사용 */
 export type ScanResult = RiskLevel;
+/** 바코드 DB에서 가져온 제품 성분 정보의 완성도 */
+export type DataCompleteness = 'complete' | 'partial' | 'not_found';
 
 // ─── Domain Entities ──────────────────────────────────────────────────────────
 
@@ -30,6 +32,16 @@ export interface Product {
   riskIngredients: Ingredient[];
   mayContainIngredients: Ingredient[];
   alternatives: Product[];
+  /** 바코드 DB 성분 정보 완성도 (undefined = mock 데이터, 완성으로 간주) */
+  dataCompleteness?: DataCompleteness;
+}
+
+export interface OCRResult {
+  rawText: string;
+  /** OCR로 추출한 성분명 목록 (한국어) */
+  parsedIngredients: string[];
+  /** OCR 신뢰도 0~1 */
+  confidence: number;
 }
 
 export interface Profile {
@@ -95,6 +107,9 @@ export interface UserStore {
   setUser: (user: User) => void;
   switchProfile: (profileId: string) => void;
   updateActiveProfile: (updates: Partial<Profile>) => void;
+  addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
+  updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;
+  deleteMultiProfile: (profileId: string) => void;
 }
 
 export interface ScanStore {
@@ -139,9 +154,12 @@ export type MainTabParamList = {
 
 export type ScanStackParamList = {
   Scan: undefined;
-  /** fromHistory: true 시 스캔 이력에 중복 추가하지 않음 */
-  ScanResult: { productId: string; fromHistory?: boolean };
+  /** fromHistory: true 시 스캔 이력에 중복 추가하지 않음
+   *  ocrProduct 제공 시 productId 조회를 건너뛰고 인라인 Product 사용 */
+  ScanResult: { productId: string; fromHistory?: boolean; ocrProduct?: Product };
   ScanHistory: undefined;
+  /** 바코드 미등록 제품 또는 partial 보완용 성분표 OCR 화면 */
+  OCRCapture: { barcode?: string };
 };
 
 export type SearchStackParamList = {

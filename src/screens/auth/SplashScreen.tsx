@@ -26,7 +26,7 @@ export default function SplashScreen({ navigation }: Props) {
         </View>
         <Text style={styles.tagline}>성분을 분석하고{'\n'}안전한 식품을 선택하세요</Text>
       </View>
-      <ActivityIndicator color={Colors.primary} style={styles.spinner} />
+      <ActivityIndicator color="#fff" style={styles.spinner} />
     </View>
   );
 }

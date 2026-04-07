@@ -12,7 +12,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { ScanStackParamList, Product, Ingredient, RiskLevel } from '../../types';
+import { ScanStackParamList, Product, Ingredient, RiskLevel, DataCompleteness } from '../../types';
 import { getProductById } from '../../services/scan.service';
 import { useUserStore } from '../../store/user.store';
 import { useScanStore } from '../../store/scan.store';
@@ -42,7 +42,7 @@ const VERDICT_COPY: Record<RiskLevel, (name: string, allergies: string) => strin
 };
 
 export default function ScanResultScreen({ navigation, route }: Props) {
-  const { productId, fromHistory = false } = route.params;
+  const { productId, fromHistory = false, ocrProduct } = route.params;
   const activeProfile = useUserStore(s => s.activeProfile);
   const currentUserId = useUserStore(s => s.currentUser.id);
   const addScanHistory = useScanStore(s => s.addHistory);
@@ -56,6 +56,23 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   const snapPoints = useMemo(() => ['50%', '85%'], []);
 
   useEffect(() => {
+    // OCR 인라인 제품이 있으면 API 조회 건너뜀
+    if (ocrProduct) {
+      setProduct(ocrProduct);
+      setLoading(false);
+      if (!fromHistory) {
+        addScanHistory({
+          id: `scan-${Date.now()}`,
+          productId: ocrProduct.id,
+          userId: currentUserId,
+          scannedAt: new Date(),
+          result: ocrProduct.riskLevel,
+          product: ocrProduct,
+        });
+      }
+      return;
+    }
+
     let cancelled = false;
     getProductById(productId, activeProfile.allergyProfile)
       .then(data => {
@@ -77,7 +94,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       .catch(e => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [productId, activeProfile.allergyProfile, currentUserId, addScanHistory, fromHistory]);
+  }, [productId, ocrProduct, activeProfile.allergyProfile, currentUserId, addScanHistory, fromHistory]);
 
   const openIngredientDetail = useCallback((ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
@@ -120,6 +137,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   const riskBg = RISK_BG[product.riskLevel];
   const allergyText = allergenLabel(activeProfile.allergyProfile);
   const verdictText = VERDICT_COPY[product.riskLevel](product.name, allergyText);
+  const completeness: DataCompleteness = product.dataCompleteness ?? 'complete';
 
   return (
     <View style={styles.root}>
@@ -139,6 +157,29 @@ export default function ScanResultScreen({ navigation, route }: Props) {
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
             <>
+              {/* DataCompleteness 배너 */}
+              {completeness === 'partial' && (
+                <TouchableOpacity
+                  style={styles.completeBanner}
+                  onPress={() => navigation.navigate('OCRCapture', { barcode: product.barcode })}
+                  activeOpacity={0.8}>
+                  <Text style={styles.completeBannerIcon}>⚠️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.completeBannerTitle}>성분 정보가 불완전합니다</Text>
+                    <Text style={styles.completeBannerSub}>성분표를 촬영하면 더 정확한 분석이 가능합니다 →</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              {completeness === 'not_found' && (
+                <View style={styles.ocrBanner}>
+                  <Text style={styles.ocrBannerIcon}>📸</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.ocrBannerTitle}>OCR 분석 결과</Text>
+                    <Text style={styles.ocrBannerSub}>실제 성분표에서 추출한 정보입니다</Text>
+                  </View>
+                </View>
+              )}
+
               <View style={styles.productCard}>
                 <View style={styles.productImagePlaceholder}>
                   <Text style={styles.productImageEmoji}>🛒</Text>
@@ -304,6 +345,36 @@ const styles = StyleSheet.create({
   backButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
 
   listContent: { padding: 16, paddingBottom: 40 },
+
+  completeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  completeBannerIcon: { fontSize: 20 },
+  completeBannerTitle: { fontSize: 14, fontWeight: '600', color: '#795548', marginBottom: 2 },
+  completeBannerSub: { fontSize: 12, color: '#A1887F' },
+
+  ocrBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#90CAF9',
+  },
+  ocrBannerIcon: { fontSize: 20 },
+  ocrBannerTitle: { fontSize: 14, fontWeight: '600', color: '#1565C0', marginBottom: 2 },
+  ocrBannerSub: { fontSize: 12, color: '#1976D2' },
 
   productCard: {
     flexDirection: 'row',

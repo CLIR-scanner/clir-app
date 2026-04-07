@@ -35,6 +35,45 @@ export const useUserStore = create<UserStore>(set => ({
       return { activeProfile: multi };
     }),
 
+  addMultiProfile: profile =>
+    set(state => ({
+      currentUser: {
+        ...state.currentUser,
+        multiProfiles: [
+          ...state.currentUser.multiProfiles,
+          { ...profile, id: `profile-${Date.now()}` },
+        ],
+      },
+    })),
+
+  updateMultiProfile: (profileId, updates) =>
+    set(state => {
+      const updatedMulti = state.currentUser.multiProfiles.map((p: Profile) =>
+        p.id === profileId ? { ...p, ...updates } : p
+      );
+      const updatedUser = { ...state.currentUser, multiProfiles: updatedMulti };
+      // activeProfile이 수정 대상이면 동기화
+      const updatedActive =
+        state.activeProfile.id === profileId
+          ? { ...state.activeProfile, ...updates }
+          : state.activeProfile;
+      return { currentUser: updatedUser, activeProfile: updatedActive };
+    }),
+
+  deleteMultiProfile: profileId =>
+    set(state => {
+      const updatedMulti = state.currentUser.multiProfiles.filter(
+        (p: Profile) => p.id !== profileId
+      );
+      // 삭제된 프로필이 활성 중이면 메인 프로필로 되돌림
+      const updatedActive =
+        state.activeProfile.id === profileId ? state.currentUser : state.activeProfile;
+      return {
+        currentUser: { ...state.currentUser, multiProfiles: updatedMulti },
+        activeProfile: updatedActive,
+      };
+    }),
+
   updateActiveProfile: updates =>
     set(state => {
       // 초기화 전(guest 상태) 에는 store를 변경하지 않음
