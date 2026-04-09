@@ -39,17 +39,17 @@ export default function AuthHomeScreen() {
 
       <View style={styles.buttons}>
         <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => navigation.navigate('Signup')}
-        >
-          <Text style={styles.primaryButtonText}>Create a new account</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={styles.secondaryButton}
           onPress={() => navigation.navigate('Login')}
         >
           <Text style={styles.secondaryButtonText}>Sign in</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => navigation.navigate('Signup')}
+        >
+          <Text style={styles.primaryButtonText}>Create a new account</Text>
         </TouchableOpacity>
       </View>
     </View>

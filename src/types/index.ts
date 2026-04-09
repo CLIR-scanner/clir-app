@@ -171,6 +171,8 @@ export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
   Signup: undefined;
+  /** 이메일 인증 코드 입력 화면 */
+  EmailCode: { name: string; email: string; password: string };
   /** 회원가입 기본 정보를 설문 화면으로 전달 */
   Survey: { name: string; email: string; password: string };
   Login: undefined;
