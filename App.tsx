@@ -15,16 +15,18 @@ export default function App() {
     initialize();
   }, [initialize]);
 
+  if (!isInitialized) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}>
+        <ActivityIndicator size="large" color={Colors.white} />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        {isInitialized ? (
-          <RootNavigator />
-        ) : (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}>
-            <ActivityIndicator size="large" color="#fff" />
-          </View>
-        )}
+        <RootNavigator />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

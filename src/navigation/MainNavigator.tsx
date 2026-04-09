@@ -13,11 +13,11 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export default function MainNavigator() {
   return (
     <Tab.Navigator>
-      <Tab.Screen name="ScanTab" component={ScanNavigator} options={{ title: Strings.tabScan }} />
-      <Tab.Screen name="SearchTab" component={SearchNavigator} options={{ title: Strings.tabSearch }} />
-      <Tab.Screen name="ListTab" component={ListNavigator} options={{ title: Strings.tabList }} />
-      <Tab.Screen name="RecommendTab" component={RecommendNavigator} options={{ title: Strings.tabRecommend }} />
-      <Tab.Screen name="ProfileTab" component={ProfileNavigator} options={{ title: Strings.tabProfile }} />
+      <Tab.Screen name="ScanTab" component={ScanNavigator} options={{ title: Strings.tabScan, headerShown: false }} />
+      <Tab.Screen name="SearchTab" component={SearchNavigator} options={{ title: Strings.tabSearch, headerShown: false }} />
+      <Tab.Screen name="ListTab" component={ListNavigator} options={{ title: Strings.tabList, headerShown: false }} />
+      <Tab.Screen name="RecommendTab" component={RecommendNavigator} options={{ title: Strings.tabRecommend, headerShown: false }} />
+      <Tab.Screen name="ProfileTab" component={ProfileNavigator} options={{ title: Strings.tabProfile, headerShown: false }} />
     </Tab.Navigator>
   );
 }

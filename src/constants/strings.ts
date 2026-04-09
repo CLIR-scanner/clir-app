@@ -1,81 +1,48 @@
 export const Strings = {
-  // Common
-  loading: '로딩 중...',
-  error: '오류가 발생했습니다.',
-  retry: '다시 시도',
+  // 탭 이름
+  tabScan: '스캔',
+  tabSearch: '검색',
+  tabList: '리스트',
+  tabRecommend: '추천',
+  tabProfile: '프로필',
+
+  // 공통
   confirm: '확인',
   cancel: '취소',
   save: '저장',
   delete: '삭제',
-  edit: '편집',
+  back: '뒤로',
+  loading: '불러오는 중...',
+  error: '오류가 발생했습니다.',
+  retry: '다시 시도',
+  empty: '항목이 없습니다.',
 
-  // Risk levels
-  riskDanger: '위험',
-  riskCaution: '주의',
-  riskSafe: '안전',
+  // 온보딩
+  signup: '회원가입',
+  login: '로그인',
+  logout: '로그아웃',
+  email: '이메일',
+  password: '비밀번호',
+  name: '이름',
 
-  // Scan
-  scanTitle: '바코드 스캔',
-  scanInstruction: '바코드를 카메라에 맞춰주세요',
-  scanResultTitle: '성분 분석 결과',
-  scanResultDanger: '이 제품에는 위험 성분이 포함되어 있습니다.',
-  scanResultCaution: '이 제품에는 주의가 필요한 성분이 포함되어 있습니다.',
-  scanResultSafe: '이 제품은 안전합니다.',
-  scanIngredients: '전체 성분',
-  scanRiskIngredients: '위험/주의 성분',
-  scanAlternatives: '대체 제품 추천',
-  scanMayContain: '혼입 가능 성분',
+  // 스캔
+  scanBarcode: '바코드 스캔',
+  scanOCR: '성분표 스캔',
+  scanResult: '스캔 결과',
+  scanHistory: '스캔 이력',
 
-  // Auth
-  authWelcome: 'CLIR에 오신 것을 환영합니다',
-  authLogin: '로그인',
-  authSignup: '회원가입',
-  authEmail: '이메일',
-  authPassword: '비밀번호',
-  authName: '이름',
+  // 판정
+  verdictSafe: '안전',
+  verdictCaution: '주의',
+  verdictDanger: '위험',
 
-  // Tab labels
-  tabScan: '스캔',
-  tabSearch: '검색',
-  tabList: '목록',
-  tabRecommend: '추천',
-  tabProfile: '프로필',
+  // 즐겨찾기
+  favorites: '즐겨찾기',
+  addFavorite: '즐겨찾기 추가',
+  removeFavorite: '즐겨찾기 삭제',
 
-  // Profile
-  profileTitle: '프로필',
-  profilePersonal: '개인정보',
-  profilePersonalization: '개인화 설정',
-  profileMultiProfile: '멀티 프로필',
-  profileLanguage: '언어',
-  profileSettings: '설정',
-
-  // Search
-  searchPlaceholder: '제품명, 브랜드, 성분 검색',
-  searchNoResults: '검색 결과가 없습니다.',
-
-  // List
-  listFavorites: '즐겨찾기',
-  listShopping: '장보기',
-  listEmpty: '목록이 비어 있습니다.',
-
-  // Recommend
-  recommendTitle: '추천',
-  recommendWeekendPopular: '주말 인기 제품',
-  recommendSimilarUsers: '비슷한 유저가 즐겨찾는 제품',
-
-  // Scan history
-  scanHistoryTitle: '스캔 이력',
-  scanHistoryEmpty: '아직 스캔한 제품이 없습니다.',
-
-  // Allergy settings
-  allergyTitle: '식이 제한 설정',
-  allergySubtitle: '알러지가 있는 성분을 선택하세요',
-  allergySaved: '저장되었습니다.',
-
-  // Sensitivity settings
-  sensitivityTitle: '민감도 설정',
-  sensitivityStrict: '엄격 모드',
-  sensitivityStrictDesc: 'may contain(혼입 가능) 성분도 위험으로 표시합니다.',
-  sensitivityNormal: '일반 모드',
-  sensitivityNormalDesc: '직접 포함된 성분만 위험·주의로 표시합니다.',
+  // 쇼핑
+  shoppingList: '장보기 목록',
+  purchased: '구매 완료',
+  notPurchased: '구매 예정',
 };

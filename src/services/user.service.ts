@@ -1,32 +1,40 @@
 // TODO: Real API 연동 시 이 파일의 구현부만 교체
 import { User, Profile } from '../types';
-import { mockUser } from '../mocks/user.mock';
 
-export async function getUser(userId: string): Promise<User> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
-  return mockUser;
+/**
+ * 현재 로그인된 사용자의 전체 프로필을 반환한다.
+ */
+export async function getProfile(): Promise<User> {
+  throw new Error('Not implemented');
 }
 
-export async function updateUser(userId: string, updates: Partial<User>): Promise<User> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
-  return { ...mockUser, ...updates };
+/**
+ * activeProfile 필드를 업데이트한다.
+ */
+export async function updateProfile(updates: Partial<Profile>): Promise<Profile> {
+  throw new Error('Not implemented');
 }
 
-export async function addProfile(userId: string, profile: Omit<Profile, 'id'>): Promise<Profile> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
-  return { id: `profile-${Date.now()}`, ...profile };
+/**
+ * 멀티 프로필에 새 프로필을 추가한다.
+ */
+export async function addMultiProfile(profile: Omit<Profile, 'id'>): Promise<Profile> {
+  throw new Error('Not implemented');
 }
 
-export async function updateProfile(
-  userId: string,
+/**
+ * 멀티 프로필의 특정 프로필을 수정한다.
+ */
+export async function updateMultiProfile(
   profileId: string,
-  updates: Partial<Profile>
+  updates: Partial<Omit<Profile, 'id'>>,
 ): Promise<Profile> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
-  const existing = mockUser.multiProfiles.find((p: Profile) => p.id === profileId) ?? mockUser;
-  return { ...existing, ...updates };
+  throw new Error('Not implemented');
 }
 
-export async function deleteProfile(userId: string, profileId: string): Promise<void> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
+/**
+ * 멀티 프로필에서 특정 프로필을 삭제한다.
+ */
+export async function deleteMultiProfile(profileId: string): Promise<void> {
+  throw new Error('Not implemented');
 }

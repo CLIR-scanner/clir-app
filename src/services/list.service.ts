@@ -1,70 +1,54 @@
 // TODO: Real API 연동 시 이 파일의 구현부만 교체
 import { FavoriteItem, ShoppingItem } from '../types';
-import { mockProductMap } from '../mocks/product.mock';
 
-export async function getFavorites(userId: string): Promise<FavoriteItem[]> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
-  return [];
+/**
+ * GET /favorites
+ * 현재 사용자의 즐겨찾기 목록을 최신순으로 반환한다.
+ */
+export async function getFavorites(): Promise<FavoriteItem[]> {
+  throw new Error('Not implemented');
 }
 
-export async function addFavorite(userId: string, productId: string, memo: string): Promise<FavoriteItem> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 400));
-  const product = mockProductMap[productId];
-  if (!product) throw new Error(`제품을 찾을 수 없습니다: ${productId}`);
-  return {
-    id: `fav-${Date.now()}`,
-    productId,
-    userId,
-    memo,
-    addedAt: new Date(),
-    product,
-  };
+/**
+ * POST /favorites
+ * 제품을 즐겨찾기에 추가한다.
+ */
+export async function addFavorite(productId: string): Promise<FavoriteItem> {
+  throw new Error('Not implemented');
 }
 
-export async function removeFavorite(userId: string, favoriteId: string): Promise<void> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
+/**
+ * DELETE /favorites/:id
+ * 즐겨찾기에서 항목을 삭제한다.
+ */
+export async function removeFavorite(favoriteId: string): Promise<void> {
+  throw new Error('Not implemented');
 }
 
-export async function getShoppingItems(userId: string): Promise<ShoppingItem[]> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
-  return [];
+/**
+ * 장보기 목록을 반환한다.
+ */
+export async function getShoppingItems(): Promise<ShoppingItem[]> {
+  throw new Error('Not implemented');
 }
 
-export async function addShoppingItem(userId: string, productId: string): Promise<ShoppingItem> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 400));
-  const product = mockProductMap[productId];
-  if (!product) throw new Error(`제품을 찾을 수 없습니다: ${productId}`);
-  return {
-    id: `shop-${Date.now()}`,
-    productId,
-    userId,
-    isPurchased: false,
-    addedAt: new Date(),
-    product,
-  };
+/**
+ * 장보기 목록에 제품을 추가한다.
+ */
+export async function addShoppingItem(productId: string): Promise<ShoppingItem> {
+  throw new Error('Not implemented');
 }
 
-export async function removeShoppingItem(userId: string, shoppingItemId: string): Promise<void> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
+/**
+ * 장보기 목록에서 항목을 삭제한다.
+ */
+export async function removeShoppingItem(itemId: string): Promise<void> {
+  throw new Error('Not implemented');
 }
 
-export async function toggleShoppingItemPurchased(
-  userId: string,
-  shoppingItemId: string
-): Promise<ShoppingItem> {
-  await new Promise<void>((resolve) => setTimeout(() => resolve(), 300));
-  // Mock: shoppingItemId 기반으로 제품을 결정적으로 선택 (Real API 연동 시 서버가 현재 상태를 반환)
-  const productIds = Object.keys(mockProductMap);
-  const hash = shoppingItemId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const productId = productIds[hash % productIds.length];
-  const product = mockProductMap[productId];
-  if (!product) throw new Error(`제품을 찾을 수 없습니다: ${productId}`);
-  return {
-    id: shoppingItemId,
-    productId,
-    userId,
-    isPurchased: true,
-    addedAt: new Date(),
-    product,
-  };
+/**
+ * 장보기 항목의 구매 완료 상태를 토글한다.
+ */
+export async function toggleShoppingItemPurchased(itemId: string): Promise<void> {
+  throw new Error('Not implemented');
 }

@@ -2,21 +2,25 @@
 
 export type RiskLevel = 'safe' | 'caution' | 'danger';
 export type SensitivityLevel = 'strict' | 'normal';
-/** RiskLevel의 alias — ScanHistory.result 필드에 사용 */
+/** RiskLevel alias — ScanHistory.result 필드에 사용 */
 export type ScanResult = RiskLevel;
 /** 바코드 DB에서 가져온 제품 성분 정보의 완성도 */
 export type DataCompleteness = 'complete' | 'partial' | 'not_found';
 
 // ─── Domain Entities ──────────────────────────────────────────────────────────
 
-export interface Ingredient {
+export interface IngredientSummary {
   id: string;
   name: string;
   nameKo: string;
+}
+
+export interface Ingredient extends IngredientSummary {
   description: string;
   riskLevel: RiskLevel;
-  sources: string[];
-  /** may-contain 성분이 실제로 연관된 알러겐 ID (예: 'ing-may-peanut' → 'ing-peanut') */
+  /** 근거자료 링크 목록 */
+  sources: { title: string; url: string }[];
+  /** may-contain 성분이 연관된 알러겐 ID (예: 'ing-may-peanut' → 'ing-peanut') */
   relatedAllergenId?: string;
 }
 
@@ -27,21 +31,37 @@ export interface Product {
   brand: string;
   image?: string;
   ingredients: Ingredient[];
+  /** 현재 activeProfile 기준 안전 여부 */
   isSafe: boolean;
   riskLevel: RiskLevel;
   riskIngredients: Ingredient[];
   mayContainIngredients: Ingredient[];
   alternatives: Product[];
-  /** 바코드 DB 성분 정보 완성도 (undefined = mock 데이터, 완성으로 간주) */
+  /** 바코드 DB 성분 정보 완성도 */
   dataCompleteness?: DataCompleteness;
 }
 
 export interface OCRResult {
   rawText: string;
-  /** OCR로 추출한 성분명 목록 (한국어) */
+  /** OCR로 추출한 성분명 목록 */
   parsedIngredients: string[];
   /** OCR 신뢰도 0~1 */
   confidence: number;
+}
+
+/** POST /analysis 응답 */
+export interface AnalysisResult {
+  verdict: RiskLevel;
+  isSafe: boolean;
+  /** 위험·주의 판정을 유발한 성분 목록 */
+  triggeredBy: TriggeredIngredient[];
+  safeIngredients: IngredientSummary[];
+}
+
+export interface TriggeredIngredient extends IngredientSummary {
+  /** 판정 이유 (예: "알러지 프로필에 등록된 성분입니다.") */
+  reason: string;
+  riskLevel: RiskLevel;
 }
 
 export interface Profile {
@@ -86,12 +106,15 @@ export interface ShoppingItem {
   product: Product;
 }
 
-// ─── Signup ───────────────────────────────────────────────────────────────────
+// ─── Request Payloads ─────────────────────────────────────────────────────────
 
 export interface SignupData {
   email: string;
   password: string;
   name: string;
+}
+
+export interface SurveyData {
   allergyProfile: string[];
   dietaryRestrictions: string[];
   sensitivityLevel: SensitivityLevel;
@@ -105,6 +128,7 @@ export interface UserStore {
   isInitialized: boolean;
   initialize: () => Promise<void>;
   setUser: (user: User) => void;
+  logout: () => void;
   switchProfile: (profileId: string) => void;
   updateActiveProfile: (updates: Partial<Profile>) => void;
   addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
@@ -121,8 +145,10 @@ export interface ScanStore {
 export interface ListStore {
   favorites: FavoriteItem[];
   shoppingItems: ShoppingItem[];
+  setFavorites: (items: FavoriteItem[]) => void;
   addFavorite: (item: FavoriteItem) => void;
   removeFavorite: (id: string) => void;
+  setShoppingItems: (items: ShoppingItem[]) => void;
   addShoppingItem: (item: ShoppingItem) => void;
   removeShoppingItem: (id: string) => void;
   togglePurchased: (id: string) => void;
@@ -139,7 +165,7 @@ export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
   Signup: undefined;
-  /** Signup에서 수집한 기본 정보를 Survey로 전달 */
+  /** 회원가입 기본 정보를 설문 화면으로 전달 */
   Survey: { name: string; email: string; password: string };
   Login: undefined;
 };
@@ -154,11 +180,14 @@ export type MainTabParamList = {
 
 export type ScanStackParamList = {
   Scan: undefined;
-  /** fromHistory: true 시 스캔 이력에 중복 추가하지 않음
-   *  ocrProduct 제공 시 productId 조회를 건너뛰고 인라인 Product 사용 */
+  /**
+   * productId: 바코드 스캔 시 제품 ID
+   * fromHistory: true 시 스캔 이력에 중복 추가하지 않음
+   * ocrProduct: OCR 결과 인라인 Product (productId 조회 생략)
+   */
   ScanResult: { productId: string; fromHistory?: boolean; ocrProduct?: Product };
   ScanHistory: undefined;
-  /** 바코드 미등록 제품 또는 partial 보완용 성분표 OCR 화면 */
+  /** barcode: 미등록 제품 보완용 OCR 진입 시 함께 전달 */
   OCRCapture: { barcode?: string };
 };
 
