@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -45,6 +46,8 @@ export default function EmailCodeScreen() {
     setCode(next);
     if (char && index < CODE_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
+    } else if (char && index === CODE_LENGTH - 1) {
+      Keyboard.dismiss();
     }
   }
 

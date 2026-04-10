@@ -167,14 +167,35 @@ export type RootStackParamList = {
   Main: undefined;
 };
 
+/** 설문 진행 중 누적되는 데이터 */
+export type SurveyParams = {
+  name: string;
+  email: string;
+  password: string;
+  dietaryType?: 'allergy' | 'vegetarian' | 'both';
+  hasAllergyDoc?: boolean;
+};
+
 export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
   Signup: undefined;
   /** 이메일 인증 코드 입력 화면 */
   EmailCode: { name: string; email: string; password: string };
-  /** 회원가입 기본 정보를 설문 화면으로 전달 */
-  Survey: { name: string; email: string; password: string };
+  /** Survey 1: 식이 유형 선택 */
+  Survey: SurveyParams;
+  /** Survey 2-A: 알러지 진단 여부 확인 */
+  SurveyAllergy: SurveyParams;
+  /** Survey 3-A-Yes: 진단서 보유 → 문서 업로드 */
+  SurveyAllergyDoc: SurveyParams;
+  /** Survey 4-A-Yes: 문서 분석 결과 확인 */
+  SurveyAllergyDocResult: SurveyParams;
+  /** Survey 4-A-Yes Edit: 분석 결과 직접 편집 */
+  SurveyAllergyEditList: SurveyParams & { categoriesJson: string };
+  /** Survey 3-A-No: 진단 없음 → 직접 알러지 항목 선택 */
+  SurveyAllergySelect: SurveyParams;
+  /** Survey 2-B: 채식 유형 선택 (Vegetarian / Both 플로우) */
+  SurveyVegetarian: SurveyParams;
   Login: undefined;
 };
 

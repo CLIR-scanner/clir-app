@@ -38,8 +38,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }
     return;
     // ─────────────────────────────────────────────────────────────────────────
-
-    set({ isInitialized: true });
   },
 
   setUser: (user: User) => {
