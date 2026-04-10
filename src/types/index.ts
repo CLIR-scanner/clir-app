@@ -56,6 +56,12 @@ export interface AnalysisResult {
   /** 위험·주의 판정을 유발한 성분 목록 */
   triggeredBy: TriggeredIngredient[];
   safeIngredients: IngredientSummary[];
+  /**
+   * 분석 대상 성분 데이터 완성도.
+   * 'partial': productId 미제공(OCR) 또는 DB 미등록 제품 — 결과 신뢰도 낮음.
+   * 'complete': 서버사이드 DB 조회로 성분 확정.
+   */
+  dataCompleteness: 'complete' | 'partial';
 }
 
 export interface TriggeredIngredient extends IngredientSummary {
