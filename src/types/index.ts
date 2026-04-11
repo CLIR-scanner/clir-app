@@ -42,11 +42,10 @@ export interface Product {
 }
 
 export interface OCRResult {
-  rawText: string;
-  /** OCR로 추출한 성분명 목록 */
-  parsedIngredients: string[];
-  /** OCR 신뢰도 0~1 */
-  confidence: number;
+  /** 이미지에서 추출한 원문 텍스트 */
+  extractedText: string;
+  /** 파싱된 성분 목록 (알러겐은 ing-* ID, 일반 성분은 ocr-{n} ID) */
+  ingredients: IngredientSummary[];
 }
 
 /** POST /analysis 응답 */
@@ -98,7 +97,7 @@ export interface FavoriteItem {
   id: string;
   productId: string;
   userId: string;
-  memo: string;
+  memo?: string;
   addedAt: Date;
   product: Product;
 }

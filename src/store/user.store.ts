@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
+import { login as authLogin } from '../services/auth.service';
 
 const EMPTY_PROFILE: Profile = {
   id: '',
@@ -26,18 +27,15 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
     // ─── DEV ONLY ────────────────────────────────────────────────────────────
     // 담당자 A가 실제 로그인 흐름(auth.service → setUser)을 완성하면 이 블록 삭제.
-    // 목적: 담당자 B가 auth 구현을 기다리지 않고 스캔/즐겨찾기 화면을 바로 테스트.
-    const DEV_USER: User = {
-      id: 'dev-user-001',
-      name: '테스트 유저',
-      email: 'dev@clir.app',
-      language: 'ko',
-      allergyProfile: ['ing-peanut', 'ing-dairy'],
-      dietaryRestrictions: ['vegan'],
-      sensitivityLevel: 'strict',
-      multiProfiles: [],
-    };
-    set({ currentUser: DEV_USER, activeProfile: DEV_USER, isInitialized: true });
+    // 목적: 담당자 B가 auth 구현을 기다리지 않고 실제 API로 스캔/즐겨찾기 화면을 바로 테스트.
+    // 테스트 계정으로 실제 로그인해 JWT 토큰을 받아옴 (B의 API 호출이 401 나지 않도록).
+    try {
+      const { user } = await authLogin('clir.test.user@gmail.com', 'testpass123');
+      set({ currentUser: user, activeProfile: user, isInitialized: true });
+    } catch {
+      // 네트워크 오프라인 등으로 로그인 실패 시 빈 유저로 초기화
+      set({ isInitialized: true });
+    }
     return;
     // ─────────────────────────────────────────────────────────────────────────
 
