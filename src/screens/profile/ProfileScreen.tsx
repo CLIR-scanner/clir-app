@@ -5,36 +5,38 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ProfileStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
-const SENSITIVITY_LABEL: Record<string, string> = {
-  strict: 'Strict',
-  normal: 'Normal',
+const SENSITIVITY_KEY: Record<string, string> = {
+  strict: 'sensitivity.strictBadge',
+  normal: 'sensitivity.normalBadge',
 };
-
-const MENU_ITEMS: { label: string; screen: keyof ProfileStackParamList }[] = [
-  { label: 'Dietary Restrictions', screen: 'PersonalizationAllergy' },
-  { label: 'Sensitivity Settings', screen: 'PersonalizationSensitivity' },
-  { label: 'Personalization',      screen: 'Personalization' },
-  { label: 'Family Profiles',      screen: 'MultiProfile' },
-  { label: 'Language',             screen: 'Language' },
-  { label: 'Settings',             screen: 'Settings' },
-];
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
-  const currentUser  = useUserStore(s => s.currentUser);
+  const { t } = useTranslation();
+  const currentUser   = useUserStore(s => s.currentUser);
   const activeProfile = useUserStore(s => s.activeProfile);
-  const logout = useUserStore(s => s.logout);
+  const logout        = useUserStore(s => s.logout);
+
+  const MENU_ITEMS: { label: string; screen: keyof ProfileStackParamList }[] = [
+    { label: t('profile.menuDietary'),         screen: 'PersonalizationAllergy' },
+    { label: t('profile.menuSensitivity'),     screen: 'PersonalizationSensitivity' },
+    { label: t('profile.menuPersonalization'), screen: 'Personalization' },
+    { label: t('profile.menuFamily'),          screen: 'MultiProfile' },
+    { label: t('profile.menuLanguage'),        screen: 'Language' },
+    { label: t('profile.menuSettings'),        screen: 'Settings' },
+  ];
 
   function handleLogout() {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: logout },
+    Alert.alert(t('auth.signOut'), t('auth.signOutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('auth.signOut'), style: 'destructive', onPress: logout },
     ]);
   }
 
@@ -42,7 +44,7 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>Profile</Text>
+        <Text style={styles.screenTitle}>{t('profile.title')}</Text>
       </View>
 
       {/* 프로필 카드 */}
@@ -60,10 +62,10 @@ export default function ProfileScreen() {
 
       {/* 알러지 & 민감도 */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Profile</Text>
+        <Text style={styles.sectionTitle}>{t('profile.myProfile')}</Text>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Sensitivity</Text>
+          <Text style={styles.infoLabel}>{t('profile.sensitivity')}</Text>
           <View style={[
             styles.badge,
             activeProfile.sensitivityLevel === 'strict' ? styles.badgeStrict : styles.badgeNormal,
@@ -72,7 +74,7 @@ export default function ProfileScreen() {
               styles.badgeText,
               activeProfile.sensitivityLevel === 'strict' ? styles.badgeTextStrict : styles.badgeTextNormal,
             ]}>
-              {SENSITIVITY_LABEL[activeProfile.sensitivityLevel] ?? activeProfile.sensitivityLevel}
+              {t(SENSITIVITY_KEY[activeProfile.sensitivityLevel] ?? 'sensitivity.normalBadge')}
             </Text>
           </View>
         </View>
@@ -80,9 +82,9 @@ export default function ProfileScreen() {
         <View style={styles.divider} />
 
         <View style={styles.infoBlock}>
-          <Text style={styles.infoLabel}>Allergy Profile</Text>
+          <Text style={styles.infoLabel}>{t('profile.allergyProfile')}</Text>
           {activeProfile.allergyProfile.length === 0 ? (
-            <Text style={styles.emptyText}>None</Text>
+            <Text style={styles.emptyText}>{t('profile.noAllergens')}</Text>
           ) : (
             <View style={styles.chips}>
               {activeProfile.allergyProfile.map(item => (
@@ -97,7 +99,7 @@ export default function ProfileScreen() {
 
       {/* 메뉴 */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
+        <Text style={styles.sectionTitle}>{t('profile.settingsSection')}</Text>
         <View style={styles.menuList}>
           {MENU_ITEMS.map((item, idx) => (
             <React.Fragment key={item.screen}>
@@ -117,7 +119,7 @@ export default function ProfileScreen() {
 
       {/* 로그아웃 */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
-        <Text style={styles.logoutText}>Sign out</Text>
+        <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -142,8 +144,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.black,
   },
-
-  // 프로필 카드
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -180,8 +180,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.gray500,
   },
-
-  // 섹션
   section: {
     backgroundColor: Colors.white,
     borderRadius: 16,
@@ -203,8 +201,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.border,
   },
-
-  // 정보 행
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -259,8 +255,6 @@ const styles = StyleSheet.create({
   badgeTextNormal: {
     color: Colors.safe,
   },
-
-  // 메뉴
   menuList: {
     gap: 0,
   },
@@ -280,8 +274,6 @@ const styles = StyleSheet.create({
     color: Colors.gray300,
     lineHeight: 22,
   },
-
-  // 로그아웃
   logoutButton: {
     borderRadius: 100,
     paddingVertical: 18,

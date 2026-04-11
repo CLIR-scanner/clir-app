@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { ALLERGY_CATEGORIES, ALLERGY_CANDIDATES } from '../../constants/allergyData';
 import { useUserStore } from '../../store/user.store';
 
 export default function PersonalizationAllergyScreen() {
   const navigation = useNavigation();
-  const allergyProfile = useUserStore(s => s.activeProfile.allergyProfile);
+  const { t } = useTranslation();
+  const allergyProfile      = useUserStore(s => s.activeProfile.allergyProfile);
   const updateActiveProfile = useUserStore(s => s.updateActiveProfile);
 
   const [selected, setSelected] = useState<Set<string>>(new Set(allergyProfile));
@@ -58,30 +59,25 @@ export default function PersonalizationAllergyScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>{'←'}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Dietary Restrictions</Text>
+        <Text style={styles.headerTitle}>{t('dietary.title')}</Text>
         <View style={styles.headerRight} />
       </View>
 
-      <Text style={styles.subtitle}>
-        Select the ingredients you want to avoid. Changes apply to your active profile.
-      </Text>
+      <Text style={styles.subtitle}>{t('dietary.subtitle')}</Text>
 
-      {/* 선택된 개수 */}
       <View style={styles.countRow}>
-        <Text style={styles.countText}>{selected.size} selected</Text>
+        <Text style={styles.countText}>{t('common.selected', { count: selected.size })}</Text>
         {selected.size > 0 && (
           <TouchableOpacity onPress={() => setSelected(new Set())}>
-            <Text style={styles.clearText}>Clear all</Text>
+            <Text style={styles.clearText}>{t('common.clearAll')}</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* 카테고리 목록 */}
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.list}>
           {ALLERGY_CATEGORIES.map(cat => {
@@ -92,7 +88,6 @@ export default function PersonalizationAllergyScreen() {
 
             return (
               <View key={cat} style={styles.categoryBlock}>
-                {/* 카테고리 행 */}
                 <TouchableOpacity
                   style={styles.categoryRow}
                   onPress={() => toggleCategory(cat)}
@@ -118,7 +113,6 @@ export default function PersonalizationAllergyScreen() {
                   <Text style={[styles.chevron, isExpanded && styles.chevronOpen]}>{'›'}</Text>
                 </TouchableOpacity>
 
-                {/* 항목 목록 (펼쳐진 경우) */}
                 {isExpanded && (
                   <View style={styles.itemList}>
                     {items.map(item => {
@@ -144,13 +138,12 @@ export default function PersonalizationAllergyScreen() {
         <View style={{ height: 16 }} />
       </ScrollView>
 
-      {/* 저장 버튼 */}
       <TouchableOpacity
         style={[styles.saveButton, !isDirty && styles.saveButtonDisabled]}
         onPress={handleSave}
         disabled={!isDirty}
       >
-        <Text style={styles.saveText}>Save</Text>
+        <Text style={styles.saveText}>{t('common.save')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -158,156 +151,54 @@ export default function PersonalizationAllergyScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    flex: 1, backgroundColor: Colors.background,
+    paddingTop: 60, paddingHorizontal: 24, paddingBottom: 40,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  backText: {
-    fontSize: 22,
-    color: Colors.black,
-    width: 32,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  backText: { fontSize: 22, color: Colors.black, width: 32 },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.black,
+    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: Colors.black,
   },
-  headerRight: {
-    width: 32,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.gray500,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
+  headerRight: { width: 32 },
+  subtitle: { fontSize: 13, color: Colors.gray500, lineHeight: 20, marginBottom: 16 },
   countRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 12,
   },
-  countText: {
-    fontSize: 13,
-    color: Colors.gray500,
-    fontWeight: '600',
-  },
-  clearText: {
-    fontSize: 13,
-    color: Colors.danger,
-    fontWeight: '600',
-  },
-  scroll: {
-    flex: 1,
-  },
-  list: {
-    gap: 8,
-  },
-
-  // 카테고리
+  countText: { fontSize: 13, color: Colors.gray500, fontWeight: '600' },
+  clearText: { fontSize: 13, color: Colors.danger, fontWeight: '600' },
+  scroll: { flex: 1 },
+  list: { gap: 8 },
   categoryBlock: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
+    backgroundColor: Colors.white, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
   },
   categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 12,
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 16, paddingHorizontal: 16, gap: 12,
   },
-  categoryLabelWrap: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  categoryLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  categoryCount: {
-    fontSize: 12,
-    color: Colors.gray500,
-  },
-  chevron: {
-    fontSize: 20,
-    color: Colors.gray300,
-    lineHeight: 22,
-  },
-  chevronOpen: {
-    transform: [{ rotate: '90deg' }],
-  },
-
-  // 항목
+  categoryLabelWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  categoryLabel: { fontSize: 15, fontWeight: '600', color: Colors.black },
+  categoryCount: { fontSize: 12, color: Colors.gray500 },
+  chevron: { fontSize: 20, color: Colors.gray300, lineHeight: 22 },
+  chevronOpen: { transform: [{ rotate: '90deg' }] },
   itemList: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 2,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    paddingHorizontal: 16, paddingVertical: 8, gap: 2,
   },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    gap: 12,
-  },
-  itemText: {
-    fontSize: 14,
-    color: Colors.black,
-    fontWeight: '400',
-  },
-
-  // 체크박스
+  itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 12 },
+  itemText: { fontSize: 14, color: Colors.black, fontWeight: '400' },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: Colors.gray300,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 20, height: 20, borderRadius: 4, borderWidth: 2,
+    borderColor: Colors.gray300, backgroundColor: Colors.white,
+    alignItems: 'center', justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: Colors.black,
-    borderColor: Colors.black,
-  },
-  checkboxPartial: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    backgroundColor: Colors.gray300,
-  },
-
-  // 저장 버튼
+  checkboxChecked: { backgroundColor: Colors.black, borderColor: Colors.black },
+  checkboxPartial: { width: 10, height: 10, borderRadius: 2, backgroundColor: Colors.gray300 },
   saveButton: {
-    backgroundColor: Colors.white,
-    borderRadius: 100,
-    paddingVertical: 18,
-    alignItems: 'center',
-    marginTop: 16,
+    backgroundColor: Colors.white, borderRadius: 100,
+    paddingVertical: 18, alignItems: 'center', marginTop: 16,
   },
-  saveButtonDisabled: {
-    opacity: 0.4,
-  },
-  saveText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.black,
-  },
+  saveButtonDisabled: { opacity: 0.4 },
+  saveText: { fontSize: 15, fontWeight: '700', color: Colors.black },
 });

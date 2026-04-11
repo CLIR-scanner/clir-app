@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
@@ -29,12 +30,13 @@ type Nav = NativeStackNavigationProp<AuthStackParamList, 'AuthHome'>;
 
 export default function AuthHomeScreen() {
   const navigation = useNavigation<Nav>();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <ClirLogo width={140} height={83} />
-        <Text style={styles.tagline}>Worry less, eat clir</Text>
+        <Text style={styles.tagline}>{t('auth.tagline')}</Text>
       </View>
 
       <View style={styles.buttons}>
@@ -42,14 +44,14 @@ export default function AuthHomeScreen() {
           style={styles.secondaryButton}
           onPress={() => navigation.navigate('Login')}
         >
-          <Text style={styles.secondaryButtonText}>Sign in</Text>
+          <Text style={styles.secondaryButtonText}>{t('auth.signIn')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.primaryButton}
           onPress={() => navigation.navigate('Signup')}
         >
-          <Text style={styles.primaryButtonText}>Create a new account</Text>
+          <Text style={styles.primaryButtonText}>{t('auth.createAccount')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -69,7 +71,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-tagline: {
+  tagline: {
     marginTop: 12,
     fontSize: 15,
     color: Colors.gray500,

@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  Alert, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 
@@ -19,27 +13,29 @@ type Nav = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
 export default function SignupScreen() {
   const navigation = useNavigation<Nav>();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { t } = useTranslation();
+
+  const [firstName, setFirstName]             = useState('');
+  const [lastName, setLastName]               = useState('');
+  const [email, setEmail]                     = useState('');
+  const [password, setPassword]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   function handleContinue() {
     if (firstName.trim().length < 1 || lastName.trim().length < 1) {
-      Alert.alert('이름을 입력해주세요.');
+      Alert.alert(t('signup.errorName'));
       return;
     }
     if (!email.includes('@')) {
-      Alert.alert('올바른 이메일 주소를 입력해주세요.');
+      Alert.alert(t('signup.errorEmail'));
       return;
     }
     if (password.length < 8) {
-      Alert.alert('비밀번호는 8자 이상이어야 합니다.');
+      Alert.alert(t('signup.errorPasswordLen'));
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('비밀번호가 일치하지 않습니다.');
+      Alert.alert(t('signup.errorPasswordMatch'));
       return;
     }
     navigation.navigate('EmailCode', {
@@ -64,10 +60,10 @@ export default function SignupScreen() {
 
         <View style={styles.fields}>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={styles.label}>{t('signup.labelName')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your First Name"
+              placeholder={t('signup.placeholderFirstName')}
               placeholderTextColor={Colors.gray300}
               value={firstName}
               onChangeText={setFirstName}
@@ -75,7 +71,7 @@ export default function SignupScreen() {
             />
             <TextInput
               style={styles.input}
-              placeholder="Enter your Last Name"
+              placeholder={t('signup.placeholderLastName')}
               placeholderTextColor={Colors.gray300}
               value={lastName}
               onChangeText={setLastName}
@@ -84,10 +80,10 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>ID (Email Address)</Text>
+            <Text style={styles.label}>{t('signup.labelId')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Your Email address"
+              placeholder={t('signup.placeholderEmail')}
               placeholderTextColor={Colors.gray300}
               value={email}
               onChangeText={setEmail}
@@ -98,10 +94,10 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t('signup.labelPassword')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Set your Password"
+              placeholder={t('signup.placeholderPassword')}
               placeholderTextColor={Colors.gray300}
               value={password}
               onChangeText={setPassword}
@@ -110,7 +106,7 @@ export default function SignupScreen() {
             />
             <TextInput
               style={styles.input}
-              placeholder="Confirm your Password"
+              placeholder={t('signup.placeholderConfirm')}
               placeholderTextColor={Colors.gray300}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -121,7 +117,7 @@ export default function SignupScreen() {
         </View>
 
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

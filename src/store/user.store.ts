@@ -13,7 +13,7 @@ const EMPTY_PROFILE: Profile = {
 const EMPTY_USER: User = {
   ...EMPTY_PROFILE,
   email: '',
-  language: 'ko',
+  language: 'en',
   multiProfiles: [],
 };
 
@@ -61,6 +61,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
   updateActiveProfile: (updates: Partial<Profile>) => {
     set(state => ({
       activeProfile: { ...state.activeProfile, ...updates },
+    }));
+  },
+
+  setLanguage: (language: string) => {
+    set(state => ({
+      currentUser: { ...state.currentUser, language },
     }));
   },
 
