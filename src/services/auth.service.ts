@@ -1,4 +1,3 @@
-// TODO: Real API 연동 시 이 파일의 구현부만 교체
 import { User, SignupData, SurveyData } from '../types';
 import { apiFetch, setAuthToken } from '../lib/api';
 

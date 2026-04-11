@@ -1,32 +1,44 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergySelect'>;
-type Route = RouteProp<AuthStackParamList, 'SurveyAllergySelect'>;
+type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyDietConfirm'>;
+type Route = RouteProp<AuthStackParamList, 'SurveyDietConfirm'>;
 
-type Severity = 'mild' | 'moderate' | 'severe';
+const VEGETARIAN_LABELS: Record<NonNullable<SurveyParams['vegetarianType']>, string> = {
+  pescatarian:          'Pescatarian',
+  vegan:                'Vegan',
+  lacto_vegetarian:     'Lacto - Vegetarian',
+  ovo_vegetarian:       'Ovo - Vegetarian',
+  lacto_ovo_vegetarian: 'Lacto-ovo - Vegetarian',
+  pesco_vegetarian:     'Pesco - Vegetarian',
+  pollo_vegetarian:     'Pollo - Vegetarian',
+  flexitarian:          'Flexitarian',
+};
 
-const OPTIONS: { value: Severity; label: string }[] = [
-  { value: 'mild',     label: 'Mild' },
-  { value: 'moderate', label: 'Moderate' },
-  { value: 'severe',   label: 'Severe' },
-];
+const VEGAN_LABELS: Record<NonNullable<SurveyParams['veganStrictness']>, string> = {
+  strict:   'Strict Vegan',
+  flexible: 'Flexible Vegan',
+};
 
-export default function SurveyAllergySelectScreen() {
+function getDisplayLabel(params: SurveyParams): string {
+  if (params.veganStrictness) return VEGAN_LABELS[params.veganStrictness];
+  if (params.vegetarianType)  return VEGETARIAN_LABELS[params.vegetarianType];
+  return '';
+}
+
+export default function SurveyDietConfirmScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const params = route.params;
 
-  const [selected, setSelected] = useState<Severity | null>(null);
+  const displayLabel = getDisplayLabel(params);
 
   function handleContinue() {
-    if (!selected) return;
-    const next: SurveyParams = { ...params, allergySeverity: selected };
-    navigation.navigate('SurveyAllergyReaction', next);
+    navigation.navigate('SurveyVegetarianIngredients', params);
   }
 
   return (
@@ -43,32 +55,21 @@ export default function SurveyAllergySelectScreen() {
 
       {/* 본문 */}
       <View style={styles.body}>
-        <Text style={styles.title}>How severe is your allergy?</Text>
+        <Text style={styles.title}>Your diet preference is ...</Text>
         <Text style={styles.subtitle}>
-          Understanding your allergy type helps us recommend safer ingredients for you.
+          Your selected diet preference will be applied{'\n'}to your recommendations.
         </Text>
 
-        <View style={styles.options}>
-          {OPTIONS.map(opt => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.option, selected === opt.value && styles.optionSelected]}
-              onPress={() => setSelected(opt.value)}
-            >
-              <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        {/* 원형 뱃지 */}
+        <View style={styles.circleWrapper}>
+          <View style={styles.circle}>
+            <Text style={styles.circleText}>{`\u201C${displayLabel}\u201D`}</Text>
+          </View>
         </View>
       </View>
 
       {/* 하단 버튼 */}
-      <TouchableOpacity
-        style={[styles.continueButton, !selected && styles.continueDisabled]}
-        onPress={handleContinue}
-        disabled={!selected}
-      >
+      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
         <Text style={styles.continueText}>Continue</Text>
       </TouchableOpacity>
     </View>
@@ -118,40 +119,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.gray500,
     lineHeight: 20,
-    marginBottom: 32,
+    marginBottom: 48,
   },
-  options: {
-    gap: 12,
+  circleWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  option: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.white,
-  },
-  optionSelected: {
+  circle: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    borderWidth: 2,
     borderColor: Colors.black,
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
-  optionText: {
-    fontSize: 15,
+  circleText: {
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.black,
-    fontWeight: '500',
-  },
-  optionTextSelected: {
-    color: Colors.white,
-    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 28,
   },
   continueButton: {
     backgroundColor: Colors.white,
     borderRadius: 100,
     paddingVertical: 18,
     alignItems: 'center',
-  },
-  continueDisabled: {
-    opacity: 0.4,
   },
   continueText: {
     fontSize: 15,

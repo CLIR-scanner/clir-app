@@ -9,6 +9,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
+import { ALLERGY_CANDIDATES, ALLERGY_CATEGORIES } from '../../constants/allergyData';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
@@ -28,29 +30,7 @@ const DUMMY_RESULTS: Category[] = [
   { category: 'Fruits', items: ['Apple', 'Peach'] },
 ];
 
-// 카테고리별 선택 가능한 전체 후보 목록 (백엔드 연결 전 더미)
-const DUMMY_CANDIDATES: Record<string, string[]> = {
-  'Crustaceans':           ['Barnacle', 'Crab', 'Crayfish', 'Krill', 'Lobster', 'Prawn', 'Shrimp'],
-  'Dairy':                 ['Butter', 'Casein', 'Cheese', 'Cream', 'Ghee', 'Ice Cream', 'Kefir', 'Milk', 'Whey', 'Yogurt'],
-  'Eggs':                  ['Chicken Egg', 'Duck Egg', 'Egg White', 'Egg Yolk', 'Goose Egg', 'Quail Egg'],
-  'Fish':                  ['Anchovy', 'Carp', 'Catfish', 'Cod', 'Flounder', 'Halibut', 'Herring', 'Mackerel', 'Salmon', 'Sardine', 'Sea Bass', 'Tilapia', 'Trout', 'Tuna'],
-  'Food Additives':        ['Annatto', 'Aspartame', 'BHA', 'BHT', 'Benzoates', 'Carrageenan', 'MSG', 'Nitrates', 'Sulfites', 'Tartrazine'],
-  'Fruits':                ['Apple', 'Banana', 'Blueberry', 'Cherry', 'Grape', 'Kiwi', 'Lemon', 'Mango', 'Orange', 'Peach', 'Pineapple', 'Raspberry', 'Strawberry', 'Watermelon'],
-  'Grains':                ['Barley', 'Corn', 'Kamut', 'Millet', 'Oats', 'Rice', 'Rye', 'Sorghum', 'Spelt', 'Wheat'],
-  'Legumes':               ['Black Bean', 'Chickpea', 'Fava Bean', 'Kidney Bean', 'Lentil', 'Lupine', 'Mung Bean', 'Pea', 'Peanut', 'Soybean'],
-  'Meat':                  ['Beef', 'Bison', 'Chicken', 'Duck', 'Goat', 'Lamb', 'Pork', 'Turkey', 'Veal', 'Venison'],
-  'Moollusks / Shellfish': ['Abalone', 'Clam', 'Cuttlefish', 'Mussel', 'Octopus', 'Oyster', 'Scallop', 'Snail', 'Squid'],
-  'Seeds':                 ['Chia', 'Flaxseed', 'Hemp', 'Mustard Seed', 'Poppy', 'Pumpkin', 'Sesame', 'Sunflower'],
-  'Tree Nuts':             ['Almond', 'Brazil Nut', 'Cashew', 'Chestnut', 'Hazelnut', 'Macadamia', 'Pecan', 'Pine Nut', 'Pistachio', 'Walnut'],
-};
 const DEFAULT_CANDIDATES: string[] = [];
-
-// 추가 가능한 카테고리 후보 (백엔드 연결 전 더미)
-const DUMMY_CATEGORY_CANDIDATES = [
-  'Crustaceans', 'Dairy', 'Eggs', 'Fish', 'Food Additives',
-  'Fruits', 'Grains', 'Legumes', 'Meat', 'Moollusks / Shellfish',
-  'Seeds', 'Tree Nuts',
-];
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function SurveyAllergyDocResultScreen() {
@@ -132,22 +112,25 @@ export default function SurveyAllergyDocResultScreen() {
   async function handleComplete() {
     const { name, email, password, dietaryType } = params;
     const allergyProfile = Array.from(selected);
-    const dietaryRestrictions = dietaryType === 'vegetarian' || dietaryType === 'both'
-      ? [dietaryType]
-      : [];
+
+    // Both 플로우: 알러지 데이터를 들고 채식 플로우로 이동
+    if (dietaryType === 'both') {
+      navigation.navigate('SurveyVegetarian', {
+        ...params,
+        allergyProfileJson: JSON.stringify(allergyProfile),
+      });
+      return;
+    }
 
     setLoading(true);
     try {
       const { userId } = await AuthService.signup({ name, email, password });
-
       await AuthService.submitSurvey(userId, {
         allergyProfile,
-        dietaryRestrictions,
+        dietaryRestrictions: [],
         sensitivityLevel: 'normal',
       });
-
       const { user } = await AuthService.login(email, password);
-
       setUser(user);
     } catch (e) {
       Alert.alert('오류가 발생했습니다.', (e as Error).message);
@@ -158,7 +141,7 @@ export default function SurveyAllergyDocResultScreen() {
 
   // 모달에서 보여줄 후보 목록 (검색 필터 적용)
   const candidates = modalCategory
-    ? (DUMMY_CANDIDATES[modalCategory] ?? DEFAULT_CANDIDATES)
+    ? (ALLERGY_CANDIDATES[modalCategory] ?? DEFAULT_CANDIDATES)
     : [];
   const filteredCandidates = modalSearch.trim()
     ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
@@ -292,9 +275,9 @@ export default function SurveyAllergyDocResultScreen() {
               keyboardShouldPersistTaps="handled"
             >
               <View style={styles.modalChips}>
-                {DUMMY_CATEGORY_CANDIDATES
+                {ALLERGY_CATEGORIES
                   .filter(name =>
-                    !categories.some(c => c.category.toLowerCase() === name.toLowerCase()) &&
+                    !categories.some(c => c.category.toLowerCase() === name.toLowerCase() ) &&
                     (catModalSearch.trim()
                       ? name.toLowerCase().includes(catModalSearch.toLowerCase())
                       : true),

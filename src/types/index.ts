@@ -174,6 +174,12 @@ export type SurveyParams = {
   password: string;
   dietaryType?: 'allergy' | 'vegetarian' | 'both';
   hasAllergyDoc?: boolean;
+  allergySeverity?: 'mild' | 'moderate' | 'severe';
+  allergyReactionType?: 'immediate' | 'delayed' | 'not_sure';
+  vegetarianType?: 'pescatarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian' | 'lacto_ovo_vegetarian' | 'pesco_vegetarian' | 'pollo_vegetarian' | 'flexitarian';
+  veganStrictness?: 'strict' | 'flexible';
+  /** Both 플로우: 알러지 플로우에서 수집한 allergyProfile을 채식 플로우로 전달 */
+  allergyProfileJson?: string;
 };
 
 export type AuthStackParamList = {
@@ -192,10 +198,22 @@ export type AuthStackParamList = {
   SurveyAllergyDocResult: SurveyParams;
   /** Survey 4-A-Yes Edit: 분석 결과 직접 편집 */
   SurveyAllergyEditList: SurveyParams & { categoriesJson: string };
-  /** Survey 3-A-No: 진단 없음 → 직접 알러지 항목 선택 */
+  /** Survey 3-A-No: 알러지 심각도 선택 */
   SurveyAllergySelect: SurveyParams;
+  /** Survey 4-A-No: 반응 유형 선택 (즉각/지연/모름) */
+  SurveyAllergyReaction: SurveyParams;
+  /** Survey 5-A-No: 알러지 유발 식품 직접 선택 */
+  SurveyAllergyIngredients: SurveyParams;
+  /** Survey 6-A-No: 선택한 성분 확인 및 완료 */
+  SurveyAllergyConfirm: SurveyParams & { selectionJson: string };
   /** Survey 2-B: 채식 유형 선택 (Vegetarian / Both 플로우) */
   SurveyVegetarian: SurveyParams;
+  /** Survey 3-B: Vegan 선택 시 엄격도 선택 */
+  SurveyVeganStrictness: SurveyParams;
+  /** Survey 4-B: 선택한 채식 preference 확인 */
+  SurveyDietConfirm: SurveyParams;
+  /** Survey 5-B: 식단 기반 avoided ingredients 확인 */
+  SurveyVegetarianIngredients: SurveyParams;
   Login: undefined;
 };
 
