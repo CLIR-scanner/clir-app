@@ -137,6 +137,7 @@ export interface UserStore {
   logout: () => void;
   switchProfile: (profileId: string) => void;
   updateActiveProfile: (updates: Partial<Profile>) => void;
+  setLanguage: (language: string) => void;
   addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
   updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;
   deleteMultiProfile: (profileId: string) => void;
@@ -167,12 +168,53 @@ export type RootStackParamList = {
   Main: undefined;
 };
 
+/** 설문 진행 중 누적되는 데이터 */
+export type SurveyParams = {
+  name: string;
+  email: string;
+  password: string;
+  dietaryType?: 'allergy' | 'vegetarian' | 'both';
+  hasAllergyDoc?: boolean;
+  allergySeverity?: 'mild' | 'moderate' | 'severe';
+  allergyReactionType?: 'immediate' | 'delayed' | 'not_sure';
+  vegetarianType?: 'pescatarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian' | 'lacto_ovo_vegetarian' | 'pesco_vegetarian' | 'pollo_vegetarian' | 'flexitarian';
+  veganStrictness?: 'strict' | 'flexible';
+  /** Both 플로우: 알러지 플로우에서 수집한 allergyProfile을 채식 플로우로 전달 */
+  allergyProfileJson?: string;
+};
+
 export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
   Signup: undefined;
-  /** 회원가입 기본 정보를 설문 화면으로 전달 */
-  Survey: { name: string; email: string; password: string };
+  /** 이메일 인증 코드 입력 화면 */
+  EmailCode: { name: string; email: string; password: string };
+  /** Survey 1: 식이 유형 선택 */
+  Survey: SurveyParams;
+  /** Survey 2-A: 알러지 진단 여부 확인 */
+  SurveyAllergy: SurveyParams;
+  /** Survey 3-A-Yes: 진단서 보유 → 문서 업로드 */
+  SurveyAllergyDoc: SurveyParams;
+  /** Survey 4-A-Yes: 문서 분석 결과 확인 */
+  SurveyAllergyDocResult: SurveyParams;
+  /** Survey 4-A-Yes Edit: 분석 결과 직접 편집 */
+  SurveyAllergyEditList: SurveyParams & { categoriesJson: string };
+  /** Survey 3-A-No: 알러지 심각도 선택 */
+  SurveyAllergySelect: SurveyParams;
+  /** Survey 4-A-No: 반응 유형 선택 (즉각/지연/모름) */
+  SurveyAllergyReaction: SurveyParams;
+  /** Survey 5-A-No: 알러지 유발 식품 직접 선택 */
+  SurveyAllergyIngredients: SurveyParams;
+  /** Survey 6-A-No: 선택한 성분 확인 및 완료 */
+  SurveyAllergyConfirm: SurveyParams & { selectionJson: string };
+  /** Survey 2-B: 채식 유형 선택 (Vegetarian / Both 플로우) */
+  SurveyVegetarian: SurveyParams;
+  /** Survey 3-B: Vegan 선택 시 엄격도 선택 */
+  SurveyVeganStrictness: SurveyParams;
+  /** Survey 4-B: 선택한 채식 preference 확인 */
+  SurveyDietConfirm: SurveyParams;
+  /** Survey 5-B: 식단 기반 avoided ingredients 확인 */
+  SurveyVegetarianIngredients: SurveyParams;
   Login: undefined;
 };
 

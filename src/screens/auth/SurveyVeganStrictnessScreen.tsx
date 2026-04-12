@@ -1,44 +1,39 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'Survey'>;
-type Route = RouteProp<AuthStackParamList, 'Survey'>;
+type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVeganStrictness'>;
+type Route = RouteProp<AuthStackParamList, 'SurveyVeganStrictness'>;
 
-type DietaryType = 'allergy' | 'vegetarian' | 'both';
+type VeganStrictness = NonNullable<SurveyParams['veganStrictness']>;
 
-const OPTIONS: { value: DietaryType; label: string }[] = [
-  { value: 'allergy',    label: 'Allergy' },
-  { value: 'vegetarian', label: 'Vegetarian (Vegan)' },
-  { value: 'both',       label: 'Both' },
+const OPTIONS: { value: VeganStrictness; label: string; description: string }[] = [
+  {
+    value: 'strict',
+    label: 'Strict Vegan',
+    description: 'No lecithin / milk sugar / honey / vitamin D3 / Omega-3',
+  },
+  {
+    value: 'flexible',
+    label: 'Flexible Vegan',
+    description: 'Try to avoid lecithin / milk sugar / honey / vitamin D3 / Omega-3',
+  },
 ];
 
-export default function SurveyScreen() {
+export default function SurveyVeganStrictnessScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const params = route.params;
-
-  const [selected, setSelected] = useState<DietaryType | null>(null);
+  const [selected, setSelected] = useState<VeganStrictness | null>(null);
 
   function handleContinue() {
     if (!selected) return;
-
-    const next: SurveyParams = { ...params, dietaryType: selected };
-
-    if (selected === 'vegetarian') {
-      navigation.navigate('SurveyVegetarian', next);
-    } else {
-      // allergy, both 모두 알러지 화면 먼저
-      navigation.navigate('SurveyAllergy', next);
-    }
+    navigation.navigate('SurveyDietConfirm', { ...params, veganStrictness: selected });
   }
 
   return (
@@ -55,23 +50,30 @@ export default function SurveyScreen() {
 
       {/* 본문 */}
       <View style={styles.body}>
-        <Text style={styles.title}>Tell us your{'\n'}dietary preferences.</Text>
+        <Text style={styles.title}>How strict is your{'\n'}vegan diet?</Text>
         <Text style={styles.subtitle}>
-          Select an option that applies so we can{'\n'}personalise your food experience.
+          Choose the option that best matches what you avoid.
         </Text>
 
         <View style={styles.options}>
-          {OPTIONS.map(opt => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.option, selected === opt.value && styles.optionSelected]}
-              onPress={() => setSelected(opt.value)}
-            >
-              <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {OPTIONS.map(opt => {
+            const isSelected = selected === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.option, isSelected && styles.optionSelected]}
+                onPress={() => setSelected(opt.value)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
+                  {opt.label}
+                </Text>
+                <Text style={[styles.optionDesc, isSelected && styles.optionDescSelected]}>
+                  {opt.description}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
@@ -112,7 +114,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   progressFill: {
-    width: '33%',
+    width: '40%',
     height: '100%',
     backgroundColor: Colors.black,
     borderRadius: 2,
@@ -121,11 +123,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.black,
-    lineHeight: 32,
-    marginBottom: 10,
+    lineHeight: 30,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 13,
@@ -140,7 +142,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 12,
-    paddingVertical: 18,
+    paddingVertical: 20,
     paddingHorizontal: 20,
     backgroundColor: Colors.white,
   },
@@ -148,14 +150,22 @@ const styles = StyleSheet.create({
     borderColor: Colors.black,
     backgroundColor: Colors.black,
   },
-  optionText: {
+  optionLabel: {
     fontSize: 15,
-    color: Colors.black,
-    fontWeight: '500',
-  },
-  optionTextSelected: {
-    color: Colors.white,
     fontWeight: '600',
+    color: Colors.black,
+    marginBottom: 6,
+  },
+  optionLabelSelected: {
+    color: Colors.white,
+  },
+  optionDesc: {
+    fontSize: 13,
+    color: Colors.gray500,
+    lineHeight: 18,
+  },
+  optionDescSelected: {
+    color: Colors.gray300,
   },
   continueButton: {
     backgroundColor: Colors.white,

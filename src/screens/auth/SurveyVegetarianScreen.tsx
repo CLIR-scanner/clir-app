@@ -1,43 +1,42 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'Survey'>;
-type Route = RouteProp<AuthStackParamList, 'Survey'>;
+type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarian'>;
+type Route = RouteProp<AuthStackParamList, 'SurveyVegetarian'>;
 
-type DietaryType = 'allergy' | 'vegetarian' | 'both';
+type VegetarianType = NonNullable<SurveyParams['vegetarianType']>;
 
-const OPTIONS: { value: DietaryType; label: string }[] = [
-  { value: 'allergy',    label: 'Allergy' },
-  { value: 'vegetarian', label: 'Vegetarian (Vegan)' },
-  { value: 'both',       label: 'Both' },
+const OPTIONS: { value: VegetarianType; label: string }[] = [
+  { value: 'pescatarian',          label: 'Pescatarian' },
+  { value: 'vegan',                label: 'Vegan' },
+  { value: 'lacto_vegetarian',     label: 'Lacto-vegetarian' },
+  { value: 'ovo_vegetarian',       label: 'Ovo-vegetarian' },
+  { value: 'lacto_ovo_vegetarian', label: 'Lacto-ovo-vegetarian' },
+  { value: 'pesco_vegetarian',     label: 'Pesco-vegetarian' },
+  { value: 'pollo_vegetarian',     label: 'Pollo-vegetarian' },
+  { value: 'flexitarian',          label: 'Flextarian' },
 ];
 
-export default function SurveyScreen() {
+export default function SurveyVegetarianScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const params = route.params;
-
-  const [selected, setSelected] = useState<DietaryType | null>(null);
+  const [selected, setSelected] = useState<VegetarianType | null>(null);
 
   function handleContinue() {
     if (!selected) return;
-
-    const next: SurveyParams = { ...params, dietaryType: selected };
-
-    if (selected === 'vegetarian') {
-      navigation.navigate('SurveyVegetarian', next);
+    const next = { ...params, vegetarianType: selected };
+    if (selected === 'vegan') {
+      navigation.navigate('SurveyVeganStrictness', next);
     } else {
-      // allergy, both 모두 알러지 화면 먼저
-      navigation.navigate('SurveyAllergy', next);
+      navigation.navigate('SurveyDietConfirm', next);
     }
   }
 
@@ -53,29 +52,37 @@ export default function SurveyScreen() {
         </View>
       </View>
 
-      {/* 본문 */}
-      <View style={styles.body}>
-        <Text style={styles.title}>Tell us your{'\n'}dietary preferences.</Text>
+      {/* 스크롤 영역 */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>What kind of diet{'\n'}do you follow?</Text>
         <Text style={styles.subtitle}>
-          Select an option that applies so we can{'\n'}personalise your food experience.
+          Choose the option that best matches your eating preferences.
         </Text>
 
         <View style={styles.options}>
-          {OPTIONS.map(opt => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.option, selected === opt.value && styles.optionSelected]}
-              onPress={() => setSelected(opt.value)}
-            >
-              <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {OPTIONS.map(opt => {
+            const isSelected = selected === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.option, isSelected && styles.optionSelected]}
+                onPress={() => setSelected(opt.value)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      </View>
+      </ScrollView>
 
-      {/* 하단 버튼 */}
+      {/* 하단 고정 버튼 */}
       <TouchableOpacity
         style={[styles.continueButton, !selected && styles.continueDisabled]}
         onPress={handleContinue}
@@ -112,20 +119,22 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   progressFill: {
-    width: '33%',
+    width: '30%',
     height: '100%',
     backgroundColor: Colors.black,
     borderRadius: 2,
   },
-  body: {
+  scroll: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 24,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.black,
-    lineHeight: 32,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 13,
@@ -140,7 +149,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 12,
-    paddingVertical: 18,
+    paddingVertical: 22,
     paddingHorizontal: 20,
     backgroundColor: Colors.white,
   },

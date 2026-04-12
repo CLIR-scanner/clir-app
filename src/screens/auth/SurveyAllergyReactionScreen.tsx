@@ -1,44 +1,32 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'Survey'>;
-type Route = RouteProp<AuthStackParamList, 'Survey'>;
+type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyReaction'>;
+type Route = RouteProp<AuthStackParamList, 'SurveyAllergyReaction'>;
 
-type DietaryType = 'allergy' | 'vegetarian' | 'both';
+type ReactionType = 'immediate' | 'delayed' | 'not_sure';
 
-const OPTIONS: { value: DietaryType; label: string }[] = [
-  { value: 'allergy',    label: 'Allergy' },
-  { value: 'vegetarian', label: 'Vegetarian (Vegan)' },
-  { value: 'both',       label: 'Both' },
+const OPTIONS: { value: ReactionType; label: string }[] = [
+  { value: 'immediate', label: 'Immediate' },
+  { value: 'delayed',   label: 'Delayed' },
+  { value: 'not_sure',  label: 'Not sure' },
 ];
 
-export default function SurveyScreen() {
+export default function SurveyAllergyReactionScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const params = route.params;
 
-  const [selected, setSelected] = useState<DietaryType | null>(null);
+  const [selected, setSelected] = useState<ReactionType | null>(null);
 
   function handleContinue() {
     if (!selected) return;
-
-    const next: SurveyParams = { ...params, dietaryType: selected };
-
-    if (selected === 'vegetarian') {
-      navigation.navigate('SurveyVegetarian', next);
-    } else {
-      // allergy, both 모두 알러지 화면 먼저
-      navigation.navigate('SurveyAllergy', next);
-    }
+    const next: SurveyParams = { ...params, allergyReactionType: selected };
+    navigation.navigate('SurveyAllergyIngredients', next);
   }
 
   return (
@@ -55,9 +43,9 @@ export default function SurveyScreen() {
 
       {/* 본문 */}
       <View style={styles.body}>
-        <Text style={styles.title}>Tell us your{'\n'}dietary preferences.</Text>
+        <Text style={styles.title}>When does your reaction usually happen?</Text>
         <Text style={styles.subtitle}>
-          Select an option that applies so we can{'\n'}personalise your food experience.
+          Understanding your allergy type helps us recommend safer ingredient filters.
         </Text>
 
         <View style={styles.options}>
@@ -112,7 +100,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   progressFill: {
-    width: '33%',
+    width: '60%',
     height: '100%',
     backgroundColor: Colors.black,
     borderRadius: 2,
@@ -121,11 +109,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.black,
-    lineHeight: 32,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 13,
@@ -140,7 +127,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 12,
-    paddingVertical: 18,
+    paddingVertical: 28,
     paddingHorizontal: 20,
     backgroundColor: Colors.white,
   },

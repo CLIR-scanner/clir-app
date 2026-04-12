@@ -8,6 +8,7 @@ import {
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { MainTabParamList } from '../types';
 import ScanNavigator from './ScanNavigator';
 import SearchNavigator from './SearchNavigator';
@@ -81,16 +82,18 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
 // ── Navigator ─────────────────────────────────────────────────────────────────
 export default function MainNavigator() {
+  const { t } = useTranslation();
+
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="ScanTab"     component={ScanNavigator} />
-      <Tab.Screen name="SearchTab"   component={SearchNavigator} />
-      <Tab.Screen name="ListTab"     component={ListNavigator} />
-      <Tab.Screen name="RecommendTab" component={RecommendNavigator} />
-      <Tab.Screen name="ProfileTab"  component={ProfileNavigator} />
+      <Tab.Screen name="ScanTab"      component={ScanNavigator}      options={{ title: t('tab.scan') }} />
+      <Tab.Screen name="SearchTab"    component={SearchNavigator}    options={{ title: t('tab.search') }} />
+      <Tab.Screen name="ListTab"      component={ListNavigator}      options={{ title: t('tab.list') }} />
+      <Tab.Screen name="RecommendTab" component={RecommendNavigator} options={{ title: t('tab.recommend') }} />
+      <Tab.Screen name="ProfileTab"   component={ProfileNavigator}   options={{ title: t('tab.profile') }} />
     </Tab.Navigator>
   );
 }
