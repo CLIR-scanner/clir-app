@@ -15,9 +15,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
-import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
 import { ALLERGY_CANDIDATES, ALLERGY_CATEGORIES } from '../../constants/allergyData';
+import * as AuthService from '../../services/auth.service';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
