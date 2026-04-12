@@ -41,6 +41,7 @@ export interface Product {
   dataCompleteness?: DataCompleteness;
 }
 
+/** POST /ocr 응답 */
 export interface OCRResult {
   /** 이미지에서 추출한 원문 텍스트 */
   extractedText: string;
@@ -192,6 +193,11 @@ export type ScanStackParamList = {
    */
   ScanResult: { productId: string; fromHistory?: boolean; ocrProduct?: Product };
   ScanHistory: undefined;
+  /**
+   * product: 표시할 제품 데이터
+   * hideTitle: 대안 상품 상세에서 진입할 때 true → "History" 타이틀 숨김
+   */
+  HistoryProductDetail: { product: Product; hideTitle?: boolean };
   /** barcode: 미등록 제품 보완용 OCR 진입 시 함께 전달 */
   OCRCapture: { barcode?: string };
 };

@@ -14,7 +14,7 @@ const Stack = createNativeStackNavigator<ListStackParamList>();
 
 export default function ListNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Favorites">
       <Stack.Screen name="List" component={ListScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
       <Stack.Screen name="FavoritesMemo" component={FavoritesMemoScreen} />

@@ -805,6 +805,23 @@ components:
           description: 문제없는 성분 목록
           items:
             $ref: '#/components/schemas/IngredientSummary'
+        dataCompleteness:
+          type: string
+          enum: [complete, partial]
+          description: |
+            분석 대상 성분 데이터의 신뢰도.
+
+            complete : productId가 서버 DB에 존재 — 서버사이드 성분으로 판정.
+                       클라이언트 ingredientIds는 무시되며 DB 값이 권위 있는 기준.
+            partial  : 아래 중 하나에 해당 — 결과 신뢰도 낮음:
+                       (1) productId 미제공 (OCR 경로) — 클라이언트 ingredientIds 사용
+                       (2) productId가 DB에 없는 제품 (Open Food Facts 경유) — 클라이언트 폴백
+
+            클라이언트 대응 지침:
+            - partial 판정 시 UI에 "성분 정보가 불완전할 수 있습니다" 경고 표시 권장.
+            - safe + partial 조합은 "안전 확인됨"이 아닌 "위험 성분 미감지" 로 표시할 것.
+            - danger/caution + partial도 실제보다 더 많은 위험이 있을 수 있음을 안내할 것.
+          example: complete
 
     ErrorResponse:
       type: object
