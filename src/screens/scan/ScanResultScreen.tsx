@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
+import { ApiError } from '../../lib/api';
 import { scanBarcode, analyzeProduct, saveScanHistory } from '../../services/scan.service';
 import { addFavorite } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
@@ -48,6 +49,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
 
   const addHistory         = useScanStore(s => s.addHistory);
   const addFavoriteToStore = useListStore(s => s.addFavorite);
+  const storeFavorites     = useListStore(s => s.favorites);
 
   useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -70,6 +72,13 @@ export default function ScanResultScreen({ navigation, route }: Props) {
 
       setProduct(prod);
       setAnalysis(result);
+
+      // 이미 즐겨찾기에 있는지 스토어에서 확인 — 버튼을 처음부터 빨간색으로 표시
+      // useListStore.getState()로 호출 시점의 최신 스토어 값을 읽음 (클로저 캡처 방지)
+      const currentFavorites = useListStore.getState().favorites;
+      if (currentFavorites.some(f => f.productId === prod.id)) {
+        setFavorited(true);
+      }
 
       if (!fromHistory) {
         try {
@@ -104,11 +113,19 @@ export default function ScanResultScreen({ navigation, route }: Props) {
     if (!product || favLoading || favorited) return;
     setFavLoading(true);
     try {
-      const item = await addFavorite(product.id);
-      addFavoriteToStore(item);
+      const apiItem = await addFavorite(product.id);
+      // POST /favorites 응답에는 product 상세 없음 — 현재 화면의 product로 보완해 스토어에 저장
+      addFavoriteToStore({ ...apiItem, product });
       setFavorited(true);
-    } catch { /* silent */ }
-    finally { setFavLoading(false); }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        // 이미 즐겨찾기에 있음 — 버튼만 활성화 (스토어에 이미 존재하거나 서버에 저장됨)
+        setFavorited(true);
+      }
+      // 그 외 에러는 무시
+    } finally {
+      setFavLoading(false);
+    }
   }
 
   function handleSeeDetail() {

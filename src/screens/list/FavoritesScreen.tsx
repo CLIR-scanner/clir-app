@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -29,12 +30,15 @@ export default function FavoritesScreen({ navigation }: Props) {
   const insets       = useSafeAreaInsets();
   const favorites    = useListStore(s => s.favorites);
   const setFavorites = useListStore(s => s.setFavorites);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 화면 진입 시 즐겨찾기 목록 로드
   useEffect(() => {
+    setIsLoading(true);
     getFavorites()
-      .then(setFavorites)
-      .catch(() => { /* silent — store 데이터 유지 */ });
+      .then(data => { setFavorites(data); })
+      .catch(() => { /* silent — store 데이터 유지 */ })
+      .finally(() => { setIsLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -114,26 +118,32 @@ export default function FavoritesScreen({ navigation }: Props) {
         <View style={styles.headerSide} />
       </View>
 
-      {/* ── List ────────────────────────────────────────────────────────────── */}
-      <FlatList
-        data={sorted}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View style={styles.pillWrap}>
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>My Favorite Products</Text>
+      {/* ── List / Loading ──────────────────────────────────────────────────── */}
+      {isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={TITLE_CLR} />
+        </View>
+      ) : (
+        <FlatList
+          data={sorted}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.pillWrap}>
+              <View style={styles.pill}>
+                <Text style={styles.pillText}>My Favorite Products</Text>
+              </View>
             </View>
-          </View>
-        }
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>저장된 즐겨찾기가 없습니다.</Text>
-          </View>
-        }
-        showsVerticalScrollIndicator={false}
-      />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>저장된 즐겨찾기가 없습니다.</Text>
+            </View>
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 }
@@ -217,6 +227,9 @@ const styles = StyleSheet.create({
 
   // Divider
   divider: { height: 1, backgroundColor: '#D0D0C8' },
+
+  // Loading
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Empty state
   empty:     { paddingTop: 80, alignItems: 'center' },
