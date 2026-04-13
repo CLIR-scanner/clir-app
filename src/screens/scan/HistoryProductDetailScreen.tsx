@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
-import { getIngredient } from '../../services/scan.service';
+import { getIngredient, getAlternatives } from '../../services/scan.service';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
 
@@ -30,6 +30,23 @@ const VERDICT = {
 export default function HistoryProductDetailScreen({ navigation, route }: Props) {
   const { product, hideTitle = false } = route.params;
   const insets = useSafeAreaInsets();
+
+  // ── Alternatives state — initialized from route params, lazy-fetched if empty ─
+  const [alts,        setAlts]        = useState<Product[]>(product.alternatives);
+  const [altsLoading, setAltsLoading] = useState(false);
+
+  useEffect(() => {
+    // product는 route.params에서 고정 — 스택 네비게이터는 화면마다 새 인스턴스를 생성하므로
+    // deps 배열을 []로 두어도 product가 바뀌는 케이스는 발생하지 않음.
+    // 즐겨찾기·이력 요약 객체는 alternatives: [] — 위험 제품이면 서버에서 lazy-fetch
+    if (product.isSafe || alts.length > 0 || !product.id) return;
+    setAltsLoading(true);
+    getAlternatives(product.id)
+      .then(fetched => { if (fetched.length > 0) setAlts(fetched); })
+      .catch(() => { /* silent — 대체 제품 없음으로 표시 */ })
+      .finally(() => { setAltsLoading(false); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps — product는 route.params 고정값
+  }, []);
 
   // ── Ingredient detail bottom sheet state ──────────────────────────────────
   const [modalOpen,        setModalOpen]        = useState(false);
@@ -75,8 +92,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   // ── All ingredients list ───────────────────────────────────────────────────
   const allIngredients = product.ingredients.map(i => i.name);
 
-  // ── Alternatives (up to 3) ────────────────────────────────────────────────
-  const alternatives = product.alternatives.slice(0, 3);
+  // ── Alternatives (up to 3) — lazy-fetched into alts state ────────────────
+  const alternatives = alts.slice(0, 3);
 
   function handleAltPress(alt: Product) {
     navigation.push('HistoryProductDetail', { product: alt, hideTitle: true });
@@ -165,8 +182,13 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* 4. Alternative Products */}
-        {alternatives.length > 0 && (
+        {/* 4. Alternative Products — fetch 중엔 스피너, 완료 후 목록 표시 */}
+        {altsLoading && (
+          <View style={styles.altsLoadingWrap}>
+            <ActivityIndicator size="small" color={TITLE_CLR} />
+          </View>
+        )}
+        {!altsLoading && alternatives.length > 0 && (
           <View style={styles.section}>
             <View style={styles.pillWrap}>
               <View style={styles.pill}>
@@ -219,8 +241,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
               </View>
             </View>
 
-            {allIngredients.map(name => (
-              <Text key={name} style={styles.ingredientItem}>{name}</Text>
+            {allIngredients.map((name, idx) => (
+              <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
             ))}
 
             <Text style={styles.disclaimer}>
@@ -344,6 +366,9 @@ const styles = StyleSheet.create({
   badgeText:        { fontSize: 12, fontWeight: '600' },
   chevron:          { fontSize: 22, color: '#1A1A1A', fontWeight: '300' },
   divider:          { height: 1, backgroundColor: '#D0D0C8' },
+
+  // Alternatives loading
+  altsLoadingWrap: { paddingVertical: 24, alignItems: 'center' },
 
   // All ingredients
   ingredientItem:      { fontSize: 14, color: '#1A1A1A', textAlign: 'center', marginBottom: 6 },

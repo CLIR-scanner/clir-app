@@ -134,20 +134,19 @@ export default function ScanResultScreen({ navigation, route }: Props) {
 
   function handleSeeDetail() {
     if (!product || !analysis) return;
-    // analysis 결과(verdict, riskIngredients)를 product에 반영해서 HistoryProductDetail로 이동
-    // OCR 제품은 buildOcrProduct에서 riskLevel/riskIngredients가 기본값이므로 반드시 필요
+    // analysis 결과를 product에 반영 — triggeredBy를 riskLevel 기준으로 분리
+    // danger → riskIngredients (직접 알러겐)
+    // caution → mayContainIngredients (trace, strict 모드 한정)
+    const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
+      id: t.id, name: t.name, nameKo: t.nameKo,
+      description: '', riskLevel: t.riskLevel, sources: [] as [],
+    });
     const detailProduct = {
       ...product,
       isSafe: analysis.isSafe,
       riskLevel: analysis.verdict,
-      riskIngredients: analysis.triggeredBy.map(t => ({
-        id: t.id,
-        name: t.name,
-        nameKo: t.nameKo,
-        description: '',
-        riskLevel: t.riskLevel,
-        sources: [] as [],
-      })),
+      riskIngredients:       analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
+      mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
     };
     navigation.navigate('HistoryProductDetail', { product: detailProduct });
   }

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, createRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -52,7 +52,7 @@ export default function ScanScreen({ navigation }: Props) {
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
-  const cameraRef        = createRef<CameraView>();
+  const cameraRef        = useRef<CameraView>(null);
 
   // Animations
   const circleScale = useRef(new Animated.Value(0)).current;
@@ -228,7 +228,23 @@ export default function ScanScreen({ navigation }: Props) {
 
   function handleSeeDetail() {
     if (!scanResult) return;
-    navigation.navigate('HistoryProductDetail', { product: scanResult.product });
+    const { product, analysis } = scanResult;
+    // analysis 결과를 product에 반영 — triggeredBy를 riskLevel 기준으로 분리
+    // danger → riskIngredients (직접 알러겐)
+    // caution → mayContainIngredients (trace, strict 모드 한정)
+    // product.ingredients(전체 성분)는 scanBarcode 응답 그대로 유지
+    const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
+      id: t.id, name: t.name, nameKo: t.nameKo,
+      description: '', riskLevel: t.riskLevel, sources: [] as [],
+    });
+    const detailProduct = {
+      ...product,
+      isSafe: analysis.isSafe,
+      riskLevel: analysis.verdict,
+      riskIngredients:      analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
+      mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
+    };
+    navigation.navigate('HistoryProductDetail', { product: detailProduct });
   }
 
   // ── Permission loading ────────────────────────────────────────────────────

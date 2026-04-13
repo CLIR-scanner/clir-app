@@ -1,9 +1,11 @@
 // TODO: Real API 연동 시 USE_MOCK 을 false 로 변경
 import { Product, Ingredient, OCRResult, AnalysisResult, ScanHistory, RiskLevel } from '../types';
 import { apiFetch, apiFormFetch } from '../lib/api';
+import { ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient } from '../constants/allergyData';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
 
+/** GET /products/:id/alternatives 응답의 product 요약 객체 */
 interface ProductSummary {
   id: string;
   name: string;
@@ -12,22 +14,46 @@ interface ProductSummary {
   isSafe: boolean;
 }
 
+/** GET /scan-history 응답의 product 요약 객체 */
+interface ScanHistoryProductSummary {
+  id: string;
+  name: string;
+  brand: string;
+  image?: string;
+  isSafe: boolean;
+  /** 서버사이드 computeVerdict 결과 — riskLevel 정확도 향상 (safe/caution/danger 구분) */
+  verdict?: RiskLevel;
+  /** 현재 프로필과 매칭된 allergen ID 목록 — riskIngredients 구성용 */
+  allergenIds?: string[];
+  /** 현재 프로필과 매칭된 trace ID 목록 — mayContainIngredients 구성용 */
+  traceIds?: string[];
+}
+
 interface ScanHistoryItem {
   id: string;
   productId?: string;
-  product: ProductSummary | null; // POST 응답엔 없음, GET 응답엔 있음 (OCR 스캔 시 null 가능)
+  product: ScanHistoryProductSummary | null; // POST 응답엔 없음, GET 응답엔 있음 (OCR 스캔 시 null 가능)
   result: RiskLevel;
   scannedAt: string;
 }
 
+// ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient 는
+// constants/allergyData.ts 에서 import (단일 출처 관리)
+
+// productId 없는 OCR 이력의 폴백 객체.
+// name/brand를 빈 문자열로 두면 화면에 그대로 렌더링되므로 표시용 placeholder를 사용.
 const EMPTY_PRODUCT: Product = {
-  id: '', name: '', brand: '', ingredients: [],
+  id: '', name: 'OCR Scan', brand: '—', ingredients: [],
   isSafe: true, riskLevel: 'safe',
   riskIngredients: [], mayContainIngredients: [], alternatives: [],
 };
 
-/** ProductSummary → Product (목록용 — ingredients 빈 배열) */
-function summaryToProduct(s: ProductSummary): Product {
+/**
+ * GET /products/:id/alternatives 응답 항목 → Product 변환.
+ * 대체 제품은 안전한 제품만 반환되므로 allergenIds/traceIds 없이 변환해도 올바름.
+ * (riskIngredients = [] — 안전 제품이므로 상세 화면에서 risk box가 표시되지 않음)
+ */
+function altSummaryToProduct(s: ProductSummary): Product {
   return {
     id: s.id,
     name: s.name,
@@ -39,6 +65,26 @@ function summaryToProduct(s: ProductSummary): Product {
     riskIngredients: [],
     mayContainIngredients: [],
     alternatives: [],
+  };
+}
+
+/** GET /scan-history 응답 product → Product 변환 (목록·상세 화면용) */
+function summaryToProduct(s: ScanHistoryProductSummary): Product {
+  const riskIngredients     = (s.allergenIds ?? []).map(makeRiskIngredient);
+  const mayContainIngredients = (s.traceIds ?? []).map(makeMayContainIngredient);
+  // verdict が 있으면 3단계(safe/caution/danger) 그대로 사용; 없으면 isSafe로 폴백
+  const riskLevel: RiskLevel = s.verdict ?? (s.isSafe ? 'safe' : 'danger');
+  return {
+    id: s.id,
+    name: s.name,
+    brand: s.brand,
+    image: s.image,
+    ingredients: [],          // 전체 성분 텍스트는 별도 조회 없이는 불가
+    isSafe: s.isSafe,
+    riskLevel,
+    riskIngredients,
+    mayContainIngredients,
+    alternatives: [],         // 상세 화면에서 getAlternatives()로 lazy-fetch
   };
 }
 
@@ -255,7 +301,7 @@ export async function getAlternatives(productId: string): Promise<Product[]> {
   const res = await apiFetch<{ alternatives: ProductSummary[] }>(
     `/products/${encodeURIComponent(productId)}/alternatives`,
   );
-  return res.alternatives.map(summaryToProduct);
+  return res.alternatives.map(altSummaryToProduct);
 }
 
 /**

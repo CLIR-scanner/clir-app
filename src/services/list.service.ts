@@ -1,6 +1,7 @@
 // TODO: Real API 연동 시 USE_MOCK 을 false 로 변경
 import { FavoriteItem, Ingredient, RiskLevel, ShoppingItem } from '../types';
 import { apiFetch } from '../lib/api';
+import { ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient } from '../constants/allergyData';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
 
@@ -14,43 +15,8 @@ interface ProductSummary {
   traceIds?: string[];
 }
 
-// allergenId → 표시명 매핑 (백엔드 product.service.ts ALLERGEN_INFO와 동기화)
-const ALLERGEN_NAME_MAP: Record<string, { name: string; nameKo: string }> = {
-  'ing-milk':      { name: 'Milk',      nameKo: '우유'   },
-  'ing-egg':       { name: 'Egg',       nameKo: '달걀'   },
-  'ing-peanut':    { name: 'Peanut',    nameKo: '땅콩'   },
-  'ing-treenut':   { name: 'Tree Nuts', nameKo: '견과류' },
-  'ing-wheat':     { name: 'Wheat',     nameKo: '밀'     },
-  'ing-soy':       { name: 'Soy',       nameKo: '대두'   },
-  'ing-shellfish': { name: 'Shellfish', nameKo: '갑각류' },
-  'ing-fish':      { name: 'Fish',      nameKo: '생선'   },
-  'ing-sesame':    { name: 'Sesame',    nameKo: '참깨'   },
-  'ing-oat':       { name: 'Oat',       nameKo: '귀리'   },
-};
-
-function makeRiskIngredient(allergenId: string): Ingredient {
-  const info = ALLERGEN_NAME_MAP[allergenId] ?? { name: allergenId, nameKo: allergenId };
-  return {
-    id: allergenId,
-    name: info.name,
-    nameKo: info.nameKo,
-    description: '',
-    riskLevel: 'danger' as RiskLevel,
-    sources: [],
-  };
-}
-
-function makeMayContainIngredient(allergenId: string): Ingredient {
-  const info = ALLERGEN_NAME_MAP[allergenId] ?? { name: allergenId, nameKo: allergenId };
-  return {
-    id: `ing-may-${allergenId.replace('ing-', '')}`,
-    name: `May contain: ${info.name}`,
-    nameKo: `${info.nameKo} 흔적 (May Contain)`,
-    description: '',
-    riskLevel: 'caution' as RiskLevel,
-    sources: [],
-  };
-}
+// ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient 는
+// constants/allergyData.ts 에서 import (단일 출처 관리)
 
 /** GET /favorites 응답 항목 — product가 null일 수 있음 (DB join 실패 시) */
 interface FavoriteApiItem {
