@@ -1,5 +1,5 @@
 // TODO: Real API 연동 시 USE_MOCK 을 false 로 변경
-import { FavoriteItem, ShoppingItem } from '../types';
+import { FavoriteItem, Ingredient, RiskLevel, ShoppingItem } from '../types';
 import { apiFetch } from '../lib/api';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
@@ -10,6 +10,46 @@ interface ProductSummary {
   brand: string;
   image?: string;
   isSafe: boolean;
+  allergenIds?: string[];
+  traceIds?: string[];
+}
+
+// allergenId → 표시명 매핑 (백엔드 product.service.ts ALLERGEN_INFO와 동기화)
+const ALLERGEN_NAME_MAP: Record<string, { name: string; nameKo: string }> = {
+  'ing-milk':      { name: 'Milk',      nameKo: '우유'   },
+  'ing-egg':       { name: 'Egg',       nameKo: '달걀'   },
+  'ing-peanut':    { name: 'Peanut',    nameKo: '땅콩'   },
+  'ing-treenut':   { name: 'Tree Nuts', nameKo: '견과류' },
+  'ing-wheat':     { name: 'Wheat',     nameKo: '밀'     },
+  'ing-soy':       { name: 'Soy',       nameKo: '대두'   },
+  'ing-shellfish': { name: 'Shellfish', nameKo: '갑각류' },
+  'ing-fish':      { name: 'Fish',      nameKo: '생선'   },
+  'ing-sesame':    { name: 'Sesame',    nameKo: '참깨'   },
+  'ing-oat':       { name: 'Oat',       nameKo: '귀리'   },
+};
+
+function makeRiskIngredient(allergenId: string): Ingredient {
+  const info = ALLERGEN_NAME_MAP[allergenId] ?? { name: allergenId, nameKo: allergenId };
+  return {
+    id: allergenId,
+    name: info.name,
+    nameKo: info.nameKo,
+    description: '',
+    riskLevel: 'danger' as RiskLevel,
+    sources: [],
+  };
+}
+
+function makeMayContainIngredient(allergenId: string): Ingredient {
+  const info = ALLERGEN_NAME_MAP[allergenId] ?? { name: allergenId, nameKo: allergenId };
+  return {
+    id: `ing-may-${allergenId.replace('ing-', '')}`,
+    name: `May contain: ${info.name}`,
+    nameKo: `${info.nameKo} 흔적 (May Contain)`,
+    description: '',
+    riskLevel: 'caution' as RiskLevel,
+    sources: [],
+  };
 }
 
 /** GET /favorites 응답 항목 — product가 null일 수 있음 (DB join 실패 시) */
@@ -28,6 +68,17 @@ interface FavoritePostResponse {
 
 function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem | null {
   if (!raw.product) return null;
+
+  const allergenIds = raw.product.allergenIds ?? [];
+  const traceIds    = raw.product.traceIds ?? [];
+
+  const riskIngredients: Ingredient[]     = allergenIds.map(makeRiskIngredient);
+  const mayContainIngredients: Ingredient[] = traceIds.map(makeMayContainIngredient);
+
+  // allergenIds가 있으면 danger, trace만 있으면 caution, 없으면 safe
+  const riskLevel: RiskLevel =
+    allergenIds.length > 0 ? 'danger' : traceIds.length > 0 ? 'caution' : 'safe';
+
   return {
     id: raw.id,
     productId: raw.product.id,
@@ -38,12 +89,12 @@ function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem | null {
       name: raw.product.name,
       brand: raw.product.brand,
       image: raw.product.image,
-      ingredients: [],
+      ingredients: [],           // 전체 성분 텍스트는 별도 조회 없이는 불가 — All Ingredients 섹션 미표시
       isSafe: raw.product.isSafe,
-      riskLevel: raw.product.isSafe ? 'safe' : 'danger',
-      riskIngredients: [],
-      mayContainIngredients: [],
-      alternatives: [],
+      riskLevel,
+      riskIngredients,
+      mayContainIngredients,
+      alternatives: [],          // Phase 4에서 GET /products/:id/alternatives 연동 시 채워질 예정
     },
   };
 }
