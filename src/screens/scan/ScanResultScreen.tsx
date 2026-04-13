@@ -14,7 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { ApiError } from '../../lib/api';
-import { scanBarcode, analyzeProduct, saveScanHistory } from '../../services/scan.service';
+import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives } from '../../services/scan.service';
 import { addFavorite } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
@@ -49,7 +49,6 @@ export default function ScanResultScreen({ navigation, route }: Props) {
 
   const addHistory         = useScanStore(s => s.addHistory);
   const addFavoriteToStore = useListStore(s => s.addFavorite);
-  const storeFavorites     = useListStore(s => s.favorites);
 
   useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -70,7 +69,19 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       const ingredientIds = prod.ingredients.map(i => i.id);
       const result = await analyzeProduct({ productId: prod.id, ingredientIds });
 
-      setProduct(prod);
+      // 대체 제품 조회(danger/caution 전용) + 스캔 이력 저장을 병렬 실행해 대기 최소화
+      const [alts] = await Promise.all([
+        result.verdict !== 'safe'
+          ? getAlternatives(prod.id).catch((): Product[] => [])
+          : Promise.resolve([] as Product[]),
+        !fromHistory
+          ? saveScanHistory({ productId: prod.id, result: result.verdict })
+              .then(item => addHistory(item))
+              .catch(() => {})
+          : Promise.resolve(),
+      ]);
+
+      setProduct({ ...prod, alternatives: alts });
       setAnalysis(result);
 
       // 이미 즐겨찾기에 있는지 스토어에서 확인 — 버튼을 처음부터 빨간색으로 표시
@@ -78,13 +89,6 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       const currentFavorites = useListStore.getState().favorites;
       if (currentFavorites.some(f => f.productId === prod.id)) {
         setFavorited(true);
-      }
-
-      if (!fromHistory) {
-        try {
-          const historyItem = await saveScanHistory({ productId: prod.id, result: result.verdict });
-          addHistory(historyItem);
-        } catch { /* silent */ }
       }
 
       // Animate circle + sheet simultaneously
@@ -149,7 +153,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   }
 
   const isSafe       = analysis?.isSafe ?? true;
-  const verdictColor = isSafe ? Colors.safe : Colors.danger;
+  const verdictColor = analysis?.verdict === 'caution' ? Colors.caution : isSafe ? Colors.safe : Colors.danger;
   const hasAlts      = !isSafe && (product?.alternatives.length ?? 0) > 0;
   const ready        = !loading && !error && !!product && !!analysis;
 
@@ -291,7 +295,12 @@ export default function ScanResultScreen({ navigation, route }: Props) {
               <Text style={styles.altTitle}>Alternative products</Text>
               <View style={styles.altRow}>
                 {product!.alternatives.slice(0, 3).map(alt => (
-                  <View key={alt.id} style={styles.altThumb}>
+                  <TouchableOpacity
+                    key={alt.id}
+                    style={styles.altThumb}
+                    onPress={() => navigation.navigate('HistoryProductDetail', { product: alt, hideTitle: true })}
+                    activeOpacity={0.7}
+                  >
                     {alt.image ? (
                       <Image
                         source={{ uri: alt.image }}
@@ -303,7 +312,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
                         {alt.name}
                       </Text>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>

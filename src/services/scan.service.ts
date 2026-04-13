@@ -1,5 +1,5 @@
 // TODO: Real API 연동 시 USE_MOCK 을 false 로 변경
-import { Product, OCRResult, AnalysisResult, ScanHistory, RiskLevel } from '../types';
+import { Product, Ingredient, OCRResult, AnalysisResult, ScanHistory, RiskLevel } from '../types';
 import { apiFetch, apiFormFetch } from '../lib/api';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
@@ -56,16 +56,16 @@ const MOCK_PRODUCT_DANGER: Product = {
     { id: 'ing-hfcs',       name: 'High Fructose Corn Syrup', nameKo: '액상과당',   description: '', riskLevel: 'caution', sources: [] },
     { id: 'ing-phosphoric', name: 'Phosphoric Acid',          nameKo: '인산',       description: '', riskLevel: 'safe',    sources: [] },
     { id: 'ing-caramel',    name: 'Caramel Color',            nameKo: '카라멜색소', description: '', riskLevel: 'safe',    sources: [] },
-    { id: 'ing-eggs',       name: 'Eggs',                     nameKo: '달걀',       description: '', riskLevel: 'danger',  sources: [] },
+    { id: 'ing-egg',       name: 'Eggs',                     nameKo: '달걀',       description: '', riskLevel: 'danger',  sources: [] },
     { id: 'ing-milk',       name: 'Milk',                     nameKo: '우유',       description: '', riskLevel: 'danger',  sources: [] },
-    { id: 'ing-peanuts',    name: 'Peanuts',                  nameKo: '땅콩',       description: '', riskLevel: 'danger',  sources: [] },
+    { id: 'ing-peanut',    name: 'Peanuts',                  nameKo: '땅콩',       description: '', riskLevel: 'danger',  sources: [] },
   ],
   isSafe: false,
   riskLevel: 'danger',
   riskIngredients: [
-    { id: 'ing-eggs',    name: 'Eggs',    nameKo: '달걀', description: '', riskLevel: 'danger', sources: [] },
+    { id: 'ing-egg',    name: 'Eggs',    nameKo: '달걀', description: '', riskLevel: 'danger', sources: [] },
     { id: 'ing-milk',    name: 'Milk',    nameKo: '우유', description: '', riskLevel: 'danger', sources: [] },
-    { id: 'ing-peanuts', name: 'Peanuts', nameKo: '땅콩', description: '', riskLevel: 'danger', sources: [] },
+    { id: 'ing-peanut', name: 'Peanuts', nameKo: '땅콩', description: '', riskLevel: 'danger', sources: [] },
   ],
   mayContainIngredients: [],
   alternatives: [
@@ -100,9 +100,9 @@ const MOCK_ANALYSIS_DANGER: AnalysisResult = {
   verdict: 'danger',
   isSafe: false,
   triggeredBy: [
-    { id: 'ing-eggs',    name: 'Eggs',    nameKo: '달걀', reason: '알러지 프로필에 등록된 성분입니다.', riskLevel: 'danger' },
+    { id: 'ing-egg',    name: 'Eggs',    nameKo: '달걀', reason: '알러지 프로필에 등록된 성분입니다.', riskLevel: 'danger' },
     { id: 'ing-milk',    name: 'Milk',    nameKo: '우유', reason: '알러지 프로필에 등록된 성분입니다.', riskLevel: 'danger' },
-    { id: 'ing-peanuts', name: 'Peanuts', nameKo: '땅콩', reason: '알러지 프로필에 등록된 성분입니다.', riskLevel: 'danger' },
+    { id: 'ing-peanut', name: 'Peanuts', nameKo: '땅콩', reason: '알러지 프로필에 등록된 성분입니다.', riskLevel: 'danger' },
   ],
   safeIngredients: [
     { id: 'ing-caffeine',   name: 'Caffeine',                 nameKo: '카페인'   },
@@ -134,9 +134,9 @@ const MOCK_OCR: OCRResult = {
     { id: 'ing-water',      name: 'Carbonated Water',         nameKo: '탄산수'   },
     { id: 'ing-flavors',    name: 'Natural Flavors',          nameKo: '천연향료' },
     { id: 'ing-hfcs',       name: 'High Fructose Corn Syrup', nameKo: '액상과당' },
-    { id: 'ing-eggs',       name: 'Eggs',                     nameKo: '달걀'     },
+    { id: 'ing-egg',       name: 'Eggs',                     nameKo: '달걀'     },
     { id: 'ing-milk',       name: 'Milk',                     nameKo: '우유'     },
-    { id: 'ing-peanuts',    name: 'Peanuts',                  nameKo: '땅콩'     },
+    { id: 'ing-peanut',    name: 'Peanuts',                  nameKo: '땅콩'     },
   ],
 };
 
@@ -186,7 +186,7 @@ export async function analyzeProduct(params: {
 }): Promise<AnalysisResult> {
   if (USE_MOCK) {
     const hasDanger = params.ingredientIds.some(id =>
-      ['ing-eggs', 'ing-milk', 'ing-peanuts'].includes(id),
+      ['ing-egg', 'ing-milk', 'ing-peanut'].includes(id),
     );
     return hasDanger ? MOCK_ANALYSIS_DANGER : MOCK_ANALYSIS_SAFE;
   }
@@ -227,6 +227,28 @@ export async function saveScanHistory(params: {
     result: res.result,
     product: summaryToProduct(res.product),
   };
+}
+
+/**
+ * GET /ingredients/:id
+ * 성분 상세 정보(설명, 근거자료)를 반환한다.
+ * 성분 탭 → 바텀시트 표시 용도.
+ */
+export async function getIngredient(id: string): Promise<Ingredient> {
+  return apiFetch<Ingredient>(`/ingredients/${encodeURIComponent(id)}`);
+}
+
+/**
+ * GET /products/:id/alternatives
+ * 현재 사용자 프로필 기준으로 안전한 대체 제품 목록을 반환한다.
+ * danger / caution 판정 시 ScanResultScreen에서 자동 호출.
+ */
+export async function getAlternatives(productId: string): Promise<Product[]> {
+  if (USE_MOCK) return [];
+  const res = await apiFetch<{ alternatives: ProductSummary[] }>(
+    `/products/${encodeURIComponent(productId)}/alternatives`,
+  );
+  return res.alternatives.map(summaryToProduct);
 }
 
 /**

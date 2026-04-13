@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Modal,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ScanStackParamList, Product, RiskLevel } from '../../types';
+import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
+import { getIngredient } from '../../services/scan.service';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
 
@@ -27,6 +31,37 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   const { product, hideTitle = false } = route.params;
   const insets = useSafeAreaInsets();
 
+  // ── Ingredient detail bottom sheet state ──────────────────────────────────
+  const [modalOpen,        setModalOpen]        = useState(false);
+  const [detailIngredient, setDetailIngredient] = useState<Ingredient | null>(null);
+  const [detailLoading,    setDetailLoading]    = useState(false);
+  const cancelRef = useRef(false);
+
+  async function handleIngredientPress(ing: Ingredient) {
+    // may-contain 성분은 relatedAllergenId(예: 'ing-peanut')로 조회, 나머지는 id 그대로
+    const lookupId = ing.relatedAllergenId ?? ing.id;
+    if (!lookupId.startsWith('ing-')) return; // off-* 일반 성분은 레지스트리 없음 → 스킵
+
+    cancelRef.current = false;
+    setModalOpen(true);
+    setDetailIngredient(null);
+    setDetailLoading(true);
+    try {
+      const detail = await getIngredient(lookupId);
+      if (!cancelRef.current) setDetailIngredient(detail);
+    } catch {
+      if (!cancelRef.current) setModalOpen(false); // 조회 실패 시 모달 닫기
+    } finally {
+      if (!cancelRef.current) setDetailLoading(false);
+    }
+  }
+
+  function closeModal() {
+    cancelRef.current = true;
+    setModalOpen(false);
+    setDetailIngredient(null);
+  }
+
   const v        = VERDICT[product.riskLevel] ?? VERDICT.safe;
   const isBad    = product.riskLevel === 'danger';
   const isPoor   = product.riskLevel === 'caution';
@@ -36,7 +71,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   const riskBoxBg     = isBad ? '#FFECEC' : '#FFE9C5';
   const riskBoxBorder = isBad ? '#FF0000' : '#FF9D00';
   const riskTitle     = isBad ? 'Ingredients to avoid' : 'Suspected Allergens';
-  const riskIngredients = product.riskIngredients.map(i => i.name);
 
   // ── All ingredients list ───────────────────────────────────────────────────
   const allIngredients = product.ingredients.map(i => i.name);
@@ -113,10 +147,21 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
               ** This product contains ingredients that may not be suitable for you.
             </Text>
 
-            {riskIngredients.length > 0 ? (
-              riskIngredients.map(name => (
-                <Text key={name} style={styles.riskIngredient}>{name}</Text>
-              ))
+            {product.riskIngredients.length > 0 ? (
+              <>
+                {product.riskIngredients.map(ing => (
+                  <TouchableOpacity
+                    key={ing.id}
+                    onPress={() => handleIngredientPress(ing)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.riskIngredient, styles.riskIngredientLink]}>
+                      {ing.name} ›
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                <Text style={styles.riskTapHint}>Tap an ingredient for details</Text>
+              </>
             ) : (
               <Text style={styles.riskIngredient}>—</Text>
             )}
@@ -188,6 +233,59 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         )}
 
       </ScrollView>
+
+      {/* ── Ingredient detail bottom sheet ────────────────────────────────── */}
+      <Modal
+        visible={modalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeModal}>
+          <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
+            {/* Handle bar */}
+            <View style={styles.modalHandle} />
+
+            {detailLoading ? (
+              <View style={styles.modalLoadingWrap}>
+                <ActivityIndicator size="large" color={TITLE_CLR} />
+              </View>
+            ) : detailIngredient ? (
+              <>
+                {/* Header */}
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalTitles}>
+                    <Text style={styles.modalName}>{detailIngredient.name}</Text>
+                    <Text style={styles.modalNameKo}>{detailIngredient.nameKo}</Text>
+                  </View>
+                  <TouchableOpacity onPress={closeModal} style={styles.modalCloseBtn}>
+                    <Text style={styles.modalCloseText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Description */}
+                <Text style={styles.modalDesc}>{detailIngredient.description}</Text>
+
+                {/* Sources */}
+                {detailIngredient.sources.length > 0 && (
+                  <View style={styles.modalSources}>
+                    <Text style={styles.modalSourcesTitle}>References</Text>
+                    {detailIngredient.sources.map(s => (
+                      <TouchableOpacity
+                        key={s.url}
+                        onPress={() => Linking.openURL(s.url)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.modalSourceLink}>↗ {s.title}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : null}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -254,6 +352,34 @@ const styles = StyleSheet.create({
   divider:          { height: 1, backgroundColor: '#D0D0C8' },
 
   // All ingredients
-  ingredientItem:   { fontSize: 14, color: '#1A1A1A', textAlign: 'center', marginBottom: 6 },
-  disclaimer:       { fontSize: 11, color: '#555', textAlign: 'left', lineHeight: 17, marginTop: 16 },
+  ingredientItem:      { fontSize: 14, color: '#1A1A1A', textAlign: 'center', marginBottom: 6 },
+  disclaimer:          { fontSize: 11, color: '#555', textAlign: 'left', lineHeight: 17, marginTop: 16 },
+
+  // Tappable risk ingredient
+  riskIngredientLink:  { textDecorationLine: 'underline' },
+  riskTapHint:         { fontSize: 11, color: '#888', textAlign: 'center', marginTop: 8 },
+
+  // Ingredient detail modal
+  modalOverlay:        { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalSheet:          {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 12,
+    minHeight: 200,
+  },
+  modalHandle:         { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#D0D0D0', marginBottom: 16 },
+  modalLoadingWrap:    { paddingVertical: 40, alignItems: 'center' },
+  modalHeader:         { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
+  modalTitles:         { flex: 1 },
+  modalName:           { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
+  modalNameKo:         { fontSize: 14, color: '#666', marginTop: 2 },
+  modalCloseBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F0F0F0', alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
+  modalCloseText:      { fontSize: 12, color: '#666' },
+  modalDesc:           { fontSize: 14, color: '#333', lineHeight: 22, marginBottom: 20 },
+  modalSources:        { borderTopWidth: 1, borderTopColor: '#E8E8E8', paddingTop: 16 },
+  modalSourcesTitle:   { fontSize: 12, fontWeight: '700', color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  modalSourceLink:     { fontSize: 13, color: '#1A7A3A', marginBottom: 8, lineHeight: 18 },
 });
