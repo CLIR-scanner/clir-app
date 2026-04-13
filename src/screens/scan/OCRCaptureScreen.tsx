@@ -1,51 +1,93 @@
-import React, { createRef, useState } from 'react';
+import React, { createRef, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity,
+  Image, ActivityIndicator, Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ScanStackParamList, Product, Ingredient, IngredientSummary } from '../../types';
+import { ScanStackParamList, Product, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
-import { recognizeIngredients } from '../../services/scan.service';
+import { recognizeIngredients, analyzeProduct } from '../../services/scan.service';
 import { ScanHeader } from './ScanScreen';
+import { useListStore } from '../../store/list.store';
+import { addFavorite as apiFavorite } from '../../services/list.service';
+import { useUserStore } from '../../store/user.store';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'OCRCapture'>;
+type ScreenState = 'idle' | 'preview' | 'analyzing' | 'result' | 'error';
 
-type ScreenState = 'idle' | 'preview' | 'analyzing' | 'error';
-
-// ── Layout constants (matches ScanScreen guide box dimensions) ────────────────
+// ── Layout ─────────────────────────────────────────────────────────────────────
 const GUIDE_W    = 350;
 const GUIDE_H    = 459;
 const CORNER_LEN = 32;
 const CORNER_W   = 4;
+const CIRCLE_D   = 160;
 const DIM        = 'rgba(0,0,0,0.50)';
+const GOOD_COLOR = '#25FF81';
+const BAD_COLOR  = '#FF0000';
 
-function buildOcrProduct(barcode: string | undefined, ingredients: IngredientSummary[]): Product {
-  const fullIngredients: Ingredient[] = ingredients.map(ing => ({
-    id: ing.id,
-    name: ing.name,
-    nameKo: ing.nameKo,
-    description: '',
-    riskLevel: 'safe',
-    sources: [],
-  }));
-  return {
-    id: barcode ?? `ocr-${Date.now()}`,
-    name: 'Scanned Product',
-    brand: '',
-    ingredients: fullIngredients,
-    isSafe: true,
-    riskLevel: 'safe',
-    riskIngredients: [],
-    mayContainIngredients: [],
-    alternatives: [],
-  };
+// ── Mock ───────────────────────────────────────────────────────────────────────
+const USE_MOCK = true;
+let _ocrToggle = false;
+
+const MOCK_GOOD: Product = {
+  id: 'ocr-sprite-zero',
+  name: 'Sprite Zero',
+  brand: 'The Coca-Cola Company',
+  ingredients: [],
+  isSafe: true,
+  riskLevel: 'safe',
+  riskIngredients: [],
+  mayContainIngredients: [],
+  alternatives: [],
+  dataCompleteness: 'partial',
+};
+const MOCK_BAD: Product = {
+  id: 'ocr-coca-cola',
+  name: 'Coca-Cola Original',
+  brand: 'The Coca-Cola Company',
+  ingredients: [],
+  isSafe: false,
+  riskLevel: 'danger',
+  riskIngredients: [
+    { id: 'ing-milk',   name: 'Milk',    nameKo: '우유', description: '', riskLevel: 'danger', sources: [] },
+    { id: 'ing-peanut', name: 'Peanuts', nameKo: '땅콩', description: '', riskLevel: 'danger', sources: [] },
+  ],
+  mayContainIngredients: [],
+  alternatives: [
+    { id: 'alt-1', name: 'Alt Product 1', brand: '', ingredients: [], isSafe: true, riskLevel: 'safe', riskIngredients: [], mayContainIngredients: [], alternatives: [] },
+    { id: 'alt-2', name: 'Alt Product 2', brand: '', ingredients: [], isSafe: true, riskLevel: 'safe', riskIngredients: [], mayContainIngredients: [], alternatives: [] },
+    { id: 'alt-3', name: 'Alt Product 3', brand: '', ingredients: [], isSafe: true, riskLevel: 'safe', riskIngredients: [], mayContainIngredients: [], alternatives: [] },
+  ],
+  dataCompleteness: 'partial',
+};
+
+// ── Corner component ──────────────────────────────────────────────────────────
+type CornerPos = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
+function OCRCorner({ pos, color }: { pos: CornerPos; color: string }) {
+  const isTop  = pos === 'topLeft' || pos === 'topRight';
+  const isLeft = pos === 'topLeft' || pos === 'bottomLeft';
+  return (
+    <View
+      style={[
+        styles.corner,
+        isTop  ? { top: 0 }    : { bottom: 0 },
+        isLeft ? { left: 0 }   : { right: 0 },
+        {
+          borderTopWidth:          isTop  ? CORNER_W : 0,
+          borderBottomWidth:       isTop  ? 0 : CORNER_W,
+          borderLeftWidth:         isLeft ? CORNER_W : 0,
+          borderRightWidth:        isLeft ? 0 : CORNER_W,
+          borderTopLeftRadius:     pos === 'topLeft'     ? 3 : 0,
+          borderTopRightRadius:    pos === 'topRight'    ? 3 : 0,
+          borderBottomLeftRadius:  pos === 'bottomLeft'  ? 3 : 0,
+          borderBottomRightRadius: pos === 'bottomRight' ? 3 : 0,
+          borderColor: color,
+        },
+      ]}
+    />
+  );
 }
 
 export default function OCRCaptureScreen({ navigation, route }: Props) {
@@ -54,10 +96,21 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = createRef<CameraView>();
 
-  const [state, setState]           = useState<ScreenState>('idle');
-  const [capturedUri, setCapturedUri] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg]     = useState('');
+  const currentUser   = useUserStore(s => s.currentUser);
+  const addFavToStore = useListStore(s => s.addFavorite);
+  const favorites     = useListStore(s => s.favorites);
 
+  const [state, setState]             = useState<ScreenState>('idle');
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  const [ocrProduct, setOcrProduct]   = useState<Product | null>(null);
+  const [errorMsg, setErrorMsg]       = useState('');
+  const [favorited, setFavorited]     = useState(false);
+  const [favLoading, setFavLoading]   = useState(false);
+
+  const circleAnim = useRef(new Animated.Value(0)).current;
+  const sheetAnim  = useRef(new Animated.Value(400)).current;
+
+  // ── Capture ───────────────────────────────────────────────────────────────────
   async function handleCapture() {
     if (!cameraRef.current) return;
     try {
@@ -70,26 +123,86 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     }
   }
 
-  function handleRetake() {
-    setCapturedUri(null);
-    setErrorMsg('');
-    setState('idle');
-  }
-
+  // ── Analyze ───────────────────────────────────────────────────────────────────
   async function handleAnalyze() {
     if (!capturedUri) return;
     setState('analyzing');
     try {
-      const ocrResult  = await recognizeIngredients(capturedUri);
-      const ocrProduct = buildOcrProduct(barcode, ocrResult.ingredients);
-      navigation.navigate('ScanResult', { productId: barcode ?? '', ocrProduct });
+      let product: Product;
+      if (USE_MOCK) {
+        await new Promise(r => setTimeout(r, 800));
+        _ocrToggle = !_ocrToggle;
+        product = _ocrToggle ? MOCK_GOOD : MOCK_BAD;
+      } else {
+        const ocrResult = await recognizeIngredients(capturedUri);
+        const analysis  = await analyzeProduct({
+          ingredientIds: ocrResult.ingredients.map(i => i.id),
+        });
+        product = {
+          id: barcode ?? `ocr-${Date.now()}`,
+          name: 'Scanned Product',
+          brand: '',
+          ingredients: ocrResult.ingredients.map(i => ({
+            id: i.id, name: i.name, nameKo: i.nameKo,
+            description: '', riskLevel: 'safe' as const, sources: [],
+          })),
+          isSafe: analysis.isSafe,
+          riskLevel: analysis.verdict,
+          riskIngredients: [],
+          mayContainIngredients: [],
+          alternatives: [],
+          dataCompleteness: 'partial',
+        };
+      }
+
+      setOcrProduct(product);
+      setFavorited(favorites.some(f => f.productId === product.id));
+
+      circleAnim.setValue(0);
+      sheetAnim.setValue(400);
+      setState('result');
+      Animated.parallel([
+        Animated.spring(circleAnim, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }),
+        Animated.timing(sheetAnim,  { toValue: 0, duration: 380, useNativeDriver: true }),
+      ]).start();
     } catch {
       setErrorMsg('Could not read ingredients.\nPlease retake with better lighting.');
       setState('error');
     }
   }
 
-  // ── Permission loading ─────────────────────────────────────────────────────
+  // ── Reset ─────────────────────────────────────────────────────────────────────
+  function handleReset() {
+    setCapturedUri(null);
+    setOcrProduct(null);
+    setErrorMsg('');
+    setFavorited(false);
+    setState('idle');
+  }
+
+  // ── Add to Favorites ──────────────────────────────────────────────────────────
+  async function handleFavorite() {
+    if (!ocrProduct || favorited || favLoading) return;
+    setFavLoading(true);
+    try {
+      if (!USE_MOCK) {
+        await apiFavorite(ocrProduct.id);
+      }
+      const item: FavoriteItem = {
+        id: `fav-${Date.now()}`,
+        productId: ocrProduct.id,
+        userId: currentUser.id,
+        addedAt: new Date(),
+        product: ocrProduct,
+      };
+      addFavToStore(item);
+      setFavorited(true);
+    } finally {
+      setFavLoading(false);
+    }
+  }
+
+  // ── Permission loading ────────────────────────────────────────────────────────
   if (!permission) {
     return (
       <View style={styles.center}>
@@ -98,7 +211,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     );
   }
 
-  // ── Permission denied ──────────────────────────────────────────────────────
+  // ── Permission denied ─────────────────────────────────────────────────────────
   if (!permission.granted) {
     return (
       <View style={styles.center}>
@@ -114,7 +227,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
+  // ── Error ─────────────────────────────────────────────────────────────────────
   if (state === 'error') {
     return (
       <View style={styles.root}>
@@ -127,7 +240,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         <View style={styles.center}>
           <Text style={styles.errIcon}>⚠️</Text>
           <Text style={styles.errMsg}>{errorMsg}</Text>
-          <TouchableOpacity style={styles.retakeBtn} onPress={handleRetake}>
+          <TouchableOpacity style={styles.retakeBtn} onPress={handleReset}>
             <Text style={styles.retakeBtnText}>Retake</Text>
           </TouchableOpacity>
         </View>
@@ -135,7 +248,116 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     );
   }
 
-  // ── Preview / Analyzing ────────────────────────────────────────────────────
+  // ── Result ────────────────────────────────────────────────────────────────────
+  if (state === 'result' && ocrProduct) {
+    const isSafe     = ocrProduct.isSafe;
+    const frameColor = isSafe ? GOOD_COLOR : BAD_COLOR;
+    const hasAlts    = !isSafe && ocrProduct.alternatives.length > 0;
+
+    return (
+      <View style={styles.root}>
+        {/* Background photo — full screen */}
+        <Image
+          source={{ uri: capturedUri! }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+
+        {/* Dim overlay + frame corners + verdict circle */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <View style={styles.dimTop} />
+          <View style={styles.dimMiddle}>
+            <View style={styles.dimSide} />
+            <View style={styles.guideBox}>
+              <OCRCorner pos="topLeft"     color={frameColor} />
+              <OCRCorner pos="topRight"    color={frameColor} />
+              <OCRCorner pos="bottomLeft"  color={frameColor} />
+              <OCRCorner pos="bottomRight" color={frameColor} />
+              {/* Single verdict circle, centered in frame */}
+              <Animated.View
+                style={[
+                  styles.verdictCircle,
+                  { backgroundColor: frameColor, transform: [{ scale: circleAnim }] },
+                ]}
+              >
+                <Text style={styles.verdictIcon}>{isSafe ? '✓' : '✕'}</Text>
+                <Text style={styles.verdictLabel}>{isSafe ? 'Good!' : 'Bad!'}</Text>
+              </Animated.View>
+            </View>
+            <View style={styles.dimSide} />
+          </View>
+          <View style={styles.dimBottom} />
+        </View>
+
+        {/* Header */}
+        <ScanHeader
+          insetTop={insets.top}
+          subtitle="Scan OCR of the product"
+          onBack={handleReset}
+          onHistory={() => navigation.navigate('ScanHistory')}
+        />
+
+        {/* Bottom sheet */}
+        <Animated.View
+          style={[
+            styles.sheet,
+            { transform: [{ translateY: sheetAnim }], paddingBottom: insets.bottom + 16 },
+          ]}
+        >
+          {/* Close button */}
+          <TouchableOpacity style={styles.sheetClose} onPress={handleReset}>
+            <Text style={styles.sheetCloseText}>✕</Text>
+          </TouchableOpacity>
+
+          {/* Product row */}
+          <View style={styles.productRow}>
+            <View style={styles.productImageBox} />
+            <View style={styles.productInfo}>
+              <Text style={styles.productName} numberOfLines={1}>{ocrProduct.name}</Text>
+              <Text style={styles.brandName}   numberOfLines={1}>{ocrProduct.brand}</Text>
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[styles.favBtn, favorited && styles.favBtnActive]}
+                  onPress={handleFavorite}
+                  disabled={favLoading || favorited}
+                >
+                  {favLoading
+                    ? <ActivityIndicator size="small" color={Colors.gray500} />
+                    : (
+                      <Text style={[styles.favBtnText, favorited && styles.favBtnTextActive]}>
+                        {favorited ? '♥ Favorited' : '♡ Add to Favorites'}
+                      </Text>
+                    )
+                  }
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('HistoryProductDetail', { product: ocrProduct })}
+                >
+                  <Text style={styles.detailText}>see more detail</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Alternatives — Bad only */}
+          {hasAlts && (
+            <View style={styles.altsSection}>
+              <Text style={styles.altsLabel}>Alternative products</Text>
+              <View style={styles.altsRow}>
+                {ocrProduct.alternatives.slice(0, 3).map(alt => (
+                  <View key={alt.id} style={styles.altBox}>
+                    <Text style={styles.altText}>Image</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </Animated.View>
+      </View>
+    );
+  }
+
+  // ── Preview / Analyzing ───────────────────────────────────────────────────────
   if (state === 'preview' || state === 'analyzing') {
     return (
       <View style={styles.root}>
@@ -143,11 +365,10 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           <ScanHeader
             insetTop={insets.top}
             subtitle="Scan OCR of the product"
-            onBack={handleRetake}
+            onBack={handleReset}
             onHistory={() => navigation.navigate('ScanHistory')}
           />
         </View>
-
         <View style={styles.previewContainer}>
           {capturedUri && (
             <Image source={{ uri: capturedUri }} style={styles.previewImage} resizeMode="contain" />
@@ -159,11 +380,10 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
             </View>
           )}
         </View>
-
         <View style={[styles.previewActions, { paddingBottom: insets.bottom + 24 }]}>
           <TouchableOpacity
             style={styles.retakePill}
-            onPress={handleRetake}
+            onPress={handleReset}
             disabled={state === 'analyzing'}
           >
             <Text style={styles.retakePillText}>↺  Retake</Text>
@@ -183,29 +403,28 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     );
   }
 
-  // ── Idle: full-screen camera with guide frame ──────────────────────────────
+  // ── Idle: full-screen camera with guide frame ─────────────────────────────────
   return (
     <View style={styles.root}>
       <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
 
-      {/* Dim overlay — darkens outside the guide box */}
+      {/* Dim overlay */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <View style={styles.dimTop} />
         <View style={styles.dimMiddle}>
           <View style={styles.dimSide} />
-          {/* Guide box window */}
           <View style={styles.guideBox}>
-            <OCRCorner pos="topLeft"     />
-            <OCRCorner pos="topRight"    />
-            <OCRCorner pos="bottomLeft"  />
-            <OCRCorner pos="bottomRight" />
+            <OCRCorner pos="topLeft"     color={Colors.white} />
+            <OCRCorner pos="topRight"    color={Colors.white} />
+            <OCRCorner pos="bottomLeft"  color={Colors.white} />
+            <OCRCorner pos="bottomRight" color={Colors.white} />
           </View>
           <View style={styles.dimSide} />
         </View>
         <View style={styles.dimBottom} />
       </View>
 
-      {/* Header floats on top of camera */}
+      {/* Header */}
       <ScanHeader
         insetTop={insets.top}
         subtitle="Scan OCR of the product"
@@ -213,7 +432,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         onHistory={() => navigation.navigate('ScanHistory')}
       />
 
-      {/* Bottom — shutter button */}
+      {/* Shutter */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
         <TouchableOpacity style={styles.shutterBtn} onPress={handleCapture} activeOpacity={0.8}>
           <View style={styles.shutterOuter}>
@@ -225,46 +444,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   );
 }
 
-// ── Corner mark ───────────────────────────────────────────────────────────────
-type CornerPos = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
-
-function OCRCorner({ pos }: { pos: CornerPos }) {
-  const isTop  = pos === 'topLeft' || pos === 'topRight';
-  const isLeft = pos === 'topLeft' || pos === 'bottomLeft';
-  return (
-    <View
-      style={[
-        styles.corner,
-        isTop  ? { top: 0 }    : { bottom: 0 },
-        isLeft ? { left: 0 }   : { right: 0 },
-        {
-          borderTopWidth:          isTop  ? CORNER_W : 0,
-          borderBottomWidth:       isTop  ? 0 : CORNER_W,
-          borderLeftWidth:         isLeft ? CORNER_W : 0,
-          borderRightWidth:        isLeft ? 0 : CORNER_W,
-          borderTopLeftRadius:     pos === 'topLeft'     ? 3 : 0,
-          borderTopRightRadius:    pos === 'topRight'    ? 3 : 0,
-          borderBottomLeftRadius:  pos === 'bottomLeft'  ? 3 : 0,
-          borderBottomRightRadius: pos === 'bottomRight' ? 3 : 0,
-          borderColor: Colors.white,
-        },
-      ]}
-    />
-  );
-}
-
 // ── Styles ────────────────────────────────────────────────────────────────────
-
-// Guide box is centered horizontally; vertical center sits roughly at 55% of screen
-// We use flex layout: dimTop grows, then guideBox row, then dimBottom grows
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
-
-  // Centered (permission / error)
+  root:   { flex: 1, backgroundColor: '#000' },
   center: {
     flex: 1, backgroundColor: Colors.black,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 36,
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36,
   },
 
   // Permission
@@ -275,22 +460,41 @@ const styles = StyleSheet.create({
   permBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Error
-  errIcon:      { fontSize: 48, marginBottom: 16 },
-  errMsg:       { fontSize: 15, color: Colors.gray300, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
-  retakeBtn:    { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 36 },
-  retakeBtnText:{ color: Colors.white, fontWeight: '700', fontSize: 15 },
+  errIcon:       { fontSize: 48, marginBottom: 16 },
+  errMsg:        { fontSize: 15, color: Colors.gray300, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
+  retakeBtn:     { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 36 },
+  retakeBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  // Dim overlay for idle (camera) state
+  // Dim overlay (idle + result)
   dimTop:    { flex: 1, backgroundColor: DIM },
   dimMiddle: { flexDirection: 'row', height: GUIDE_H },
   dimSide:   { flex: 1, backgroundColor: DIM },
-  dimBottom: { flex: 1, backgroundColor: DIM },
+  dimBottom: { flex: 2, backgroundColor: DIM },
   guideBox:  { width: GUIDE_W, height: GUIDE_H },
 
   // Corner strokes
   corner: { position: 'absolute', width: CORNER_LEN, height: CORNER_LEN },
 
-  // Bottom shutter
+  // Verdict circle — centered inside guideBox via absolute position
+  verdictCircle: {
+    position: 'absolute',
+    top:  (GUIDE_H - CIRCLE_D) / 2,
+    left: (GUIDE_W - CIRCLE_D) / 2,
+    width:  CIRCLE_D,
+    height: CIRCLE_D,
+    borderRadius: CIRCLE_D / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  verdictIcon:  { fontSize: 52, color: Colors.white, fontWeight: '700', lineHeight: 60 },
+  verdictLabel: { fontSize: 22, color: Colors.white, fontWeight: '800', marginTop: -4 },
+
+  // Shutter
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     alignItems: 'center', paddingTop: 16,
@@ -308,7 +512,7 @@ const styles = StyleSheet.create({
     borderWidth: 2.5, borderColor: Colors.gray300,
   },
 
-  // Preview
+  // Preview / Analyzing
   previewHeaderBg:  { backgroundColor: '#000' },
   previewContainer: { flex: 1, backgroundColor: '#000' },
   previewImage:     { flex: 1, width: '100%' },
@@ -318,15 +522,60 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: 12,
   },
   analyzingText: { fontSize: 15, color: Colors.white, fontWeight: '600' },
-
   previewActions: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 16, paddingTop: 20, paddingHorizontal: 24,
-    backgroundColor: '#111',
+    gap: 16, paddingTop: 20, paddingHorizontal: 24, backgroundColor: '#111',
   },
   retakePill:     { borderWidth: 1.5, borderColor: Colors.white, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 28 },
   retakePillText: { color: Colors.white, fontSize: 15, fontWeight: '600' },
   analyzeBtn:     { backgroundColor: Colors.primary, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 36, minWidth: 120, alignItems: 'center' },
   analyzeBtnOff:  { opacity: 0.6 },
   analyzeBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
+
+  // Result — bottom sheet
+  sheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 20, paddingTop: 20,
+  },
+  sheetClose: {
+    position: 'absolute', top: 16, right: 16,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: Colors.gray100,
+    alignItems: 'center', justifyContent: 'center',
+    zIndex: 1,
+  },
+  sheetCloseText: { fontSize: 13, color: Colors.black, fontWeight: '600' },
+
+  productRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 16 },
+  productImageBox: {
+    width: 72, height: 72, borderRadius: 12,
+    backgroundColor: Colors.gray100, flexShrink: 0,
+  },
+  productInfo: { flex: 1, gap: 4 },
+  productName: { fontSize: 16, fontWeight: '700', color: Colors.black },
+  brandName:   { fontSize: 13, color: Colors.gray500 },
+  actionRow:   { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 6, flexWrap: 'wrap' },
+
+  favBtn: {
+    borderWidth: 1, borderColor: Colors.border, borderRadius: 100,
+    paddingVertical: 6, paddingHorizontal: 12, backgroundColor: Colors.white,
+  },
+  favBtnActive:     { borderColor: Colors.black, backgroundColor: Colors.black },
+  favBtnText:       { fontSize: 12, color: Colors.gray700, fontWeight: '600' },
+  favBtnTextActive: { color: Colors.white },
+
+  detailText: { fontSize: 12, color: Colors.gray500, textDecorationLine: 'underline' },
+
+  // Alternatives (Bad only)
+  altsSection: { borderTopWidth: 1, borderTopColor: Colors.gray100, paddingTop: 14, marginBottom: 4 },
+  altsLabel:   { fontSize: 14, fontWeight: '700', color: Colors.black, marginBottom: 10 },
+  altsRow:     { flexDirection: 'row', gap: 10 },
+  altBox: {
+    flex: 1, aspectRatio: 1,
+    backgroundColor: Colors.gray100, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  altText: { fontSize: 12, color: Colors.gray300 },
 });
