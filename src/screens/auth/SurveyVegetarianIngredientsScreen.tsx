@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, Modal,
+  ScrollView, Modal, Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 import { ALLERGY_CATEGORIES } from '../../constants/allergyData';
-import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
+import * as AuthService from '../../services/auth.service';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarianIngredients'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyVegetarianIngredients'>;
