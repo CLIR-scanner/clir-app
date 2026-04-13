@@ -94,13 +94,13 @@ export default function SurveyAllergyConfirmScreen() {
 
     setLoading(true);
     try {
-      const { userId } = await AuthService.signup({ name, email, password });
-      await AuthService.submitSurvey(userId, {
+      await AuthService.signup({ name, email, password });
+      const { user } = await AuthService.login(email, password);
+      await AuthService.submitSurvey(user.id, {
         allergyProfile,
         dietaryRestrictions: [],
         sensitivityLevel: 'normal',
       });
-      const { user } = await AuthService.login(email, password);
       setUser(user);
     } catch (e) {
       Alert.alert('오류가 발생했습니다.', (e as Error).message);
