@@ -38,7 +38,7 @@ function summaryToProduct(s: ProductSummary): Product {
 
 // ─── 공개 API ─────────────────────────────────────────────────────────────────
 
-const USE_MOCK = true; // 실제 API 연결 시 false 로 변경
+const USE_MOCK = false; // 실제 API 연결 시 false 로 변경
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
