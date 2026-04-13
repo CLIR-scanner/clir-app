@@ -15,10 +15,16 @@ interface ProductSummary {
 interface ScanHistoryItem {
   id: string;
   productId?: string;
-  product: ProductSummary;
+  product: ProductSummary | null; // POST 응답엔 없음, GET 응답엔 있음 (OCR 스캔 시 null 가능)
   result: RiskLevel;
   scannedAt: string;
 }
+
+const EMPTY_PRODUCT: Product = {
+  id: '', name: '', brand: '', ingredients: [],
+  isSafe: true, riskLevel: 'safe',
+  riskIngredients: [], mayContainIngredients: [], alternatives: [],
+};
 
 /** ProductSummary → Product (목록용 — ingredients 빈 배열) */
 function summaryToProduct(s: ProductSummary): Product {
@@ -219,13 +225,14 @@ export async function saveScanHistory(params: {
     method: 'POST',
     body: JSON.stringify(params),
   });
+  // POST 응답에는 product 필드가 없음 — 호출 측에서 { ...item, product }로 덮어씀
   return {
     id: res.id,
     productId: res.productId ?? '',
     userId: '',
     scannedAt: new Date(res.scannedAt),
     result: res.result,
-    product: summaryToProduct(res.product),
+    product: res.product ? summaryToProduct(res.product) : EMPTY_PRODUCT,
   };
 }
 
@@ -269,6 +276,7 @@ export async function getScanHistory(): Promise<ScanHistory[]> {
     userId: '',
     scannedAt: new Date(item.scannedAt),
     result: item.result,
-    product: summaryToProduct(item.product),
+    // OCR 스캔 등 productId 없는 이력은 product가 null일 수 있음
+    product: item.product ? summaryToProduct(item.product) : EMPTY_PRODUCT,
   }));
 }

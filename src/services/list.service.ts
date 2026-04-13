@@ -99,6 +99,21 @@ function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem | null {
   };
 }
 
+/**
+ * POST /favorites 응답을 FavoriteItem으로 변환한다.
+ *
+ * ⚠️  STUB PRODUCT 경고:
+ * POST /favorites 응답에는 product 상세 정보가 포함되지 않는다.
+ * 반환된 item.product는 빈 stub 객체(name: '', isSafe: true)이므로
+ * 이 함수의 결과를 Zustand store에 직접 저장하면 즐겨찾기 목록에
+ * 제품명 없음("-")·Good 판정 오표시가 발생한다.
+ *
+ * ✅  올바른 사용 패턴:
+ * ```
+ * const item = await addFavorite(productId);
+ * addFavoriteToStore({ ...item, product }); // product는 호출 측이 보유한 전체 Product 객체
+ * ```
+ */
 function postResponseToFavoriteItem(raw: FavoritePostResponse): FavoriteItem {
   return {
     id: raw.id,
@@ -107,11 +122,11 @@ function postResponseToFavoriteItem(raw: FavoritePostResponse): FavoriteItem {
     addedAt: new Date(raw.addedAt),
     product: {
       id: raw.productId,
-      name: '',
-      brand: '',
+      name: '',        // stub — 호출 측에서 반드시 실제 product로 교체할 것
+      brand: '',       // stub
       ingredients: [],
-      isSafe: true,
-      riskLevel: 'safe',
+      isSafe: true,    // stub — 실제 판정 아님
+      riskLevel: 'safe', // stub
       riskIngredients: [],
       mayContainIngredients: [],
       alternatives: [],
@@ -240,6 +255,13 @@ export async function getFavorites(): Promise<FavoriteItem[]> {
 /**
  * POST /favorites
  * 제품을 즐겨찾기에 추가한다.
+ *
+ * ⚠️  반환된 FavoriteItem.product는 stub이다 (postResponseToFavoriteItem 참고).
+ * Zustand store에 저장할 때는 반드시 호출 측이 보유한 실제 Product 객체로 교체해야 한다:
+ * ```
+ * const item = await addFavorite(productId);
+ * store.addFavorite({ ...item, product: fullProduct });
+ * ```
  */
 export async function addFavorite(productId: string): Promise<FavoriteItem> {
   if (USE_MOCK) {

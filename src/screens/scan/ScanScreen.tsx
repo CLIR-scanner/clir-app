@@ -218,7 +218,7 @@ export default function ScanScreen({ navigation }: Props) {
     setFavLoading(true);
     try {
       const item = await addFavorite(product.id);
-      addFavoriteToStore(item);
+      addFavoriteToStore({ ...item, product });
       setFavorited(true);
     } catch { /* silent */ }
     finally { setFavLoading(false); }
