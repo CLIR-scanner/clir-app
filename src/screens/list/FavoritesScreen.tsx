@@ -51,12 +51,8 @@ export default function FavoritesScreen({ navigation }: Props) {
   );
 
   function handleItemPress(item: FavoriteItem) {
-    // ScanTab의 HistoryProductDetail 화면으로 이동 (cross-tab navigation)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (navigation.getParent() as any)?.navigate('ScanTab', {
-      screen: 'HistoryProductDetail',
-      params: { product: item.product },
-    });
+    // ListStack 내부의 HistoryProductDetail로 이동 — back 시 Favorites로 정상 복귀
+    navigation.navigate('HistoryProductDetail', { product: item.product });
   }
 
   function renderItem({ item, index }: { item: FavoriteItem; index: number }) {

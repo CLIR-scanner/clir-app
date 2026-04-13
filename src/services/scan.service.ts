@@ -322,7 +322,9 @@ export async function getScanHistory(): Promise<ScanHistory[]> {
     userId: '',
     scannedAt: new Date(item.scannedAt),
     result: item.result,
-    // OCR 스캔 등 productId 없는 이력은 product가 null일 수 있음
-    product: item.product ? summaryToProduct(item.product) : EMPTY_PRODUCT,
+    // OCR 스캔 등 productId 없는 이력은 product가 null — result 기반으로 riskLevel 복원
+    product: item.product
+      ? summaryToProduct(item.product)
+      : { ...EMPTY_PRODUCT, isSafe: item.result === 'safe', riskLevel: item.result },
   }));
 }

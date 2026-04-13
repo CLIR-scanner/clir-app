@@ -140,10 +140,22 @@ export default function ScanScreen({ navigation }: Props) {
       const ingredientIds  = product.ingredients.map(i => i.id);
       const analysis       = await analyzeProduct({ productId: product.id, ingredientIds });
 
-      // Save history silently — product 데이터를 직접 첨부해 썸네일에 image 포함
+      // Save history silently — analysis 결과를 반영한 enrichedProduct로 저장
+      // riskIngredients / mayContainIngredients 가 history 상세에서도 표시되도록
       try {
+        const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
+          id: t.id, name: t.name, nameKo: t.nameKo,
+          description: '', riskLevel: t.riskLevel, sources: [] as [],
+        });
+        const enrichedProduct = {
+          ...product,
+          isSafe:                analysis.isSafe,
+          riskLevel:             analysis.verdict,
+          riskIngredients:       analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
+          mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
+        };
         const historyItem = await saveScanHistory({ productId: product.id, result: analysis.verdict });
-        addHistory({ ...historyItem, product });
+        addHistory({ ...historyItem, product: enrichedProduct });
       } catch { /* silent */ }
 
       setProcessing(false);

@@ -8,9 +8,10 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
-import { recognizeIngredients, analyzeProduct } from '../../services/scan.service';
+import { recognizeIngredients, analyzeProduct, saveScanHistory } from '../../services/scan.service';
 import { ScanHeader } from './ScanScreen';
 import { useListStore } from '../../store/list.store';
+import { useScanStore } from '../../store/scan.store';
 import { addFavorite as apiFavorite } from '../../services/list.service';
 import { useUserStore } from '../../store/user.store';
 
@@ -99,6 +100,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const currentUser   = useUserStore(s => s.currentUser);
   const addFavToStore = useListStore(s => s.addFavorite);
   const favorites     = useListStore(s => s.favorites);
+  const addHistory    = useScanStore(s => s.addHistory);
 
   const [state, setState]             = useState<ScreenState>('idle');
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
@@ -149,6 +151,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           id: barcode ?? `ocr-${Date.now()}`,
           name: 'Scanned Product',
           brand: '',
+          image: capturedUri ?? undefined,
           ingredients: ocrResult.ingredients.map(i => ({
             id: i.id, name: i.name, nameKo: i.nameKo,
             description: '', riskLevel: 'safe' as const, sources: [],
@@ -161,6 +164,13 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           dataCompleteness: 'partial',
         };
       }
+
+      // 스캔 이력 저장 — OCR 제품은 productId 없이 저장 (product_id = null)
+      // barcode가 있어도 products 테이블에 미등록이므로 FK 위반 방지를 위해 omit
+      try {
+        const historyItem = await saveScanHistory({ result: product.riskLevel });
+        addHistory({ ...historyItem, product });
+      } catch { /* silent — 이력 저장 실패 시 분석 결과 표시는 유지 */ }
 
       setOcrProduct(product);
       setFavorited(favorites.some(f => f.productId === product.id));
@@ -323,7 +333,15 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
 
           {/* Product row */}
           <View style={styles.productRow}>
-            <View style={styles.productImageBox} />
+            <View style={styles.productImageBox}>
+              {capturedUri && (
+                <Image
+                  source={{ uri: capturedUri }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                />
+              )}
+            </View>
             <View style={styles.productInfo}>
               <Text style={styles.productName} numberOfLines={1}>{ocrProduct.name}</Text>
               <Text style={styles.brandName}   numberOfLines={1}>{ocrProduct.brand}</Text>
@@ -563,7 +581,7 @@ const styles = StyleSheet.create({
   productRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 16 },
   productImageBox: {
     width: 72, height: 72, borderRadius: 12,
-    backgroundColor: Colors.gray100, flexShrink: 0,
+    backgroundColor: Colors.gray100, flexShrink: 0, overflow: 'hidden',
   },
   productInfo: { flex: 1, gap: 4 },
   productName: { fontSize: 16, fontWeight: '700', color: Colors.black },
