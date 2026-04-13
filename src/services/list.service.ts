@@ -12,13 +12,22 @@ interface ProductSummary {
   isSafe: boolean;
 }
 
+/** GET /favorites 응답 항목 — product가 null일 수 있음 (DB join 실패 시) */
 interface FavoriteApiItem {
   id: string;
-  product: ProductSummary;
+  product: ProductSummary | null;
   addedAt: string;
 }
 
-function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem {
+/** POST /favorites 응답 — product 객체 없이 productId만 반환 */
+interface FavoritePostResponse {
+  id: string;
+  productId: string;
+  addedAt: string;
+}
+
+function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem | null {
+  if (!raw.product) return null;
   return {
     id: raw.id,
     productId: raw.product.id,
@@ -39,9 +48,29 @@ function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem {
   };
 }
 
+function postResponseToFavoriteItem(raw: FavoritePostResponse): FavoriteItem {
+  return {
+    id: raw.id,
+    productId: raw.productId,
+    userId: '',
+    addedAt: new Date(raw.addedAt),
+    product: {
+      id: raw.productId,
+      name: '',
+      brand: '',
+      ingredients: [],
+      isSafe: true,
+      riskLevel: 'safe',
+      riskIngredients: [],
+      mayContainIngredients: [],
+      alternatives: [],
+    },
+  };
+}
+
 // ─── 즐겨찾기 ─────────────────────────────────────────────────────────────────
 
-const USE_MOCK = true; // 실제 API 연결 시 false 로 변경
+const USE_MOCK = false; // 실제 API 연결 시 false 로 변경
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -154,7 +183,7 @@ export async function getFavorites(): Promise<FavoriteItem[]> {
     return [...MOCK_FAVORITES];
   }
   const res = await apiFetch<{ favorites: FavoriteApiItem[] }>('/favorites');
-  return res.favorites.map(toFavoriteItem);
+  return res.favorites.map(toFavoriteItem).filter((f): f is FavoriteItem => f !== null);
 }
 
 /**
@@ -167,11 +196,11 @@ export async function addFavorite(productId: string): Promise<FavoriteItem> {
     if (existing) return existing;
     throw new Error('Product not found in mock');
   }
-  const raw = await apiFetch<FavoriteApiItem>('/favorites', {
+  const raw = await apiFetch<FavoritePostResponse>('/favorites', {
     method: 'POST',
     body: JSON.stringify({ productId }),
   });
-  return toFavoriteItem(raw);
+  return postResponseToFavoriteItem(raw);
 }
 
 /**
