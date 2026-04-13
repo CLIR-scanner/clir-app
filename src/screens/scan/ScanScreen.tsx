@@ -16,7 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
-import { scanBarcode, analyzeProduct, saveScanHistory } from '../../services/scan.service';
+import { scanBarcode, analyzeProduct, saveScanHistory, getScanHistory } from '../../services/scan.service';
 import { addFavorite } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
@@ -59,13 +59,14 @@ export default function ScanScreen({ navigation }: Props) {
   const sheetY      = useRef(new Animated.Value(320)).current;
 
   const addHistory         = useScanStore(s => s.addHistory);
+  const setHistory         = useScanStore(s => s.setHistory);
   const history            = useScanStore(s => s.history);
-  const favorites          = useListStore(s => s.favorites);
   const addFavoriteToStore = useListStore(s => s.addFavorite);
+  // favorites는 렌더 구독 대신 getState()로 스냅샷 조회 (showOverlay, handleFavorite)
 
   const lastProductImage = history[0]?.product.image;
 
-  // ── Focus / blur: camera lifecycle ───────────────────────────────────────────
+  // ── Focus / blur: camera lifecycle + history 썸네일 로드 ──────────────────────
   useFocusEffect(
     useCallback(() => {
       // Screen focused → activate camera + reset all scan state
@@ -78,19 +79,28 @@ export default function ScanScreen({ navigation }: Props) {
       circleScale.setValue(0);
       sheetY.setValue(320);
 
+      // history store가 비어있으면 서버에서 로드 — 앱 재시작 후 썸네일 복원
+      // 실패 시 재시도 없이 무시하고 다음 focus에서 다시 시도
+      if (useScanStore.getState().history.length === 0) {
+        getScanHistory()
+          .then(data => setHistory(data))
+          .catch(() => {});
+      }
+
       return () => {
         // Screen blurred → deactivate camera + stop scanning
         setCameraActive(false);
         processingRef.current = false;
       };
-    }, [circleScale, sheetY]),
+    }, [circleScale, sheetY, setHistory]),
   );
 
   // ── Overlay animation helpers ─────────────────────────────────────────────
 
   function showOverlay(product: Product, analysis: AnalysisResult) {
+    const currentFavs = useListStore.getState().favorites;
     setScanResult({ product, analysis });
-    setFavorited(false);
+    setFavorited(currentFavs.some(f => f.productId === product.id));
     circleScale.setValue(0);
     sheetY.setValue(320);
     Animated.parallel([
@@ -130,10 +140,10 @@ export default function ScanScreen({ navigation }: Props) {
       const ingredientIds  = product.ingredients.map(i => i.id);
       const analysis       = await analyzeProduct({ productId: product.id, ingredientIds });
 
-      // Save history silently
+      // Save history silently — product 데이터를 직접 첨부해 썸네일에 image 포함
       try {
         const historyItem = await saveScanHistory({ productId: product.id, result: analysis.verdict });
-        addHistory(historyItem);
+        addHistory({ ...historyItem, product });
       } catch { /* silent */ }
 
       setProcessing(false);
@@ -200,8 +210,8 @@ export default function ScanScreen({ navigation }: Props) {
   async function handleFavorite() {
     if (!scanResult || favLoading || favorited) return;
     const { product } = scanResult;
-    // Already in favorites?
-    if (favorites.some(f => f.productId === product.id)) {
+    // Already in favorites? (store 최신 스냅샷으로 확인)
+    if (useListStore.getState().favorites.some(f => f.productId === product.id)) {
       setFavorited(true);
       return;
     }
@@ -250,10 +260,7 @@ export default function ScanScreen({ navigation }: Props) {
     ? (isSafe ? GOOD_COLOR : BAD_COLOR)
     : barcodeDetected ? '#FF0000' : Colors.white;
   const verdictColor = isSafe ? GOOD_COLOR : BAD_COLOR;
-  const hasAlts      = !isSafe && (scanResult?.product.alternatives.length ?? 0) > 0;
-  const alreadyFav   = scanResult
-    ? favorites.some(f => f.productId === scanResult.product.id)
-    : false;
+  const hasAlts = !isSafe && (scanResult?.product.alternatives.length ?? 0) > 0;
 
   return (
     <View style={styles.root}>
@@ -367,19 +374,19 @@ export default function ScanScreen({ navigation }: Props) {
                 <TouchableOpacity
                   style={[
                     styles.favBtn,
-                    (favorited || alreadyFav) && styles.favBtnActive,
+                    favorited && styles.favBtnActive,
                   ]}
                   onPress={handleFavorite}
-                  disabled={favLoading || favorited || alreadyFav}
+                  disabled={favLoading || favorited}
                 >
                   {favLoading ? (
                     <ActivityIndicator size="small" color={Colors.danger} />
                   ) : (
                     <Text style={[
                       styles.favBtnText,
-                      (favorited || alreadyFav) && styles.favBtnTextActive,
+                      favorited && styles.favBtnTextActive,
                     ]}>
-                      {(favorited || alreadyFav) ? '♥' : '♡'} Add to Favorites
+                      {favorited ? '♥' : '♡'} Add to Favorites
                     </Text>
                   )}
                 </TouchableOpacity>

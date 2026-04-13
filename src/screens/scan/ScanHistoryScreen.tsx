@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
 import { useScanStore } from '../../store/scan.store';
+import { getScanHistory } from '../../services/scan.service';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 
@@ -25,8 +27,29 @@ const BADGE: Record<RiskLevel, { dot: string; label: string; text: string; borde
 };
 
 export default function ScanHistoryScreen({ navigation }: Props) {
-  const insets  = useSafeAreaInsets();
-  const history = useScanStore(s => s.history);
+  const insets     = useSafeAreaInsets();
+  const history    = useScanStore(s => s.history);
+  const setHistory = useScanStore(s => s.setHistory);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError,   setIsError]   = useState(false);
+
+  function fetchHistory() {
+    let cancelled = false;
+    setIsLoading(true);
+    setIsError(false);
+    getScanHistory()
+      .then(data => { if (!cancelled) setHistory(data); })
+      .catch(() => { if (!cancelled) setIsError(true); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }
+
+  // 화면 포커스될 때마다 최신 이력 fetch (초기 진입 + 재방문 모두 대응)
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', fetchHistory);
+    return unsub;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation]);
 
   // 최신순 정렬 (store는 이미 최신순이지만 방어적으로 정렬)
   const sorted = useMemo(
@@ -109,7 +132,19 @@ export default function ScanHistoryScreen({ navigation }: Props) {
         <View style={styles.backBtn} />
       </View>
 
-      {/* ── List ────────────────────────────────────────────────────────────── */}
+      {/* ── List / Loading / Error ──────────────────────────────────────────── */}
+      {isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={TITLE_COLOR} />
+        </View>
+      ) : isError ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>이력을 불러오지 못했습니다.</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={fetchHistory}>
+            <Text style={styles.retryText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
       <FlatList
         data={sorted}
         keyExtractor={item => item.id}
@@ -132,6 +167,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
         }
         showsVerticalScrollIndicator={false}
       />
+      )}
     </View>
   );
 }
@@ -230,6 +266,13 @@ const styles = StyleSheet.create({
 
   // Divider
   divider: { height: 1, backgroundColor: '#D0D0C8' },
+
+  // Loading
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+  // Retry button
+  retryBtn:  { marginTop: 16, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1.5, borderColor: TITLE_COLOR },
+  retryText: { fontSize: 14, fontWeight: '600', color: TITLE_COLOR },
 
   // Empty state
   empty: {

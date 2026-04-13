@@ -145,6 +145,7 @@ export interface UserStore {
 
 export interface ScanStore {
   history: ScanHistory[];
+  setHistory: (items: ScanHistory[]) => void;
   addHistory: (item: ScanHistory) => void;
   clearHistory: () => void;
 }
@@ -219,6 +220,7 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
+  HomeTab: undefined;
   ScanTab: undefined;
   SearchTab: undefined;
   ListTab: undefined;

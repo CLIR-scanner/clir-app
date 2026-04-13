@@ -10,6 +10,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MainTabParamList } from '../types';
+import HomeScreen from '../screens/home/HomeScreen';
 import ScanNavigator from './ScanNavigator';
 import SearchNavigator from './SearchNavigator';
 import ListNavigator from './ListNavigator';
@@ -22,8 +23,8 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 type TabRoute = keyof MainTabParamList;
 
 const LEFT_TABS:  { route: TabRoute; label: string }[] = [
-  { route: 'ScanTab',  label: 'HOME' },
-  { route: 'ListTab',  label: 'LIST' },
+  { route: 'HomeTab', label: 'HOME' },
+  { route: 'ListTab', label: 'LIST' },
 ];
 const RIGHT_TABS: { route: TabRoute; label: string }[] = [
   { route: 'RecommendTab', label: 'COMMUNITY' },
@@ -89,6 +90,7 @@ export default function MainNavigator() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
+      <Tab.Screen name="HomeTab"      component={HomeScreen}         options={{ title: 'Home' }} />
       <Tab.Screen name="ScanTab"      component={ScanNavigator}      options={{ title: t('tab.scan') }} />
       <Tab.Screen name="SearchTab"    component={SearchNavigator}    options={{ title: t('tab.search') }} />
       <Tab.Screen name="ListTab"      component={ListNavigator}      options={{ title: t('tab.list') }} />
