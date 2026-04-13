@@ -28,7 +28,7 @@ const GOOD_COLOR = '#25FF81';
 const BAD_COLOR  = '#FF0000';
 
 // ── Mock ───────────────────────────────────────────────────────────────────────
-const USE_MOCK = true;
+const USE_MOCK = false;
 let _ocrToggle = false;
 
 const MOCK_GOOD: Product = {
@@ -138,6 +138,10 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         const analysis  = await analyzeProduct({
           ingredientIds: ocrResult.ingredients.map(i => i.id),
         });
+        const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
+          id: t.id, name: t.name, nameKo: t.nameKo,
+          description: '', riskLevel: t.riskLevel, sources: [] as [],
+        });
         product = {
           id: barcode ?? `ocr-${Date.now()}`,
           name: 'Scanned Product',
@@ -148,8 +152,8 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           })),
           isSafe: analysis.isSafe,
           riskLevel: analysis.verdict,
-          riskIngredients: [],
-          mayContainIngredients: [],
+          riskIngredients:       analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
+          mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
           alternatives: [],
           dataCompleteness: 'partial',
         };
