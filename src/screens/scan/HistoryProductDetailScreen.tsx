@@ -161,24 +161,30 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
               ** This product contains ingredients that may not be suitable for you.
             </Text>
 
-            {product.riskIngredients.length > 0 ? (
-              <>
-                {product.riskIngredients.map(ing => (
-                  <TouchableOpacity
-                    key={ing.id}
-                    onPress={() => handleIngredientPress(ing)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.riskIngredient, styles.riskIngredientLink]}>
-                      {ing.name} ›
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-                <Text style={styles.riskTapHint}>Tap an ingredient for details</Text>
-              </>
-            ) : (
-              <Text style={styles.riskIngredient}>—</Text>
-            )}
+            {(() => {
+              // danger → riskIngredients(직접 알러겐), caution → mayContainIngredients(흔적 알러겐)
+              const displayIngredients = isBad
+                ? product.riskIngredients
+                : product.mayContainIngredients;
+              return displayIngredients.length > 0 ? (
+                <>
+                  {displayIngredients.map(ing => (
+                    <TouchableOpacity
+                      key={ing.id}
+                      onPress={() => handleIngredientPress(ing)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.riskIngredient, styles.riskIngredientLink]}>
+                        {ing.name} ›
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                  <Text style={styles.riskTapHint}>Tap an ingredient for details</Text>
+                </>
+              ) : (
+                <Text style={styles.riskIngredient}>—</Text>
+              );
+            })()}
           </View>
         )}
 

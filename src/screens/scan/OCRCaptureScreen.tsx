@@ -1,4 +1,4 @@
-import React, { createRef, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   Image, ActivityIndicator, Animated,
@@ -94,7 +94,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const { barcode } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = createRef<CameraView>();
+  const cameraRef = useRef<CameraView>(null);
 
   const currentUser   = useUserStore(s => s.currentUser);
   const addFavToStore = useListStore(s => s.addFavorite);
@@ -141,6 +141,9 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
           id: t.id, name: t.name, nameKo: t.nameKo,
           description: '', riskLevel: t.riskLevel, sources: [] as [],
+          // may-contain 성분(ing-may-xxx)은 relatedAllergenId를 설정해야
+          // HistoryProductDetailScreen의 성분 상세 조회 시 올바른 ID(ing-xxx)로 검색됨
+          ...(t.id.startsWith('ing-may-') ? { relatedAllergenId: t.id.replace('ing-may-', 'ing-') } : {}),
         });
         product = {
           id: barcode ?? `ocr-${Date.now()}`,
@@ -190,7 +193,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     setFavLoading(true);
     try {
       if (!USE_MOCK) {
-        await apiFavorite(ocrProduct.id);
+        try {
+          await apiFavorite(ocrProduct.id);
+        } catch {
+          // OCR 제품은 products 테이블에 없어 FK violation으로 API 실패.
+          // API 실패 여부와 무관하게 로컬 store에는 저장 (세션 내 즐겨찾기 유지).
+        }
       }
       const item: FavoriteItem = {
         id: `fav-${Date.now()}`,
