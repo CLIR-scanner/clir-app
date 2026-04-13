@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { scanBarcode, analyzeProduct, saveScanHistory } from '../../services/scan.service';
@@ -32,9 +33,11 @@ const GUIDE_H    = 148;
 const GUIDE_TOP  = 190;
 const CORNER_LEN = 32;
 const CORNER_W   = 4;
-const CIRCLE_D   = 160;
-const CIRCLE_R   = CIRCLE_D / 2;
+const CIRCLE_D   = 120;
+const BADGE_D    = 54;
 const DIM        = 'rgba(0,0,0,0.52)';
+const GOOD_COLOR = '#25FF81';
+const BAD_COLOR  = '#FF0000';
 
 export default function ScanScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -44,6 +47,8 @@ export default function ScanScreen({ navigation }: Props) {
   const [scanResult, setScanResult]           = useState<{ product: Product; analysis: AnalysisResult } | null>(null);
   const [favLoading, setFavLoading]           = useState(false);
   const [favorited,  setFavorited]            = useState(false);
+
+  const [cameraActive, setCameraActive] = useState(true);
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
@@ -59,6 +64,27 @@ export default function ScanScreen({ navigation }: Props) {
   const addFavoriteToStore = useListStore(s => s.addFavorite);
 
   const lastProductImage = history[0]?.product.image;
+
+  // ── Focus / blur: camera lifecycle ───────────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      // Screen focused → activate camera + reset all scan state
+      setCameraActive(true);
+      processingRef.current    = false;
+      latestBarcodeRef.current = null;
+      setBarcodeDetected(false);
+      setProcessing(false);
+      setScanResult(null);
+      circleScale.setValue(0);
+      sheetY.setValue(320);
+
+      return () => {
+        // Screen blurred → deactivate camera + stop scanning
+        setCameraActive(false);
+        processingRef.current = false;
+      };
+    }, [circleScale, sheetY]),
+  );
 
   // ── Overlay animation helpers ─────────────────────────────────────────────
 
@@ -217,9 +243,11 @@ export default function ScanScreen({ navigation }: Props) {
     );
   }
 
-  const cornerColor  = barcodeDetected ? '#FF0000' : Colors.white;
   const isSafe       = scanResult?.analysis.isSafe ?? true;
-  const verdictColor = isSafe ? Colors.safe : Colors.danger;
+  const cornerColor  = scanResult
+    ? (isSafe ? GOOD_COLOR : BAD_COLOR)
+    : barcodeDetected ? '#FF0000' : Colors.white;
+  const verdictColor = isSafe ? GOOD_COLOR : BAD_COLOR;
   const hasAlts      = !isSafe && (scanResult?.product.alternatives.length ?? 0) > 0;
   const alreadyFav   = scanResult
     ? favorites.some(f => f.productId === scanResult.product.id)
@@ -227,14 +255,16 @@ export default function ScanScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Full-screen camera */}
-      <CameraView
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        facing="back"
-        barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
-        onBarcodeScanned={processingRef.current ? undefined : handleBarcodeScanned}
-      />
+      {/* Full-screen camera — unmounted when screen is not focused */}
+      {cameraActive && (
+        <CameraView
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
+          onBarcodeScanned={processingRef.current ? undefined : handleBarcodeScanned}
+        />
+      )}
 
       {/* Dim overlay with guide window */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -246,6 +276,22 @@ export default function ScanScreen({ navigation }: Props) {
             <ScanCorner pos="topRight"    color={cornerColor} />
             <ScanCorner pos="bottomLeft"  color={cornerColor} />
             <ScanCorner pos="bottomRight" color={cornerColor} />
+            {/* Verdict circle — centered inside frame, single circle */}
+            {scanResult && (
+              <Animated.View
+                style={[
+                  styles.verdictWrap,
+                  { borderColor: verdictColor, transform: [{ scale: circleScale }] },
+                ]}
+              >
+                <View style={[styles.verdictBadge, { backgroundColor: verdictColor }]}>
+                  <Text style={styles.verdictBadgeIcon}>{isSafe ? '✓' : '✕'}</Text>
+                </View>
+                <Text style={[styles.verdictLabel, { color: verdictColor }]}>
+                  {isSafe ? 'Good!' : 'Bad!'}
+                </Text>
+              </Animated.View>
+            )}
           </View>
           <View style={styles.dimSide} />
         </View>
@@ -280,25 +326,6 @@ export default function ScanScreen({ navigation }: Props) {
             </View>
           </TouchableOpacity>
         </View>
-      )}
-
-      {/* ── Verdict circle ───────────────────────────────────────────────────── */}
-      {scanResult && (
-        <Animated.View
-          style={[styles.verdictWrap, { transform: [{ scale: circleScale }] }]}
-          pointerEvents="none"
-        >
-          <View style={[styles.verdictRingOuter, { borderColor: verdictColor }]} />
-          <View style={[styles.verdictCircle, {
-            borderColor: verdictColor,
-            backgroundColor: `${verdictColor}30`,
-          }]}>
-            <Text style={styles.verdictIcon}>{isSafe ? '✓' : '✕'}</Text>
-            <Text style={[styles.verdictLabel, { color: verdictColor }]}>
-              {isSafe ? 'Good!' : 'Bad!'}
-            </Text>
-          </View>
-        </Animated.View>
       )}
 
       {/* ── Bottom sheet ─────────────────────────────────────────────────────── */}
@@ -525,27 +552,26 @@ const styles = StyleSheet.create({
     borderWidth: 2.5, borderColor: Colors.gray300,
   },
 
-  // Verdict circle
+  // Verdict circle — positioned inside guideBox
   verdictWrap: {
     position: 'absolute',
-    top: GUIDE_TOP + GUIDE_H / 2 - CIRCLE_R,
-    left: 0, right: 0,
+    top:  (GUIDE_H - CIRCLE_D) / 2,
+    left: (GUIDE_W - CIRCLE_D) / 2,
+    width:  CIRCLE_D,
+    height: CIRCLE_D,
+    borderRadius: CIRCLE_D / 2,
+    borderWidth: 3,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
-  verdictRingOuter: {
-    position: 'absolute',
-    width: CIRCLE_D + 20, height: CIRCLE_D + 20,
-    borderRadius: (CIRCLE_D + 20) / 2,
-    borderWidth: 2, opacity: 0.5,
-    top: -10,
-  },
-  verdictCircle: {
-    width: CIRCLE_D, height: CIRCLE_D,
-    borderRadius: CIRCLE_R, borderWidth: 3,
+  verdictBadge: {
+    width: BADGE_D, height: BADGE_D,
+    borderRadius: BADGE_D / 2,
     alignItems: 'center', justifyContent: 'center',
   },
-  verdictIcon:  { fontSize: 44, color: Colors.white, fontWeight: '900', lineHeight: 50 },
-  verdictLabel: { fontSize: 24, fontWeight: '800', letterSpacing: 0.5 },
+  verdictBadgeIcon: { fontSize: 26, color: Colors.white, fontWeight: '900', lineHeight: 30 },
+  verdictLabel:     { fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
 
   // Bottom sheet
   sheet: {
