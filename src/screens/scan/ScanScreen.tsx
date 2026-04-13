@@ -143,6 +143,8 @@ export default function ScanScreen({ navigation }: Props) {
 
   const handleBarcodeScanned = useCallback(
     (result: BarcodeScanningResult) => {
+      // URL 형태 QR 코드는 제품 바코드가 아님 (Expo 개발 QR 등)
+      if (/^https?:\/\/|^exp:\/\//.test(result.data)) return;
       latestBarcodeRef.current = result.data;
       if (processingRef.current) return;
       processBarcode(result.data);
