@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { ProfileStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
+import { ALLERGEN_NAME_MAP } from '../../constants/allergyData';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -89,7 +90,9 @@ export default function ProfileScreen() {
             <View style={styles.chips}>
               {activeProfile.allergyProfile.map(item => (
                 <View key={item} style={styles.chip}>
-                  <Text style={styles.chipText}>{item}</Text>
+                  <Text style={styles.chipText}>
+                    {ALLERGEN_NAME_MAP[item]?.name ?? item}
+                  </Text>
                 </View>
               ))}
             </View>
