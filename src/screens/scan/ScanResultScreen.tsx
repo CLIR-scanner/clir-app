@@ -112,8 +112,23 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   }
 
   function handleSeeDetail() {
-    if (!product) return;
-    navigation.navigate('ScanResult', { productId: product.id });
+    if (!product || !analysis) return;
+    // analysis 결과(verdict, riskIngredients)를 product에 반영해서 HistoryProductDetail로 이동
+    // OCR 제품은 buildOcrProduct에서 riskLevel/riskIngredients가 기본값이므로 반드시 필요
+    const detailProduct = {
+      ...product,
+      isSafe: analysis.isSafe,
+      riskLevel: analysis.verdict,
+      riskIngredients: analysis.triggeredBy.map(t => ({
+        id: t.id,
+        name: t.name,
+        nameKo: t.nameKo,
+        description: '',
+        riskLevel: t.riskLevel,
+        sources: [] as [],
+      })),
+    };
+    navigation.navigate('HistoryProductDetail', { product: detailProduct });
   }
 
   const isSafe       = analysis?.isSafe ?? true;
