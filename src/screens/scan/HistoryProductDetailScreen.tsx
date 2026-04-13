@@ -85,9 +85,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
-      {/* ── Notch pill ────────────────────────────────────────────────────── */}
-      <View style={styles.notchPill} />
-
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -293,9 +290,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:             { flex: 1, backgroundColor: BG },
-
-  // Notch
-  notchPill:        { alignSelf: 'center', width: 120, height: 30, backgroundColor: '#1A1A1A', borderRadius: 20, marginBottom: 4 },
 
   // Header
   header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },

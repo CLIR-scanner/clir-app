@@ -108,9 +108,6 @@ export default function FavoritesScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
 
-      {/* ── Notch pill ──────────────────────────────────────────────────────── */}
-      <View style={[styles.notchPill, { marginTop: insets.top }]} />
-
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <View style={styles.headerSide} />

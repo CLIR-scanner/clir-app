@@ -10,7 +10,6 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={styles.notchPill} />
       <View style={styles.body}>
         <Text style={styles.appName}>CLIR</Text>
         <Text style={styles.tagline}>Scan · Analyze · Stay Safe</Text>
@@ -22,13 +21,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root:      { flex: 1, backgroundColor: BG },
-  notchPill: {
-    alignSelf: 'center',
-    width: 120, height: 30,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 20,
-    marginBottom: 4,
-  },
   body: {
     flex: 1,
     alignItems: 'center',
