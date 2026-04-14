@@ -131,7 +131,9 @@ export default function SurveyAllergyDocResultScreen() {
         dietaryRestrictions: [],
         sensitivityLevel: 'normal',
       });
-      setUser(user);
+      // login() 응답은 submitSurvey() 이전 시점의 빈 프로필이므로
+      // 설문 데이터를 직접 병합해 store에 반영
+      setUser({ ...user, allergyProfile, dietaryRestrictions: [], sensitivityLevel: 'normal' });
     } catch (e) {
       Alert.alert('오류가 발생했습니다.', (e as Error).message);
     } finally {

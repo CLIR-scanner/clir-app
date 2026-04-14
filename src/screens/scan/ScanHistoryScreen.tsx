@@ -30,7 +30,8 @@ export default function ScanHistoryScreen({ navigation }: Props) {
   const insets     = useSafeAreaInsets();
   const history    = useScanStore(s => s.history);
   const setHistory = useScanStore(s => s.setHistory);
-  const [isLoading, setIsLoading] = useState(true);
+  // store에 데이터가 있으면 초기 로딩 스피너 생략
+  const [isLoading, setIsLoading] = useState(() => useScanStore.getState().history.length === 0);
   const [isError,   setIsError]   = useState(false);
 
   function fetchHistory() {
@@ -44,9 +45,17 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     return () => { cancelled = true; };
   }
 
-  // 화면 포커스될 때마다 최신 이력 fetch (초기 진입 + 재방문 모두 대응)
+  // 포커스 시 store에 이미 이력이 있으면 재fetch 생략.
+  // OCR 이력은 서버에 image·riskIngredients가 없으므로 재fetch 시 데이터 손실 발생.
+  // store가 비어있을 때만 서버에서 초기 로드.
   useEffect(() => {
-    const unsub = navigation.addListener('focus', fetchHistory);
+    const unsub = navigation.addListener('focus', () => {
+      if (useScanStore.getState().history.length > 0) {
+        setIsLoading(false);
+        return;
+      }
+      fetchHistory();
+    });
     return unsub;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation]);
