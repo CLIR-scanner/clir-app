@@ -26,10 +26,9 @@ export default function ProfileScreen() {
   const logout        = useUserStore(s => s.logout);
 
   const MENU_ITEMS: { label: string; screen: keyof ProfileStackParamList }[] = [
-    { label: t('profile.menuPersonalization'), screen: 'Personalization' },
-    { label: t('profile.menuFamily'),          screen: 'MultiProfile' },
-    { label: t('profile.menuLanguage'),        screen: 'Language' },
-    { label: t('profile.menuSettings'),        screen: 'Settings' },
+    { label: t('profile.menuFamily'),    screen: 'MultiProfile' },
+    { label: t('profile.menuLanguage'),  screen: 'Language' },
+    { label: t('profile.menuSettings'), screen: 'Settings' },
   ];
 
   function handleLogout() {
