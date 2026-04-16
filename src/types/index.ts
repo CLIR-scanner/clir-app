@@ -137,6 +137,7 @@ export interface UserStore {
   logout: () => void;
   switchProfile: (profileId: string) => void;
   updateActiveProfile: (updates: Partial<Profile>) => void;
+  updateUserName: (name: string) => void;
   setLanguage: (language: string) => void;
   addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
   updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;

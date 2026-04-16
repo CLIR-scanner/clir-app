@@ -197,6 +197,28 @@ const en = {
     deviceDetected:  'Device language detected:',
     deviceBadge:     'Device',
   },
+
+  // ── Personal Name / Password ──────────────────────────────────────────────
+  personalName: {
+    title:                  'Edit Profile',
+    sectionName:            'Name',
+    saveName:               'Save Name',
+    sectionPassword:        'Change Password',
+    currentPassword:        'Current Password',
+    newPassword:            'New Password',
+    confirmPassword:        'Confirm New Password',
+    savePassword:           'Change Password',
+    placeholderName:        'Enter your name',
+    placeholderCurrentPw:   'Current password',
+    placeholderNewPw:       'New password (min. 8 characters)',
+    placeholderConfirmPw:   'Confirm new password',
+    successName:            'Name updated.',
+    successPassword:        'Password changed successfully.',
+    errorNameEmpty:         'Name cannot be empty.',
+    errorCurrentPw:         'Please enter your current password.',
+    errorPwLen:             'Password must be at least 8 characters.',
+    errorPwMatch:           'Passwords do not match.',
+  },
 } as const;
 
 export default en;

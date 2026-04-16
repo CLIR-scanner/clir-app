@@ -66,6 +66,16 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }));
   },
 
+  updateUserName: (name: string) => {
+    set(state => ({
+      currentUser: { ...state.currentUser, name },
+      // activeProfile이 메인 유저와 동일한 경우에만 이름 반영
+      activeProfile: state.activeProfile.id === state.currentUser.id
+        ? { ...state.activeProfile, name }
+        : state.activeProfile,
+    }));
+  },
+
   setLanguage: (language: string) => {
     set(state => ({
       currentUser: { ...state.currentUser, language },
