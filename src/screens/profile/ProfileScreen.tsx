@@ -64,16 +64,16 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       {/* 알러지 & 민감도 */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.myProfile')}</Text>
+      <TouchableOpacity
+        style={styles.myProfileCard}
+        onPress={() => navigation.navigate('MyProfileEdit')}
+        activeOpacity={0.7}
+      >
+        <View style={styles.myProfileContent}>
+          <Text style={styles.sectionTitle}>{t('profile.myProfile')}</Text>
 
-        {/* 민감도 행 */}
-        <TouchableOpacity
-          style={styles.profileRow}
-          onPress={() => navigation.navigate('PersonalizationSensitivity')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.profileRowLeft}>
+          {/* 민감도 */}
+          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>{t('profile.sensitivity')}</Text>
             <View style={[
               styles.badge,
@@ -87,18 +87,9 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </View>
-          <Text style={styles.menuArrow}>{'›'}</Text>
-        </TouchableOpacity>
 
-        <View style={styles.divider} />
-
-        {/* 알러지 프로필 행 */}
-        <TouchableOpacity
-          style={styles.profileRow}
-          onPress={() => navigation.navigate('PersonalizationAllergy')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.profileRowLeft}>
+          {/* 알러지 프로필 */}
+          <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>{t('profile.allergyProfile')}</Text>
             {activeProfile.allergyProfile.length === 0 ? (
               <Text style={styles.emptyText}>{t('profile.noAllergens')}</Text>
@@ -114,9 +105,10 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
-          <Text style={styles.menuArrow}>{'›'}</Text>
-        </TouchableOpacity>
-      </View>
+        </View>
+
+        <Text style={styles.menuArrow}>{'›'}</Text>
+      </TouchableOpacity>
 
       {/* 메뉴 */}
       <View style={styles.section}>
@@ -222,15 +214,33 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.border,
   },
-  profileRow: {
+  myProfileCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  myProfileContent: {
+    flex: 1,
+    gap: 12,
+    paddingRight: 8,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
     justifyContent: 'space-between',
     paddingVertical: 2,
   },
+  profileRowArrow: {
+    justifyContent: 'center',
+  },
   profileRowLeft: {
     flex: 1,
-    gap: 8,
+    gap: 14,
     paddingRight: 8,
   },
   infoRow: {

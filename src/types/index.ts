@@ -273,6 +273,7 @@ export type RecommendStackParamList = {
 
 export type ProfileStackParamList = {
   Profile: undefined;
+  MyProfileEdit: undefined;
   Personal: undefined;
   PersonalName: undefined;
   PersonalEmail: undefined;
