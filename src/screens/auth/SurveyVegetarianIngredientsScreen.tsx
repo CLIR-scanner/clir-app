@@ -92,7 +92,7 @@ export default function SurveyVegetarianIngredientsScreen() {
   }
 
   async function handleContinue() {
-    const { name, email, password, vegetarianType, veganStrictness, allergyProfileJson } = params;
+    const { vegetarianType, veganStrictness, allergyProfileJson } = params;
 
     const dietaryRestrictions: string[] = [];
     if (vegetarianType) dietaryRestrictions.push(vegetarianType);
@@ -106,17 +106,14 @@ export default function SurveyVegetarianIngredientsScreen() {
 
     setLoading(true);
     try {
-      await AuthService.signup({ name, email, password });
-      const { user } = await AuthService.login(email, password);
       const sensitivityLevel = veganStrictness === 'strict' ? 'strict' : 'normal';
-      await AuthService.submitSurvey(user.id, {
+      await AuthService.submitSurvey({
         allergyProfile: mergedAllergyProfile,
         dietaryRestrictions,
         sensitivityLevel,
       });
-      // login() 응답은 submitSurvey() 이전 시점의 빈 프로필이므로
-      // 설문 데이터를 직접 병합해 store에 반영
-      setUser({ ...user, allergyProfile: mergedAllergyProfile, dietaryRestrictions, sensitivityLevel });
+      const { user } = await AuthService.fetchMe();
+      setUser(user);
     } catch (e) {
       Alert.alert('오류가 발생했습니다.', (e as Error).message);
     } finally {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
-import { login as authLogin } from '../services/auth.service';
+import { signOut as authSignOut } from '../services/auth.service';
 
 const EMPTY_PROFILE: Profile = {
   id: '',
@@ -23,22 +23,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
   isInitialized: false,
 
   initialize: async () => {
-    // TODO: 저장된 토큰으로 세션 복원
-
-    // ─── DEV ONLY (비활성화 중) ───────────────────────────────────────────────
-    // 담당자 A가 실제 로그인 흐름(auth.service → setUser)을 완성하면 이 블록 삭제.
-    // 목적: 담당자 B가 auth 구현을 기다리지 않고 실제 API로 스캔/즐겨찾기 화면을 바로 테스트.
-    // 테스트 계정으로 실제 로그인해 JWT 토큰을 받아옴 (B의 API 호출이 401 나지 않도록).
-    // try {
-    //   const { user } = await authLogin('clir.test.user@gmail.com', 'testpass123');
-    //   set({ currentUser: user, activeProfile: user, isInitialized: true });
-    // } catch {
-    //   // 네트워크 오프라인 등으로 로그인 실패 시 빈 유저로 초기화
-    //   set({ isInitialized: true });
-    // }
-    // return;
-    // ─────────────────────────────────────────────────────────────────────────
-
+    // MVP: 토큰은 앱 메모리에만 저장 → 재시작 시 항상 미인증 상태로 시작.
+    // 추후 SecureStore에 refresh_token을 저장하면 supabase.auth.setSession()
+    // 또는 /auth/me 호출로 세션을 복원하는 분기를 여기에 추가.
     set({ isInitialized: true });
   },
 
@@ -47,6 +34,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   logout: () => {
+    // Supabase 세션 + 로컬 토큰 정리 (실패해도 스토어는 반드시 초기화)
+    void authSignOut();
     set({ currentUser: EMPTY_USER, activeProfile: EMPTY_PROFILE });
   },
 

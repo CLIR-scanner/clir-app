@@ -114,12 +114,6 @@ export interface ShoppingItem {
 
 // ─── Request Payloads ─────────────────────────────────────────────────────────
 
-export interface SignupData {
-  email: string;
-  password: string;
-  name: string;
-}
-
 export interface SurveyData {
   allergyProfile: string[];
   dietaryRestrictions: string[];
@@ -169,11 +163,8 @@ export type RootStackParamList = {
   Main: undefined;
 };
 
-/** 설문 진행 중 누적되는 데이터 */
+/** 설문 진행 중 누적되는 데이터 (소셜 로그인 후 최초 진입 시에만 통과) */
 export type SurveyParams = {
-  name: string;
-  email: string;
-  password: string;
   dietaryType?: 'allergy' | 'vegetarian' | 'both';
   hasAllergyDoc?: boolean;
   allergySeverity?: 'mild' | 'moderate' | 'severe';
@@ -187,9 +178,6 @@ export type SurveyParams = {
 export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
-  Signup: undefined;
-  /** 이메일 인증 코드 입력 화면 */
-  EmailCode: { name: string; email: string; password: string };
   /** Survey 1: 식이 유형 선택 */
   Survey: SurveyParams;
   /** Survey 2-A: 알러지 진단 여부 확인 */
@@ -216,7 +204,6 @@ export type AuthStackParamList = {
   SurveyDietConfirm: SurveyParams;
   /** Survey 5-B: 식단 기반 avoided ingredients 확인 */
   SurveyVegetarianIngredients: SurveyParams;
-  Login: undefined;
 };
 
 export type MainTabParamList = {

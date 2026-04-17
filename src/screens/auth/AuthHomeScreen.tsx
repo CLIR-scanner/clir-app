@@ -1,11 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
+import * as AuthService from '../../services/auth.service';
+import { useUserStore } from '../../store/user.store';
 
 function ClirLogo({ width = 105, height = 62 }: { width?: number; height?: number }) {
   return (
@@ -31,6 +33,32 @@ type Nav = NativeStackNavigationProp<AuthStackParamList, 'AuthHome'>;
 export default function AuthHomeScreen() {
   const navigation = useNavigation<Nav>();
   const { t } = useTranslation();
+  const setUser = useUserStore(s => s.setUser);
+
+  const [loading, setLoading] = useState(false);
+
+  async function handleGoogle() {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { user, isFirstLogin } = await AuthService.signInWithGoogle();
+      if (isFirstLogin) {
+        navigation.reset({ index: 0, routes: [{ name: 'Survey' }] });
+      } else {
+        setUser(user);
+      }
+    } catch (e) {
+      const msg = (e as Error).message;
+      console.log('[oauth] caught:', msg);
+      Alert.alert(t('auth.loginFailed'), msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleApple() {
+    Alert.alert(t('auth.appleComingSoon'));
+  }
 
   return (
     <View style={styles.container}>
@@ -41,17 +69,23 @@ export default function AuthHomeScreen() {
 
       <View style={styles.buttons}>
         <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('Login')}
+          style={[styles.googleButton, loading && styles.buttonDisabled]}
+          onPress={handleGoogle}
+          disabled={loading}
         >
-          <Text style={styles.secondaryButtonText}>{t('auth.signIn')}</Text>
+          {loading ? (
+            <ActivityIndicator color={Colors.black} />
+          ) : (
+            <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle')}</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => navigation.navigate('Signup')}
+          style={[styles.appleButton, styles.buttonDisabled]}
+          onPress={handleApple}
+          disabled={loading}
         >
-          <Text style={styles.primaryButtonText}>{t('auth.createAccount')}</Text>
+          <Text style={styles.appleButtonText}>{t('auth.continueWithApple')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -79,18 +113,7 @@ const styles = StyleSheet.create({
   buttons: {
     gap: 12,
   },
-  primaryButton: {
-    backgroundColor: Colors.black,
-    borderRadius: 100,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  secondaryButton: {
+  googleButton: {
     backgroundColor: Colors.white,
     borderRadius: 100,
     paddingVertical: 18,
@@ -98,9 +121,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  secondaryButtonText: {
+  googleButtonText: {
     color: Colors.black,
     fontSize: 16,
     fontWeight: '700',
+  },
+  appleButton: {
+    backgroundColor: Colors.black,
+    borderRadius: 100,
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  appleButtonText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  buttonDisabled: {
+    opacity: 0.4,
   },
 });
