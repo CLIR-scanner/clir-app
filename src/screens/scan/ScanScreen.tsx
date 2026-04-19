@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
@@ -18,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { scanBarcode, analyzeProduct, saveScanHistory, getScanHistory } from '../../services/scan.service';
+import { ApiError } from '../../lib/api';
 import { addFavorite } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
@@ -204,15 +206,29 @@ export default function ScanScreen({ navigation }: Props) {
 
       setProcessing(false);
       showOverlay(product, analysis);
-    } catch {
-      // Product not in DB → OCR fallback
-      navigation.navigate('OCRCapture', { barcode });
-      setTimeout(() => {
-        processingRef.current    = false;
-        latestBarcodeRef.current = null;
-        setBarcodeDetected(false);
-        setProcessing(false);
-      }, 1500);
+    } catch (err) {
+      // 스캔 잠금 해제 — 오류 후 재스캔 가능하도록
+      processingRef.current    = false;
+      latestBarcodeRef.current = null;
+      setBarcodeDetected(false);
+      setProcessing(false);
+
+      if (err instanceof ApiError) {
+        if (err.code === 'PRODUCT_NOT_FOUND') {
+          Alert.alert(
+            '등록되지 않은 제품입니다',
+            '성분표를 직접 촬영해서 분석할 수 있습니다.',
+            [
+              { text: '취소', style: 'cancel' },
+              { text: '성분표 촬영', onPress: () => navigation.navigate('OCRCapture', {}) },
+            ],
+          );
+        } else {
+          Alert.alert('오류', err.message);
+        }
+      } else {
+        Alert.alert('연결 오류', '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      }
     }
   }
 
