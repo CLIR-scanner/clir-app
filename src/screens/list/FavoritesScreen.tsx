@@ -105,7 +105,7 @@ export default function FavoritesScreen({ navigation }: Props) {
     <View style={styles.root}>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <View style={styles.headerSide} />
         <Text style={styles.title}>List</Text>
         <View style={styles.headerSide} />
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingBottom: 14,
   },
   headerSide: { width: 36 },
   title:      { flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700', color: TITLE_CLR },
