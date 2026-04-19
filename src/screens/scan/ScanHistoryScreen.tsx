@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
 import { useScanStore } from '../../store/scan.store';
@@ -45,20 +46,13 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     return () => { cancelled = true; };
   }
 
-  // 포커스 시 store에 이미 이력이 있으면 재fetch 생략.
-  // OCR 이력은 서버에 image·riskIngredients가 없으므로 재fetch 시 데이터 손실 발생.
-  // store가 비어있을 때만 서버에서 초기 로드.
-  useEffect(() => {
-    const unsub = navigation.addListener('focus', () => {
-      if (useScanStore.getState().history.length > 0) {
-        setIsLoading(false);
-        return;
-      }
-      fetchHistory();
-    });
-    return unsub;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigation]);
+  // 화면 진입 시마다 최신 데이터 fetch — cleanup으로 취소 처리
+  useFocusEffect(
+    useCallback(() => {
+      return fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
 
   // 최신순 정렬 (store는 이미 최신순이지만 방어적으로 정렬)
   const sorted = useMemo(

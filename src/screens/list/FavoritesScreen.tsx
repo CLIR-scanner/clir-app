@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,14 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ListStackParamList, FavoriteItem, RiskLevel } from '../../types';
 import { useListStore } from '../../store/list.store';
-import { getFavorites } from '../../services/list.service';
+import { getFavorites, removeFavorite } from '../../services/list.service';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 
@@ -28,19 +30,43 @@ const BADGE: Record<RiskLevel, { dot: string; label: string }> = {
 
 export default function FavoritesScreen({ navigation }: Props) {
   const insets       = useSafeAreaInsets();
-  const favorites    = useListStore(s => s.favorites);
-  const setFavorites = useListStore(s => s.setFavorites);
-  const [isLoading, setIsLoading] = useState(true);
+  const favorites             = useListStore(s => s.favorites);
+  const setFavorites          = useListStore(s => s.setFavorites);
+  const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
+  const [isLoading,  setIsLoading]  = useState(true);
+  const [isError,    setIsError]    = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // 화면 진입 시 즐겨찾기 목록 로드
-  useEffect(() => {
+  function fetchFavorites() {
+    let cancelled = false;
     setIsLoading(true);
+    setIsError(false);
     getFavorites()
-      .then(data => { setFavorites(data); })
-      .catch(() => { /* silent — store 데이터 유지 */ })
-      .finally(() => { setIsLoading(false); });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      .then(data  => { if (!cancelled) setFavorites(data); })
+      .catch(()   => { if (!cancelled) setIsError(true); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      return fetchFavorites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
+
+  async function handleDelete(item: FavoriteItem) {
+    if (deletingId) return;
+    setDeletingId(item.id);
+    try {
+      await removeFavorite(item.id);
+      removeFavoriteFromStore(item.id);
+    } catch {
+      Alert.alert('삭제 실패', '다시 시도해주세요.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   // 최신순 정렬
   const sorted = useMemo(
@@ -56,8 +82,9 @@ export default function FavoritesScreen({ navigation }: Props) {
   }
 
   function renderItem({ item, index }: { item: FavoriteItem; index: number }) {
-    const badge  = BADGE[item.product.riskLevel] ?? BADGE.safe;
-    const isLast = index === sorted.length - 1;
+    const badge     = BADGE[item.product.riskLevel] ?? BADGE.safe;
+    const isLast    = index === sorted.length - 1;
+    const isDeleting = deletingId === item.id;
     return (
       <View>
         <TouchableOpacity
@@ -96,6 +123,19 @@ export default function FavoritesScreen({ navigation }: Props) {
           <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
 
+        {/* Delete button */}
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => handleDelete(item)}
+          disabled={!!deletingId}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          {isDeleting
+            ? <ActivityIndicator size="small" color={TITLE_CLR} />
+            : <Text style={styles.deleteText}>✕</Text>
+          }
+        </TouchableOpacity>
+
         {!isLast && <View style={styles.divider} />}
       </View>
     );
@@ -111,10 +151,17 @@ export default function FavoritesScreen({ navigation }: Props) {
         <View style={styles.headerSide} />
       </View>
 
-      {/* ── List / Loading ──────────────────────────────────────────────────── */}
+      {/* ── List / Loading / Error ──────────────────────────────────────────── */}
       {isLoading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={TITLE_CLR} />
+        </View>
+      ) : isError ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>즐겨찾기를 불러오지 못했습니다.</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={fetchFavorites}>
+            <Text style={styles.retryText}>다시 시도</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -131,7 +178,7 @@ export default function FavoritesScreen({ navigation }: Props) {
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>저장된 즐겨찾기가 없습니다.</Text>
+              <Text style={styles.emptyText}>아직 즐겨찾기가 없습니다.</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -144,15 +191,6 @@ export default function FavoritesScreen({ navigation }: Props) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
-
-  // Notch
-  notchPill: {
-    alignSelf: 'center',
-    width: 120, height: 30,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 20,
-    marginBottom: 4,
-  },
 
   // Header
   header: {
@@ -224,7 +262,15 @@ const styles = StyleSheet.create({
   // Loading
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  // Empty state
+  // Retry button
+  retryBtn:  { marginTop: 16, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1.5, borderColor: TITLE_CLR },
+  retryText: { fontSize: 14, fontWeight: '600', color: TITLE_CLR },
+
+  // Empty / error state
   empty:     { paddingTop: 80, alignItems: 'center' },
   emptyText: { fontSize: 15, color: '#888' },
+
+  // Delete button — absolute 우측 상단, row 영역 내
+  deleteBtn:  { position: 'absolute', right: 0, top: 0, bottom: 0, justifyContent: 'center', paddingHorizontal: 4 },
+  deleteText: { fontSize: 16, color: '#AAAAAA' },
 });
