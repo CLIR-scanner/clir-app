@@ -17,6 +17,28 @@ import { getIngredient, getAlternatives, getProductById } from '../../services/s
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
 
+// ── Dummy data (Good verdict) ──────────────────────────────────────────────────
+const DUMMY_GOOD_PRODUCT: Product = {
+  id: 'prod-dummy-001',
+  barcode: '0049000000443',
+  name: 'Coca-Cola Classic',
+  brand: 'The Coca-Cola Company',
+  image: 'https://images.openfoodfacts.org/images/products/004/900/000/0443/front_en.7.400.jpg',
+  isSafe: true,
+  riskLevel: 'safe',
+  riskIngredients: [],
+  mayContainIngredients: [],
+  alternatives: [],
+  ingredients: [
+    { id: 'off-caffeine',        name: 'Caffeine',                       nameKo: '카페인',              description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-carbonated-water',name: 'Carbonated Water',               nameKo: '탄산수',              description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-natural-flavors', name: 'Natural Flavors',                nameKo: '천연향',              description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-hfcs',            name: 'High Fructose Corn Syrup or Sugar', nameKo: '액상과당 또는 설탕', description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-phosphoric-acid', name: 'Phosphoric Acid',                nameKo: '인산',                description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-caramel-color',   name: 'Caramel Color',                  nameKo: '캐러멜 색소',         description: '', riskLevel: 'safe', sources: [] },
+  ] as unknown as Product['ingredients'],
+};
+
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG         = '#F9FFF3';
 const TITLE_CLR  = '#1A2E1A';
@@ -32,7 +54,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   const insets = useSafeAreaInsets();
 
   // ── Full product data — fetched if ingredients are missing ─
-  const [product, setProduct] = useState<Product>(initialProduct);
+  const [product, setProduct] = useState<Product>(initialProduct ?? DUMMY_GOOD_PRODUCT);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // ── Alternatives state — initialized from route params, lazy-fetched if empty ─
@@ -169,7 +191,26 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
-        {/* 3. Risk ingredients box (Bad / Poor only) */}
+        {/* 3-A. All Ingredients (Good only) — Brand Name 바로 아래 */}
+        {!showRisk && allIngredients.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.pillWrap}>
+              <View style={styles.pill}>
+                <Text style={styles.pillText}>All Ingredients</Text>
+              </View>
+            </View>
+
+            {allIngredients.map((name, idx) => (
+              <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
+            ))}
+
+            <Text style={styles.disclaimer}>
+              {'** For severe allergies,\nplease double-check all ingredients before consuming.'}
+            </Text>
+          </View>
+        )}
+
+        {/* 3-B. Risk ingredients box (Bad / Poor only) */}
         {showRisk && (
           <View style={[styles.riskBox, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
             {/* Legend-style header */}
@@ -261,8 +302,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* 5. All Ingredients */}
-        {allIngredients.length > 0 && (
+        {/* 5. All Ingredients — Bad/Poor 전용 (하단) */}
+        {showRisk && allIngredients.length > 0 && (
           <View style={styles.section}>
             <View style={styles.pillWrap}>
               <View style={styles.pill}>
@@ -405,7 +446,7 @@ const styles = StyleSheet.create({
 
   // All ingredients
   ingredientItem:      { fontSize: 14, color: '#1A1A1A', textAlign: 'center', marginBottom: 6 },
-  disclaimer:          { fontSize: 11, color: '#555', textAlign: 'left', lineHeight: 17, marginTop: 16 },
+  disclaimer:          { fontSize: 11, color: '#555', textAlign: 'center', lineHeight: 17, marginTop: 16 },
 
   // Tappable risk ingredient
   riskIngredientLink:  { textDecorationLine: 'underline' },
