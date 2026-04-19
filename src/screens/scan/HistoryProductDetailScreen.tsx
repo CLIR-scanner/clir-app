@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
-import { getIngredient, getAlternatives } from '../../services/scan.service';
+import { getIngredient, getAlternatives, getProductById } from '../../services/scan.service';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
 
@@ -28,12 +28,27 @@ const VERDICT = {
 } satisfies Record<RiskLevel, { dot: string; label: string; iconBg: string; icon: string }>;
 
 export default function HistoryProductDetailScreen({ navigation, route }: Props) {
-  const { product, hideTitle = false } = route.params;
+  const { product: initialProduct, hideTitle = false } = route.params;
   const insets = useSafeAreaInsets();
+
+  // ── Full product data — fetched if ingredients are missing ─
+  const [product, setProduct] = useState<Product>(initialProduct);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // ── Alternatives state — initialized from route params, lazy-fetched if empty ─
   const [alts,        setAlts]        = useState<Product[]>(product.alternatives);
   const [altsLoading, setAltsLoading] = useState(false);
+
+  useEffect(() => {
+    // ── Fetch full product details if ingredients are missing ─
+    if (product.ingredients.length > 0 || !product.id) return;
+    
+    setIsLoadingDetails(true);
+    getProductById(product.id)
+      .then(fullProduct => { setProduct(fullProduct); })
+      .catch(() => { /* silent — use partial product data */ })
+      .finally(() => { setIsLoadingDetails(false); });
+  }, [product.id]);
 
   useEffect(() => {
     // product는 route.params에서 고정 — 스택 네비게이터는 화면마다 새 인스턴스를 생성하므로
@@ -121,6 +136,14 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
         showsVerticalScrollIndicator={false}
       >
+
+        {/* Loading indicator for fetching full product details */}
+        {isLoadingDetails && (
+          <View style={styles.loadingDetailWrap}>
+            <ActivityIndicator size="small" color={TITLE_CLR} />
+            <Text style={styles.loadingText}>로딩 중...</Text>
+          </View>
+        )}
 
         {/* 1. Product image */}
         <View style={styles.imgWrap}>
@@ -375,6 +398,10 @@ const styles = StyleSheet.create({
 
   // Alternatives loading
   altsLoadingWrap: { paddingVertical: 24, alignItems: 'center' },
+
+  // Loading details
+  loadingDetailWrap: { paddingVertical: 24, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { fontSize: 12, color: TITLE_CLR, marginTop: 8 },
 
   // All ingredients
   ingredientItem:      { fontSize: 14, color: '#1A1A1A', textAlign: 'center', marginBottom: 6 },

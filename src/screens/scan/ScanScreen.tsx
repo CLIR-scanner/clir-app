@@ -9,6 +9,7 @@ import {
   Image,
   Animated,
   Easing,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
@@ -28,9 +29,16 @@ const BARCODE_TYPES = [
 ] as const;
 
 // ── Layout constants ──────────────────────────────────────────────────────────
+const { height: SCREEN_H, width: SCREEN_W } = Dimensions.get('window');
+
+// Barcode frame
 const GUIDE_W    = 264;
 const GUIDE_H    = 148;
 const GUIDE_TOP  = 190;
+
+// OCR frame width (height is insets-dependent, computed inside component)
+const OCR_GUIDE_W = SCREEN_W - 50;
+
 const CORNER_LEN = 32;
 const CORNER_W   = 4;
 const CIRCLE_D   = 120;
@@ -39,8 +47,17 @@ const DIM        = 'rgba(0,0,0,0.52)';
 const GOOD_COLOR = '#25FF81';
 const BAD_COLOR  = '#FF0000';
 
+const TOGGLE_W   = 190;
+const TOGGLE_H   = 36;
+const TOGGLE_PAD = 3;
+
 export default function ScanScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+
+  // OCR 프레임 높이: 상하 safe area + 헤더(80) + 촬영버튼 영역(100) 제외
+  const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 260;
+  const ocrDimTop  = insets.top + 100;
+  const ocrDimBot  = insets.bottom + 120;
   const [permission, requestPermission] = useCameraPermissions();
   const [barcodeDetected, setBarcodeDetected] = useState(false);
   const [processing, setProcessing]           = useState(false);
@@ -49,6 +66,7 @@ export default function ScanScreen({ navigation }: Props) {
   const [favorited,  setFavorited]            = useState(false);
 
   const [cameraActive, setCameraActive] = useState(true);
+  const [isOCRMode,    setIsOCRMode]    = useState(false);
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
@@ -57,6 +75,7 @@ export default function ScanScreen({ navigation }: Props) {
   // Animations
   const circleScale = useRef(new Animated.Value(0)).current;
   const sheetY      = useRef(new Animated.Value(320)).current;
+  const toggleSlide = useRef(new Animated.Value(0)).current;
 
   const addHistory         = useScanStore(s => s.addHistory);
   const setHistory         = useScanStore(s => s.setHistory);
@@ -71,6 +90,8 @@ export default function ScanScreen({ navigation }: Props) {
     useCallback(() => {
       // Screen focused → activate camera + reset all scan state
       setCameraActive(true);
+      setIsOCRMode(false);
+      toggleSlide.setValue(0);
       processingRef.current    = false;
       latestBarcodeRef.current = null;
       setBarcodeDetected(false);
@@ -92,8 +113,31 @@ export default function ScanScreen({ navigation }: Props) {
         setCameraActive(false);
         processingRef.current = false;
       };
-    }, [circleScale, sheetY, setHistory]),
+    }, [circleScale, sheetY, setHistory, toggleSlide]),
   );
+
+  // ── Mode toggle ───────────────────────────────────────────────────────────
+
+  function handleToggleMode(ocr: boolean) {
+    if (ocr === isOCRMode) return;
+    // Reset scan state on mode switch
+    processingRef.current    = false;
+    latestBarcodeRef.current = null;
+    setBarcodeDetected(false);
+    setProcessing(false);
+    setScanResult(null);
+    circleScale.setValue(0);
+    sheetY.setValue(320);
+    setCameraActive(true);
+
+    setIsOCRMode(ocr);
+    Animated.timing(toggleSlide, {
+      toValue: ocr ? 1 : 0,
+      duration: 200,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }
 
   // ── Overlay animation helpers ─────────────────────────────────────────────
 
@@ -205,14 +249,22 @@ export default function ScanScreen({ navigation }: Props) {
 
   async function handleManualCapture() {
     if (processingRef.current) return;
+
+    if (isOCRMode) {
+      if (!cameraRef.current) return;
+      try {
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+        navigation.navigate('OCRCapture', { photoUri: photo.uri });
+      } catch {
+        // 촬영 실패 시 카메라 화면 그대로 유지
+      }
+      return;
+    }
+
+    // Barcode mode: process captured barcode or fall back to OCRCapture
     if (latestBarcodeRef.current) {
       processBarcode(latestBarcodeRef.current);
       return;
-    }
-    // No barcode in view → hand off to OCRCapture
-    if (cameraRef.current) {
-      try { await cameraRef.current.takePictureAsync({ quality: 0.8 }); }
-      catch { /* ignore */ }
     }
     navigation.navigate('OCRCapture', {});
   }
@@ -299,16 +351,16 @@ export default function ScanScreen({ navigation }: Props) {
           style={StyleSheet.absoluteFill}
           facing="back"
           barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
-          onBarcodeScanned={processingRef.current ? undefined : handleBarcodeScanned}
+          onBarcodeScanned={(!isOCRMode && !processingRef.current) ? handleBarcodeScanned : undefined}
         />
       )}
 
       {/* Dim overlay with guide window */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <View style={styles.dimTop} />
-        <View style={styles.dimMiddle}>
+        <View style={[styles.dimTop, isOCRMode && { height: ocrDimTop }]} />
+        <View style={[styles.dimMiddle, isOCRMode && { height: ocrGuideH }]}>
           <View style={styles.dimSide} />
-          <View style={styles.guideBox}>
+          <View style={[styles.guideBox, isOCRMode && { width: OCR_GUIDE_W, height: ocrGuideH }]}>
             <ScanCorner pos="topLeft"     color={cornerColor} />
             <ScanCorner pos="topRight"    color={cornerColor} />
             <ScanCorner pos="bottomLeft"  color={cornerColor} />
@@ -332,7 +384,7 @@ export default function ScanScreen({ navigation }: Props) {
           </View>
           <View style={styles.dimSide} />
         </View>
-        <View style={styles.dimBottom} />
+        <View style={[styles.dimBottom, isOCRMode && { flex: 0, height: ocrDimBot }]} />
       </View>
 
       {/* Header */}
@@ -341,6 +393,14 @@ export default function ScanScreen({ navigation }: Props) {
         onBack={handleBack}
         onHistory={() => navigation.navigate('ScanHistory')}
         historyImageUri={lastProductImage}
+        subtitle={isOCRMode ? 'Scan OCR of the product' : 'Scan Bar code of the product'}
+        toggleNode={
+          <ModeToggle
+            isOCRMode={isOCRMode}
+            onToggle={handleToggleMode}
+            slideAnim={toggleSlide}
+          />
+        }
       />
 
       {/* Processing spinner */}
@@ -459,6 +519,38 @@ export default function ScanScreen({ navigation }: Props) {
   );
 }
 
+// ── Mode toggle ───────────────────────────────────────────────────────────────
+function ModeToggle({
+  isOCRMode,
+  onToggle,
+  slideAnim,
+}: {
+  isOCRMode: boolean;
+  onToggle: (ocr: boolean) => void;
+  slideAnim: Animated.Value;
+}) {
+  const PILL_W = TOGGLE_W / 2 - TOGGLE_PAD;
+  const pillTranslateX = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, TOGGLE_W / 2],
+  });
+
+  return (
+    <View style={toggleStyles.container}>
+      <Animated.View
+        style={[toggleStyles.slidingPill, { width: PILL_W, transform: [{ translateX: pillTranslateX }] }]}
+        pointerEvents="none"
+      />
+      <TouchableOpacity style={toggleStyles.tab} onPress={() => onToggle(false)} activeOpacity={0.8}>
+        <Text style={[toggleStyles.tabText, !isOCRMode && toggleStyles.tabTextActive]}>BARCODE</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={toggleStyles.tab} onPress={() => onToggle(true)} activeOpacity={0.8}>
+        <Text style={[toggleStyles.tabText, isOCRMode && toggleStyles.tabTextActive]}>OCR</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // ── Shared header (exported for OCRCaptureScreen) ─────────────────────────────
 export function ScanHeader({
   insetTop,
@@ -466,43 +558,53 @@ export function ScanHeader({
   onHistory,
   subtitle = 'Scan Bar code of the product',
   historyImageUri,
+  toggleNode,
 }: {
   insetTop: number;
   onBack: () => void;
   onHistory: () => void;
   subtitle?: string;
   historyImageUri?: string;
+  toggleNode?: React.ReactNode;
 }) {
   return (
-    <View style={[headerStyles.wrap, { paddingTop: insetTop + 10 }]}>
-      <TouchableOpacity
-        style={headerStyles.iconBtn}
-        onPress={onBack}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={headerStyles.backArrow}>←</Text>
-      </TouchableOpacity>
+    <View>
+      <View style={[headerStyles.wrap, { paddingTop: insetTop + 10 }]}>
+        <TouchableOpacity
+          style={headerStyles.iconBtn}
+          onPress={onBack}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={headerStyles.backArrow}>←</Text>
+        </TouchableOpacity>
 
-      <View style={headerStyles.center}>
-        <Text style={headerStyles.title}>Scan</Text>
-        <Text style={headerStyles.subtitle}>{subtitle}</Text>
+        <View style={headerStyles.center}>
+          <Text style={headerStyles.title}>Scan</Text>
+          <Text style={headerStyles.subtitle}>{subtitle}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={[headerStyles.iconBtn, headerStyles.historyBtn]}
+          onPress={onHistory}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          {historyImageUri ? (
+            <Image
+              source={{ uri: historyImageUri }}
+              style={headerStyles.historyImg}
+              resizeMode="cover"
+            />
+          ) : (
+            <HistoryIcon />
+          )}
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={[headerStyles.iconBtn, headerStyles.historyBtn]}
-        onPress={onHistory}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        {historyImageUri ? (
-          <Image
-            source={{ uri: historyImageUri }}
-            style={headerStyles.historyImg}
-            resizeMode="cover"
-          />
-        ) : (
-          <HistoryIcon />
-        )}
-      </TouchableOpacity>
+      {toggleNode && (
+        <View style={headerStyles.toggleRow}>
+          {toggleNode}
+        </View>
+      )}
     </View>
   );
 }
@@ -658,6 +760,42 @@ const headerStyles = StyleSheet.create({
   subtitle:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3, textAlign: 'center' },
   historyBtn: { borderRadius: 8, overflow: 'hidden' },
   historyImg: { width: 36, height: 36, borderRadius: 8 },
+  toggleRow:  { alignItems: 'center', paddingBottom: 10 },
+});
+
+const toggleStyles = StyleSheet.create({
+  container: {
+    width: TOGGLE_W,
+    height: TOGGLE_H,
+    borderRadius: TOGGLE_H / 2,
+    backgroundColor: 'rgba(200,200,200,0.35)',
+    flexDirection: 'row',
+    padding: TOGGLE_PAD,
+    overflow: 'hidden',
+  },
+  slidingPill: {
+    position: 'absolute',
+    top: TOGGLE_PAD,
+    left: TOGGLE_PAD,
+    height: TOGGLE_H - TOGGLE_PAD * 2,
+    borderRadius: (TOGGLE_H - TOGGLE_PAD * 2) / 2,
+    backgroundColor: Colors.white,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 0.3,
+  },
+  tabTextActive: {
+    fontWeight: '700',
+    color: Colors.black,
+  },
 });
 
 const historyIconStyles = StyleSheet.create({

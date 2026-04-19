@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Image, ActivityIndicator, Animated,
+  Image, ActivityIndicator, Animated, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -19,14 +19,17 @@ type Props = NativeStackScreenProps<ScanStackParamList, 'OCRCapture'>;
 type ScreenState = 'idle' | 'preview' | 'analyzing' | 'result' | 'error';
 
 // ── Layout ─────────────────────────────────────────────────────────────────────
-const GUIDE_W    = 350;
-const GUIDE_H    = 459;
-const CORNER_LEN = 32;
-const CORNER_W   = 4;
-const CIRCLE_D   = 160;
-const DIM        = 'rgba(0,0,0,0.50)';
-const GOOD_COLOR = '#25FF81';
-const BAD_COLOR  = '#FF0000';
+const { height: SCREEN_H, width: SCREEN_W } = Dimensions.get('window');
+const DIM_TOP_H    = 160;
+const DIM_BOTTOM_H = 130;
+const GUIDE_W      = SCREEN_W - 40;
+const GUIDE_H      = SCREEN_H - DIM_TOP_H - DIM_BOTTOM_H;
+const CORNER_LEN   = 32;
+const CORNER_W     = 4;
+const CIRCLE_D     = 160;
+const DIM          = 'rgba(0,0,0,0.50)';
+const GOOD_COLOR   = '#25FF81';
+const BAD_COLOR    = '#FF0000';
 
 // ── Mock ───────────────────────────────────────────────────────────────────────
 const USE_MOCK = false;
@@ -92,7 +95,7 @@ function OCRCorner({ pos, color }: { pos: CornerPos; color: string }) {
 }
 
 export default function OCRCaptureScreen({ navigation, route }: Props) {
-  const { barcode } = route.params ?? {};
+  const { barcode, photoUri: initialPhotoUri } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -102,8 +105,8 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const favorites     = useListStore(s => s.favorites);
   const addHistory    = useScanStore(s => s.addHistory);
 
-  const [state, setState]             = useState<ScreenState>('idle');
-  const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  const [state, setState]             = useState<ScreenState>(initialPhotoUri ? 'preview' : 'idle');
+  const [capturedUri, setCapturedUri] = useState<string | null>(initialPhotoUri ?? null);
   const [ocrProduct, setOcrProduct]   = useState<Product | null>(null);
   const [errorMsg, setErrorMsg]       = useState('');
   const [favorited, setFavorited]     = useState(false);
@@ -190,6 +193,11 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
 
   // ── Reset ─────────────────────────────────────────────────────────────────────
   function handleReset() {
+    if (initialPhotoUri) {
+      // ScanScreen에서 촬영 후 진입한 경우 → 뒤로가기 (재촬영은 ScanScreen에서)
+      navigation.goBack();
+      return;
+    }
     setCapturedUri(null);
     setOcrProduct(null);
     setErrorMsg('');
@@ -496,10 +504,10 @@ const styles = StyleSheet.create({
   retakeBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Dim overlay (idle + result)
-  dimTop:    { flex: 1, backgroundColor: DIM },
+  dimTop:    { height: DIM_TOP_H, backgroundColor: DIM },
   dimMiddle: { flexDirection: 'row', height: GUIDE_H },
   dimSide:   { flex: 1, backgroundColor: DIM },
-  dimBottom: { flex: 2, backgroundColor: DIM },
+  dimBottom: { height: DIM_BOTTOM_H, backgroundColor: DIM },
   guideBox:  { width: GUIDE_W, height: GUIDE_H },
 
   // Corner strokes
