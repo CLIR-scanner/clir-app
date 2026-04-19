@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
-import { login as authLogin } from '../services/auth.service';
+import { signOut as authSignOut } from '../services/auth.service';
 
 const EMPTY_PROFILE: Profile = {
   id: '',
@@ -23,7 +23,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
   isInitialized: false,
 
   initialize: async () => {
+
     // TODO: 저장된 토큰으로 세션 복원
+
     set({ isInitialized: true });
   },
 
@@ -33,6 +35,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   logout: () => {
+    // Supabase 세션 + 로컬 토큰 정리 (실패해도 스토어는 반드시 초기화)
+    void authSignOut();
     set({ currentUser: EMPTY_USER, activeProfile: EMPTY_PROFILE });
   },
 

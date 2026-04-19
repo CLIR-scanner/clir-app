@@ -33,14 +33,13 @@ const en = {
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   auth: {
-    tagline:          'Worry less, eat clir',
-    signIn:           'Sign in',
-    createAccount:    'Create a new account',
-    signOut:          'Sign out',
-    signOutConfirm:   'Are you sure you want to sign out?',
-    email:            'Email',
-    password:         'Password',
-    name:             'Name',
+    tagline:              'Worry less, eat clir',
+    continueWithGoogle:   'Continue with Google',
+    continueWithApple:    'Continue with Apple',
+    appleComingSoon:      'Apple Sign-In coming soon',
+    loginFailed:          'Login failed. Please try again.',
+    signOut:              'Sign out',
+    signOutConfirm:       'Are you sure you want to sign out?',
   },
 
   // ── Profile ───────────────────────────────────────────────────────────────

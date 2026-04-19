@@ -3,8 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types';
 import SplashScreen from '../screens/auth/SplashScreen';
 import AuthHomeScreen from '../screens/auth/AuthHomeScreen';
-import SignupScreen from '../screens/auth/SignupScreen';
-import EmailCodeScreen from '../screens/auth/EmailCode';
 import SurveyScreen from '../screens/auth/SurveyScreen';
 import SurveyAllergyScreen from '../screens/auth/SurveyAllergyScreen';
 import SurveyAllergyDocScreen from '../screens/auth/SurveyAllergyDocScreen';
@@ -18,7 +16,6 @@ import SurveyVegetarianScreen from '../screens/auth/SurveyVegetarianScreen';
 import SurveyVeganStrictnessScreen from '../screens/auth/SurveyVeganStrictnessScreen';
 import SurveyDietConfirmScreen from '../screens/auth/SurveyDietConfirmScreen';
 import SurveyVegetarianIngredientsScreen from '../screens/auth/SurveyVegetarianIngredientsScreen';
-import LoginScreen from '../screens/auth/LoginScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -27,8 +24,6 @@ export default function AuthNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
-      <Stack.Screen name="Signup" component={SignupScreen} />
-      <Stack.Screen name="EmailCode" component={EmailCodeScreen} />
       <Stack.Screen name="Survey" component={SurveyScreen} />
       <Stack.Screen name="SurveyAllergy" component={SurveyAllergyScreen} />
       <Stack.Screen name="SurveyAllergyDoc" component={SurveyAllergyDocScreen} />
@@ -42,7 +37,6 @@ export default function AuthNavigator() {
       <Stack.Screen name="SurveyVeganStrictness" component={SurveyVeganStrictnessScreen} />
       <Stack.Screen name="SurveyDietConfirm" component={SurveyDietConfirmScreen} />
       <Stack.Screen name="SurveyVegetarianIngredients" component={SurveyVegetarianIngredientsScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
     </Stack.Navigator>
   );
 }
