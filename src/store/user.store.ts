@@ -23,14 +23,15 @@ export const useUserStore = create<UserStore>((set, get) => ({
   isInitialized: false,
 
   initialize: async () => {
-    // MVP: 토큰은 앱 메모리에만 저장 → 재시작 시 항상 미인증 상태로 시작.
-    // 추후 SecureStore에 refresh_token을 저장하면 supabase.auth.setSession()
-    // 또는 /auth/me 호출로 세션을 복원하는 분기를 여기에 추가.
+
+    // TODO: 저장된 토큰으로 세션 복원
+
     set({ isInitialized: true });
   },
 
   setUser: (user: User) => {
-    set({ currentUser: user, activeProfile: user });
+    const normalized: User = { multiProfiles: [], language: 'en', ...user };
+    set({ currentUser: normalized, activeProfile: normalized });
   },
 
   logout: () => {
@@ -52,6 +53,16 @@ export const useUserStore = create<UserStore>((set, get) => ({
   updateActiveProfile: (updates: Partial<Profile>) => {
     set(state => ({
       activeProfile: { ...state.activeProfile, ...updates },
+    }));
+  },
+
+  updateUserName: (name: string) => {
+    set(state => ({
+      currentUser: { ...state.currentUser, name },
+      // activeProfile이 메인 유저와 동일한 경우에만 이름 반영
+      activeProfile: state.activeProfile.id === state.currentUser.id
+        ? { ...state.activeProfile, name }
+        : state.activeProfile,
     }));
   },
 

@@ -197,6 +197,28 @@ const ko = {
     deviceDetected:  '기기 언어 감지됨:',
     deviceBadge:     '기기',
   },
+
+  // ── Personal Name / Password ──────────────────────────────────────────────
+  personalName: {
+    title:                  '프로필 편집',
+    sectionName:            '이름',
+    saveName:               '이름 저장',
+    sectionPassword:        '비밀번호 변경',
+    currentPassword:        '현재 비밀번호',
+    newPassword:            '새 비밀번호',
+    confirmPassword:        '새 비밀번호 확인',
+    savePassword:           '비밀번호 변경',
+    placeholderName:        '이름을 입력하세요',
+    placeholderCurrentPw:   '현재 비밀번호',
+    placeholderNewPw:       '새 비밀번호 (8자 이상)',
+    placeholderConfirmPw:   '새 비밀번호 확인',
+    successName:            '이름이 변경되었습니다.',
+    successPassword:        '비밀번호가 변경되었습니다.',
+    errorNameEmpty:         '이름을 입력해주세요.',
+    errorCurrentPw:         '현재 비밀번호를 입력해주세요.',
+    errorPwLen:             '비밀번호는 8자 이상이어야 합니다.',
+    errorPwMatch:           '비밀번호가 일치하지 않습니다.',
+  },
 } as const;
 
 export default ko;
