@@ -12,7 +12,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
 import { useScanStore } from '../../store/scan.store';
+import { useListStore } from '../../store/list.store';
 import { getScanHistory } from '../../services/scan.service';
+import { addFavorite, removeFavorite } from '../../services/list.service';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 
@@ -33,6 +35,41 @@ export default function ScanHistoryScreen({ navigation }: Props) {
   // store에 데이터가 있으면 초기 로딩 스피너 생략
   const [isLoading, setIsLoading] = useState(() => useScanStore.getState().history.length === 0);
   const [isError,   setIsError]   = useState(false);
+
+  // ── Favorites ──────────────────────────────────────────────────────────────
+  const favorites          = useListStore(s => s.favorites);
+  const addFavToStore      = useListStore(s => s.addFavorite);
+  const removeFavFromStore = useListStore(s => s.removeFavorite);
+  const [favLoading, setFavLoading] = useState<Set<string>>(new Set());
+
+  function isFav(productId: string) {
+    return favorites.some(f => f.productId === productId);
+  }
+
+  async function handleToggleFavorite(item: ScanHistory) {
+    const productId = item.product.id;
+    if (favLoading.has(productId)) return;
+    setFavLoading(prev => new Set([...prev, productId]));
+    try {
+      if (isFav(productId)) {
+        const fav = favorites.find(f => f.productId === productId);
+        if (fav) {
+          await removeFavorite(fav.id);
+          removeFavFromStore(fav.id);
+        }
+      } else {
+        const newFav = await addFavorite(productId);
+        addFavToStore({ ...newFav, product: item.product });
+      }
+    } catch { /* silent */ }
+    finally {
+      setFavLoading(prev => {
+        const next = new Set(prev);
+        next.delete(productId);
+        return next;
+      });
+    }
+  }
 
   function fetchHistory() {
     let cancelled = false;
@@ -73,36 +110,56 @@ export default function ScanHistoryScreen({ navigation }: Props) {
   }
 
   function renderItem({ item, index }: { item: ScanHistory; index: number }) {
-    const badge  = BADGE[item.result] ?? BADGE.safe;
-    const isLast = index === sorted.length - 1;
+    const badge     = BADGE[item.result] ?? BADGE.safe;
+    const isLast    = index === sorted.length - 1;
+    const favorited = isFav(item.product.id);
+    const loading   = favLoading.has(item.product.id);
 
     return (
       <View>
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => handleItemPress(item)}
-          activeOpacity={0.7}
-        >
-          {/* Product image */}
-          <View style={styles.thumb}>
-            {item.product.image ? (
-              <Image
-                source={{ uri: item.product.image }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-              />
-            ) : null}
-          </View>
+        <View style={styles.rowWrap}>
+          {/* 네비게이션 터치 영역: 썸네일 + 이름/브랜드 + 화살표 */}
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => handleItemPress(item)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.thumb}>
+              {item.product.image ? (
+                <Image
+                  source={{ uri: item.product.image }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                />
+              ) : null}
+            </View>
+            <View style={styles.info}>
+              <Text style={styles.productName} numberOfLines={1}>
+                {item.product.name}
+              </Text>
+              <Text style={styles.brandName} numberOfLines={1}>
+                {item.product.brand || '—'}
+              </Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
 
-          {/* Info */}
-          <View style={styles.info}>
-            <Text style={styles.productName} numberOfLines={1}>
-              {item.product.name}
-            </Text>
-            <Text style={styles.brandName} numberOfLines={1}>
-              {item.product.brand || '—'}
-            </Text>
-            {/* Risk badge */}
+          {/* 액션 영역: 즐겨찾기 버튼 + 리스크 뱃지 (네비게이션 TouchableOpacity 밖) */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.favBtn, favorited && styles.favBtnActive]}
+              onPress={() => handleToggleFavorite(item)}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={favorited ? '#FF3B30' : '#888'} />
+              ) : (
+                <Text style={[styles.favBtnText, favorited && styles.favBtnTextActive]}>
+                  {favorited ? '♥  Favorited' : '♡  Add to Favorites'}
+                </Text>
+              )}
+            </TouchableOpacity>
             <View style={[styles.badge, { borderColor: badge.border }]}>
               <View style={[styles.dot, { backgroundColor: badge.dot }]} />
               <Text style={[styles.badgeText, { color: badge.text }]}>
@@ -110,12 +167,8 @@ export default function ScanHistoryScreen({ navigation }: Props) {
               </Text>
             </View>
           </View>
+        </View>
 
-          {/* Chevron */}
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
         {!isLast && <View style={styles.divider} />}
       </View>
     );
@@ -155,6 +208,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
         data={sorted}
         keyExtractor={item => item.id}
         renderItem={renderItem}
+        extraData={{ favorites, favLoading }}
         contentContainerStyle={[
           styles.listContent,
           { paddingBottom: insets.bottom + 24 },
@@ -223,12 +277,24 @@ const styles = StyleSheet.create({
     color: TITLE_COLOR,
   },
 
-  // Row
+  // Row wrapper (vertical padding 담당)
+  rowWrap: {
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  // 네비게이션 터치 영역 (thumb + name/brand + chevron)
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
     gap: 12,
+  },
+  // 즐겨찾기 + 뱃지 영역 (thumb width + gap 만큼 들여쓰기)
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 8,
+    paddingLeft: 84,   // thumb(72) + gap(12)
   },
 
   // Product thumbnail
@@ -243,7 +309,34 @@ const styles = StyleSheet.create({
   // Info block
   info:        { flex: 1 },
   productName: { fontSize: 15, fontWeight: '700', color: '#1A1A1A', marginBottom: 3 },
-  brandName:   { fontSize: 13, color: '#666666', marginBottom: 8 },
+  brandName:   { fontSize: 13, color: '#666666' },
+
+  // Add to Favorites button
+  favBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#C0C0C0',
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginBottom: 8,
+    minWidth: 44,
+    justifyContent: 'center',
+  },
+  favBtnActive: {
+    borderColor: '#FF3B30',
+  },
+  favBtnText: {
+    fontSize: 12,
+    color: '#666666',
+    fontWeight: '500',
+  },
+  favBtnTextActive: {
+    color: '#FF3B30',
+    fontWeight: '600',
+  },
 
   // Risk badge
   badge: {

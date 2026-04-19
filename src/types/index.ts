@@ -229,8 +229,8 @@ export type ScanStackParamList = {
    * hideTitle: 대안 상품 상세에서 진입할 때 true → "History" 타이틀 숨김
    */
   HistoryProductDetail: { product: Product; hideTitle?: boolean };
-  /** barcode: 미등록 제품 보완용 OCR 진입 시 함께 전달 */
-  OCRCapture: { barcode?: string };
+  /** barcode: 미등록 제품 보완용 OCR 진입 시 함께 전달. imageUri: ScanScreen에서 미리 촬영한 사진 URI */
+  OCRCapture: { barcode?: string; imageUri?: string };
 };
 
 export type SearchStackParamList = {

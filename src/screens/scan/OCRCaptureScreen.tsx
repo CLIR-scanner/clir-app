@@ -92,7 +92,7 @@ function OCRCorner({ pos, color }: { pos: CornerPos; color: string }) {
 }
 
 export default function OCRCaptureScreen({ navigation, route }: Props) {
-  const { barcode } = route.params ?? {};
+  const { barcode, imageUri } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -102,8 +102,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const favorites     = useListStore(s => s.favorites);
   const addHistory    = useScanStore(s => s.addHistory);
 
-  const [state, setState]             = useState<ScreenState>('idle');
-  const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  // imageUri가 전달되면 이미 촬영 완료 → preview 상태로 바로 시작
+  const [state, setState]             = useState<ScreenState>(imageUri ? 'preview' : 'idle');
+  const [capturedUri, setCapturedUri] = useState<string | null>(imageUri ?? null);
+
+  // ScanScreen에서 촬영 후 진입한 경우(imageUri 있음), 뒤로가기 → ScanScreen으로 복귀
+  const handleBack = imageUri ? () => navigation.goBack() : handleReset;
   const [ocrProduct, setOcrProduct]   = useState<Product | null>(null);
   const [errorMsg, setErrorMsg]       = useState('');
   const [favorited, setFavorited]     = useState(false);
@@ -315,7 +319,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         <ScanHeader
           insetTop={insets.top}
           subtitle="Scan OCR of the product"
-          onBack={handleReset}
+          onBack={handleBack}
           onHistory={() => navigation.navigate('ScanHistory')}
         />
 
@@ -395,7 +399,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           <ScanHeader
             insetTop={insets.top}
             subtitle="Scan OCR of the product"
-            onBack={handleReset}
+            onBack={handleBack}
             onHistory={() => navigation.navigate('ScanHistory')}
           />
         </View>

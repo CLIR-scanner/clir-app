@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getAlternatives } from '../../services/scan.service';
+import { useListStore } from '../../store/list.store';
+import { addFavorite, removeFavorite } from '../../services/list.service';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
 

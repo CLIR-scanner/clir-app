@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Image,
   Animated,
   Easing,
+  Alert,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
@@ -21,6 +23,8 @@ import { addFavorite } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
 
+const SCREEN_W = Dimensions.get('window').width;
+
 type Props = NativeStackScreenProps<ScanStackParamList, 'Scan'>;
 
 const BARCODE_TYPES = [
@@ -28,16 +32,19 @@ const BARCODE_TYPES = [
 ] as const;
 
 // ── Layout constants ──────────────────────────────────────────────────────────
-const GUIDE_W    = 264;
-const GUIDE_H    = 148;
-const GUIDE_TOP  = 190;
-const CORNER_LEN = 32;
-const CORNER_W   = 4;
-const CIRCLE_D   = 120;
-const BADGE_D    = 54;
-const DIM        = 'rgba(0,0,0,0.52)';
-const GOOD_COLOR = '#25FF81';
-const BAD_COLOR  = '#FF0000';
+const GUIDE_W      = 264;
+const GUIDE_H      = 148;
+const GUIDE_TOP    = 190;
+const OCR_GUIDE_W  = SCREEN_W - 48;
+const OCR_GUIDE_H  = 480;
+const OCR_GUIDE_TOP = 130;
+const CORNER_LEN   = 32;
+const CORNER_W     = 4;
+const CIRCLE_D     = 120;
+const BADGE_D      = 54;
+const DIM          = 'rgba(0,0,0,0.52)';
+const GOOD_COLOR   = '#25FF81';
+const BAD_COLOR    = '#FF0000';
 
 export default function ScanScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -49,6 +56,7 @@ export default function ScanScreen({ navigation }: Props) {
   const [favorited,  setFavorited]            = useState(false);
 
   const [cameraActive, setCameraActive] = useState(true);
+  const [isOCRMode, setIsOCRMode]       = useState(false);
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
@@ -71,6 +79,7 @@ export default function ScanScreen({ navigation }: Props) {
     useCallback(() => {
       // Screen focused → activate camera + reset all scan state
       setCameraActive(true);
+      setIsOCRMode(false);
       processingRef.current    = false;
       latestBarcodeRef.current = null;
       setBarcodeDetected(false);
@@ -161,15 +170,29 @@ export default function ScanScreen({ navigation }: Props) {
       setProcessing(false);
       showOverlay(product, analysis);
     } catch {
-      // Product not in DB → OCR fallback
-      navigation.navigate('OCRCapture', { barcode });
-      setTimeout(() => {
-        processingRef.current    = false;
-        latestBarcodeRef.current = null;
-        setBarcodeDetected(false);
-        setProcessing(false);
-      }, 1500);
+      setProcessing(false);
+      processingRef.current    = false;
+      latestBarcodeRef.current = null;
+      setBarcodeDetected(false);
+      Alert.alert(
+        'Product Not Found',
+        'Could not find this product. Switch to OCR mode using the toggle to scan ingredient labels.',
+      );
     }
+  }
+
+  // ── Mode toggle ───────────────────────────────────────────────────────────
+
+  function handleToggle(value: boolean) {
+    setIsOCRMode(value);
+    processingRef.current    = false;
+    latestBarcodeRef.current = null;
+    setBarcodeDetected(false);
+    setProcessing(false);
+    setScanResult(null);
+    circleScale.setValue(0);
+    sheetY.setValue(320);
+    setCameraActive(true);
   }
 
   // ── Back button ───────────────────────────────────────────────────────────
@@ -205,16 +228,22 @@ export default function ScanScreen({ navigation }: Props) {
 
   async function handleManualCapture() {
     if (processingRef.current) return;
-    if (latestBarcodeRef.current) {
-      processBarcode(latestBarcodeRef.current);
+
+    if (isOCRMode) {
+      if (!cameraRef.current) return;
+      try {
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+        navigation.navigate('OCRCapture', { imageUri: photo.uri });
+      } catch {
+        Alert.alert('Capture Failed', 'Failed to capture photo. Please try again.');
+      }
       return;
     }
-    // No barcode in view → hand off to OCRCapture
-    if (cameraRef.current) {
-      try { await cameraRef.current.takePictureAsync({ quality: 0.8 }); }
-      catch { /* ignore */ }
+
+    // Barcode mode: process the last detected barcode if available
+    if (latestBarcodeRef.current) {
+      processBarcode(latestBarcodeRef.current);
     }
-    navigation.navigate('OCRCapture', {});
   }
 
   // ── Add to Favorites ──────────────────────────────────────────────────────
@@ -290,6 +319,10 @@ export default function ScanScreen({ navigation }: Props) {
   const verdictColor = isSafe ? GOOD_COLOR : BAD_COLOR;
   const hasAlts = !isSafe && (scanResult?.product.alternatives.length ?? 0) > 0;
 
+  const guideW   = isOCRMode ? OCR_GUIDE_W : GUIDE_W;
+  const guideH   = isOCRMode ? OCR_GUIDE_H : GUIDE_H;
+  const guideTop = isOCRMode ? OCR_GUIDE_TOP : GUIDE_TOP;
+
   return (
     <View style={styles.root}>
       {/* Full-screen camera — unmounted when screen is not focused */}
@@ -299,16 +332,16 @@ export default function ScanScreen({ navigation }: Props) {
           style={StyleSheet.absoluteFill}
           facing="back"
           barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
-          onBarcodeScanned={processingRef.current ? undefined : handleBarcodeScanned}
+          onBarcodeScanned={(!isOCRMode && !processingRef.current) ? handleBarcodeScanned : undefined}
         />
       )}
 
       {/* Dim overlay with guide window */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <View style={styles.dimTop} />
-        <View style={styles.dimMiddle}>
+        <View style={[styles.dimTop, { height: guideTop }]} />
+        <View style={[styles.dimMiddle, { height: guideH }]}>
           <View style={styles.dimSide} />
-          <View style={styles.guideBox}>
+          <View style={[styles.guideBox, { width: guideW, height: guideH }]}>
             <ScanCorner pos="topLeft"     color={cornerColor} />
             <ScanCorner pos="topRight"    color={cornerColor} />
             <ScanCorner pos="bottomLeft"  color={cornerColor} />
@@ -341,6 +374,8 @@ export default function ScanScreen({ navigation }: Props) {
         onBack={handleBack}
         onHistory={() => navigation.navigate('ScanHistory')}
         historyImageUri={lastProductImage}
+        isOCRMode={isOCRMode}
+        onToggleMode={handleToggle}
       />
 
       {/* Processing spinner */}
@@ -350,7 +385,7 @@ export default function ScanScreen({ navigation }: Props) {
         </View>
       )}
 
-      {/* Bottom camera button — hidden while overlay is showing */}
+      {/* Bottom camera button — centered, hidden while overlay is showing */}
       {!scanResult && !processing && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
           <TouchableOpacity
@@ -358,9 +393,7 @@ export default function ScanScreen({ navigation }: Props) {
             onPress={handleManualCapture}
             activeOpacity={0.8}
           >
-            <View style={styles.shutterOuter}>
-              <View style={styles.shutterInner} />
-            </View>
+            <View style={styles.shutterOuter} />
           </TouchableOpacity>
         </View>
       )}
@@ -464,15 +497,27 @@ export function ScanHeader({
   insetTop,
   onBack,
   onHistory,
-  subtitle = 'Scan Bar code of the product',
+  subtitle,
   historyImageUri,
+  isOCRMode,
+  onToggleMode,
 }: {
   insetTop: number;
   onBack: () => void;
   onHistory: () => void;
   subtitle?: string;
   historyImageUri?: string;
+  isOCRMode?: boolean;
+  onToggleMode?: (value: boolean) => void;
 }) {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [historyImageUri]);
+
+  const showThumb = !!historyImageUri && !imgError;
+
   return (
     <View style={[headerStyles.wrap, { paddingTop: insetTop + 10 }]}>
       <TouchableOpacity
@@ -485,7 +530,11 @@ export function ScanHeader({
 
       <View style={headerStyles.center}>
         <Text style={headerStyles.title}>Scan</Text>
-        <Text style={headerStyles.subtitle}>{subtitle}</Text>
+        {onToggleMode !== undefined ? (
+          <ModeToggle isOCR={isOCRMode ?? false} onToggle={onToggleMode} />
+        ) : subtitle ? (
+          <Text style={headerStyles.subtitle}>{subtitle}</Text>
+        ) : null}
       </View>
 
       <TouchableOpacity
@@ -493,11 +542,12 @@ export function ScanHeader({
         onPress={onHistory}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        {historyImageUri ? (
+        {showThumb ? (
           <Image
             source={{ uri: historyImageUri }}
             style={headerStyles.historyImg}
             resizeMode="cover"
+            onError={() => setImgError(true)}
           />
         ) : (
           <HistoryIcon />
@@ -535,6 +585,60 @@ function ScanCorner({ pos, color }: { pos: CornerPos; color: string }) {
   );
 }
 
+// ── Mode Toggle (pill-style text, placed in header) ───────────────────────────
+function ModeToggle({ isOCR, onToggle }: { isOCR: boolean; onToggle: (v: boolean) => void }) {
+  return (
+    <View style={modeToggleStyles.container}>
+      <TouchableOpacity
+        style={[modeToggleStyles.option, !isOCR && modeToggleStyles.activeOption]}
+        onPress={() => onToggle(false)}
+        activeOpacity={0.7}
+      >
+        <Text style={[modeToggleStyles.optionText, !isOCR && modeToggleStyles.activeText]}>
+          BARCODE
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[modeToggleStyles.option, isOCR && modeToggleStyles.activeOption]}
+        onPress={() => onToggle(true)}
+        activeOpacity={0.7}
+      >
+        <Text style={[modeToggleStyles.optionText, isOCR && modeToggleStyles.activeText]}>
+          OCR
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const modeToggleStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 20,
+    padding: 3,
+    marginTop: 7,
+  },
+  option: {
+    paddingVertical: 5,
+    paddingHorizontal: 18,
+    borderRadius: 17,
+  },
+  activeOption: {
+    backgroundColor: Colors.white,
+  },
+  optionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 0.3,
+  },
+  activeText: {
+    color: '#1A1A1A',
+    fontWeight: '700',
+  },
+});
+
 // ── History icon (fallback) ───────────────────────────────────────────────────
 function HistoryIcon() {
   return (
@@ -558,12 +662,12 @@ const styles = StyleSheet.create({
   permBtn:       { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
   permBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  // Dim overlay
-  dimTop:    { height: GUIDE_TOP, backgroundColor: DIM },
-  dimMiddle: { flexDirection: 'row', height: GUIDE_H },
+  // Dim overlay (height/width overridden by inline styles for OCR vs barcode)
+  dimTop:    { backgroundColor: DIM },
+  dimMiddle: { flexDirection: 'row' },
   dimSide:   { flex: 1, backgroundColor: DIM },
   dimBottom: { flex: 1, backgroundColor: DIM },
-  guideBox:  { width: GUIDE_W, height: GUIDE_H },
+  guideBox:  {},
 
   // Corner strokes
   corner: { position: 'absolute', width: CORNER_LEN, height: CORNER_LEN },
@@ -571,7 +675,7 @@ const styles = StyleSheet.create({
   // Spinner
   spinnerWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
 
-  // Bottom camera button
+  // Bottom camera button (centered)
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     alignItems: 'center', paddingTop: 16,
@@ -580,13 +684,8 @@ const styles = StyleSheet.create({
   shutterOuter: {
     width: 64, height: 64, borderRadius: 32,
     backgroundColor: Colors.white,
-    alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3, shadowRadius: 5, elevation: 6,
-  },
-  shutterInner: {
-    width: 48, height: 48, borderRadius: 24,
-    borderWidth: 2.5, borderColor: Colors.gray300,
   },
 
   // Verdict circle — positioned inside guideBox
