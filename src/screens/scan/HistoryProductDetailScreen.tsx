@@ -14,6 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getAlternatives, getProductById } from '../../services/scan.service';
+import { addFavorite, removeFavorite } from '../../services/list.service';
+import { useListStore } from '../../store/list.store';
+import { Colors } from '../../constants/colors';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
 
@@ -84,6 +87,36 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
       .finally(() => { setAltsLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps — product는 route.params 고정값
   }, []);
+
+  // ── Favorites state ───────────────────────────────────────────────────────
+  const [favorited,  setFavorited]  = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+  const addFavoriteToStore    = useListStore(s => s.addFavorite);
+  const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
+
+  useEffect(() => {
+    setFavorited(useListStore.getState().favorites.some(f => f.productId === product.id));
+  }, [product.id]);
+
+  async function handleFavorite() {
+    if (favLoading) return;
+    setFavLoading(true);
+    try {
+      if (favorited) {
+        const favItem = useListStore.getState().favorites.find(f => f.productId === product.id);
+        if (favItem) {
+          await removeFavorite(favItem.id);
+          removeFavoriteFromStore(favItem.id);
+        }
+        setFavorited(false);
+      } else {
+        const item = await addFavorite(product.id);
+        addFavoriteToStore({ ...item, product });
+        setFavorited(true);
+      }
+    } catch { /* silent */ }
+    finally { setFavLoading(false); }
+  }
 
   // ── Ingredient detail bottom sheet state ──────────────────────────────────
   const [modalOpen,        setModalOpen]        = useState(false);
@@ -190,6 +223,24 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
 
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
+
+        {/* Add to Favorites */}
+        <View style={styles.favWrap}>
+          <TouchableOpacity
+            style={[styles.favBtn, favorited && styles.favBtnActive]}
+            onPress={handleFavorite}
+            disabled={favLoading}
+            activeOpacity={0.7}
+          >
+            {favLoading ? (
+              <ActivityIndicator size="small" color={Colors.danger} />
+            ) : (
+              <Text style={[styles.favBtnText, favorited && styles.favBtnTextActive]}>
+                {favorited ? '♥' : '♡'} Add to Favorites
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* 3-A. All Ingredients (Good only) — Brand Name 바로 아래 */}
         {!showRisk && allIngredients.length > 0 && (
@@ -409,6 +460,13 @@ const styles = StyleSheet.create({
   verdictIconText:  { fontSize: 15, color: '#fff', fontWeight: '900' },
   productName:      { fontSize: 22, fontWeight: '800', color: '#1A1A1A' },
   brandName:        { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 24 },
+
+  // Add to Favorites
+  favWrap:          { alignItems: 'center', marginBottom: 20 },
+  favBtn:           { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.gray300, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 16 },
+  favBtnActive:     { borderColor: Colors.danger },
+  favBtnText:       { fontSize: 13, color: Colors.gray700 },
+  favBtnTextActive: { color: Colors.danger },
 
   // Risk box
   riskBox:          { borderWidth: 1.5, borderRadius: 16, padding: 16, marginBottom: 28 },
