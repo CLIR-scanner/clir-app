@@ -26,12 +26,9 @@ export default function ProfileScreen() {
   const logout        = useUserStore(s => s.logout);
 
   const MENU_ITEMS: { label: string; screen: keyof ProfileStackParamList }[] = [
-    { label: t('profile.menuDietary'),         screen: 'PersonalizationAllergy' },
-    { label: t('profile.menuSensitivity'),     screen: 'PersonalizationSensitivity' },
-    { label: t('profile.menuPersonalization'), screen: 'Personalization' },
-    { label: t('profile.menuFamily'),          screen: 'MultiProfile' },
-    { label: t('profile.menuLanguage'),        screen: 'Language' },
-    { label: t('profile.menuSettings'),        screen: 'Settings' },
+    { label: t('profile.menuFamily'),    screen: 'MultiProfile' },
+    { label: t('profile.menuLanguage'),  screen: 'Language' },
+    { label: t('profile.menuSettings'), screen: 'Settings' },
   ];
 
   function handleLogout() {
@@ -49,7 +46,11 @@ export default function ProfileScreen() {
       </View>
 
       {/* 프로필 카드 */}
-      <View style={styles.profileCard}>
+      <TouchableOpacity
+        style={styles.profileCard}
+        onPress={() => navigation.navigate('PersonalName')}
+        activeOpacity={0.7}
+      >
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
             {activeProfile.name ? activeProfile.name[0].toUpperCase() : '?'}
@@ -59,46 +60,55 @@ export default function ProfileScreen() {
           <Text style={styles.profileName}>{activeProfile.name || '—'}</Text>
           <Text style={styles.profileEmail}>{currentUser.email || '—'}</Text>
         </View>
-      </View>
+        <Text style={styles.menuArrow}>{'›'}</Text>
+      </TouchableOpacity>
 
       {/* 알러지 & 민감도 */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.myProfile')}</Text>
+      <TouchableOpacity
+        style={styles.myProfileCard}
+        onPress={() => navigation.navigate('MyProfileEdit')}
+        activeOpacity={0.7}
+      >
+        <View style={styles.myProfileContent}>
+          <Text style={styles.sectionTitle}>{t('profile.myProfile')}</Text>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>{t('profile.sensitivity')}</Text>
-          <View style={[
-            styles.badge,
-            activeProfile.sensitivityLevel === 'strict' ? styles.badgeStrict : styles.badgeNormal,
-          ]}>
-            <Text style={[
-              styles.badgeText,
-              activeProfile.sensitivityLevel === 'strict' ? styles.badgeTextStrict : styles.badgeTextNormal,
+          {/* 민감도 */}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{t('profile.sensitivity')}</Text>
+            <View style={[
+              styles.badge,
+              activeProfile.sensitivityLevel === 'strict' ? styles.badgeStrict : styles.badgeNormal,
             ]}>
-              {t(SENSITIVITY_KEY[activeProfile.sensitivityLevel] ?? 'sensitivity.normalBadge')}
-            </Text>
+              <Text style={[
+                styles.badgeText,
+                activeProfile.sensitivityLevel === 'strict' ? styles.badgeTextStrict : styles.badgeTextNormal,
+              ]}>
+                {t(SENSITIVITY_KEY[activeProfile.sensitivityLevel] ?? 'sensitivity.normalBadge')}
+              </Text>
+            </View>
+          </View>
+
+          {/* 알러지 프로필 */}
+          <View style={styles.infoBlock}>
+            <Text style={styles.infoLabel}>{t('profile.allergyProfile')}</Text>
+            {activeProfile.allergyProfile.length === 0 ? (
+              <Text style={styles.emptyText}>{t('profile.noAllergens')}</Text>
+            ) : (
+              <View style={styles.chips}>
+                {activeProfile.allergyProfile.map(item => (
+                  <View key={item} style={styles.chip}>
+                    <Text style={styles.chipText}>
+                      {ALLERGEN_NAME_MAP[item]?.name ?? item}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </View>
 
-        <View style={styles.divider} />
-
-        <View style={styles.infoBlock}>
-          <Text style={styles.infoLabel}>{t('profile.allergyProfile')}</Text>
-          {activeProfile.allergyProfile.length === 0 ? (
-            <Text style={styles.emptyText}>{t('profile.noAllergens')}</Text>
-          ) : (
-            <View style={styles.chips}>
-              {activeProfile.allergyProfile.map(item => (
-                <View key={item} style={styles.chip}>
-                  <Text style={styles.chipText}>
-                    {ALLERGEN_NAME_MAP[item]?.name ?? item}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-      </View>
+        <Text style={styles.menuArrow}>{'›'}</Text>
+      </TouchableOpacity>
 
       {/* 메뉴 */}
       <View style={styles.section}>
@@ -204,6 +214,35 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.border,
   },
+  myProfileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  myProfileContent: {
+    flex: 1,
+    gap: 12,
+    paddingRight: 8,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+  },
+  profileRowArrow: {
+    justifyContent: 'center',
+  },
+  profileRowLeft: {
+    flex: 1,
+    gap: 14,
+    paddingRight: 8,
+  },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -241,6 +280,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     paddingVertical: 4,
     paddingHorizontal: 12,
+    alignSelf: 'flex-start',
   },
   badgeStrict: {
     backgroundColor: Colors.dangerLight,

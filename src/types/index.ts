@@ -131,6 +131,7 @@ export interface UserStore {
   logout: () => void;
   switchProfile: (profileId: string) => void;
   updateActiveProfile: (updates: Partial<Profile>) => void;
+  updateUserName: (name: string) => void;
   setLanguage: (language: string) => void;
   addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
   updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;
@@ -259,6 +260,7 @@ export type RecommendStackParamList = {
 
 export type ProfileStackParamList = {
   Profile: undefined;
+  MyProfileEdit: undefined;
   Personal: undefined;
   PersonalName: undefined;
   PersonalEmail: undefined;
