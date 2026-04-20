@@ -201,7 +201,7 @@ export default function SearchResultScreen({ route, navigation }: Props) {
           contentContainerStyle={results.length === 0 ? styles.emptyContainer : styles.listContent}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ProductRow item={item} onPress={() => {/* TODO: navigate to ScanResult */}} />
+            <ProductRow item={item} onPress={() => navigation.navigate('SearchProductDetail', { product: item })} />
           )}
           ItemSeparatorComponent={() => <View style={styles.divider} />}
           ListEmptyComponent={

@@ -236,6 +236,7 @@ export type ScanStackParamList = {
 export type SearchStackParamList = {
   Search: undefined;
   SearchResult: { query: string };
+  SearchProductDetail: { product: Product };
 };
 
 export type ListStackParamList = {
