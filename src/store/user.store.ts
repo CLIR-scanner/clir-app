@@ -30,7 +30,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   setUser: (user: User) => {
+
+
     const normalized: User = { ...user, multiProfiles: user.multiProfiles ?? [], language: user.language ?? 'en' };
+
     set({ currentUser: normalized, activeProfile: normalized });
   },
 

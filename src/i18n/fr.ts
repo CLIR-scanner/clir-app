@@ -92,6 +92,24 @@ const fr = {
     goBack: 'Retour à ', tryAnother: 'Essayer un autre e-mail',
   },
   language: { title: 'Langue', deviceDetected: 'Langue de l\'appareil détectée :', deviceBadge: 'Appareil' },
+  search: {
+    placeholder:   'Rechercher un produit ou une marque',
+    sortBy:        'Trier',
+    sortRelevance: 'Pertinence',
+    sortSafety:    'Sécurité',
+    sortName:      'Nom',
+    recentTitle:   'Recherches récentes',
+    empty:         'Aucun résultat',
+    loading:       'Recherche...',
+    filters:        'Filtres',
+    categories:     'Catégories de produits',
+    safeOnlyLabel:  'Afficher uniquement les produits sûrs pour moi',
+    priceRange:     'Fourchette de prix',
+    minPrice:       'Prix min',
+    maxPrice:       'Prix max',
+    apply:          'Appliquer les filtres',
+    reset:          'Réinitialiser',
+  },
 } as const;
 
 export default fr;

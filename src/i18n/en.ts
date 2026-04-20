@@ -197,6 +197,26 @@ const en = {
     deviceBadge:     'Device',
   },
 
+  // ── Search ────────────────────────────────────────────────────────────────
+  search: {
+    placeholder:    'Search your Product',
+    sortBy:         'Sort by',
+    sortRelevance:  'Relevance',
+    sortSafety:     'Safety',
+    sortName:       'Name',
+    recentTitle:    'Recent Searches',
+    empty:          'No results found',
+    loading:        'Searching...',
+    filters:        'Filters',
+    categories:     'Products Categories',
+    safeOnlyLabel:  'Show only safe products for me',
+    priceRange:     'Price Range',
+    minPrice:       'Min Price',
+    maxPrice:       'Max Price',
+    apply:          'Apply Filters',
+    reset:          'Reset',
+  },
+
   // ── Personal Name / Password ──────────────────────────────────────────────
   personalName: {
     title:                  'Edit Profile',
