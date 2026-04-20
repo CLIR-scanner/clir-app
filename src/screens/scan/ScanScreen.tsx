@@ -57,8 +57,8 @@ export default function ScanScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   // OCR 프레임 높이: 상하 safe area + 헤더(80) + 촬영버튼 영역(100) 제외
-  const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 260;
-  const ocrDimTop  = insets.top + 100;
+  const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 340;
+  const ocrDimTop  = insets.top + 130;
   const ocrDimBot  = insets.bottom + 120;
   const [permission, requestPermission] = useCameraPermissions();
   const [barcodeDetected, setBarcodeDetected] = useState(false);

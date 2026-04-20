@@ -89,14 +89,13 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   }, []);
 
   // ── Favorites state ───────────────────────────────────────────────────────
-  const [favorited,  setFavorited]  = useState(false);
+  // lazy initializer: 첫 렌더부터 스토어 기준으로 초기화 (Favorites 목록 진입 시 즉시 빨간 하트)
+  const [favorited,  setFavorited]  = useState(() =>
+    useListStore.getState().favorites.some(f => f.productId === product.id),
+  );
   const [favLoading, setFavLoading] = useState(false);
-  const addFavoriteToStore    = useListStore(s => s.addFavorite);
+  const addFavoriteToStore      = useListStore(s => s.addFavorite);
   const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
-
-  useEffect(() => {
-    setFavorited(useListStore.getState().favorites.some(f => f.productId === product.id));
-  }, [product.id]);
 
   async function handleFavorite() {
     if (favLoading) return;
@@ -104,17 +103,25 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
     try {
       if (favorited) {
         const favItem = useListStore.getState().favorites.find(f => f.productId === product.id);
+        console.log('삭제 시도 favItem:', favItem);
+        console.log('현재 favorites:', useListStore.getState().favorites);
         if (favItem) {
+          console.log('favItem.id (DELETE 경로에 사용):', favItem.id);
+          console.log('favItem.productId:', favItem.productId);
+          console.log('product.id (화면의 제품 ID):', product.id);
           await removeFavorite(favItem.id);
           removeFavoriteFromStore(favItem.id);
         }
         setFavorited(false);
       } else {
         const item = await addFavorite(product.id);
+        console.log('추가된 item:', item);
         addFavoriteToStore({ ...item, product });
         setFavorited(true);
       }
-    } catch { /* silent */ }
+    } catch(e) {
+      console.log('에러:', e);
+    }
     finally { setFavLoading(false); }
   }
 

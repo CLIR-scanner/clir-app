@@ -82,9 +82,8 @@ export default function FavoritesScreen({ navigation }: Props) {
   }
 
   function renderItem({ item, index }: { item: FavoriteItem; index: number }) {
-    const badge     = BADGE[item.product.riskLevel] ?? BADGE.safe;
-    const isLast    = index === sorted.length - 1;
-    const isDeleting = deletingId === item.id;
+    const badge  = BADGE[item.product.riskLevel] ?? BADGE.safe;
+    const isLast = index === sorted.length - 1;
     return (
       <View>
         <TouchableOpacity
@@ -123,20 +122,7 @@ export default function FavoritesScreen({ navigation }: Props) {
           <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
 
-        {/* Delete button */}
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={() => handleDelete(item)}
-          disabled={!!deletingId}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          {isDeleting
-            ? <ActivityIndicator size="small" color={TITLE_CLR} />
-            : <Text style={styles.deleteText}>✕</Text>
-          }
-        </TouchableOpacity>
-
-        {!isLast && <View style={styles.divider} />}
+{!isLast && <View style={styles.divider} />}
       </View>
     );
   }
@@ -270,7 +256,4 @@ const styles = StyleSheet.create({
   empty:     { paddingTop: 80, alignItems: 'center' },
   emptyText: { fontSize: 15, color: '#888' },
 
-  // Delete button — absolute 우측 상단, row 영역 내
-  deleteBtn:  { position: 'absolute', right: 0, top: 0, bottom: 0, justifyContent: 'center', paddingHorizontal: 4 },
-  deleteText: { fontSize: 16, color: '#AAAAAA' },
 });
