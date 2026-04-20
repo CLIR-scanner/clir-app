@@ -88,6 +88,7 @@ export default function MainNavigator() {
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
+      initialRouteName="SearchTab"
     >
       <Tab.Screen name="ScanTab"      component={ScanNavigator}      options={{ title: t('tab.scan') }} />
       <Tab.Screen name="SearchTab"    component={SearchNavigator}    options={{ title: t('tab.search') }} />

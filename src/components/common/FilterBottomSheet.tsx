@@ -31,15 +31,15 @@ export interface FilterState {
 }
 
 export const INITIAL_FILTER_CATEGORIES: FilterCategory[] = [
-  { id: 'bakery',    label: 'Bakery & Bread',   selected: false },
-  { id: 'desserts',  label: 'Desserts & Sweet',  selected: false },
-  { id: 'beverages', label: 'Beverages',          selected: false },
-  { id: 'packaged',  label: 'Packaged Foods',     selected: false },
-  { id: 'instant',   label: 'Instant Meals',      selected: false },
-  { id: 'dairy',     label: 'Dairy Products',     selected: false },
-  { id: 'meat',      label: 'Meat & Poultry',     selected: false },
-  { id: 'seafood',   label: 'Seafood',            selected: false },
-  { id: 'produce',   label: 'Fresh Produce',      selected: false },
+  { id: 'bakery',    label: 'Bakery & Bread',  selected: false },
+  { id: 'desserts',  label: 'Desserts & Sweet', selected: false },
+  { id: 'beverages', label: 'Beverages',        selected: false },
+  { id: 'packaged',  label: 'Packaged Foods',   selected: false },
+  { id: 'instant',   label: 'Instant Meals',    selected: false },
+  { id: 'dairy',     label: 'Dairy Products',   selected: false },
+  { id: 'meat',      label: 'Meat & Poultry',   selected: false },
+  { id: 'seafood',   label: 'Seafood',          selected: false },
+  { id: 'produce',   label: 'Fresh Produce',    selected: false },
 ];
 
 export const INITIAL_FILTERS: FilterState = {
@@ -48,6 +48,18 @@ export const INITIAL_FILTERS: FilterState = {
   minPrice: '',
   maxPrice: '',
 };
+
+type SectionId = 'categories' | 'safeOnly' | 'priceRange';
+
+const INITIAL_SECTION_ORDER: SectionId[] = ['categories', 'safeOnly', 'priceRange'];
+
+const SECTION_LABELS: Record<SectionId, string> = {
+  categories: 'Product Categories',
+  safeOnly:   'Show only safe products for me',
+  priceRange: 'Price Range',
+};
+
+const SECTION_H = 56;
 
 interface Props {
   visible: boolean;
@@ -60,7 +72,6 @@ interface Props {
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const ITEM_H = 50;
-const LONG_PRESS_DELAY = 250;
 
 // ── SortBarsIcon ──────────────────────────────────────────────────────────────
 
@@ -83,9 +94,7 @@ const sortIconStyles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
   },
-  wrapActive: {
-    backgroundColor: Colors.black,
-  },
+  wrapActive: { backgroundColor: Colors.black },
   bar: { height: 2, borderRadius: 1 },
 });
 
@@ -114,35 +123,32 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
   const insets = useSafeAreaInsets();
 
   // ── Animation ──────────────────────────────────────────────────────────────
-  // slideOffset: -SCREEN_H (hidden below) → 0 (fully shown), drives sheet bottom
   const slideOffset    = useRef(new Animated.Value(-SCREEN_H)).current;
   const backdropAnim   = useRef(new Animated.Value(0)).current;
   const keyboardBottom = useRef(new Animated.Value(0)).current;
-  // sheetBottom = keyboardBottom + slideOffset (both useNativeDriver: false → no conflict)
   const sheetBottom    = useRef(Animated.add(keyboardBottom, slideOffset)).current;
 
   // ── Draft state ────────────────────────────────────────────────────────────
-  const [categories,   setCategories] = useState<FilterCategory[]>(filters.categories);
-  const [safeOnly,     setSafeOnly]   = useState(filters.safeOnly);
-  const [minPrice,     setMinPrice]   = useState(filters.minPrice);
-  const [maxPrice,     setMaxPrice]   = useState(filters.maxPrice);
+  const [categories,   setCategories]  = useState<FilterCategory[]>(filters.categories);
+  const [safeOnly,     setSafeOnly]    = useState(filters.safeOnly);
+  const [minPrice,     setMinPrice]    = useState(filters.minPrice);
+  const [maxPrice,     setMaxPrice]    = useState(filters.maxPrice);
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(INITIAL_SECTION_ORDER);
 
-  // ── Reorder mode ───────────────────────────────────────────────────────────
+  // ── Reorder mode (section-level) ──────────────────────────────────────────
   const [reorderMode,  setReorderMode] = useState(false);
   const reorderModeRef = useRef(false);
   useEffect(() => { reorderModeRef.current = reorderMode; }, [reorderMode]);
 
   // ── Drag state ─────────────────────────────────────────────────────────────
-  const [scrollEnabled, setScrollEnabled] = useState(true);
-  const [activeId,      setActiveId]      = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<SectionId | null>(null);
   const [hoverIndex,    setHoverIndex]    = useState<number | null>(null);
 
-  const categoriesRef  = useRef(categories);
-  const activeIdRef    = useRef<string | null>(null);
-  const hoverIndexRef  = useRef<number | null>(null);
-  const scrollRef      = useRef<ScrollView>(null);
+  const sectionOrderRef  = useRef(sectionOrder);
+  const activeSectionRef = useRef<SectionId | null>(null);
+  const hoverIndexRef    = useRef<number | null>(null);
 
-  useEffect(() => { categoriesRef.current = categories; }, [categories]);
+  useEffect(() => { sectionOrderRef.current = sectionOrder; }, [sectionOrder]);
 
   // ── Keyboard listeners ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -183,58 +189,47 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
   useEffect(() => {
     if (visible) {
       Animated.parallel([
-        Animated.timing(slideOffset,  { toValue: 0, duration: 320, useNativeDriver: false }),
-        Animated.timing(backdropAnim, { toValue: 1, duration: 320, useNativeDriver: true  }),
+        Animated.timing(slideOffset,  { toValue: 0,         duration: 320, useNativeDriver: false }),
+        Animated.timing(backdropAnim, { toValue: 1,         duration: 320, useNativeDriver: true  }),
       ]).start();
     } else {
       Animated.parallel([
         Animated.timing(slideOffset,  { toValue: -SCREEN_H, duration: 280, useNativeDriver: false }),
-        Animated.timing(backdropAnim, { toValue: 0,         duration: 280, useNativeDriver: true  }),
+        Animated.timing(backdropAnim, { toValue: 0,          duration: 280, useNativeDriver: true  }),
       ]).start();
     }
   }, [visible]);
 
-  // ── Build PanResponder per category ───────────────────────────────────────
-  function buildDragPR(itemId: string) {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let activated = false;
-
+  // ── Build PanResponder per section ─────────────────────────────────────────
+  function buildSectionDragPR(sectionId: SectionId) {
     function cleanup() {
-      if (timer) clearTimeout(timer);
-      activated = false;
-      timer = null;
-      activeIdRef.current = null;
-      hoverIndexRef.current = null;
-      setActiveId(null);
+      activeSectionRef.current = null;
+      hoverIndexRef.current    = null;
+      setActiveSection(null);
       setHoverIndex(null);
-      setScrollEnabled(true);
     }
 
     return PanResponder.create({
-      onStartShouldSetPanResponder: () => reorderModeRef.current,
-      onMoveShouldSetPanResponder:  () => activated,
+      onStartShouldSetPanResponder:            () => reorderModeRef.current,
+      onStartShouldSetPanResponderCapture:     () => reorderModeRef.current,
+      onMoveShouldSetPanResponder:             () => reorderModeRef.current,
+      onMoveShouldSetPanResponderCapture:      () => reorderModeRef.current,
 
       onPanResponderGrant: () => {
-        if (!reorderModeRef.current) return;
-        timer = setTimeout(() => {
-          activated = true;
-          const idx = categoriesRef.current.findIndex(c => c.id === itemId);
-          if (idx === -1) return;
-          activeIdRef.current   = itemId;
-          hoverIndexRef.current = idx;
-          setActiveId(itemId);
-          setHoverIndex(idx);
-          setScrollEnabled(false);
-        }, LONG_PRESS_DELAY);
+        const idx = sectionOrderRef.current.indexOf(sectionId);
+        if (idx === -1) return;
+        activeSectionRef.current = sectionId;
+        hoverIndexRef.current    = idx;
+        setActiveSection(sectionId);
+        setHoverIndex(idx);
       },
 
       onPanResponderMove: (_, gs) => {
-        if (!activated) return;
-        const currentIdx = categoriesRef.current.findIndex(c => c.id === itemId);
+        const currentIdx = sectionOrderRef.current.indexOf(sectionId);
         if (currentIdx === -1) return;
         const newHover = Math.max(
           0,
-          Math.min(categoriesRef.current.length - 1, currentIdx + Math.round(gs.dy / ITEM_H)),
+          Math.min(sectionOrderRef.current.length - 1, currentIdx + Math.round(gs.dy / SECTION_H)),
         );
         if (newHover !== hoverIndexRef.current) {
           hoverIndexRef.current = newHover;
@@ -243,19 +238,16 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
       },
 
       onPanResponderRelease: () => {
-        if (timer) clearTimeout(timer);
-        if (activated) {
-          const from = categoriesRef.current.findIndex(c => c.id === itemId);
-          const to   = hoverIndexRef.current;
-          if (from !== -1 && to !== null && from !== to) {
-            setCategories(prev => {
-              const next = [...prev];
-              const [moved] = next.splice(from, 1);
-              next.splice(to, 0, moved);
-              categoriesRef.current = next;
-              return next;
-            });
-          }
+        const from = sectionOrderRef.current.indexOf(sectionId);
+        const to   = hoverIndexRef.current;
+        if (from !== -1 && to !== null && from !== to) {
+          setSectionOrder(prev => {
+            const next = [...prev];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            sectionOrderRef.current = next;
+            return next;
+          });
         }
         cleanup();
       },
@@ -264,16 +256,17 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
     });
   }
 
-  const panResponders = useRef<Record<string, ReturnType<typeof PanResponder.create>>>({});
+  const sectionPRs = useRef<Record<SectionId, ReturnType<typeof PanResponder.create>>>(
+    {} as Record<SectionId, ReturnType<typeof PanResponder.create>>,
+  );
   useEffect(() => {
-    INITIAL_FILTER_CATEGORIES.forEach(cat => {
-      panResponders.current[cat.id] = buildDragPR(cat.id);
+    INITIAL_SECTION_ORDER.forEach(id => {
+      sectionPRs.current[id] = buildSectionDragPR(id);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   function toggleCategory(index: number) {
-    if (reorderMode) return; // don't toggle while reordering
     setCategories(prev => prev.map((c, i) => i === index ? { ...c, selected: !c.selected } : c));
   }
 
@@ -288,6 +281,102 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
     setMinPrice('');
     setMaxPrice('');
     setReorderMode(false);
+    setSectionOrder(INITIAL_SECTION_ORDER);
+  }
+
+  // ── Section content renderers ──────────────────────────────────────────────
+  function renderCategoriesContent() {
+    return (
+      <View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('search.categories')}</Text>
+          <TouchableOpacity
+            onPress={() => setReorderMode(true)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <SortBarsIcon active={false} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.categoryList}>
+          {categories.map((cat, index) => (
+            <View key={cat.id} style={styles.categoryRow}>
+              <TouchableOpacity
+                onPress={() => toggleCategory(index)}
+                style={styles.checkboxTouch}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, cat.selected && styles.checkboxChecked]}>
+                  {cat.selected && <Text style={styles.checkmark}>✓</Text>}
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.catLabel}>{cat.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.divider} />
+      </View>
+    );
+  }
+
+  function renderSafeOnlyContent() {
+    return (
+      <View>
+        <View style={styles.safeRow}>
+          <Text style={styles.safeLabel}>{t('search.safeOnlyLabel')}</Text>
+          <Switch
+            value={safeOnly}
+            onValueChange={setSafeOnly}
+            trackColor={{ false: Colors.gray300, true: Colors.primary }}
+            thumbColor={Colors.white}
+          />
+        </View>
+        <View style={styles.divider} />
+      </View>
+    );
+  }
+
+  function renderPriceRangeContent() {
+    return (
+      <View style={styles.priceSection}>
+        <Text style={styles.sectionTitle}>{t('search.priceRange')}</Text>
+        <View style={styles.priceRow}>
+          <View style={styles.priceBox}>
+            <Text style={styles.priceBoxLabel}>{t('search.minPrice')}</Text>
+            <View style={styles.priceInputRow}>
+              <Text style={styles.priceDollar}>$</Text>
+              <TextInput
+                style={styles.priceBoxInput}
+                value={minPrice}
+                onChangeText={setMinPrice}
+                placeholder="0"
+                placeholderTextColor={Colors.gray500}
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          <View style={styles.priceDash} />
+
+          <View style={styles.priceBox}>
+            <Text style={styles.priceBoxLabel}>{t('search.maxPrice')}</Text>
+            <View style={styles.priceInputRow}>
+              <Text style={styles.priceDollar}>$</Text>
+              <TextInput
+                style={styles.priceBoxInput}
+                value={maxPrice}
+                onChangeText={setMaxPrice}
+                placeholder="999"
+                placeholderTextColor={Colors.gray500}
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+    );
   }
 
   if (!visible) return null;
@@ -302,14 +391,13 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
         </TouchableWithoutFeedback>
       </Animated.View>
 
-      {/* ── Sheet — bottom = keyboardBottom + slideOffset (both non-native) ─ */}
+      {/* ── Sheet ─────────────────────────────────────────────────────────── */}
       <Animated.View
         style={[
           styles.sheet,
           { bottom: sheetBottom, paddingBottom: Math.max(insets.bottom, 20) },
         ]}
       >
-        {/* Handle bar */}
         <View style={styles.handleBar} />
 
         {/* Header */}
@@ -325,87 +413,43 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
           <Text style={styles.headerTitle}>{t('search.filters')}</Text>
 
           <TouchableOpacity
-            onPress={handleReset}
+            onPress={reorderMode ? () => setReorderMode(false) : handleReset}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             style={styles.headerSide}
           >
-            <Text style={styles.resetBtn}>{t('search.reset')}</Text>
+            <Text style={[styles.resetBtn, reorderMode && styles.doneBtn]}>
+              {reorderMode ? 'Done' : t('search.reset')}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.divider} />
 
-        {/* ── Scrollable content ──────────────────────────────────────────── */}
-        <ScrollView
-          ref={scrollRef}
-          scrollEnabled={scrollEnabled}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        {reorderMode ? (
+          // ── Section reorder mode ─────────────────────────────────────────
+          <View>
+            <Text style={styles.reorderHint}>Drag to reorder sections</Text>
 
-          {/* ── Products Categories ──────────────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('search.categories')}</Text>
-            {/* Sort button: tap to toggle reorder mode */}
-            <TouchableOpacity
-              onPress={() => setReorderMode(v => !v)}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <SortBarsIcon active={reorderMode} />
-            </TouchableOpacity>
-          </View>
-
-          {reorderMode && (
-            <Text style={styles.reorderHint}>꾹 눌러서 순서를 바꾸세요</Text>
-          )}
-
-          <View style={styles.categoryList}>
-            {categories.map((cat, index) => {
-              const isDragging   = activeId === cat.id;
-              const isHoverAbove = hoverIndex === index && activeId !== null && !isDragging &&
-                categories.findIndex(c => c.id === activeId) > index;
-              const isHoverBelow = hoverIndex === index && activeId !== null && !isDragging &&
-                categories.findIndex(c => c.id === activeId) < index;
-              const pr = panResponders.current[cat.id];
+            {sectionOrder.map((sectionId, index) => {
+              const isDragging   = activeSection === sectionId;
+              const isHoverAbove = hoverIndex === index && activeSection !== null && !isDragging &&
+                sectionOrder.indexOf(activeSection) > index;
+              const isHoverBelow = hoverIndex === index && activeSection !== null && !isDragging &&
+                sectionOrder.indexOf(activeSection) < index;
+              const pr = sectionPRs.current[sectionId];
 
               return (
-                <View key={cat.id}>
+                <View key={sectionId}>
                   {isHoverAbove && <View style={styles.dropIndicator} />}
 
-                  <View style={[styles.categoryRow, isDragging && styles.categoryRowActive]}>
-                    {/* Checkbox */}
-                    <TouchableOpacity
-                      onPress={() => toggleCategory(index)}
-                      style={styles.checkboxTouch}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.checkbox, cat.selected && styles.checkboxChecked]}>
-                        {cat.selected && <Text style={styles.checkmark}>✓</Text>}
-                      </View>
-                    </TouchableOpacity>
-
-                    {/* Label */}
-                    <Text
-                      style={[
-                        styles.catLabel,
-                        isDragging && styles.catLabelActive,
-                        reorderMode && styles.catLabelReorder,
-                      ]}
-                    >
-                      {cat.label}
+                  <View
+                    style={[styles.sectionDragRow, isDragging && styles.sectionDragRowActive]}
+                    {...(pr?.panHandlers ?? {})}
+                  >
+                    <Text style={[styles.sectionDragLabel, isDragging && styles.sectionDragLabelActive]}>
+                      {SECTION_LABELS[sectionId]}
                     </Text>
-
-                    {/* Drag handle — only visible in reorder mode */}
-                    {reorderMode && (
-                      <View
-                        {...(pr?.panHandlers ?? {})}
-                        style={styles.dragHandle}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <DragHandleIcon active={isDragging} />
-                      </View>
-                    )}
+                    <DragHandleIcon active={isDragging} />
                   </View>
 
                   {isHoverBelow && <View style={styles.dropIndicator} />}
@@ -413,64 +457,24 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
               );
             })}
           </View>
+        ) : (
+          // ── Normal filter view ───────────────────────────────────────────
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {sectionOrder.map(sectionId => {
+              if (sectionId === 'categories') return <View key="categories">{renderCategoriesContent()}</View>;
+              if (sectionId === 'safeOnly')   return <View key="safeOnly">{renderSafeOnlyContent()}</View>;
+              if (sectionId === 'priceRange') return <View key="priceRange">{renderPriceRangeContent()}</View>;
+              return null;
+            })}
 
-          <View style={styles.divider} />
+            <View style={{ height: 100 }} />
+          </ScrollView>
+        )}
 
-          {/* ── Safe Only Toggle ─────────────────────────────────────────── */}
-          <View style={styles.safeRow}>
-            <Text style={styles.safeLabel}>{t('search.safeOnlyLabel')}</Text>
-            <Switch
-              value={safeOnly}
-              onValueChange={setSafeOnly}
-              trackColor={{ false: Colors.gray300, true: Colors.primary }}
-              thumbColor={Colors.white}
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* ── Price Range ──────────────────────────────────────────────── */}
-          <View style={styles.priceSection}>
-            <Text style={styles.sectionTitle}>{t('search.priceRange')}</Text>
-            <View style={styles.priceRow}>
-              <View style={styles.priceBox}>
-                <Text style={styles.priceBoxLabel}>{t('search.minPrice')}</Text>
-                <View style={styles.priceInputRow}>
-                  <Text style={styles.priceDollar}>$</Text>
-                  <TextInput
-                    style={styles.priceBoxInput}
-                    value={minPrice}
-                    onChangeText={setMinPrice}
-                    placeholder="0"
-                    placeholderTextColor={Colors.gray500}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.priceDash} />
-
-              <View style={styles.priceBox}>
-                <Text style={styles.priceBoxLabel}>{t('search.maxPrice')}</Text>
-                <View style={styles.priceInputRow}>
-                  <Text style={styles.priceDollar}>$</Text>
-                  <TextInput
-                    style={styles.priceBoxInput}
-                    value={maxPrice}
-                    onChangeText={setMaxPrice}
-                    placeholder="999"
-                    placeholderTextColor={Colors.gray500}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          <View style={{ height: 100 }} />
-        </ScrollView>
-
-        {/* ── Apply button ─────────────────────────────────────────────────── */}
+        {/* Apply button */}
         <TouchableOpacity style={styles.applyBtn} onPress={handleApply} activeOpacity={0.85}>
           <Text style={styles.applyBtnText}>{t('search.apply')}</Text>
         </TouchableOpacity>
@@ -512,7 +516,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  headerSide: { minWidth: 44 },
+  headerSide:  { minWidth: 44 },
   closeBtn: {
     fontSize: 14,
     fontWeight: '600',
@@ -530,6 +534,10 @@ const styles = StyleSheet.create({
     color: Colors.gray500,
     textAlign: 'right',
   },
+  doneBtn: {
+    color: Colors.black,
+    fontWeight: '600',
+  },
 
   divider: {
     height: 1,
@@ -538,6 +546,51 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
 
+  // Section reorder rows
+  reorderHint: {
+    fontSize: 12,
+    color: Colors.gray500,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  sectionDragRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: SECTION_H,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  sectionDragRowActive: {
+    backgroundColor: Colors.gray100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 10,
+  },
+  sectionDragLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.black,
+    letterSpacing: -0.3,
+  },
+  sectionDragLabelActive: {
+    color: Colors.primary,
+  },
+
+  dropIndicator: {
+    height: 2,
+    backgroundColor: Colors.primary,
+    marginHorizontal: 24,
+    borderRadius: 1,
+  },
+
+  // Normal view
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -553,13 +606,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
-  reorderHint: {
-    fontSize: 12,
-    color: Colors.gray500,
-    paddingHorizontal: 24,
-    marginBottom: 4,
-  },
-
   categoryList: { paddingBottom: 8 },
   categoryRow: {
     flexDirection: 'row',
@@ -568,16 +614,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     backgroundColor: Colors.white,
   },
-  categoryRowActive: {
-    backgroundColor: Colors.gray100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 8,
-    elevation: 5,
-    zIndex: 10,
-  },
-
   checkboxTouch: { marginRight: 14, padding: 4 },
   checkbox: {
     width: 20, height: 20,
@@ -593,28 +629,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   checkmark: { color: Colors.white, fontSize: 11, fontWeight: '800' },
-
   catLabel: {
     flex: 1,
     fontSize: 14,
     color: Colors.black,
     letterSpacing: -0.27,
-  },
-  catLabelActive: { fontWeight: '600' },
-  catLabelReorder: { color: Colors.gray700 },
-
-  dragHandle: {
-    paddingVertical: 10,
-    paddingLeft: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  dropIndicator: {
-    height: 2,
-    backgroundColor: Colors.primary,
-    marginHorizontal: 24,
-    borderRadius: 1,
   },
 
   safeRow: {
