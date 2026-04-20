@@ -292,6 +292,19 @@ export async function getIngredient(id: string): Promise<Ingredient> {
 }
 
 /**
+ * GET /products/:id
+ * 제품 ID로 전체 상세 정보를 조회한다.
+ * 상세 화면에서 성분 정보 등 전체 데이터를 표시할 때 사용한다.
+ */
+export async function getProductById(productId: string): Promise<Product> {
+  if (USE_MOCK) {
+    // Mock mode에서는 cache된 제품 반환
+    return MOCK_PRODUCT_DANGER.id === productId ? MOCK_PRODUCT_DANGER : MOCK_PRODUCT_SAFE;
+  }
+  return apiFetch<Product>(`/products/${encodeURIComponent(productId)}`);
+}
+
+/**
  * GET /products/:id/alternatives
  * 현재 사용자 프로필 기준으로 안전한 대체 제품 목록을 반환한다.
  * danger / caution 판정 시 ScanResultScreen에서 자동 호출.

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Image, ActivityIndicator, Animated,
+  Image, ActivityIndicator, Animated, Dimensions, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -9,6 +9,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
 import { recognizeIngredients, analyzeProduct, saveScanHistory } from '../../services/scan.service';
+import { ApiError } from '../../lib/api';
 import { ScanHeader } from './ScanScreen';
 import { useListStore } from '../../store/list.store';
 import { useScanStore } from '../../store/scan.store';
@@ -19,14 +20,17 @@ type Props = NativeStackScreenProps<ScanStackParamList, 'OCRCapture'>;
 type ScreenState = 'idle' | 'preview' | 'analyzing' | 'result' | 'error';
 
 // ── Layout ─────────────────────────────────────────────────────────────────────
-const GUIDE_W    = 350;
-const GUIDE_H    = 459;
-const CORNER_LEN = 32;
-const CORNER_W   = 4;
-const CIRCLE_D   = 160;
-const DIM        = 'rgba(0,0,0,0.50)';
-const GOOD_COLOR = '#25FF81';
-const BAD_COLOR  = '#FF0000';
+const { height: SCREEN_H, width: SCREEN_W } = Dimensions.get('window');
+const DIM_TOP_H    = 160;
+const DIM_BOTTOM_H = 130;
+const GUIDE_W      = SCREEN_W - 40;
+const GUIDE_H      = SCREEN_H - DIM_TOP_H - DIM_BOTTOM_H;
+const CORNER_LEN   = 32;
+const CORNER_W     = 4;
+const CIRCLE_D     = 160;
+const DIM          = 'rgba(0,0,0,0.50)';
+const GOOD_COLOR   = '#25FF81';
+const BAD_COLOR    = '#FF0000';
 
 // ── Mock ───────────────────────────────────────────────────────────────────────
 const USE_MOCK = false;
@@ -92,7 +96,7 @@ function OCRCorner({ pos, color }: { pos: CornerPos; color: string }) {
 }
 
 export default function OCRCaptureScreen({ navigation, route }: Props) {
-  const { barcode } = route.params ?? {};
+  const { barcode, photoUri: initialPhotoUri } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -102,15 +106,16 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const favorites     = useListStore(s => s.favorites);
   const addHistory    = useScanStore(s => s.addHistory);
 
-  const [state, setState]             = useState<ScreenState>('idle');
-  const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  const [state, setState]             = useState<ScreenState>(initialPhotoUri ? 'preview' : 'idle');
+  const [capturedUri, setCapturedUri] = useState<string | null>(initialPhotoUri ?? null);
   const [ocrProduct, setOcrProduct]   = useState<Product | null>(null);
   const [errorMsg, setErrorMsg]       = useState('');
   const [favorited, setFavorited]     = useState(false);
   const [favLoading, setFavLoading]   = useState(false);
 
-  const circleAnim = useRef(new Animated.Value(0)).current;
-  const sheetAnim  = useRef(new Animated.Value(400)).current;
+  const circleAnim  = useRef(new Animated.Value(0)).current;
+  const sheetAnim   = useRef(new Animated.Value(400)).current;
+  const cancelledRef = useRef(false);
 
   // ── Capture ───────────────────────────────────────────────────────────────────
   async function handleCapture() {
@@ -125,9 +130,16 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     }
   }
 
+  // ── Cancel analysis ───────────────────────────────────────────────────────────
+  function handleCancel() {
+    cancelledRef.current = true;
+    setState('preview');
+  }
+
   // ── Analyze ───────────────────────────────────────────────────────────────────
   async function handleAnalyze() {
     if (!capturedUri) return;
+    cancelledRef.current = false;
     setState('analyzing');
     try {
       let product: Product;
@@ -172,6 +184,8 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         addHistory({ ...historyItem, product });
       } catch { /* silent — 이력 저장 실패 시 분석 결과 표시는 유지 */ }
 
+      if (cancelledRef.current) return;
+
       setOcrProduct(product);
       setFavorited(favorites.some(f => f.productId === product.id));
 
@@ -182,14 +196,24 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         Animated.spring(circleAnim, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }),
         Animated.timing(sheetAnim,  { toValue: 0, duration: 380, useNativeDriver: true }),
       ]).start();
-    } catch {
-      setErrorMsg('Could not read ingredients.\nPlease retake with better lighting.');
-      setState('error');
+    } catch (err) {
+      if (cancelledRef.current) return;
+      setState('preview');
+      if (err instanceof ApiError && err.code === 'OCR_FAILED') {
+        Alert.alert('인식 실패', '성분표를 더 밝고 선명하게 촬영해주세요.');
+      } else {
+        Alert.alert('오류', '분석에 실패했습니다. 다시 시도해주세요.');
+      }
     }
   }
 
   // ── Reset ─────────────────────────────────────────────────────────────────────
   function handleReset() {
+    if (initialPhotoUri) {
+      // ScanScreen에서 촬영 후 진입한 경우 → 뒤로가기 (재촬영은 ScanScreen에서)
+      navigation.goBack();
+      return;
+    }
     setCapturedUri(null);
     setOcrProduct(null);
     setErrorMsg('');
@@ -406,17 +430,18 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           {state === 'analyzing' && (
             <View style={styles.analyzingOverlay}>
               <ActivityIndicator color={Colors.white} size="large" />
-              <Text style={styles.analyzingText}>Reading ingredients…</Text>
+              <Text style={styles.analyzingText}>분석 중...</Text>
             </View>
           )}
         </View>
         <View style={[styles.previewActions, { paddingBottom: insets.bottom + 24 }]}>
           <TouchableOpacity
             style={styles.retakePill}
-            onPress={handleReset}
-            disabled={state === 'analyzing'}
+            onPress={state === 'analyzing' ? handleCancel : handleReset}
           >
-            <Text style={styles.retakePillText}>↺  Retake</Text>
+            <Text style={styles.retakePillText}>
+              {state === 'analyzing' ? '취소' : '↺  Retake'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.analyzeBtn, state === 'analyzing' && styles.analyzeBtnOff]}
@@ -496,10 +521,10 @@ const styles = StyleSheet.create({
   retakeBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Dim overlay (idle + result)
-  dimTop:    { flex: 1, backgroundColor: DIM },
+  dimTop:    { height: DIM_TOP_H, backgroundColor: DIM },
   dimMiddle: { flexDirection: 'row', height: GUIDE_H },
   dimSide:   { flex: 1, backgroundColor: DIM },
-  dimBottom: { flex: 2, backgroundColor: DIM },
+  dimBottom: { height: DIM_BOTTOM_H, backgroundColor: DIM },
   guideBox:  { width: GUIDE_W, height: GUIDE_H },
 
   // Corner strokes

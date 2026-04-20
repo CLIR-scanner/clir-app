@@ -13,9 +13,34 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
-import { getIngredient, getAlternatives } from '../../services/scan.service';
+import { getIngredient, getAlternatives, getProductById } from '../../services/scan.service';
+import { addFavorite, removeFavorite } from '../../services/list.service';
+import { useListStore } from '../../store/list.store';
+import { Colors } from '../../constants/colors';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
+
+// ── Dummy data (Good verdict) ──────────────────────────────────────────────────
+const DUMMY_GOOD_PRODUCT: Product = {
+  id: 'prod-dummy-001',
+  barcode: '0049000000443',
+  name: 'Coca-Cola Classic',
+  brand: 'The Coca-Cola Company',
+  image: 'https://images.openfoodfacts.org/images/products/004/900/000/0443/front_en.7.400.jpg',
+  isSafe: true,
+  riskLevel: 'safe',
+  riskIngredients: [],
+  mayContainIngredients: [],
+  alternatives: [],
+  ingredients: [
+    { id: 'off-caffeine',        name: 'Caffeine',                       nameKo: '카페인',              description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-carbonated-water',name: 'Carbonated Water',               nameKo: '탄산수',              description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-natural-flavors', name: 'Natural Flavors',                nameKo: '천연향',              description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-hfcs',            name: 'High Fructose Corn Syrup or Sugar', nameKo: '액상과당 또는 설탕', description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-phosphoric-acid', name: 'Phosphoric Acid',                nameKo: '인산',                description: '', riskLevel: 'safe', sources: [] },
+    { id: 'off-caramel-color',   name: 'Caramel Color',                  nameKo: '캐러멜 색소',         description: '', riskLevel: 'safe', sources: [] },
+  ] as unknown as Product['ingredients'],
+};
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG         = '#F9FFF3';
@@ -28,12 +53,27 @@ const VERDICT = {
 } satisfies Record<RiskLevel, { dot: string; label: string; iconBg: string; icon: string }>;
 
 export default function HistoryProductDetailScreen({ navigation, route }: Props) {
-  const { product, hideTitle = false } = route.params;
+  const { product: initialProduct, hideTitle = false } = route.params;
   const insets = useSafeAreaInsets();
+
+  // ── Full product data — fetched if ingredients are missing ─
+  const [product, setProduct] = useState<Product>(initialProduct ?? DUMMY_GOOD_PRODUCT);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // ── Alternatives state — initialized from route params, lazy-fetched if empty ─
   const [alts,        setAlts]        = useState<Product[]>(product.alternatives);
   const [altsLoading, setAltsLoading] = useState(false);
+
+  useEffect(() => {
+    // ── Fetch full product details if ingredients are missing ─
+    if (product.ingredients.length > 0 || !product.id) return;
+    
+    setIsLoadingDetails(true);
+    getProductById(product.id)
+      .then(fullProduct => { setProduct(fullProduct); })
+      .catch(() => { /* silent — use partial product data */ })
+      .finally(() => { setIsLoadingDetails(false); });
+  }, [product.id]);
 
   useEffect(() => {
     // product는 route.params에서 고정 — 스택 네비게이터는 화면마다 새 인스턴스를 생성하므로
@@ -47,6 +87,43 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
       .finally(() => { setAltsLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps — product는 route.params 고정값
   }, []);
+
+  // ── Favorites state ───────────────────────────────────────────────────────
+  // lazy initializer: 첫 렌더부터 스토어 기준으로 초기화 (Favorites 목록 진입 시 즉시 빨간 하트)
+  const [favorited,  setFavorited]  = useState(() =>
+    useListStore.getState().favorites.some(f => f.productId === product.id),
+  );
+  const [favLoading, setFavLoading] = useState(false);
+  const addFavoriteToStore      = useListStore(s => s.addFavorite);
+  const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
+
+  async function handleFavorite() {
+    if (favLoading) return;
+    setFavLoading(true);
+    try {
+      if (favorited) {
+        const favItem = useListStore.getState().favorites.find(f => f.productId === product.id);
+        console.log('삭제 시도 favItem:', favItem);
+        console.log('현재 favorites:', useListStore.getState().favorites);
+        if (favItem) {
+          console.log('favItem.id (DELETE 경로에 사용):', favItem.id);
+          console.log('favItem.productId:', favItem.productId);
+          console.log('product.id (화면의 제품 ID):', product.id);
+          await removeFavorite(favItem.id);
+          removeFavoriteFromStore(favItem.id);
+        }
+        setFavorited(false);
+      } else {
+        const item = await addFavorite(product.id);
+        console.log('추가된 item:', item);
+        addFavoriteToStore({ ...item, product });
+        setFavorited(true);
+      }
+    } catch(e) {
+      console.log('에러:', e);
+    }
+    finally { setFavLoading(false); }
+  }
 
   // ── Ingredient detail bottom sheet state ──────────────────────────────────
   const [modalOpen,        setModalOpen]        = useState(false);
@@ -122,6 +199,14 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         showsVerticalScrollIndicator={false}
       >
 
+        {/* Loading indicator for fetching full product details */}
+        {isLoadingDetails && (
+          <View style={styles.loadingDetailWrap}>
+            <ActivityIndicator size="small" color={TITLE_CLR} />
+            <Text style={styles.loadingText}>로딩 중...</Text>
+          </View>
+        )}
+
         {/* 1. Product image */}
         <View style={styles.imgWrap}>
           <View style={styles.imgBox}>
@@ -146,7 +231,44 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
-        {/* 3. Risk ingredients box (Bad / Poor only) */}
+        {/* Add to Favorites */}
+        <View style={styles.favWrap}>
+          <TouchableOpacity
+            style={[styles.favBtn, favorited && styles.favBtnActive]}
+            onPress={handleFavorite}
+            disabled={favLoading}
+            activeOpacity={0.7}
+          >
+            {favLoading ? (
+              <ActivityIndicator size="small" color={Colors.danger} />
+            ) : (
+              <Text style={[styles.favBtnText, favorited && styles.favBtnTextActive]}>
+                {favorited ? '♥' : '♡'} Add to Favorites
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* 3-A. All Ingredients (Good only) — Brand Name 바로 아래 */}
+        {!showRisk && allIngredients.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.pillWrap}>
+              <View style={styles.pill}>
+                <Text style={styles.pillText}>All Ingredients</Text>
+              </View>
+            </View>
+
+            {allIngredients.map((name, idx) => (
+              <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
+            ))}
+
+            <Text style={styles.disclaimer}>
+              {'** For severe allergies,\nplease double-check all ingredients before consuming.'}
+            </Text>
+          </View>
+        )}
+
+        {/* 3-B. Risk ingredients box (Bad / Poor only) */}
         {showRisk && (
           <View style={[styles.riskBox, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
             {/* Legend-style header */}
@@ -238,8 +360,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* 5. All Ingredients */}
-        {allIngredients.length > 0 && (
+        {/* 5. All Ingredients — Bad/Poor 전용 (하단) */}
+        {showRisk && allIngredients.length > 0 && (
           <View style={styles.section}>
             <View style={styles.pillWrap}>
               <View style={styles.pill}>
@@ -346,6 +468,13 @@ const styles = StyleSheet.create({
   productName:      { fontSize: 22, fontWeight: '800', color: '#1A1A1A' },
   brandName:        { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 24 },
 
+  // Add to Favorites
+  favWrap:          { alignItems: 'center', marginBottom: 20 },
+  favBtn:           { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.gray300, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 16 },
+  favBtnActive:     { borderColor: Colors.danger },
+  favBtnText:       { fontSize: 13, color: Colors.gray700 },
+  favBtnTextActive: { color: Colors.danger },
+
   // Risk box
   riskBox:          { borderWidth: 1.5, borderRadius: 16, padding: 16, marginBottom: 28 },
   riskHeader:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10 },
@@ -376,9 +505,13 @@ const styles = StyleSheet.create({
   // Alternatives loading
   altsLoadingWrap: { paddingVertical: 24, alignItems: 'center' },
 
+  // Loading details
+  loadingDetailWrap: { paddingVertical: 24, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { fontSize: 12, color: TITLE_CLR, marginTop: 8 },
+
   // All ingredients
   ingredientItem:      { fontSize: 14, color: '#1A1A1A', textAlign: 'center', marginBottom: 6 },
-  disclaimer:          { fontSize: 11, color: '#555', textAlign: 'left', lineHeight: 17, marginTop: 16 },
+  disclaimer:          { fontSize: 11, color: '#555', textAlign: 'center', lineHeight: 17, marginTop: 16 },
 
   // Tappable risk ingredient
   riskIngredientLink:  { textDecorationLine: 'underline' },

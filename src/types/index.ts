@@ -70,6 +70,32 @@ export interface TriggeredIngredient extends IngredientSummary {
   riskLevel: RiskLevel;
 }
 
+/** GET /search/products items[] — 서버에서 개인화 판정 후 반환 */
+export interface SearchResultItem {
+  id: string;
+  name: string;
+  brand: string;
+  image?: string;
+  riskLevel: RiskLevel;
+  isSafe: boolean;
+  isFavorited: boolean;
+}
+
+/** GET /search/suggestions suggestions[] — 개인화 없는 prefix 매칭 결과 */
+export interface SearchSuggestion {
+  productId: string;
+  name: string;
+  brand: string;
+  highlight: SearchHighlight[];
+}
+
+/** 자동완성 UI에서 매칭 구간을 강조하기 위한 인덱스 정보 */
+export interface SearchHighlight {
+  field: 'name' | 'brand';
+  start: number;
+  end: number;
+}
+
 export interface Profile {
   id: string;
   name: string;
@@ -229,8 +255,8 @@ export type ScanStackParamList = {
    * hideTitle: 대안 상품 상세에서 진입할 때 true → "History" 타이틀 숨김
    */
   HistoryProductDetail: { product: Product; hideTitle?: boolean };
-  /** barcode: 미등록 제품 보완용 OCR 진입 시 함께 전달 */
-  OCRCapture: { barcode?: string };
+  /** barcode: 미등록 제품 보완용 OCR 진입 시 함께 전달 / photoUri: 이미 촬영된 사진 URI (preview 상태로 바로 시작) */
+  OCRCapture: { barcode?: string; photoUri?: string };
 };
 
 export type SearchStackParamList = {
