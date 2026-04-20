@@ -7,14 +7,14 @@ import {
   ScrollView,
   Image,
   Modal,
-  ActivityIndicator,
+  ActivityIndicator, // ingredient 모달 로딩에 사용
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SearchStackParamList, RiskLevel, Ingredient } from '../../types';
 import { getIngredient } from '../../services/scan.service';
-import { addFavorite } from '../../services/list.service';
+import { addFavorite, removeFavorite } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
 import { ApiError } from '../../lib/api';
 
@@ -38,22 +38,37 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
   const [detailLoading,    setDetailLoading]    = useState(false);
   const cancelRef = useRef(false);
 
-  const addFavoriteToStore = useListStore(s => s.addFavorite);
-  const favorites          = useListStore(s => s.favorites);
-  const [favorited,    setFavorited]    = useState(() => favorites.some(f => f.productId === product.id));
-  const [favLoading,   setFavLoading]   = useState(false);
+  const addFavoriteToStore    = useListStore(s => s.addFavorite);
+  const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
+  const favorites             = useListStore(s => s.favorites);
 
-  async function handleFavorite() {
-    if (favorited || favLoading) return;
-    setFavLoading(true);
-    try {
-      const item = await addFavorite(product.id);
-      addFavoriteToStore({ ...item, product });
+  const existingFav = favorites.find(f => f.productId === product.id);
+  const [favorited,   setFavorited]   = useState(() => !!existingFav);
+  const [favoriteId,  setFavoriteId]  = useState<string>(() => existingFav?.id ?? '');
+
+  function handleFavorite() {
+    if (favorited) {
+      // 해제: 스토어에서 즉시 제거
+      removeFavoriteFromStore(favoriteId);
+      setFavorited(false);
+      setFavoriteId('');
+      removeFavorite(favoriteId).catch(() => {});
+    } else {
+      // 추가: 스토어에 즉시 반영
+      const newItem: import('../../types').FavoriteItem = {
+        id: `fav-${Date.now()}`,
+        productId: product.id,
+        userId: 'dev-user',
+        memo: '',
+        addedAt: new Date(),
+        product,
+      };
+      addFavoriteToStore(newItem);
       setFavorited(true);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 409) setFavorited(true);
-    } finally {
-      setFavLoading(false);
+      setFavoriteId(newItem.id);
+      addFavorite(product.id).catch((err) => {
+        if (err instanceof ApiError && err.status === 409) return;
+      });
     }
   }
 
@@ -142,21 +157,14 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
         <TouchableOpacity
           style={[styles.favBtn, favorited && styles.favBtnDone]}
           onPress={handleFavorite}
-          activeOpacity={0.8}
-          disabled={favLoading || favorited}
+          activeOpacity={0.75}
         >
-          {favLoading ? (
-            <ActivityIndicator size="small" color={TITLE_CLR} />
-          ) : (
-            <>
-              <Text style={[styles.favBtnHeart, favorited && styles.favBtnHeartDone]}>
-                {favorited ? '♥' : '♡'}
-              </Text>
-              <Text style={[styles.favBtnText, favorited && styles.favBtnTextDone]}>
-                {favorited ? 'Added to Favorites' : 'Add to Favorites'}
-              </Text>
-            </>
-          )}
+          <Text style={[styles.favBtnHeart, favorited && styles.favBtnHeartDone]}>
+            {favorited ? '♥' : '♡'}
+          </Text>
+          <Text style={[styles.favBtnText, favorited && styles.favBtnTextDone]}>
+            {favorited ? 'Saved · Tap to remove' : 'Add to Favorites'}
+          </Text>
         </TouchableOpacity>
 
         {/* 3. Risk ingredients box (Bad / Poor only) */}
@@ -301,15 +309,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: TITLE_CLR,
     borderRadius: 50,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    gap: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    gap: 5,
     marginBottom: 28,
   },
   favBtnDone:      { backgroundColor: TITLE_CLR },
-  favBtnHeart:     { fontSize: 15, color: TITLE_CLR },
+  favBtnHeart:     { fontSize: 11, color: TITLE_CLR },
   favBtnHeartDone: { color: '#fff' },
-  favBtnText:      { fontSize: 14, fontWeight: '500', color: TITLE_CLR },
+  favBtnText:      { fontSize: 11, fontWeight: '500', color: TITLE_CLR },
   favBtnTextDone:  { color: '#fff' },
 
   riskBox:          { borderWidth: 1.5, borderRadius: 16, padding: 16, marginBottom: 28 },

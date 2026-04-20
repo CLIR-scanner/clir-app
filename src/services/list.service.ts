@@ -233,7 +233,17 @@ export async function addFavorite(productId: string): Promise<FavoriteItem> {
   if (USE_MOCK) {
     const existing = MOCK_FAVORITES.find(f => f.productId === productId);
     if (existing) return existing;
-    throw new Error('Product not found in mock');
+    // 목록에 없는 제품도 즐겨찾기 추가 허용 (검색 결과 등)
+    const newItem: FavoriteItem = {
+      id: `fav-${Date.now()}`,
+      productId,
+      userId: 'dev-user',
+      memo: '',
+      addedAt: new Date(),
+      product: { id: productId, name: '', brand: '', ingredients: [], isSafe: true, riskLevel: 'safe', riskIngredients: [], mayContainIngredients: [], alternatives: [] },
+    };
+    MOCK_FAVORITES.push(newItem);
+    return newItem;
   }
   const raw = await apiFetch<FavoritePostResponse>('/favorites', {
     method: 'POST',

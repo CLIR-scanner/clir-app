@@ -15,6 +15,13 @@ export async function searchProducts(query: string): Promise<Product[]> {
 }
 
 /**
+ * 전체 제품 목록 반환 (검색 전 그리드 표시용).
+ */
+export async function getAllProducts(): Promise<Product[]> {
+  return [...MOCK_PRODUCTS];
+}
+
+/**
  * 자동완성 제안 목록 (제품명만 반환).
  */
 export async function getSearchSuggestions(query: string): Promise<string[]> {
