@@ -10,7 +10,7 @@ export default function SearchNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Search"       component={SearchScreen}       />
-      <Stack.Screen name="SearchResult" component={SearchResultScreen} options={{ headerShown: true }} />
+      <Stack.Screen name="SearchResult" component={SearchResultScreen} />
     </Stack.Navigator>
   );
 }
