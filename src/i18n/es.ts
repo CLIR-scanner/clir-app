@@ -92,6 +92,24 @@ const es = {
     goBack: 'Volver a ', tryAnother: 'Intentar con otro correo',
   },
   language: { title: 'Idioma', deviceDetected: 'Idioma del dispositivo detectado:', deviceBadge: 'Dispositivo' },
+  search: {
+    placeholder:   'Buscar producto o marca',
+    sortBy:        'Ordenar',
+    sortRelevance: 'Relevancia',
+    sortSafety:    'Seguridad',
+    sortName:      'Nombre',
+    recentTitle:   'Búsquedas recientes',
+    empty:         'Sin resultados',
+    loading:       'Buscando...',
+    filters:        'Filtros',
+    categories:     'Categorías de productos',
+    safeOnlyLabel:  'Mostrar solo productos seguros para mí',
+    priceRange:     'Rango de precios',
+    minPrice:       'Precio mínimo',
+    maxPrice:       'Precio máximo',
+    apply:          'Aplicar filtros',
+    reset:          'Restablecer',
+  },
 } as const;
 
 export default es;

@@ -91,6 +91,24 @@ const ja = {
     goBack: '戻る ', tryAnother: '別のメールを使用',
   },
   language: { title: '言語', deviceDetected: '端末の言語を検出しました:', deviceBadge: '端末' },
+  search: {
+    placeholder:   '製品名またはブランドを検索',
+    sortBy:        '並び替え',
+    sortRelevance: '関連度順',
+    sortSafety:    '安全度順',
+    sortName:      '名前順',
+    recentTitle:   '最近の検索',
+    empty:         '検索結果がありません',
+    loading:       '検索中...',
+    filters:        'フィルター',
+    categories:     '製品カテゴリ',
+    safeOnlyLabel:  '安全な製品のみ表示',
+    priceRange:     '価格帯',
+    minPrice:       '最低価格',
+    maxPrice:       '最高価格',
+    apply:          'フィルターを適用',
+    reset:          'リセット',
+  },
 } as const;
 
 export default ja;

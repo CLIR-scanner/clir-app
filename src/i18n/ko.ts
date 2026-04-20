@@ -198,6 +198,26 @@ const ko = {
     deviceBadge:     '기기',
   },
 
+  // ── Search ────────────────────────────────────────────────────────────────
+  search: {
+    placeholder:    '제품명 또는 브랜드 검색',
+    sortBy:         '보기 필터순',
+    sortRelevance:  '관련도순',
+    sortSafety:     '안전도순',
+    sortName:       '이름순',
+    recentTitle:    '최근 검색',
+    empty:          '검색 결과가 없습니다',
+    loading:        '검색 중...',
+    filters:        '필터',
+    categories:     '제품 카테고리',
+    safeOnlyLabel:  '나에게 안전한 제품만 보기',
+    priceRange:     '가격 범위',
+    minPrice:       '최소 가격',
+    maxPrice:       '최대 가격',
+    apply:          '필터 적용',
+    reset:          '초기화',
+  },
+
   // ── Personal Name / Password ──────────────────────────────────────────────
   personalName: {
     title:                  '프로필 편집',

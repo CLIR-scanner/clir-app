@@ -91,6 +91,24 @@ const zh = {
     goBack: '返回 ', tryAnother: '使用其他邮箱',
   },
   language: { title: '语言', deviceDetected: '已检测到设备语言:', deviceBadge: '设备' },
+  search: {
+    placeholder:   '搜索产品名称或品牌',
+    sortBy:        '排序',
+    sortRelevance: '相关度',
+    sortSafety:    '安全度',
+    sortName:      '名称',
+    recentTitle:   '最近搜索',
+    empty:         '没有找到结果',
+    loading:       '搜索中...',
+    filters:        '筛选',
+    categories:     '产品类别',
+    safeOnlyLabel:  '只显示对我安全的产品',
+    priceRange:     '价格范围',
+    minPrice:       '最低价格',
+    maxPrice:       '最高价格',
+    apply:          '应用筛选',
+    reset:          '重置',
+  },
 } as const;
 
 export default zh;
