@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Image, ActivityIndicator, Animated, Dimensions, Alert,
+  Image, ActivityIndicator, Animated, Dimensions, Alert, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -198,11 +198,22 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
       ]).start();
     } catch (err) {
       if (cancelledRef.current) return;
-      setState('preview');
-      if (err instanceof ApiError && err.code === 'OCR_FAILED') {
-        Alert.alert('인식 실패', '성분표를 더 밝고 선명하게 촬영해주세요.');
+      const isOcrFail = err instanceof ApiError && err.code === 'OCR_FAILED';
+      const title = isOcrFail ? '인식 실패' : '오류';
+      const msg   = isOcrFail
+        ? '성분표를 더 밝고 선명하게 촬영해주세요.'
+        : err instanceof ApiError
+          ? err.message
+          : '분석에 실패했습니다. 다시 시도해주세요.';
+      // 모바일 웹 브라우저는 fetch 콜백에서 window.alert를 억제/드랍하는 경우가
+      // 있어 alert만 믿으면 "로딩 후 조용히 실패"로 보인다. 웹에선 전용 error
+      // state를 사용해 화면에 명시적으로 렌더링한다.
+      if (Platform.OS === 'web') {
+        setErrorMsg(msg);
+        setState('error');
       } else {
-        Alert.alert('오류', '분석에 실패했습니다. 다시 시도해주세요.');
+        setState('preview');
+        Alert.alert(title, msg);
       }
     }
   }

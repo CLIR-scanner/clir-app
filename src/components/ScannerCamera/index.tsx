@@ -16,6 +16,8 @@ export interface ScannerCameraProps {
   active?: boolean;
   onBarcodeScanned?: (result: ScannerResult) => void;
   barcodeTypes?: readonly ScannerBarcodeType[];
+  /** 웹 shim 전용 — 네이티브는 useCameraPermissions로 처리되므로 무시. */
+  onError?: (reason: 'DENIED' | 'UNAVAILABLE' | 'UNKNOWN', raw?: unknown) => void;
 }
 
 export interface ScannerCameraHandle {
