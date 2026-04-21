@@ -538,7 +538,7 @@ export default function CommunityScreen({ navigation }: Props) {
 
         {/* ── Sections in dynamic order ─────────────────────────────────── */}
         {sectionOrder.map((tab, i) => (
-          <View key={tab} onLayout={onSectionLayout(tab)}>
+          <View key={`${i}-${tab}`} onLayout={onSectionLayout(tab)}>
             {renderSection(tab)}
             {i < sectionOrder.length - 1 && <View style={styles.divider} />}
           </View>
