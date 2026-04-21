@@ -4,7 +4,7 @@ const zh = {
   },
   common: {
     save: '保存', cancel: '取消', delete: '删除', confirm: '确认', back: '返回',
-    loading: '加载中...', error: '发生错误。', retry: '重试', empty: '暂无内容。',
+    loading: '加载中...', saving: '保存中...', error: '发生错误。', retry: '重试', empty: '暂无内容。',
     continue: '继续', done: '完成', edit: '编辑', editList: '编辑列表', add: '添加',
     clearAll: '全部清除', selected_one: '已选 {{count}} 项', selected_other: '已选 {{count}} 项',
     currentlyActive: '当前应用中', tapToSelect: '点击选择',

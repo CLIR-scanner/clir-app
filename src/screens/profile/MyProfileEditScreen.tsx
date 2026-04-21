@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView,
+  ScrollView, Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import { ProfileStackParamList, SensitivityLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
 import { ALLERGY_CATEGORIES, ALLERGY_CANDIDATES } from '../../constants/allergyData';
+import { ApiError } from '../../services/auth.service';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'MyProfileEdit'>;
 
@@ -18,11 +19,12 @@ export default function MyProfileEditScreen() {
   const { t }             = useTranslation();
   const allergyProfile    = useUserStore(s => s.activeProfile.allergyProfile);
   const sensitivityLevel  = useUserStore(s => s.activeProfile.sensitivityLevel);
-  const updateActiveProfile = useUserStore(s => s.updateActiveProfile);
+  const syncActiveProfile = useUserStore(s => s.syncActiveProfile);
 
   const [selectedSensitivity, setSelectedSensitivity] = useState<SensitivityLevel>(sensitivityLevel);
   const [selectedAllergy, setSelectedAllergy]         = useState<Set<string>>(new Set(allergyProfile));
   const [expandedCats, setExpandedCats]               = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving]                       = useState(false);
 
   // ── 저장 ──────────────────────────────────────────────────────────────────
   const isDirty =
@@ -30,12 +32,23 @@ export default function MyProfileEditScreen() {
     !(selectedAllergy.size === allergyProfile.length &&
       allergyProfile.every(i => selectedAllergy.has(i)));
 
-  function handleSave() {
-    updateActiveProfile({
-      sensitivityLevel: selectedSensitivity,
-      allergyProfile: Array.from(selectedAllergy),
-    });
-    navigation.goBack();
+  async function handleSave() {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await syncActiveProfile({
+        sensitivityLevel: selectedSensitivity,
+        allergyProfile: Array.from(selectedAllergy),
+      });
+      navigation.goBack();
+    } catch (err) {
+      const message = err instanceof ApiError
+        ? err.message
+        : t('common.error');
+      Alert.alert(t('common.error'), message);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   // ── 알러지 토글 ──────────────────────────────────────────────────────────
@@ -218,12 +231,14 @@ export default function MyProfileEditScreen() {
 
       {/* 저장 버튼 */}
       <TouchableOpacity
-        style={[styles.saveButton, !isDirty && styles.saveButtonDisabled]}
+        style={[styles.saveButton, (!isDirty || isSaving) && styles.saveButtonDisabled]}
         onPress={handleSave}
-        disabled={!isDirty}
+        disabled={!isDirty || isSaving}
         activeOpacity={0.8}
       >
-        <Text style={styles.saveText}>{t('common.save')}</Text>
+        <Text style={styles.saveText}>
+          {isSaving ? t('common.saving') : t('common.save')}
+        </Text>
       </TouchableOpacity>
     </View>
   );

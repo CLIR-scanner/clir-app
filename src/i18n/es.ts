@@ -4,7 +4,7 @@ const es = {
   },
   common: {
     save: 'Guardar', cancel: 'Cancelar', delete: 'Eliminar', confirm: 'Confirmar', back: 'Volver',
-    loading: 'Cargando...', error: 'Ha ocurrido un error.', retry: 'Reintentar', empty: 'Sin elementos.',
+    loading: 'Cargando...', saving: 'Guardando...', error: 'Ha ocurrido un error.', retry: 'Reintentar', empty: 'Sin elementos.',
     continue: 'Continuar', done: 'Listo', edit: 'Editar', editList: 'Editar lista', add: 'Añadir',
     clearAll: 'Borrar todo', selected_one: '{{count}} seleccionado', selected_other: '{{count}} seleccionados',
     currentlyActive: 'Activo actualmente', tapToSelect: 'Toca para seleccionar',

@@ -157,6 +157,13 @@ export interface UserStore {
   logout: () => void;
   switchProfile: (profileId: string) => void;
   updateActiveProfile: (updates: Partial<Profile>) => void;
+  /**
+   * 서버(POST /auth/survey)에 알러지·식이·민감도를 전체-치환 저장.
+   * 낙관적 업데이트 → 실패 시 롤백 + throw. 메인 프로필(activeProfile.id === currentUser.id)에서만 서버 동기화.
+   */
+  syncActiveProfile: (
+    updates: Partial<Pick<Profile, 'allergyProfile' | 'dietaryRestrictions' | 'sensitivityLevel'>>,
+  ) => Promise<void>;
   updateUserName: (name: string) => void;
   setLanguage: (language: string) => void;
   addMultiProfile: (profile: Omit<Profile, 'id'>) => void;

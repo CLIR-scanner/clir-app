@@ -16,6 +16,7 @@ const ko = {
     confirm:        '확인',
     back:           '뒤로',
     loading:        '불러오는 중...',
+    saving:         '저장 중...',
     error:          '오류가 발생했습니다.',
     retry:          '다시 시도',
     empty:          '항목이 없습니다.',
