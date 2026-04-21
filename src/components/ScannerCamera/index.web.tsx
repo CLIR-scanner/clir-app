@@ -12,6 +12,40 @@ import {
 } from '@zxing/browser';
 import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 
+// ─── 네이티브 Shape Detection API 타입 ────────────────────────────────────────
+// lib.dom.d.ts에 정식 정의되기 전 버전을 염두에 두고 inline 선언.
+interface DetectedBarcode {
+  format: string;
+  rawValue: string;
+}
+interface BarcodeDetectorInstance {
+  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
+}
+interface BarcodeDetectorCtor {
+  new (options?: { formats?: string[] }): BarcodeDetectorInstance;
+  getSupportedFormats(): Promise<string[]>;
+}
+
+// BarcodeDetector가 쓰는 포맷 문자열 (W3C Shape Detection 규격)
+const BD_FORMATS = [
+  'ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code',
+];
+
+// zxing fallback 포맷 (열거형 상수)
+const ZXING_FORMATS = [
+  BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
+  BarcodeFormat.UPC_A,  BarcodeFormat.UPC_E,
+  BarcodeFormat.CODE_128, BarcodeFormat.CODE_39,
+  BarcodeFormat.QR_CODE,
+];
+
+function buildZxingHints() {
+  const hints = new Map<DecodeHintType, unknown>();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, ZXING_FORMATS);
+  hints.set(DecodeHintType.TRY_HARDER, true);
+  return hints;
+}
+
 export type ScannerBarcodeType =
   | 'ean13' | 'ean8' | 'upc_a' | 'upc_e' | 'code128' | 'code39' | 'qr';
 
@@ -34,28 +68,9 @@ export interface ScannerCameraHandle {
   takePictureAsync(opts?: { quality?: number }): Promise<{ uri: string }>;
 }
 
-// 제품 바코드는 거의 1D. QR을 남기되 2D 가중 탐색을 피하기 위해 명시 리스트로 제한.
-const FORMATS = [
-  BarcodeFormat.EAN_13,
-  BarcodeFormat.EAN_8,
-  BarcodeFormat.UPC_A,
-  BarcodeFormat.UPC_E,
-  BarcodeFormat.CODE_128,
-  BarcodeFormat.CODE_39,
-  BarcodeFormat.QR_CODE,
-];
-
-function buildHints() {
-  const hints = new Map<DecodeHintType, unknown>();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, FORMATS);
-  hints.set(DecodeHintType.TRY_HARDER, true);
-  return hints;
-}
-
 const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
   ({ facing = 'back', active = true, onBarcodeScanned, onError }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const controlsRef = useRef<IScannerControls | null>(null);
     const callbackRef = useRef(onBarcodeScanned);
     const errorRef    = useRef(onError);
     callbackRef.current = onBarcodeScanned;
@@ -82,77 +97,161 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
 
     useEffect(() => {
       if (!active) return;
-      const video = videoRef.current;
-      if (!video) return;
+      const videoEl = videoRef.current;
+      if (!videoEl) return;
+      // async 클로저에 nullable 누출 방지 — 지역 상수로 좁혀둔다.
+      const video: HTMLVideoElement = videoEl;
 
       let cancelled = false;
-      // 250ms 스캔 간격 — 연속 decode로 CPU 과소비 방지하면서 반응성 확보.
-      const reader = new BrowserMultiFormatReader(buildHints(), {
-        delayBetweenScanAttempts: 250,
-      });
+      let stream: MediaStream | null = null;
+      let rafId = 0;
+      let zxingControls: IScannerControls | null = null;
 
-      // 해상도를 명시해 저해상도(640x480) 기본값을 회피. 바코드 edge가 선명해야
-      // zxing detection이 안정적으로 성공한다.
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: facing === 'back' ? { ideal: 'environment' } : { ideal: 'user' },
-          width:  { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-        },
-        audio: false,
+      const kindFromError = (err: unknown): 'DENIED' | 'UNAVAILABLE' => {
+        const name = (err && typeof err === 'object' && 'name' in err)
+          ? String((err as { name: unknown }).name) : '';
+        return (name === 'NotAllowedError' || name === 'SecurityError') ? 'DENIED' : 'UNAVAILABLE';
       };
 
-      const applyAdvancedConstraints = (stream: MediaStream) => {
-        // 모바일 후면 카메라에서 연속 AF가 디폴트가 아닌 경우가 있어 명시 요청.
-        // 미지원 장치에선 throw — 무시하면 됨.
-        const track = stream.getVideoTracks()[0];
-        if (!track) return;
-        const caps = typeof track.getCapabilities === 'function'
-          ? track.getCapabilities() as { focusMode?: string[] }
-          : undefined;
-        if (caps?.focusMode?.includes('continuous')) {
+      const reportError = (err: unknown) => {
+        if (cancelled) return;
+        const kind = kindFromError(err);
+        setErrorKind(kind);
+        errorRef.current?.(kind, err);
+      };
+
+      const maybeApplyAF = (s: MediaStream) => {
+        const track = s.getVideoTracks()[0];
+        if (!track || typeof track.getCapabilities !== 'function') return;
+        const caps = track.getCapabilities() as { focusMode?: string[] };
+        if (caps.focusMode?.includes('continuous')) {
           track.applyConstraints({
             advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
-          }).catch(() => { /* 지원 안하면 무시 */ });
+          }).catch(() => { /* 미지원 무시 */ });
         }
       };
 
-      reader
-        .decodeFromConstraints(constraints, video, (result, _err, controls) => {
-          if (cancelled) {
-            controls.stop();
-            return;
+      async function start() {
+        // ── 1. getUserMedia ───────────────────────────────────────────────────
+        // `min` 제약 제거 — 저사양 디바이스에서 OverconstrainedError로 시작도 못하는 것 방지.
+        const constraints: MediaStreamConstraints = {
+          video: {
+            facingMode: facing === 'back' ? { ideal: 'environment' } : { ideal: 'user' },
+            width:  { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        };
+
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err) {
+          reportError(err);
+          return;
+        }
+        if (cancelled) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        video.srcObject = stream;
+        try { await video.play(); } catch { /* iOS autoplay edge-case */ }
+        maybeApplyAF(stream);
+
+        // 첫 프레임 데이터 준비 대기 — detect() 호출 전 video.readyState ≥ 2 보장.
+        if (video.readyState < 2) {
+          await new Promise<void>(resolve => {
+            const onReady = () => {
+              video.removeEventListener('loadeddata', onReady);
+              resolve();
+            };
+            video.addEventListener('loadeddata', onReady);
+          });
+        }
+        if (cancelled) return;
+
+        // ── 2. Tier 1: BarcodeDetector ────────────────────────────────────────
+        // Chrome Android, Samsung Internet, iOS Safari 17+ 등에서 OS-level barcode
+        // 스캐너를 직접 호출. 순수 JS zxing 대비 수십 배 빠르고 검출률 높음.
+        const win = window as unknown as { BarcodeDetector?: BarcodeDetectorCtor };
+        if (win.BarcodeDetector) {
+          try {
+            const supported = await win.BarcodeDetector.getSupportedFormats();
+            const want = BD_FORMATS.filter(f => supported.includes(f));
+            if (want.length > 0) {
+              const detector = new win.BarcodeDetector({ formats: want });
+              // eslint-disable-next-line no-console
+              console.info('[ScannerCamera] using BarcodeDetector', want);
+
+              let logged = false;
+              const loop = async () => {
+                if (cancelled) return;
+                try {
+                  const codes = await detector.detect(video);
+                  if (codes.length && callbackRef.current) {
+                    if (!logged) {
+                      // eslint-disable-next-line no-console
+                      console.info('[ScannerCamera] detected', codes[0].format, codes[0].rawValue);
+                      logged = true;
+                    }
+                    callbackRef.current({
+                      data: codes[0].rawValue,
+                      type: codes[0].format,
+                    });
+                  }
+                } catch {
+                  // 프레임 전환 타이밍의 transient error는 무시 (다음 rAF에서 재시도)
+                }
+                rafId = requestAnimationFrame(loop);
+              };
+              rafId = requestAnimationFrame(loop);
+              return;
+            }
+          } catch {
+            // format 조회/생성 실패 → zxing 폴백
           }
-          controlsRef.current = controls;
-          const stream = video.srcObject as MediaStream | null;
-          if (stream) applyAdvancedConstraints(stream);
-          if (result && callbackRef.current) {
-            callbackRef.current({
-              data: result.getText(),
-              type: result.getBarcodeFormat().toString(),
-            });
-          }
-        })
-        .then(controls => {
-          if (cancelled) controls.stop();
-          else controlsRef.current = controls;
-        })
-        .catch(err => {
-          // 권한 거부·디바이스 없음을 **사용자에게 노출**. 기존 silent catch가
-          // "아무 반응 없음" 증상의 주 원인이었다.
-          const name = (err && typeof err === 'object' && 'name' in err)
-            ? String((err as { name: unknown }).name)
-            : '';
-          const kind: 'DENIED' | 'UNAVAILABLE' =
-            name === 'NotAllowedError' || name === 'SecurityError' ? 'DENIED' : 'UNAVAILABLE';
-          setErrorKind(kind);
-          errorRef.current?.(kind, err);
+        }
+
+        // ── 3. Tier 2: zxing-browser fallback ────────────────────────────────
+        // iOS <17, Firefox, BarcodeDetector 미탑재 브라우저용.
+        // eslint-disable-next-line no-console
+        console.info('[ScannerCamera] using zxing fallback');
+        const reader = new BrowserMultiFormatReader(buildZxingHints(), {
+          delayBetweenScanAttempts: 200,
         });
+        try {
+          zxingControls = await reader.decodeFromStream(
+            stream,
+            video,
+            (result) => {
+              if (cancelled) return;
+              if (result && callbackRef.current) {
+                callbackRef.current({
+                  data: result.getText(),
+                  type: result.getBarcodeFormat().toString(),
+                });
+              }
+            },
+          );
+        } catch (err) {
+          reportError(err);
+        }
+      }
+
+      start();
 
       return () => {
         cancelled = true;
-        controlsRef.current?.stop();
-        controlsRef.current = null;
+        if (rafId) cancelAnimationFrame(rafId);
+        zxingControls?.stop();
+        zxingControls = null;
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+          stream = null;
+        }
+        if (video.srcObject) {
+          video.srcObject = null;
+        }
       };
     }, [active, facing]);
 
@@ -165,10 +264,8 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
           muted
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
+            top: 0, left: 0,
+            width: '100%', height: '100%',
             objectFit: 'cover',
             backgroundColor: '#000',
           }}
