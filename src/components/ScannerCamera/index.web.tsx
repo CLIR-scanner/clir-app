@@ -73,8 +73,13 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
     const videoRef = useRef<HTMLVideoElement>(null);
     const callbackRef = useRef(onBarcodeScanned);
     const errorRef    = useRef(onError);
+    // active를 ref로 관리 — 스트림 lifecycle은 active에 의존하지 않고, 콜백
+    // 호출 여부만 activeRef로 게이트한다. 네이티브(index.tsx)와 의미 일치:
+    // active=false여도 카메라 프리뷰는 계속 노출되어야 함 (OCR 모드 등).
+    const activeRef = useRef(active);
     callbackRef.current = onBarcodeScanned;
     errorRef.current    = onError;
+    activeRef.current   = active;
 
     const [errorKind, setErrorKind] =
       useState<'DENIED' | 'UNAVAILABLE' | null>(null);
@@ -96,7 +101,6 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
     }));
 
     useEffect(() => {
-      if (!active) return;
       const videoEl = videoRef.current;
       if (!videoEl) return;
       // async 클로저에 nullable 누출 방지 — 지역 상수로 좁혀둔다.
@@ -186,21 +190,25 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
               let logged = false;
               const loop = async () => {
                 if (cancelled) return;
-                try {
-                  const codes = await detector.detect(video);
-                  if (codes.length && callbackRef.current) {
-                    if (!logged) {
-                      // eslint-disable-next-line no-console
-                      console.info('[ScannerCamera] detected', codes[0].format, codes[0].rawValue);
-                      logged = true;
+                // active=false면 detect() 호출 자체를 스킵 (CPU 절약).
+                // 스트림은 계속 돌아 프리뷰 유지.
+                if (activeRef.current) {
+                  try {
+                    const codes = await detector.detect(video);
+                    if (codes.length && callbackRef.current) {
+                      if (!logged) {
+                        // eslint-disable-next-line no-console
+                        console.info('[ScannerCamera] detected', codes[0].format, codes[0].rawValue);
+                        logged = true;
+                      }
+                      callbackRef.current({
+                        data: codes[0].rawValue,
+                        type: codes[0].format,
+                      });
                     }
-                    callbackRef.current({
-                      data: codes[0].rawValue,
-                      type: codes[0].format,
-                    });
+                  } catch {
+                    // 프레임 전환 타이밍의 transient error는 무시 (다음 rAF에서 재시도)
                   }
-                } catch {
-                  // 프레임 전환 타이밍의 transient error는 무시 (다음 rAF에서 재시도)
                 }
                 rafId = requestAnimationFrame(loop);
               };
@@ -225,6 +233,7 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
             video,
             (result) => {
               if (cancelled) return;
+              if (!activeRef.current) return; // 프리뷰는 유지, 콜백만 억제
               if (result && callbackRef.current) {
                 callbackRef.current({
                   data: result.getText(),
@@ -253,7 +262,7 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
           video.srcObject = null;
         }
       };
-    }, [active, facing]);
+    }, [facing]);
 
     return (
       <>
