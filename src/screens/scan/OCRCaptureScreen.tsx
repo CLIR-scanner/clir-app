@@ -4,10 +4,11 @@ import {
   Image, ActivityIndicator, Animated, Dimensions, Alert, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
+import ScannerCamera, { ScannerCameraHandle } from '../../components/ScannerCamera';
 import { recognizeIngredients, analyzeProduct, saveScanHistory } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
 import { ScanHeader } from './ScanScreen';
@@ -99,7 +100,10 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const { barcode, photoUri: initialPhotoUri } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<ScannerCameraHandle>(null);
+  // 웹에서는 expo-camera가 동작하지 않는다 — getUserMedia 기반 ScannerCamera.web
+  // 내부에서 브라우저 권한을 직접 처리하므로 네이티브 권한 게이트를 건너뛴다.
+  const skipPermissionGate = Platform.OS === 'web';
 
   const currentUser   = useUserStore(s => s.currentUser);
   const addFavToStore = useListStore(s => s.addFavorite);
@@ -260,7 +264,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   }
 
   // ── Permission loading ────────────────────────────────────────────────────────
-  if (!permission) {
+  if (!skipPermissionGate && !permission) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={Colors.primary} size="large" />
@@ -269,7 +273,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   }
 
   // ── Permission denied ─────────────────────────────────────────────────────────
-  if (!permission.granted) {
+  if (!skipPermissionGate && !permission?.granted) {
     return (
       <View style={styles.center}>
         <Text style={styles.permIcon}>📷</Text>
@@ -472,7 +476,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   // ── Idle: full-screen camera with guide frame ─────────────────────────────────
   return (
     <View style={styles.root}>
-      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+      <ScannerCamera ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" active={state === 'idle'} />
 
       {/* Dim overlay */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
