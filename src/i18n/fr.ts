@@ -4,7 +4,7 @@ const fr = {
   },
   common: {
     save: 'Enregistrer', cancel: 'Annuler', delete: 'Supprimer', confirm: 'Confirmer', back: 'Retour',
-    loading: 'Chargement...', error: 'Une erreur est survenue.', retry: 'Réessayer', empty: 'Aucun élément.',
+    loading: 'Chargement...', saving: 'Enregistrement...', error: 'Une erreur est survenue.', retry: 'Réessayer', empty: 'Aucun élément.',
     continue: 'Continuer', done: 'Terminé', edit: 'Modifier', editList: 'Modifier la liste', add: 'Ajouter',
     clearAll: 'Tout effacer', selected_one: '{{count}} sélectionné', selected_other: '{{count}} sélectionnés',
     currentlyActive: 'Actuellement actif', tapToSelect: 'Appuyez pour sélectionner',

@@ -1,13 +1,14 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Image, ActivityIndicator, Animated, Dimensions, Alert,
+  Image, ActivityIndicator, Animated, Dimensions, Alert, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
+import ScannerCamera, { ScannerCameraHandle } from '../../components/ScannerCamera';
 import { recognizeIngredients, analyzeProduct, saveScanHistory } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
 import { ScanHeader } from './ScanScreen';
@@ -99,7 +100,10 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const { barcode, photoUri: initialPhotoUri } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<ScannerCameraHandle>(null);
+  // 웹에서는 expo-camera가 동작하지 않는다 — getUserMedia 기반 ScannerCamera.web
+  // 내부에서 브라우저 권한을 직접 처리하므로 네이티브 권한 게이트를 건너뛴다.
+  const skipPermissionGate = Platform.OS === 'web';
 
   const currentUser   = useUserStore(s => s.currentUser);
   const addFavToStore = useListStore(s => s.addFavorite);
@@ -198,11 +202,22 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
       ]).start();
     } catch (err) {
       if (cancelledRef.current) return;
-      setState('preview');
-      if (err instanceof ApiError && err.code === 'OCR_FAILED') {
-        Alert.alert('인식 실패', '성분표를 더 밝고 선명하게 촬영해주세요.');
+      const isOcrFail = err instanceof ApiError && err.code === 'OCR_FAILED';
+      const title = isOcrFail ? '인식 실패' : '오류';
+      const msg   = isOcrFail
+        ? '성분표를 더 밝고 선명하게 촬영해주세요.'
+        : err instanceof ApiError
+          ? err.message
+          : '분석에 실패했습니다. 다시 시도해주세요.';
+      // 모바일 웹 브라우저는 fetch 콜백에서 window.alert를 억제/드랍하는 경우가
+      // 있어 alert만 믿으면 "로딩 후 조용히 실패"로 보인다. 웹에선 전용 error
+      // state를 사용해 화면에 명시적으로 렌더링한다.
+      if (Platform.OS === 'web') {
+        setErrorMsg(msg);
+        setState('error');
       } else {
-        Alert.alert('오류', '분석에 실패했습니다. 다시 시도해주세요.');
+        setState('preview');
+        Alert.alert(title, msg);
       }
     }
   }
@@ -249,7 +264,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   }
 
   // ── Permission loading ────────────────────────────────────────────────────────
-  if (!permission) {
+  if (!skipPermissionGate && !permission) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={Colors.primary} size="large" />
@@ -258,7 +273,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   }
 
   // ── Permission denied ─────────────────────────────────────────────────────────
-  if (!permission.granted) {
+  if (!skipPermissionGate && !permission?.granted) {
     return (
       <View style={styles.center}>
         <Text style={styles.permIcon}>📷</Text>
@@ -461,7 +476,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   // ── Idle: full-screen camera with guide frame ─────────────────────────────────
   return (
     <View style={styles.root}>
-      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+      <ScannerCamera ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" active={state === 'idle'} />
 
       {/* Dim overlay */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">

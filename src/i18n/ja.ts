@@ -4,7 +4,7 @@ const ja = {
   },
   common: {
     save: '保存', cancel: 'キャンセル', delete: '削除', confirm: '確認', back: '戻る',
-    loading: '読み込み中...', error: 'エラーが発生しました。', retry: '再試行', empty: '項目がありません。',
+    loading: '読み込み中...', saving: '保存中...', error: 'エラーが発生しました。', retry: '再試行', empty: '項目がありません。',
     continue: '続ける', done: '完了', edit: '編集', editList: 'リストを編集', add: '追加',
     clearAll: 'すべてクリア', selected_one: '{{count}}個選択中', selected_other: '{{count}}個選択中',
     currentlyActive: '現在適用中', tapToSelect: 'タップして選択',

@@ -16,6 +16,7 @@ const en = {
     confirm:        'Confirm',
     back:           'Back',
     loading:        'Loading...',
+    saving:         'Saving...',
     error:          'An error occurred.',
     retry:          'Retry',
     empty:          'No items.',

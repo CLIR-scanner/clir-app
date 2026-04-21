@@ -13,7 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
@@ -23,6 +23,10 @@ import { ApiError } from '../../lib/api';
 import { addFavorite } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
+import ScannerCamera, {
+  ScannerCameraHandle,
+  ScannerResult,
+} from '../../components/ScannerCamera';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'Scan'>;
 
@@ -72,7 +76,7 @@ export default function ScanScreen({ navigation }: Props) {
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
-  const cameraRef        = useRef<CameraView>(null);
+  const cameraRef        = useRef<ScannerCameraHandle>(null);
 
   // Animations
   const circleScale = useRef(new Animated.Value(0)).current;
@@ -250,7 +254,7 @@ export default function ScanScreen({ navigation }: Props) {
   // ── Auto barcode scan ─────────────────────────────────────────────────────
 
   const handleBarcodeScanned = useCallback(
-    (result: BarcodeScanningResult) => {
+    (result: ScannerResult) => {
       // URL 형태 QR 코드는 제품 바코드가 아님 (Expo 개발 QR 등)
       if (/^https?:\/\/|^exp:\/\//.test(result.data)) return;
       latestBarcodeRef.current = result.data;
@@ -328,27 +332,30 @@ export default function ScanScreen({ navigation }: Props) {
   }
 
   // ── Permission loading ────────────────────────────────────────────────────
-  if (!permission) {
-    return (
-      <View style={styles.permContainer}>
-        <ActivityIndicator color={Colors.primary} size="large" />
-      </View>
-    );
-  }
+  // Web: browser prompts on getUserMedia inside ScannerCamera — skip gate.
+  if (Platform.OS !== 'web') {
+    if (!permission) {
+      return (
+        <View style={styles.permContainer}>
+          <ActivityIndicator color={Colors.primary} size="large" />
+        </View>
+      );
+    }
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.permContainer}>
-        <Text style={styles.permIcon}>📷</Text>
-        <Text style={styles.permTitle}>Camera Access Required</Text>
-        <Text style={styles.permDesc}>
-          CLIR needs camera access to scan barcodes and ingredient labels.
-        </Text>
-        <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-          <Text style={styles.permBtnText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    if (!permission.granted) {
+      return (
+        <View style={styles.permContainer}>
+          <Text style={styles.permIcon}>📷</Text>
+          <Text style={styles.permTitle}>Camera Access Required</Text>
+          <Text style={styles.permDesc}>
+            CLIR needs camera access to scan barcodes and ingredient labels.
+          </Text>
+          <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
+            <Text style={styles.permBtnText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
   }
 
   const isSafe       = scanResult?.analysis.isSafe ?? true;
@@ -362,12 +369,13 @@ export default function ScanScreen({ navigation }: Props) {
     <View style={styles.root}>
       {/* Full-screen camera — unmounted when screen is not focused */}
       {cameraActive && (
-        <CameraView
+        <ScannerCamera
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
           facing="back"
-          barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
-          onBarcodeScanned={(!isOCRMode && !processingRef.current) ? handleBarcodeScanned : undefined}
+          active={!isOCRMode && !processingRef.current}
+          barcodeTypes={BARCODE_TYPES}
+          onBarcodeScanned={handleBarcodeScanned}
         />
       )}
 

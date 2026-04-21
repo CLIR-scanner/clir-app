@@ -109,10 +109,24 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     let code = 'UNKNOWN_ERROR';
     let message = `HTTP ${response.status}`;
+    // BE 계약: { error: 'CODE', message: '...' } (플랫). Fastify 디폴트 에러
+    // 핸들러는 { statusCode, error, message } 형태로 error가 이름 문자열이므로
+    // 같은 키에서 파싱된다. 방어적으로 nested form도 허용.
     try {
-      const body = (await response.json()) as { error?: { code?: string; message?: string } };
-      code = body.error?.code ?? code;
-      message = body.error?.message ?? message;
+      const body = (await response.json()) as {
+        error?: string | { code?: string; message?: string };
+        message?: string;
+      };
+      if (typeof body.error === 'string') {
+        code = body.error;
+      } else if (body.error?.code) {
+        code = body.error.code;
+      }
+      if (typeof body.message === 'string') {
+        message = body.message;
+      } else if (typeof body.error === 'object' && body.error?.message) {
+        message = body.error.message;
+      }
     } catch {
       // JSON 파싱 실패 시 기본 메시지 유지
     }

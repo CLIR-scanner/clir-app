@@ -1,4 +1,5 @@
 // TODO: Real API 연동 시 USE_MOCK 을 false 로 변경
+import { Platform } from 'react-native';
 import { Product, Ingredient, OCRResult, AnalysisResult, ScanHistory, RiskLevel } from '../types';
 import { apiFetch, apiFormFetch } from '../lib/api';
 import { ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient } from '../constants/allergyData';
@@ -220,11 +221,19 @@ export async function recognizeIngredients(imageUri: string): Promise<OCRResult>
     return MOCK_OCR;
   }
   const formData = new FormData();
-  formData.append('image', {
-    uri: imageUri,
-    type: 'image/jpeg',
-    name: 'image.jpg',
-  } as unknown as Blob);
+  if (Platform.OS === 'web') {
+    // 웹은 `{ uri, type, name }` RN 관용구를 문자열로 직렬화해버림.
+    // data:/blob: URI를 실제 Blob으로 변환해 파일 필드로 넣는다.
+    const res  = await fetch(imageUri);
+    const blob = await res.blob();
+    formData.append('image', blob, 'image.jpg');
+  } else {
+    formData.append('image', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'image.jpg',
+    } as unknown as Blob);
+  }
   return apiFormFetch<OCRResult>('/ocr', formData);
 }
 

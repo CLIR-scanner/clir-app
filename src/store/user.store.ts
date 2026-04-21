@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
-import { signOut as authSignOut } from '../services/auth.service';
+import { signOut as authSignOut, submitSurvey } from '../services/auth.service';
 
 const EMPTY_PROFILE: Profile = {
   id: '',
@@ -57,6 +57,34 @@ export const useUserStore = create<UserStore>((set, get) => ({
     set(state => ({
       activeProfile: { ...state.activeProfile, ...updates },
     }));
+  },
+
+  syncActiveProfile: async (updates) => {
+    const { activeProfile, currentUser } = get();
+    const prevActive = activeProfile;
+    const prevUser = currentUser;
+    const nextActive: Profile = { ...activeProfile, ...updates };
+
+    // 메인 프로필 편집만 서버로 동기화. 서브 프로필(멀티)은 현재 BE 스키마가 1:1이라 로컬만 반영.
+    const isMainProfile = activeProfile.id === currentUser.id;
+
+    set({
+      activeProfile: nextActive,
+      ...(isMainProfile ? { currentUser: { ...currentUser, ...updates } } : {}),
+    });
+
+    if (!isMainProfile) return;
+
+    try {
+      await submitSurvey({
+        allergyProfile: nextActive.allergyProfile,
+        dietaryRestrictions: nextActive.dietaryRestrictions,
+        sensitivityLevel: nextActive.sensitivityLevel,
+      });
+    } catch (err) {
+      set({ activeProfile: prevActive, currentUser: prevUser });
+      throw err;
+    }
   },
 
   updateUserName: (name: string) => {
