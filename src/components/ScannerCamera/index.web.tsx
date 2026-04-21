@@ -77,6 +77,7 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
     // 호출 여부만 activeRef로 게이트한다. 네이티브(index.tsx)와 의미 일치:
     // active=false여도 카메라 프리뷰는 계속 노출되어야 함 (OCR 모드 등).
     const activeRef = useRef(active);
+    const recoveryHandlersRef = useRef<(() => void) | null>(null);
     callbackRef.current = onBarcodeScanned;
     errorRef.current    = onError;
     activeRef.current   = active;
@@ -162,6 +163,31 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
         try { await video.play(); } catch { /* iOS autoplay edge-case */ }
         maybeApplyAF(stream);
 
+        // iOS 26 Safari 방어: 레이아웃 급변(예: OCR 토글로 dim overlay 크기
+        // 재구성)이나 탭 전환 시 iOS가 video를 임의로 pause하고, 심한 경우
+        // srcObject를 떼어내기도 함. 수동 복구 경로를 등록해 프리뷰가 "영구
+        // 정지"되는 상황을 차단한다.
+        const resumePlayback = () => {
+          if (cancelled) return;
+          if (!video.srcObject && stream) video.srcObject = stream;
+          if (video.paused) {
+            video.play().catch(() => { /* 첫 gesture 이후엔 대개 성공 */ });
+          }
+        };
+        video.addEventListener('pause', resumePlayback);
+        video.addEventListener('suspend', resumePlayback);
+        video.addEventListener('stalled', resumePlayback);
+        const onVisible = () => {
+          if (document.visibilityState === 'visible') resumePlayback();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        recoveryHandlersRef.current = () => {
+          video.removeEventListener('pause', resumePlayback);
+          video.removeEventListener('suspend', resumePlayback);
+          video.removeEventListener('stalled', resumePlayback);
+          document.removeEventListener('visibilitychange', onVisible);
+        };
+
         // 첫 프레임 데이터 준비 대기 — detect() 호출 전 video.readyState ≥ 2 보장.
         if (video.readyState < 2) {
           await new Promise<void>(resolve => {
@@ -190,25 +216,25 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
               let logged = false;
               const loop = async () => {
                 if (cancelled) return;
-                // active=false면 detect() 호출 자체를 스킵 (CPU 절약).
-                // 스트림은 계속 돌아 프리뷰 유지.
-                if (activeRef.current) {
-                  try {
-                    const codes = await detector.detect(video);
-                    if (codes.length && callbackRef.current) {
-                      if (!logged) {
-                        // eslint-disable-next-line no-console
-                        console.info('[ScannerCamera] detected', codes[0].format, codes[0].rawValue);
-                        logged = true;
-                      }
-                      callbackRef.current({
-                        data: codes[0].rawValue,
-                        type: codes[0].format,
-                      });
+                // detect()는 active 여부와 무관하게 계속 호출 — iOS Safari는
+                // 프레임 소비자가 없으면 MediaStream을 throttle/pause하는
+                // 것으로 의심됨 (OCR 모드에서 프리뷰가 검게 되는 원인).
+                // active=false면 콜백만 억제한다.
+                try {
+                  const codes = await detector.detect(video);
+                  if (codes.length && activeRef.current && callbackRef.current) {
+                    if (!logged) {
+                      // eslint-disable-next-line no-console
+                      console.info('[ScannerCamera] detected', codes[0].format, codes[0].rawValue);
+                      logged = true;
                     }
-                  } catch {
-                    // 프레임 전환 타이밍의 transient error는 무시 (다음 rAF에서 재시도)
+                    callbackRef.current({
+                      data: codes[0].rawValue,
+                      type: codes[0].format,
+                    });
                   }
+                } catch {
+                  // 프레임 전환 타이밍의 transient error는 무시 (다음 rAF에서 재시도)
                 }
                 rafId = requestAnimationFrame(loop);
               };
@@ -254,6 +280,8 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
         if (rafId) cancelAnimationFrame(rafId);
         zxingControls?.stop();
         zxingControls = null;
+        recoveryHandlersRef.current?.();
+        recoveryHandlersRef.current = null;
         if (stream) {
           stream.getTracks().forEach(t => t.stop());
           stream = null;
@@ -263,6 +291,17 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
         }
       };
     }, [facing]);
+
+    // active=false → true 전환 시 video가 어떤 이유로든 paused 상태라면
+    // 복구 — iOS Safari에서 OCR 모드 복귀 등 사용자 제스처 직후 호출되므로
+    // play()가 autoplay 정책에 걸리지 않는다.
+    useEffect(() => {
+      const video = videoRef.current;
+      if (!video) return;
+      if (active && video.paused && video.srcObject) {
+        video.play().catch(() => { /* 권한 재요청 등은 무시 */ });
+      }
+    }, [active]);
 
     return (
       <>
