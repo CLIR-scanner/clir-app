@@ -46,11 +46,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* 프로필 카드 */}
-      <TouchableOpacity
-        style={styles.profileCard}
-        onPress={() => navigation.navigate('PersonalName')}
-        activeOpacity={0.7}
-      >
+      <View style={styles.profileCard}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
             {activeProfile.name ? activeProfile.name[0].toUpperCase() : '?'}
@@ -60,8 +56,7 @@ export default function ProfileScreen() {
           <Text style={styles.profileName}>{activeProfile.name || '—'}</Text>
           <Text style={styles.profileEmail}>{currentUser.email || '—'}</Text>
         </View>
-        <Text style={styles.menuArrow}>{'›'}</Text>
-      </TouchableOpacity>
+      </View>
 
       {/* 알러지 & 민감도 */}
       <TouchableOpacity

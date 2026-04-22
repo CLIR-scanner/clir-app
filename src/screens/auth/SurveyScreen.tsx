@@ -36,8 +36,8 @@ export default function SurveyScreen() {
     if (selected === 'vegetarian') {
       navigation.navigate('SurveyVegetarian', next);
     } else {
-      // allergy, both 모두 알러지 화면 먼저
-      navigation.navigate('SurveyAllergy', next);
+      // 진단서 업로드 화면 건너뛰고 바로 알러지 선택으로
+      navigation.navigate('SurveyAllergySelect', { ...next, hasAllergyDoc: false });
     }
   }
 
