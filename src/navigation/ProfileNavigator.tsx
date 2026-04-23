@@ -25,6 +25,7 @@ import SettingsPrivacyScreen from '../screens/profile/SettingsPrivacyScreen';
 import SettingsConsultScreen from '../screens/profile/SettingsConsultScreen';
 import SettingsReportScreen from '../screens/profile/SettingsReportScreen';
 import SettingsDeleteScreen from '../screens/profile/SettingsDeleteScreen';
+import DevSurveyNavigator from './DevSurveyNavigator';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -55,6 +56,9 @@ export default function ProfileNavigator() {
       <Stack.Screen name="SettingsConsult" component={SettingsConsultScreen} />
       <Stack.Screen name="SettingsReport" component={SettingsReportScreen} />
       <Stack.Screen name="SettingsDelete" component={SettingsDeleteScreen} />
+      {/* ─── DEV ONLY ─── */}
+      <Stack.Screen name="DevSurveyLanding" component={DevSurveyNavigator} />
+      {/* ─── DEV ONLY ─── */}
     </Stack.Navigator>
   );
 }

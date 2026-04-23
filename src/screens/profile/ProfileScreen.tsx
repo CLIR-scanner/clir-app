@@ -31,6 +31,12 @@ export default function ProfileScreen() {
     { label: t('profile.menuSettings'), screen: 'Settings' },
   ];
 
+  // ─── DEV ONLY ───
+  function handleDevSurveyPreview() {
+    navigation.navigate('DevSurveyLanding' as any);
+  }
+  // ─── DEV ONLY ───
+
   function handleLogout() {
     Alert.alert(t('auth.signOut'), t('auth.signOutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -134,6 +140,12 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
         <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
+
+      {/* ─── DEV ONLY ─── */}
+      <TouchableOpacity style={styles.devButton} onPress={handleDevSurveyPreview} activeOpacity={0.7}>
+        <Text style={styles.devButtonText}>DEV: Survey Preview</Text>
+      </TouchableOpacity>
+      {/* ─── DEV ONLY ─── */}
     </ScrollView>
   );
 }
@@ -330,4 +342,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.danger,
   },
+  // ─── DEV ONLY ───
+  devButton: {
+    borderRadius: 100,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#AAAAAA',
+    backgroundColor: '#F5F5F5',
+  },
+  devButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#888888',
+  },
+  // ─── DEV ONLY ───
 });

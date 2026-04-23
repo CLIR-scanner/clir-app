@@ -94,90 +94,24 @@ export default function SurveyVegetarianScreen() {
   );
 }
 
+const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 28,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 40,
-  },
-  backText: {
-    fontSize: 22,
-    color: Colors.black,
-  },
-  progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: Colors.gray100,
-    borderRadius: 2,
-  },
-  progressFill: {
-    width: '30%',
-    height: '100%',
-    backgroundColor: Colors.black,
-    borderRadius: 2,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.black,
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.gray500,
-    lineHeight: 20,
-    marginBottom: 32,
-  },
-  options: {
-    gap: 12,
-  },
-  option: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.white,
-  },
-  optionSelected: {
-    borderColor: Colors.black,
-    backgroundColor: Colors.black,
-  },
-  optionText: {
-    fontSize: 15,
-    color: Colors.black,
-    fontWeight: '500',
-  },
-  optionTextSelected: {
-    color: Colors.white,
-    fontWeight: '600',
-  },
-  continueButton: {
-    backgroundColor: Colors.white,
-    borderRadius: 100,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  continueDisabled: {
-    opacity: 0.4,
-  },
-  continueText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.black,
-  },
+  container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 40 },
+  backText: { fontSize: 22, color: S.primary },
+  progressBar: { flex: 1, height: 4, backgroundColor: '#D6E8D4', borderRadius: 2 },
+  progressFill: { width: '30%', height: '100%', backgroundColor: S.primary, borderRadius: 2 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 24 },
+  title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 12 },
+  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 32 },
+  options: { gap: 12 },
+  option: { height: 94, borderWidth: 1, borderColor: S.primary, borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: S.bg },
+  optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
+  optionText: { fontSize: 16, color: S.primary, fontWeight: '400' },
+  optionTextSelected: { color: '#FFFFFF', fontWeight: '600' },
+  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueDisabled: { opacity: 0.4 },
+  continueText: { fontSize: 16, fontWeight: '700', color: S.textLight },
 });

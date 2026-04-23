@@ -6,7 +6,6 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
-import { Colors } from '../../constants/colors';
 import { ALLERGY_CATEGORIES } from '../../constants/allergyData';
 import { useUserStore } from '../../store/user.store';
 import * as AuthService from '../../services/auth.service';
@@ -157,7 +156,9 @@ export default function SurveyVegetarianIngredientsScreen() {
               >
                 <Text style={styles.itemText}>{item}</Text>
                 {isEditing && (
-                  <View style={[styles.checkbox, styles.checkboxChecked]} />
+                  <View style={styles.removeBox}>
+                    <Text style={styles.removeIcon}>−</Text>
+                  </View>
                 )}
               </TouchableOpacity>
             ))}
@@ -221,7 +222,9 @@ export default function SurveyVegetarianIngredientsScreen() {
                         activeOpacity={0.8}
                       >
                         <Text style={styles.modalItemText}>{cat}</Text>
-                        <View style={[styles.checkbox, checked && styles.checkboxChecked]} />
+                        <View style={[styles.addBox, checked && styles.addBoxChecked]}>
+                          <Text style={[styles.addBoxIcon, checked && styles.addBoxIconChecked]}>{checked ? '✓' : '+'}</Text>
+                        </View>
                       </TouchableOpacity>
                     );
                   })
@@ -239,202 +242,72 @@ export default function SurveyVegetarianIngredientsScreen() {
   );
 }
 
+const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 28,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 40,
-  },
-  backText: {
-    fontSize: 22,
-    color: Colors.black,
-  },
-  progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: Colors.gray100,
-    borderRadius: 2,
-  },
-  progressFill: {
-    width: '70%',
-    height: '100%',
-    backgroundColor: Colors.black,
-    borderRadius: 2,
-  },
-  body: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.black,
-    lineHeight: 30,
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.gray500,
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  scroll: {
-    flex: 1,
-  },
-  list: {
-    gap: 10,
-    paddingBottom: 16,
-  },
+  container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 40 },
+  backText: { fontSize: 22, color: S.primary },
+  progressBar: { flex: 1, height: 4, backgroundColor: '#D6E8D4', borderRadius: 2 },
+  progressFill: { width: '90%', height: '100%', backgroundColor: S.primary, borderRadius: 2 },
+  body: { flex: 1 },
+  title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 12 },
+  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 24 },
+  scroll: { flex: 1 },
+  list: { gap: 10, paddingBottom: 16 },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.white,
+    borderColor: S.primary,
+    borderRadius: 16,
+    height: 94,
+    paddingHorizontal: 44,
+    backgroundColor: S.selectedFill,
   },
-  itemText: {
-    fontSize: 15,
-    color: Colors.black,
-    fontWeight: '500',
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: Colors.gray300,
-    borderRadius: 4,
-    backgroundColor: Colors.white,
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.black,
-    borderColor: Colors.black,
-  },
+  itemText: { fontSize: 16, color: '#FFFFFF', fontWeight: '600' },
+  removeBox: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  removeIcon: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', lineHeight: 18 },
+  addBox: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: S.primary, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  addBoxChecked: { backgroundColor: S.primary },
+  addBoxIcon: { fontSize: 14, fontWeight: '700', color: S.primary, lineHeight: 16 },
+  addBoxIconChecked: { color: '#FFFFFF' },
   addButton: {
-    borderWidth: 1.5,
-    borderColor: Colors.black,
+    borderWidth: 1,
+    borderColor: S.primary,
     borderStyle: 'dashed',
-    borderRadius: 12,
-    paddingVertical: 18,
+    borderRadius: 16,
+    height: 94,
     alignItems: 'center',
-  },
-  addButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  buttons: {
-    gap: 10,
-    marginTop: 8,
-  },
-  editButton: {
-    borderWidth: 2,
-    borderColor: Colors.black,
-    borderRadius: 100,
-    paddingVertical: 16,
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-  },
-  editButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.black,
-  },
-  continueButton: {
-    backgroundColor: Colors.white,
-    borderRadius: 100,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  continueDisabled: {
-    opacity: 0.4,
-  },
-  continueText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.black,
-  },
-
-  // ─── 모달 ───────────────────────────────────────────────────────────────────
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
   },
-  modalCard: {
-    width: '100%',
-    maxHeight: '75%',
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
-    paddingTop: 28,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.black,
-    marginBottom: 6,
-  },
-  modalSubtitle: {
-    fontSize: 13,
-    color: Colors.gray500,
-    marginBottom: 20,
-    lineHeight: 18,
-  },
-  modalScroll: {
-    flexGrow: 0,
-  },
-  modalList: {
-    gap: 10,
-    paddingBottom: 8,
-  },
+  addButtonText: { fontSize: 15, fontWeight: '600', color: S.primary },
+  buttons: { gap: 12, paddingTop: 16 },
+  editButton: { height: 53, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: S.primary },
+  editButtonText: { fontSize: 16, fontWeight: '600', color: S.primary },
+  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueDisabled: { opacity: 0.4 },
+  continueText: { fontSize: 16, fontWeight: '700', color: S.textLight },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
+  modalCard: { width: '100%', maxHeight: '75%', backgroundColor: S.bg, borderRadius: 24, paddingTop: 28, paddingHorizontal: 24, paddingBottom: 24 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#000000', marginBottom: 6 },
+  modalSubtitle: { fontSize: 12, color: S.primary, marginBottom: 20, lineHeight: 18 },
+  modalScroll: { flexGrow: 0 },
+  modalList: { gap: 10, paddingBottom: 8 },
   modalItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
+    borderColor: S.primary,
+    borderRadius: 16,
     paddingVertical: 18,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
+    backgroundColor: S.bg,
   },
-  modalItemText: {
-    fontSize: 14,
-    color: Colors.black,
-    fontWeight: '500',
-  },
-  modalEmpty: {
-    fontSize: 14,
-    color: Colors.gray500,
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
-  modalSave: {
-    marginTop: 16,
-    backgroundColor: Colors.white,
-    borderRadius: 100,
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.black,
-  },
-  modalSaveText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.black,
-  },
+  modalItemText: { fontSize: 14, color: S.primary, fontWeight: '500' },
+  modalEmpty: { fontSize: 14, color: S.primary, textAlign: 'center', paddingVertical: 20 },
+  modalSave: { marginTop: 16, height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  modalSaveText: { fontSize: 16, fontWeight: '700', color: S.textLight },
 });

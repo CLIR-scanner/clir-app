@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types';
 import SplashScreen from '../screens/auth/SplashScreen';
 import AuthHomeScreen from '../screens/auth/AuthHomeScreen';
+import SurveyLandingScreen from '../screens/auth/SurveyLandingScreen';
 import SurveyScreen from '../screens/auth/SurveyScreen';
 import SurveyAllergyScreen from '../screens/auth/SurveyAllergyScreen';
 import SurveyAllergyDocScreen from '../screens/auth/SurveyAllergyDocScreen';
@@ -21,9 +22,10 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export default function AuthNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F9FFF3' } }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
+      <Stack.Screen name="SurveyLanding" component={SurveyLandingScreen} />
       <Stack.Screen name="Survey" component={SurveyScreen} />
       <Stack.Screen name="SurveyAllergy" component={SurveyAllergyScreen} />
       <Stack.Screen name="SurveyAllergyDoc" component={SurveyAllergyDocScreen} />

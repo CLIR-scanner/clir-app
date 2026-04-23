@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
-import { Colors } from '../../constants/colors';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyDoc'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyDoc'>;
@@ -32,7 +26,6 @@ export default function SurveyAllergyDocScreen() {
   }
 
   function handleContinue() {
-    // TODO: 서버에 문서 업로드 후 분석 요청
     navigation.navigate('SurveyAllergyDocResult', params);
   }
 
@@ -61,7 +54,7 @@ export default function SurveyAllergyDocScreen() {
             <>
               <Text style={styles.uploadIcon}>✓</Text>
               <Text style={styles.uploadedName} numberOfLines={2}>{fileName}</Text>
-              <Text style={styles.uploadChange}>tap to change</Text>
+              <Text style={styles.uploadHint}>tap to change</Text>
             </>
           ) : (
             <>
@@ -86,103 +79,34 @@ export default function SurveyAllergyDocScreen() {
   );
 }
 
+const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 28,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 40,
-  },
-  backText: {
-    fontSize: 22,
-    color: Colors.black,
-  },
-  progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: Colors.gray100,
-    borderRadius: 2,
-  },
-  progressFill: {
-    width: '80%',
-    height: '100%',
-    backgroundColor: Colors.black,
-    borderRadius: 2,
-  },
-  body: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.black,
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.gray500,
-    lineHeight: 20,
-    marginBottom: 32,
-  },
+  container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 40 },
+  backText: { fontSize: 22, color: S.primary },
+  progressBar: { flex: 1, height: 4, backgroundColor: '#D6E8D4', borderRadius: 2 },
+  progressFill: { width: '80%', height: '100%', backgroundColor: S.primary, borderRadius: 2 },
+  body: { flex: 1 },
+  title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 12 },
+  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 32 },
   uploadArea: {
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderWidth: 1,
+    borderColor: S.primary,
     borderStyle: 'dashed',
     borderRadius: 16,
     paddingVertical: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: S.bg,
     gap: 8,
   },
-  uploadIcon: {
-    fontSize: 28,
-    color: Colors.gray500,
-  },
-  uploadLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  uploadHint: {
-    fontSize: 12,
-    color: Colors.gray500,
-  },
-  uploadedName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.black,
-    textAlign: 'center',
-    paddingHorizontal: 16,
-  },
-  uploadChange: {
-    fontSize: 12,
-    color: Colors.gray500,
-  },
-  footer: {
-    gap: 16,
-  },
-  disclaimer: {
-    fontSize: 12,
-    color: Colors.gray500,
-    lineHeight: 18,
-  },
-  continueButton: {
-    backgroundColor: Colors.white,
-    borderRadius: 100,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  continueText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.black,
-  },
+  uploadIcon: { fontSize: 28, color: S.primary },
+  uploadLabel: { fontSize: 15, fontWeight: '600', color: S.primary },
+  uploadHint: { fontSize: 12, color: S.primary, opacity: 0.6 },
+  uploadedName: { fontSize: 14, fontWeight: '600', color: S.primary, textAlign: 'center', paddingHorizontal: 16 },
+  footer: { gap: 16 },
+  disclaimer: { fontSize: 11, color: S.primary, lineHeight: 16, opacity: 0.6 },
+  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueText: { fontSize: 16, fontWeight: '700', color: S.textLight },
 });
