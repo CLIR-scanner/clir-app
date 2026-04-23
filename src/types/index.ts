@@ -318,5 +318,4 @@ export type ProfileStackParamList = {
   SettingsConsult: undefined;
   SettingsReport: undefined;
   SettingsDelete: undefined;
-  DevSurveyLanding: undefined;
 };

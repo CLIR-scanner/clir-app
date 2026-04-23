@@ -62,9 +62,7 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     ? activeTabState.routes[activeTabState.index ?? 0]?.name
     : null;
 
-  if (focusedStackRoute === 'DevSurveyLanding' || activeRoute === 'ProfileTab' && focusedStackRoute === 'DevSurveyLanding') return null;
-
-  const bottomPad = insets.bottom > 0 ? insets.bottom : 12;
+const bottomPad = insets.bottom > 0 ? insets.bottom : 12;
 
   return (
     <View style={[tabStyles.bar, { paddingBottom: bottomPad }]}>

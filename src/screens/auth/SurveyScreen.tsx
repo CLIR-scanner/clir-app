@@ -52,18 +52,20 @@ export default function SurveyScreen() {
           Select an option that applies so we can{'\n'}personalise your food experience.
         </Text>
 
-        <View style={styles.options}>
-          {OPTIONS.map(opt => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.option, selected === opt.value && styles.optionSelected]}
-              onPress={() => setSelected(opt.value)}
-            >
-              <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.optionsBlock}>
+          <View style={styles.options}>
+            {OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.option, selected === opt.value && styles.optionSelected]}
+                onPress={() => setSelected(opt.value)}
+              >
+                <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
 
@@ -108,8 +110,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: S.primary,
     lineHeight: 12 * 1.35,
-    marginBottom: 32,
   },
+  optionsBlock: { flex: 1, justifyContent: 'center', paddingBottom: 53 },
   options: {
     gap: 12,
   },

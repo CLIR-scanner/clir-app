@@ -43,18 +43,20 @@ export default function SurveyAllergyReactionScreen() {
           Understanding your allergy type helps us recommend safer ingredient filters.
         </Text>
 
-        <View style={styles.options}>
-          {OPTIONS.map(opt => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.option, selected === opt.value && styles.optionSelected]}
-              onPress={() => setSelected(opt.value)}
-            >
-              <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.optionsBlock}>
+          <View style={styles.options}>
+            {OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.option, selected === opt.value && styles.optionSelected]}
+                onPress={() => setSelected(opt.value)}
+              >
+                <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
 
@@ -76,7 +78,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
   body: { flex: 1 },
   title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 12 },
-  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 32 },
+  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35 },
+  optionsBlock: { flex: 1, justifyContent: 'center', paddingBottom: 53 },
   options: { gap: 12 },
   option: { height: 94, borderWidth: 1, borderColor: S.primary, borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: S.bg },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },

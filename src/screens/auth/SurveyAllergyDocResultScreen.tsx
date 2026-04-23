@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import SurveyHeader from '../../components/common/SurveyHeader';
+import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
@@ -24,19 +26,16 @@ type Route = RouteProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
 
 interface Category { category: string; items: string[] }
 
-// ─── 더미 데이터 (API 연결 전) ─────────────────────────────────────────────────
 const DUMMY_RESULTS: Category[] = [
   { category: 'Fish',   items: ['Tuna', 'Salmon', 'Cod'] },
   { category: 'Fruits', items: ['Apple', 'Peach'] },
 ];
 
-const DEFAULT_CANDIDATES: string[] = [];
-// ──────────────────────────────────────────────────────────────────────────────
-
 export default function SurveyAllergyDocResultScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const params = route.params;
+  const { step, total } = getSurveyProgress('SurveyAllergyDocResult', params.dietaryType);
 
   const setUser = useUserStore(s => s.setUser);
 
@@ -46,12 +45,10 @@ export default function SurveyAllergyDocResultScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 항목 추가 모달 상태
   const [modalCategory, setModalCategory] = useState<string | null>(null);
   const [modalSearch, setModalSearch] = useState('');
   const [modalSelected, setModalSelected] = useState<Set<string>>(new Set());
 
-  // 카테고리 추가 모달 상태
   const [showCatModal, setShowCatModal] = useState(false);
   const [catModalSearch, setCatModalSearch] = useState('');
   const [catModalSelected, setCatModalSelected] = useState<Set<string>>(new Set());
@@ -88,7 +85,6 @@ export default function SurveyAllergyDocResultScreen() {
     );
     setSelected(prev => {
       const next = new Set(prev);
-      // 기존 카테고리 항목 제거 후 새 항목 추가
       const old = categories.find(c => c.category === modalCategory)?.items ?? [];
       old.forEach(i => next.delete(i));
       newItems.forEach(i => next.add(i));
@@ -113,7 +109,6 @@ export default function SurveyAllergyDocResultScreen() {
     const { dietaryType } = params;
     const allergyProfile = Array.from(selected);
 
-    // Both 플로우: 알러지 데이터를 들고 채식 플로우로 이동
     if (dietaryType === 'both') {
       navigation.navigate('SurveyVegetarian', {
         ...params,
@@ -138,31 +133,16 @@ export default function SurveyAllergyDocResultScreen() {
     }
   }
 
-  // 모달에서 보여줄 후보 목록 (검색 필터 적용)
-  const candidates = modalCategory
-    ? (ALLERGY_CANDIDATES[modalCategory] ?? DEFAULT_CANDIDATES)
-    : [];
+  const candidates = modalCategory ? (ALLERGY_CANDIDATES[modalCategory] ?? []) : [];
   const filteredCandidates = modalSearch.trim()
     ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
     : candidates;
 
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{'←'}</Text>
-        </TouchableOpacity>
-        <View style={styles.progressBar}>
-          <View style={styles.progressFill} />
-        </View>
-      </View>
+      <SurveyHeader step={step} total={total} />
 
-      <ScrollView
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Here are the ingredients{'\n'}we found.</Text>
         <Text style={styles.subtitle}>
           {isEditing
@@ -185,12 +165,8 @@ export default function SurveyAllergyDocResultScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-
               {isEditing && (
-                <TouchableOpacity
-                  style={styles.addChip}
-                  onPress={() => openModal(group.category)}
-                >
+                <TouchableOpacity style={styles.addChip} onPress={() => openModal(group.category)}>
                   <Text style={styles.addChipText}>+ Add</Text>
                 </TouchableOpacity>
               )}
@@ -198,15 +174,10 @@ export default function SurveyAllergyDocResultScreen() {
           </View>
         ))}
 
-        {/* 편집 모드: 새 카테고리 추가 */}
         {isEditing && (
           <TouchableOpacity
             style={styles.newCatButton}
-            onPress={() => {
-              setCatModalSelected(new Set());
-              setCatModalSearch('');
-              setShowCatModal(true);
-            }}
+            onPress={() => { setCatModalSelected(new Set()); setCatModalSearch(''); setShowCatModal(true); }}
           >
             <Text style={styles.newCatText}>+ Add new Categories</Text>
           </TouchableOpacity>
@@ -215,7 +186,6 @@ export default function SurveyAllergyDocResultScreen() {
         <View style={{ height: 24 }} />
       </ScrollView>
 
-      {/* 하단 버튼 */}
       <View style={styles.buttons}>
         {!isEditing && (
           <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
@@ -223,153 +193,79 @@ export default function SurveyAllergyDocResultScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity
-          style={[styles.continueButton, loading && styles.continueDisabled]}
+          style={[styles.completeButton, loading && styles.completeDisabled]}
           onPress={handleComplete}
           disabled={loading}
         >
-          <Text style={styles.continueText}>{loading ? '처리 중...' : 'Complete'}</Text>
+          <Text style={styles.completeText}>{loading ? '처리 중...' : 'Complete'}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* ── 카테고리 추가 모달 ── */}
-      <Modal
-        visible={showCatModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCatModal(false)}
-      >
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowCatModal(false)}
-          />
+      {/* 항목 추가 모달 */}
+      <Modal visible={modalCategory !== null} transparent animationType="slide" onRequestClose={() => setModalCategory(null)}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setModalCategory(null)} />
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Add new Categories</Text>
-                <Text style={styles.modalSubtitle}>
-                  Choose allergy categories to add.
-                </Text>
+                <Text style={styles.modalTitle}>Select {modalCategory}</Text>
+                <Text style={styles.modalSubtitle}>Choose {modalCategory?.toLowerCase()} ingredients to avoid.</Text>
               </View>
-              <TouchableOpacity onPress={() => setShowCatModal(false)}>
+              <TouchableOpacity onPress={() => setModalCategory(null)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-
-            <TextInput
-              style={styles.searchInput}
-              value={catModalSearch}
-              onChangeText={setCatModalSearch}
-              placeholder="Search categories"
-              placeholderTextColor={Colors.gray300}
-            />
-
-            <ScrollView
-              style={styles.modalScroll}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
+            <TextInput style={styles.searchInput} value={modalSearch} onChangeText={setModalSearch} placeholder="Search your ingredients" placeholderTextColor={Colors.gray300} />
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
-                {ALLERGY_CATEGORIES
-                  .filter(name =>
-                    !categories.some(c => c.category.toLowerCase() === name.toLowerCase() ) &&
-                    (catModalSearch.trim()
-                      ? name.toLowerCase().includes(catModalSearch.toLowerCase())
-                      : true),
-                  )
-                  .map(name => (
-                    <TouchableOpacity
-                      key={name}
-                      style={[styles.chip, catModalSelected.has(name) && styles.chipSelected]}
-                      onPress={() => {
-                        setCatModalSelected(prev => {
-                          const next = new Set(prev);
-                          next.has(name) ? next.delete(name) : next.add(name);
-                          return next;
-                        });
-                      }}
-                    >
-                      <Text style={[styles.chipText, catModalSelected.has(name) && styles.chipTextSelected]}>
-                        {name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                {filteredCandidates.map(item => (
+                  <TouchableOpacity key={item} style={[styles.chip, modalSelected.has(item) && styles.chipSelected]} onPress={() => toggleModalItem(item)}>
+                    <Text style={[styles.chipText, modalSelected.has(item) && styles.chipTextSelected]}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </ScrollView>
-
-            <TouchableOpacity style={styles.saveButton} onPress={handleCatModalSave}>
+            <TouchableOpacity style={styles.saveButton} onPress={handleModalSave}>
               <Text style={styles.saveText}>Save</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── 항목 선택 모달 ── */}
-      <Modal
-        visible={modalCategory !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalCategory(null)}
-      >
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setModalCategory(null)}
-          />
+      {/* 카테고리 추가 모달 */}
+      <Modal visible={showCatModal} transparent animationType="slide" onRequestClose={() => setShowCatModal(false)}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowCatModal(false)} />
           <View style={styles.modalSheet}>
-            {/* 모달 헤더 */}
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Select {modalCategory}</Text>
-                <Text style={styles.modalSubtitle}>
-                  Choose additional {modalCategory?.toLowerCase()} ingredients to add.
-                </Text>
+                <Text style={styles.modalTitle}>Add new Categories</Text>
+                <Text style={styles.modalSubtitle}>Choose allergy categories to add.</Text>
               </View>
-              <TouchableOpacity onPress={() => setModalCategory(null)}>
+              <TouchableOpacity onPress={() => setShowCatModal(false)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-
-            {/* 검색 */}
-            <TextInput
-              style={styles.searchInput}
-              value={modalSearch}
-              onChangeText={setModalSearch}
-              placeholder="Search your ingredients"
-              placeholderTextColor={Colors.gray300}
-            />
-
-            {/* 후보 칩 목록 */}
-            <ScrollView
-              style={styles.modalScroll}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
+            <TextInput style={styles.searchInput} value={catModalSearch} onChangeText={setCatModalSearch} placeholder="Search categories" placeholderTextColor={Colors.gray300} />
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
-                {filteredCandidates.map(item => (
-                  <TouchableOpacity
-                    key={item}
-                    style={[styles.chip, modalSelected.has(item) && styles.chipSelected]}
-                    onPress={() => toggleModalItem(item)}
-                  >
-                    <Text style={[styles.chipText, modalSelected.has(item) && styles.chipTextSelected]}>
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {ALLERGY_CATEGORIES
+                  .filter(name =>
+                    !categories.some(c => c.category.toLowerCase() === name.toLowerCase()) &&
+                    (catModalSearch.trim() ? name.toLowerCase().includes(catModalSearch.toLowerCase()) : true),
+                  )
+                  .map(name => (
+                    <TouchableOpacity
+                      key={name}
+                      style={[styles.chip, catModalSelected.has(name) && styles.chipSelected]}
+                      onPress={() => setCatModalSelected(prev => { const next = new Set(prev); next.has(name) ? next.delete(name) : next.add(name); return next; })}
+                    >
+                      <Text style={[styles.chipText, catModalSelected.has(name) && styles.chipTextSelected]}>{name}</Text>
+                    </TouchableOpacity>
+                  ))}
               </View>
             </ScrollView>
-
-            {/* Save */}
-            <TouchableOpacity style={styles.saveButton} onPress={handleModalSave}>
+            <TouchableOpacity style={styles.saveButton} onPress={handleCatModalSave}>
               <Text style={styles.saveText}>Save</Text>
             </TouchableOpacity>
           </View>
@@ -379,88 +275,40 @@ export default function SurveyAllergyDocResultScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 28,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 32,
-  },
-  backText: { fontSize: 22, color: Colors.black },
-  progressBar: { flex: 1, height: 4, backgroundColor: Colors.gray100, borderRadius: 2 },
-  progressFill: { width: '90%', height: '100%', backgroundColor: Colors.black, borderRadius: 2 },
-  scroll: { flex: 1 },
-  title: { fontSize: 24, fontWeight: '700', color: Colors.black, lineHeight: 34, marginBottom: 10 },
-  subtitle: { fontSize: 13, color: Colors.gray500, lineHeight: 20, marginBottom: 32 },
-  group: { marginBottom: 24 },
-  groupLabel: { fontSize: 14, fontWeight: '700', color: Colors.black, marginBottom: 10 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  chip: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 100,
-    paddingVertical: 8, paddingHorizontal: 16, backgroundColor: Colors.white,
-  },
-  chipSelected: { borderColor: Colors.black, backgroundColor: Colors.black },
-  chipText: { fontSize: 13, color: Colors.black, fontWeight: '600' },
-  chipTextSelected: { color: Colors.white },
-  addChip: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 100,
-    paddingVertical: 8, paddingHorizontal: 14, backgroundColor: Colors.white,
-  },
-  addChipText: { fontSize: 13, color: Colors.gray700 },
-  addConfirm: { fontSize: 13, fontWeight: '600', color: Colors.primary },
-  newCatButton: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 100,
-    paddingVertical: 12, paddingHorizontal: 20, alignSelf: 'flex-start', backgroundColor: Colors.white,
-  },
-  newCatText: { fontSize: 13, color: Colors.gray700 },
-  newCatInputWrap: {
-    flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.black,
-    borderRadius: 100, paddingHorizontal: 16, backgroundColor: Colors.white,
-    alignSelf: 'flex-start', gap: 8,
-  },
-  newCatInput: { fontSize: 13, color: Colors.black, paddingVertical: 10, minWidth: 120 },
-  buttons: { gap: 12, paddingTop: 16 },
-  editButton: {
-    borderRadius: 100, paddingVertical: 18, alignItems: 'center',
-    borderWidth: 1, borderColor: Colors.border,
-  },
-  editText: { fontSize: 15, fontWeight: '600', color: Colors.black },
-  continueButton: { backgroundColor: Colors.white, borderRadius: 100, paddingVertical: 18, alignItems: 'center' },
-  continueDisabled: { opacity: 0.5 },
-  continueText: { fontSize: 15, fontWeight: '700', color: Colors.black },
+const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
 
-  // ── 모달 ──
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
+  scroll: { flex: 1 },
+  title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 10 },
+  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 28 },
+  group: { marginBottom: 20 },
+  groupLabel: { fontSize: 14, fontWeight: '700', color: S.primary, marginBottom: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  chip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
+  chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
+  chipText: { fontSize: 13, color: S.primary, fontWeight: '600' },
+  chipTextSelected: { color: '#FFFFFF' },
+  addChip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
+  addChipText: { fontSize: 13, color: S.primary },
+  newCatButton: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 12, paddingHorizontal: 20, alignSelf: 'flex-start', backgroundColor: S.bg, marginTop: 4 },
+  newCatText: { fontSize: 13, color: S.primary },
+  buttons: { gap: 12, paddingTop: 16 },
+  editButton: { height: 53, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: S.primary },
+  editText: { fontSize: 16, fontWeight: '600', color: S.primary },
+  completeButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  completeDisabled: { opacity: 0.5 },
+  completeText: { fontSize: 16, fontWeight: '700', color: S.textLight },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalSheet: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40,
-    maxHeight: '75%',
-  },
-  modalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.black },
-  modalSubtitle: { fontSize: 12, color: Colors.gray500, marginTop: 4 },
-  modalClose: { fontSize: 18, color: Colors.black, paddingLeft: 8 },
-  searchInput: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14,
-    color: Colors.black, marginBottom: 16,
-  },
+  modalSheet: { backgroundColor: S.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, maxHeight: '75%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#000000' },
+  modalSubtitle: { fontSize: 12, color: S.primary, marginTop: 4 },
+  modalClose: { fontSize: 18, color: S.primary, paddingLeft: 8 },
+  searchInput: { borderWidth: 1, borderColor: S.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: S.primary, marginBottom: 16, backgroundColor: S.bg },
   modalScroll: { maxHeight: 220 },
   modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 8 },
-  saveButton: {
-    backgroundColor: Colors.black, borderRadius: 100,
-    paddingVertical: 16, alignItems: 'center', marginTop: 16,
-  },
-  saveText: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  saveButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  saveText: { fontSize: 16, fontWeight: '700', color: S.textLight },
 });
