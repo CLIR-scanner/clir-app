@@ -56,6 +56,8 @@ async function signInWithProvider(provider: 'google' | 'apple'): Promise<AuthRes
     throw new Error('OAuth 응답에서 토큰을 찾을 수 없습니다.');
   }
   console.log('[oauth] tokens extracted, setting session');
+  // DEV-ONLY: 로컬 curl 테스트용 access_token 출력. 배포 전 제거.
+  console.log('[DEV] ACCESS_TOKEN =', accessToken);
 
   const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
     access_token: accessToken,

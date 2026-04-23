@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types';
+import { START_AT_SURVEY } from '../constants/dev';
 import SplashScreen from '../screens/auth/SplashScreen';
 import AuthHomeScreen from '../screens/auth/AuthHomeScreen';
 import SurveyScreen from '../screens/auth/SurveyScreen';
@@ -21,7 +22,10 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export default function AuthNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={START_AT_SURVEY ? 'Survey' : 'Splash'}
+    >
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
       <Stack.Screen name="Survey" component={SurveyScreen} />
