@@ -301,16 +301,17 @@ export async function getIngredient(id: string): Promise<Ingredient> {
 }
 
 /**
- * GET /products/:id
- * 제품 ID로 전체 상세 정보를 조회한다.
+ * GET /products/by-id/:id
+ * 제품 ID로 전체 상세 정보를 조회한다. 비-바코드 ID(UUID, seed-xxx, off-xxx, ocr-xxx) 지원.
  * 상세 화면에서 성분 정보 등 전체 데이터를 표시할 때 사용한다.
+ * 응답은 이미 현재 프로필 기준 riskLevel, riskIngredients 가 주입된 상태.
  */
 export async function getProductById(productId: string): Promise<Product> {
   if (USE_MOCK) {
     // Mock mode에서는 cache된 제품 반환
     return MOCK_PRODUCT_DANGER.id === productId ? MOCK_PRODUCT_DANGER : MOCK_PRODUCT_SAFE;
   }
-  return apiFetch<Product>(`/products/${encodeURIComponent(productId)}`);
+  return apiFetch<Product>(`/products/by-id/${encodeURIComponent(productId)}`);
 }
 
 /**

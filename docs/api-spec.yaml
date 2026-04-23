@@ -183,6 +183,80 @@ paths:
                 error: PRODUCT_NOT_FOUND
                 message: 등록되지 않은 제품입니다.
 
+  /products/by-id/{id}:
+    get:
+      tags: [Products]
+      summary: 제품 ID로 상세 조회 (비-바코드)
+      description: |
+        UUID / seed-* / off-* / ocr-* 등 비-바코드 식별자로 제품 상세를 조회.
+        HistoryProductDetail 이 scan-history 요약에서 성분 보강 시 호출.
+        응답의 riskLevel, isSafe, riskIngredients, mayContainIngredients 는
+        현재 프로필 기준으로 주입된 상태.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 제품 상세
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 등록되지 않은 제품
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /allergens/catalog:
+    get:
+      tags: [Allergens]
+      summary: 알러지 카탈로그
+      description: |
+        Survey/Personalization 화면 렌더용 카테고리 트리. 항목의 allergenId (ing-*)
+        가 있는 경우만 BE 판정 범위. 인증 불필요.
+      parameters:
+        - name: lang
+          in: query
+          schema: { type: string, enum: [en, ko] }
+      responses:
+        '200':
+          description: 카탈로그
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version: { type: integer }
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code: { type: string }
+                        name: { type: string }
+                        items:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name: { type: string }
+                              allergenId: { type: string, nullable: true }
+                  allergens:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        category: { type: string }
+                        riskDefault: { type: string, enum: [danger, caution] }
+
   /products/{id}/alternatives:
     get:
       tags: [Products]
