@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import SurveyHeader from '../../components/common/SurveyHeader';
+import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 
@@ -20,6 +22,7 @@ export default function SurveyAllergyReactionScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const params = route.params;
+  const { step, total } = getSurveyProgress('SurveyAllergyReaction', params.dietaryType);
 
   const [selected, setSelected] = useState<ReactionType | null>(null);
 
@@ -31,15 +34,7 @@ export default function SurveyAllergyReactionScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{'←'}</Text>
-        </TouchableOpacity>
-        <View style={styles.progressBar}>
-          <View style={styles.progressFill} />
-        </View>
-      </View>
+      <SurveyHeader step={step} total={total} />
 
       {/* 본문 */}
       <View style={styles.body}>
@@ -79,10 +74,6 @@ const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLigh
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 40 },
-  backText: { fontSize: 22, color: S.primary },
-  progressBar: { flex: 1, height: 4, backgroundColor: '#D6E8D4', borderRadius: 2 },
-  progressFill: { width: '60%', height: '100%', backgroundColor: S.primary, borderRadius: 2 },
   body: { flex: 1 },
   title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 12 },
   subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 32 },

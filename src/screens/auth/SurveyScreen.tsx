@@ -8,7 +8,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList, SurveyParams } from '../../types';
-import { Colors } from '../../constants/colors';
+import SurveyHeader from '../../components/common/SurveyHeader';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Survey'>;
 type Route = RouteProp<AuthStackParamList, 'Survey'>;
@@ -43,15 +43,7 @@ export default function SurveyScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{'←'}</Text>
-        </TouchableOpacity>
-        <View style={styles.progressBar}>
-          <View style={styles.progressFill} />
-        </View>
-      </View>
+      <SurveyHeader step={1} total={6} />
 
       {/* 본문 */}
       <View style={styles.body}>
@@ -101,28 +93,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 40,
-  },
-  backText: {
-    fontSize: 22,
-    color: S.primary,
-  },
-  progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: '#D6E8D4',
-    borderRadius: 2,
-  },
-  progressFill: {
-    width: '33%',
-    height: '100%',
-    backgroundColor: S.primary,
-    borderRadius: 2,
   },
   body: {
     flex: 1,

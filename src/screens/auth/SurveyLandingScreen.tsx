@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    justifyContent: 'center',
+    paddingTop: 140,
     paddingHorizontal: 22,
   },
   title: {

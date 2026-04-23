@@ -1,6 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useSharedValue } from 'react-native-reanimated';
 import { AuthStackParamList } from '../types';
+import { SurveyProgressContext } from '../contexts/SurveyProgressContext';
 
 import SurveyLandingScreen from '../screens/auth/SurveyLandingScreen';
 import SurveyScreen from '../screens/auth/SurveyScreen';
@@ -21,8 +23,10 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 // ─── DEV ONLY ───
 export default function DevSurveyNavigator() {
+  const surveyProgress = useSharedValue(0);
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="SurveyLanding">
+    <SurveyProgressContext.Provider value={surveyProgress}>
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F9FFF3' } }} initialRouteName="SurveyLanding">
       <Stack.Screen name="SurveyLanding"             component={SurveyLandingScreen}             />
       <Stack.Screen name="Survey"                    component={SurveyScreen}                    />
       <Stack.Screen name="SurveyAllergy"             component={SurveyAllergyScreen}             />
@@ -38,6 +42,7 @@ export default function DevSurveyNavigator() {
       <Stack.Screen name="SurveyDietConfirm"         component={SurveyDietConfirmScreen}         />
       <Stack.Screen name="SurveyVegetarianIngredients" component={SurveyVegetarianIngredientsScreen} />
     </Stack.Navigator>
+    </SurveyProgressContext.Provider>
   );
 }
 // ─── DEV ONLY ───
