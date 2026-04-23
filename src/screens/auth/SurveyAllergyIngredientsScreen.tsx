@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, TextInput, Modal, KeyboardAvoidingView, Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -9,7 +10,7 @@ import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
-import { ALLERGY_CATEGORIES, ALLERGY_CANDIDATES } from '../../constants/allergyData';
+import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
@@ -23,12 +24,19 @@ export default function SurveyAllergyIngredientsScreen() {
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergyIngredients', params.dietaryType);
 
+  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [selection, setSelection] = useState<SelectionMap>({});
 
   // 모달 상태
   const [modalCategory, setModalCategory] = useState<string | null>(null);
   const [modalSearch, setModalSearch] = useState('');
   const [modalSelected, setModalSelected] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetchAllergenCatalog('en')
+      .then(setCatalog)
+      .catch(() => { /* 네트워크 실패 시 빈 카탈로그 — 사용자는 Back 으로 재시도 */ });
+  }, []);
 
   function openModal(category: string) {
     setModalSelected(new Set(selection[category] ?? []));
@@ -60,9 +68,10 @@ export default function SurveyAllergyIngredientsScreen() {
     });
   }
 
-  const candidates = modalCategory
-    ? (ALLERGY_CANDIDATES[modalCategory] ?? [])
-    : [];
+  const activeCategory = modalCategory && catalog
+    ? catalog.categories.find(c => c.code === modalCategory)
+    : null;
+  const candidates = activeCategory ? activeCategory.items.map(i => i.name) : [];
   const filtered = modalSearch.trim()
     ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
     : candidates;
@@ -77,18 +86,24 @@ export default function SurveyAllergyIngredientsScreen() {
           Choose the ingredients related to your allergy so we can personalise your filter settings.
         </Text>
 
-        {ALLERGY_CATEGORIES.map(cat => {
-          const items = selection[cat] ?? [];
+        {!catalog && (
+          <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+            <ActivityIndicator color={Colors.black} />
+          </View>
+        )}
+
+        {catalog?.categories.map(cat => {
+          const items = selection[cat.code] ?? [];
           return (
-            <View key={cat} style={styles.group}>
-              <Text style={styles.groupLabel}>{cat}</Text>
+            <View key={cat.code} style={styles.group}>
+              <Text style={styles.groupLabel}>{cat.name}</Text>
               <View style={styles.chips}>
                 {items.map(item => (
                   <View key={item} style={[styles.chip, styles.chipSelected]}>
                     <Text style={[styles.chipText, styles.chipTextSelected]}>{item}</Text>
                   </View>
                 ))}
-                <TouchableOpacity style={styles.addChip} onPress={() => openModal(cat)}>
+                <TouchableOpacity style={styles.addChip} onPress={() => openModal(cat.code)}>
                   <Text style={styles.addChipText}>+ Add</Text>
                 </TouchableOpacity>
               </View>
@@ -123,9 +138,9 @@ export default function SurveyAllergyIngredientsScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Select {modalCategory}</Text>
+                <Text style={styles.modalTitle}>Select {activeCategory?.name ?? modalCategory}</Text>
                 <Text style={styles.modalSubtitle}>
-                  Choose {modalCategory?.toLowerCase()} ingredients to avoid.
+                  Choose {(activeCategory?.name ?? modalCategory ?? '').toLowerCase()} ingredients to avoid.
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setModalCategory(null)}>

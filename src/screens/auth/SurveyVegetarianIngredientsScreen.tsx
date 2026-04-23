@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Modal, Alert,
@@ -8,7 +8,8 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
-import { ALLERGY_CATEGORIES } from '../../constants/allergyData';
+import { Colors } from '../../constants/colors';
+import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
 import * as AuthService from '../../services/auth.service';
 
@@ -58,11 +59,16 @@ export default function SurveyVegetarianIngredientsScreen() {
   const dietKey = getDietKey(params);
   const initialItems = AVOIDED_BY_DIET[dietKey] ?? [];
 
+  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [items, setItems] = useState<string[]>(initialItems);
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalSelected, setModalSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+  }, []);
 
   // 편집 모드: 기존 항목 토글 (제거/복원)
   function toggleItem(item: string) {
@@ -125,8 +131,9 @@ export default function SurveyVegetarianIngredientsScreen() {
 
   const titleLabel = DIET_TITLE[dietKey] ?? dietKey;
 
-  // 모달에 표시할 카테고리 (이미 목록에 있는 것 제외)
-  const availableCategories = ALLERGY_CATEGORIES.filter(c => !items.includes(c));
+  // 모달에 표시할 카테고리 (이미 목록에 있는 것 제외) — 카탈로그 기반
+  const allCategoryCodes = catalog?.categories.map(c => c.code) ?? [];
+  const availableCategories = allCategoryCodes.filter(c => !items.includes(c));
 
   return (
     <View style={styles.container}>

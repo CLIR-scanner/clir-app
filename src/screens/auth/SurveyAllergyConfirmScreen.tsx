@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, TextInput, Modal, KeyboardAvoidingView, Platform, Alert,
@@ -9,7 +9,9 @@ import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
-import { ALLERGY_CATEGORIES, ALLERGY_CANDIDATES } from '../../constants/allergyData';
+import {
+  fetchAllergenCatalog, selectionToAllergenIds, AllergenCatalog,
+} from '../../services/allergen.service';
 import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
 
@@ -25,11 +27,16 @@ export default function SurveyAllergyConfirmScreen() {
   const { step, total } = getSurveyProgress('SurveyAllergyConfirm', surveyParams.dietaryType);
   const setUser = useUserStore(s => s.setUser);
 
+  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [categories, setCategories] = useState<SelectionMap>(
     JSON.parse(selectionJson) as SelectionMap,
   );
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+  }, []);
 
   // 항목 추가 모달
   const [modalCategory, setModalCategory] = useState<string | null>(null);
@@ -84,7 +91,11 @@ export default function SurveyAllergyConfirmScreen() {
 
   async function handleComplete() {
     const { dietaryType } = surveyParams;
-    const allergyProfile = Object.values(categories).flat();
+    // 카탈로그 기반 정규화 — "Chicken Egg" 같은 항목명을 ing-* ID 로 변환.
+    // 카탈로그 로드 전 클릭 시에는 raw 항목명으로 폴백(BE 가 재차 정규화).
+    const allergyProfile = catalog
+      ? selectionToAllergenIds(categories, catalog)
+      : Object.values(categories).flat();
 
     // Both 플로우: 알러지 데이터를 들고 채식 플로우로 이동
     if (dietaryType === 'both') {
@@ -111,12 +122,16 @@ export default function SurveyAllergyConfirmScreen() {
     }
   }
 
-  const candidates = modalCategory ? (ALLERGY_CANDIDATES[modalCategory] ?? []) : [];
+  const activeCategory = modalCategory && catalog
+    ? catalog.categories.find(c => c.code === modalCategory || c.name === modalCategory)
+    : null;
+  const candidates = activeCategory ? activeCategory.items.map(i => i.name) : [];
   const filteredCandidates = modalSearch.trim()
     ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
     : candidates;
 
-  const availableCats = ALLERGY_CATEGORIES.filter(
+  const allCategoryCodes = catalog?.categories.map(c => c.code) ?? [];
+  const availableCats = allCategoryCodes.filter(
     name => !Object.keys(categories).some(c => c.toLowerCase() === name.toLowerCase()),
   );
   const filteredCats = catSearch.trim()

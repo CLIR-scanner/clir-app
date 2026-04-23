@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,9 @@ import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
-import { ALLERGY_CANDIDATES, ALLERGY_CATEGORIES } from '../../constants/allergyData';
+import {
+  fetchAllergenCatalog, AllergenCatalog,
+} from '../../services/allergen.service';
 import * as AuthService from '../../services/auth.service';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
@@ -39,12 +41,18 @@ export default function SurveyAllergyDocResultScreen() {
 
   const setUser = useUserStore(s => s.setUser);
 
+  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [categories, setCategories] = useState<Category[]>(DUMMY_RESULTS);
   const allItems = categories.flatMap(g => g.items);
   const [selected, setSelected] = useState<Set<string>>(new Set(allItems));
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+  }, []);
+
+  // 항목 추가 모달 상태
   const [modalCategory, setModalCategory] = useState<string | null>(null);
   const [modalSearch, setModalSearch] = useState('');
   const [modalSelected, setModalSelected] = useState<Set<string>>(new Set());
@@ -107,7 +115,21 @@ export default function SurveyAllergyDocResultScreen() {
 
   async function handleComplete() {
     const { dietaryType } = params;
-    const allergyProfile = Array.from(selected);
+    // 선택된 항목명(예: "Salmon")을 카탈로그로 lookup 해 ing-* 로 변환.
+    // 매핑 없는 항목은 drop. 카탈로그 로드 전이면 raw 폴백(BE 정규화가 catch).
+    const selectedNames = Array.from(selected);
+    const allergyProfile = catalog
+      ? (() => {
+          const ids = new Set<string>();
+          for (const name of selectedNames) {
+            for (const cat of catalog.categories) {
+              const item = cat.items.find(i => i.name === name);
+              if (item?.allergenId) { ids.add(item.allergenId); break; }
+            }
+          }
+          return [...ids];
+        })()
+      : selectedNames;
 
     if (dietaryType === 'both') {
       navigation.navigate('SurveyVegetarian', {
@@ -133,7 +155,13 @@ export default function SurveyAllergyDocResultScreen() {
     }
   }
 
-  const candidates = modalCategory ? (ALLERGY_CANDIDATES[modalCategory] ?? []) : [];
+  // 모달에서 보여줄 후보 목록 (검색 필터 적용) — 카탈로그 기반
+  const activeCategory = modalCategory && catalog
+    ? catalog.categories.find(c => c.code === modalCategory || c.name === modalCategory)
+    : null;
+  const candidates = activeCategory
+    ? activeCategory.items.map(i => i.name)
+    : DEFAULT_CANDIDATES;
   const filteredCandidates = modalSearch.trim()
     ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
     : candidates;
@@ -218,11 +246,30 @@ export default function SurveyAllergyDocResultScreen() {
             <TextInput style={styles.searchInput} value={modalSearch} onChangeText={setModalSearch} placeholder="Search your ingredients" placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
-                {filteredCandidates.map(item => (
-                  <TouchableOpacity key={item} style={[styles.chip, modalSelected.has(item) && styles.chipSelected]} onPress={() => toggleModalItem(item)}>
-                    <Text style={[styles.chipText, modalSelected.has(item) && styles.chipTextSelected]}>{item}</Text>
-                  </TouchableOpacity>
-                ))}
+                {(catalog?.categories.map(c => c.code) ?? [])
+                  .filter(name =>
+                    !categories.some(c => c.category.toLowerCase() === name.toLowerCase() ) &&
+                    (catModalSearch.trim()
+                      ? name.toLowerCase().includes(catModalSearch.toLowerCase())
+                      : true),
+                  )
+                  .map(name => (
+                    <TouchableOpacity
+                      key={name}
+                      style={[styles.chip, catModalSelected.has(name) && styles.chipSelected]}
+                      onPress={() => {
+                        setCatModalSelected(prev => {
+                          const next = new Set(prev);
+                          next.has(name) ? next.delete(name) : next.add(name);
+                          return next;
+                        });
+                      }}
+                    >
+                      <Text style={[styles.chipText, catModalSelected.has(name) && styles.chipTextSelected]}>
+                        {name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
               </View>
             </ScrollView>
             <TouchableOpacity style={styles.saveButton} onPress={handleModalSave}>

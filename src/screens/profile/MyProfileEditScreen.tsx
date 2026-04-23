@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert,
+  ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { ProfileStackParamList, SensitivityLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
-import { ALLERGY_CATEGORIES, ALLERGY_CANDIDATES } from '../../constants/allergyData';
+import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { ApiError } from '../../services/auth.service';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'MyProfileEdit'>;
@@ -25,6 +25,11 @@ export default function MyProfileEditScreen() {
   const [selectedAllergy, setSelectedAllergy]         = useState<Set<string>>(new Set(allergyProfile));
   const [expandedCats, setExpandedCats]               = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving]                       = useState(false);
+  const [catalog, setCatalog]                         = useState<AllergenCatalog | null>(null);
+
+  useEffect(() => {
+    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+  }, []);
 
   // ── 저장 ──────────────────────────────────────────────────────────────────
   const isDirty =
@@ -68,9 +73,14 @@ export default function MyProfileEditScreen() {
     });
   }
 
+  function itemsOfCategory(cat: string): string[] {
+    const c = catalog?.categories.find(x => x.code === cat);
+    return c ? c.items.map(i => i.name) : [];
+  }
+
   function toggleAllInCategory(cat: string) {
-    const items     = ALLERGY_CANDIDATES[cat] ?? [];
-    const allChecked = items.every(i => selectedAllergy.has(i));
+    const items     = itemsOfCategory(cat);
+    const allChecked = items.length > 0 && items.every(i => selectedAllergy.has(i));
     setSelectedAllergy(prev => {
       const next = new Set(prev);
       if (allChecked) items.forEach(i => next.delete(i));
@@ -172,22 +182,27 @@ export default function MyProfileEditScreen() {
         </View>
 
         <View style={styles.allergyList}>
-          {ALLERGY_CATEGORIES.map(cat => {
-            const items        = ALLERGY_CANDIDATES[cat] ?? [];
+          {!catalog && (
+            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+              <ActivityIndicator color={Colors.black} />
+            </View>
+          )}
+          {catalog?.categories.map(cat => {
+            const items        = cat.items.map(i => i.name);
             const checkedCount = items.filter(i => selectedAllergy.has(i)).length;
-            const isExpanded   = expandedCats.has(cat);
-            const allChecked   = checkedCount === items.length;
+            const isExpanded   = expandedCats.has(cat.code);
+            const allChecked   = items.length > 0 && checkedCount === items.length;
 
             return (
-              <View key={cat} style={styles.categoryBlock}>
+              <View key={cat.code} style={styles.categoryBlock}>
                 <TouchableOpacity
                   style={styles.categoryRow}
-                  onPress={() => toggleCategory(cat)}
+                  onPress={() => toggleCategory(cat.code)}
                   activeOpacity={0.8}
                 >
                   <TouchableOpacity
                     style={[styles.checkbox, allChecked && checkedCount > 0 && styles.checkboxChecked]}
-                    onPress={() => toggleAllInCategory(cat)}
+                    onPress={() => toggleAllInCategory(cat.code)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     {checkedCount > 0 && !allChecked && (
@@ -195,7 +210,7 @@ export default function MyProfileEditScreen() {
                     )}
                   </TouchableOpacity>
                   <View style={styles.categoryLabelWrap}>
-                    <Text style={styles.categoryLabel}>{cat}</Text>
+                    <Text style={styles.categoryLabel}>{cat.name}</Text>
                     {checkedCount > 0 && (
                       <Text style={styles.categoryCount}>{checkedCount}/{items.length}</Text>
                     )}

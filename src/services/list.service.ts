@@ -1,7 +1,7 @@
 // TODO: Real API 연동 시 USE_MOCK 을 false 로 변경
 import { FavoriteItem, Ingredient, RiskLevel, ShoppingItem } from '../types';
 import { apiFetch } from '../lib/api';
-import { ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient } from '../constants/allergyData';
+import { makeRiskIngredient, makeMayContainIngredient } from './allergen.service';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
 
@@ -15,8 +15,8 @@ interface ProductSummary {
   traceIds?: string[];
 }
 
-// ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient 는
-// constants/allergyData.ts 에서 import (단일 출처 관리)
+// makeRiskIngredient / makeMayContainIngredient 는 allergen.service.ts 에서 import.
+// 알러지 카탈로그 SSOT 는 BE /allergens/catalog.
 
 /** GET /favorites 응답 항목 — product가 null일 수 있음 (DB join 실패 시) */
 interface FavoriteApiItem {

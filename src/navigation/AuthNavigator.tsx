@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSharedValue } from 'react-native-reanimated';
 import { SurveyProgressContext } from '../contexts/SurveyProgressContext';
 import { AuthStackParamList } from '../types';
+import { START_AT_SURVEY } from '../constants/dev';
 import SplashScreen from '../screens/auth/SplashScreen';
 import AuthHomeScreen from '../screens/auth/AuthHomeScreen';
 import SurveyLandingScreen from '../screens/auth/SurveyLandingScreen';
@@ -25,8 +26,10 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 export default function AuthNavigator() {
   const surveyProgress = useSharedValue(0);
   return (
+
     <SurveyProgressContext.Provider value={surveyProgress}>
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F9FFF3' } }}>
+
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
       <Stack.Screen name="SurveyLanding" component={SurveyLandingScreen} />

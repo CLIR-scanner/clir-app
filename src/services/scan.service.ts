@@ -2,7 +2,7 @@
 import { Platform } from 'react-native';
 import { Product, Ingredient, OCRResult, AnalysisResult, ScanHistory, RiskLevel } from '../types';
 import { apiFetch, apiFormFetch } from '../lib/api';
-import { ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient } from '../constants/allergyData';
+import { makeRiskIngredient, makeMayContainIngredient } from './allergen.service';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
 
@@ -38,8 +38,8 @@ interface ScanHistoryItem {
   scannedAt: string;
 }
 
-// ALLERGEN_NAME_MAP, makeRiskIngredient, makeMayContainIngredient 는
-// constants/allergyData.ts 에서 import (단일 출처 관리)
+// makeRiskIngredient / makeMayContainIngredient 는 allergen.service.ts 에서 import.
+// BE 카탈로그(/allergens/catalog) 응답이 캐시되면 표시명이 자동으로 반영됨.
 
 // productId 없는 OCR 이력의 폴백 객체.
 // name/brand를 빈 문자열로 두면 화면에 그대로 렌더링되므로 표시용 placeholder를 사용.
@@ -301,16 +301,17 @@ export async function getIngredient(id: string): Promise<Ingredient> {
 }
 
 /**
- * GET /products/:id
- * 제품 ID로 전체 상세 정보를 조회한다.
+ * GET /products/by-id/:id
+ * 제품 ID로 전체 상세 정보를 조회한다. 비-바코드 ID(UUID, seed-xxx, off-xxx, ocr-xxx) 지원.
  * 상세 화면에서 성분 정보 등 전체 데이터를 표시할 때 사용한다.
+ * 응답은 이미 현재 프로필 기준 riskLevel, riskIngredients 가 주입된 상태.
  */
 export async function getProductById(productId: string): Promise<Product> {
   if (USE_MOCK) {
     // Mock mode에서는 cache된 제품 반환
     return MOCK_PRODUCT_DANGER.id === productId ? MOCK_PRODUCT_DANGER : MOCK_PRODUCT_SAFE;
   }
-  return apiFetch<Product>(`/products/${encodeURIComponent(productId)}`);
+  return apiFetch<Product>(`/products/by-id/${encodeURIComponent(productId)}`);
 }
 
 /**
