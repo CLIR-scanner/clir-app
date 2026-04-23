@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
 import { signOut as authSignOut, submitSurvey } from '../services/auth.service';
+import { useScanStore } from './scan.store';
+import { useListStore } from './list.store';
 
 const EMPTY_PROFILE: Profile = {
   id: '',
@@ -81,6 +83,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
         dietaryRestrictions: nextActive.dietaryRestrictions,
         sensitivityLevel: nextActive.sensitivityLevel,
       });
+      // 프로필이 바뀌면 BE 가 scan_history 를 재계산하고, GET 경로는 실시간 재판정을
+      // 한다. 로컬 캐시(Zustand)는 이전 프로필 기준 결과를 보유하므로 무효화해
+      // 다음 화면 진입 시 최신 값을 받도록 강제.
+      useScanStore.getState().clearHistory();
+      useListStore.getState().setFavorites([]);
     } catch (err) {
       set({ activeProfile: prevActive, currentUser: prevUser });
       throw err;
