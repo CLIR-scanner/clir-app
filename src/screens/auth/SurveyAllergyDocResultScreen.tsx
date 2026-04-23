@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,9 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
-import { ALLERGY_CANDIDATES, ALLERGY_CATEGORIES } from '../../constants/allergyData';
+import {
+  fetchAllergenCatalog, AllergenCatalog,
+} from '../../services/allergen.service';
 import * as AuthService from '../../services/auth.service';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
@@ -40,11 +42,16 @@ export default function SurveyAllergyDocResultScreen() {
 
   const setUser = useUserStore(s => s.setUser);
 
+  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [categories, setCategories] = useState<Category[]>(DUMMY_RESULTS);
   const allItems = categories.flatMap(g => g.items);
   const [selected, setSelected] = useState<Set<string>>(new Set(allItems));
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+  }, []);
 
   // 항목 추가 모달 상태
   const [modalCategory, setModalCategory] = useState<string | null>(null);
@@ -111,7 +118,21 @@ export default function SurveyAllergyDocResultScreen() {
 
   async function handleComplete() {
     const { dietaryType } = params;
-    const allergyProfile = Array.from(selected);
+    // 선택된 항목명(예: "Salmon")을 카탈로그로 lookup 해 ing-* 로 변환.
+    // 매핑 없는 항목은 drop. 카탈로그 로드 전이면 raw 폴백(BE 정규화가 catch).
+    const selectedNames = Array.from(selected);
+    const allergyProfile = catalog
+      ? (() => {
+          const ids = new Set<string>();
+          for (const name of selectedNames) {
+            for (const cat of catalog.categories) {
+              const item = cat.items.find(i => i.name === name);
+              if (item?.allergenId) { ids.add(item.allergenId); break; }
+            }
+          }
+          return [...ids];
+        })()
+      : selectedNames;
 
     // Both 플로우: 알러지 데이터를 들고 채식 플로우로 이동
     if (dietaryType === 'both') {
@@ -138,10 +159,13 @@ export default function SurveyAllergyDocResultScreen() {
     }
   }
 
-  // 모달에서 보여줄 후보 목록 (검색 필터 적용)
-  const candidates = modalCategory
-    ? (ALLERGY_CANDIDATES[modalCategory] ?? DEFAULT_CANDIDATES)
-    : [];
+  // 모달에서 보여줄 후보 목록 (검색 필터 적용) — 카탈로그 기반
+  const activeCategory = modalCategory && catalog
+    ? catalog.categories.find(c => c.code === modalCategory || c.name === modalCategory)
+    : null;
+  const candidates = activeCategory
+    ? activeCategory.items.map(i => i.name)
+    : DEFAULT_CANDIDATES;
   const filteredCandidates = modalSearch.trim()
     ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
     : candidates;
@@ -274,7 +298,7 @@ export default function SurveyAllergyDocResultScreen() {
               keyboardShouldPersistTaps="handled"
             >
               <View style={styles.modalChips}>
-                {ALLERGY_CATEGORIES
+                {(catalog?.categories.map(c => c.code) ?? [])
                   .filter(name =>
                     !categories.some(c => c.category.toLowerCase() === name.toLowerCase() ) &&
                     (catModalSearch.trim()

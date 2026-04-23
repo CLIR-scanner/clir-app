@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
-import { ALLERGY_CATEGORIES, ALLERGY_CANDIDATES } from '../../constants/allergyData';
+import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
 
 export default function PersonalizationAllergyScreen() {
@@ -14,8 +14,13 @@ export default function PersonalizationAllergyScreen() {
   const allergyProfile      = useUserStore(s => s.activeProfile.allergyProfile);
   const updateActiveProfile = useUserStore(s => s.updateActiveProfile);
 
+  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set(allergyProfile));
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+  }, []);
 
   function toggleItem(item: string) {
     setSelected(prev => {
@@ -33,9 +38,14 @@ export default function PersonalizationAllergyScreen() {
     });
   }
 
+  function itemsOfCategory(cat: string): string[] {
+    const c = catalog?.categories.find(x => x.code === cat);
+    return c ? c.items.map(i => i.name) : [];
+  }
+
   function toggleAllInCategory(cat: string) {
-    const items = ALLERGY_CANDIDATES[cat] ?? [];
-    const allChecked = items.every(i => selected.has(i));
+    const items = itemsOfCategory(cat);
+    const allChecked = items.length > 0 && items.every(i => selected.has(i));
     setSelected(prev => {
       const next = new Set(prev);
       if (allChecked) {
@@ -80,22 +90,27 @@ export default function PersonalizationAllergyScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.list}>
-          {ALLERGY_CATEGORIES.map(cat => {
-            const items = ALLERGY_CANDIDATES[cat] ?? [];
+          {!catalog && (
+            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+              <ActivityIndicator color={Colors.black} />
+            </View>
+          )}
+          {catalog?.categories.map(cat => {
+            const items = cat.items.map(i => i.name);
             const checkedCount = items.filter(i => selected.has(i)).length;
-            const isExpanded = expanded.has(cat);
-            const allChecked = checkedCount === items.length;
+            const isExpanded = expanded.has(cat.code);
+            const allChecked = items.length > 0 && checkedCount === items.length;
 
             return (
-              <View key={cat} style={styles.categoryBlock}>
+              <View key={cat.code} style={styles.categoryBlock}>
                 <TouchableOpacity
                   style={styles.categoryRow}
-                  onPress={() => toggleCategory(cat)}
+                  onPress={() => toggleCategory(cat.code)}
                   activeOpacity={0.8}
                 >
                   <TouchableOpacity
                     style={[styles.checkbox, allChecked && checkedCount > 0 && styles.checkboxChecked]}
-                    onPress={() => toggleAllInCategory(cat)}
+                    onPress={() => toggleAllInCategory(cat.code)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     {checkedCount > 0 && !allChecked && (
@@ -104,7 +119,7 @@ export default function PersonalizationAllergyScreen() {
                   </TouchableOpacity>
 
                   <View style={styles.categoryLabelWrap}>
-                    <Text style={styles.categoryLabel}>{cat}</Text>
+                    <Text style={styles.categoryLabel}>{cat.name}</Text>
                     {checkedCount > 0 && (
                       <Text style={styles.categoryCount}>{checkedCount}/{items.length}</Text>
                     )}

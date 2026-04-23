@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal,
@@ -6,8 +6,19 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
-import { ALLERGY_CATEGORIES } from '../../constants/allergyData';
+import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
+
+// 각 subcomponent 에서 동일하게 호출 — 모듈 캐시 덕에 실제 fetch 는 1회만 발생.
+function useCategoryCodes(): string[] {
+  const [codes, setCodes] = useState<string[]>([]);
+  useEffect(() => {
+    fetchAllergenCatalog('en')
+      .then((c: AllergenCatalog) => setCodes(c.categories.map(x => x.code)))
+      .catch(() => {});
+  }, []);
+  return codes;
+}
 
 type DietaryType    = 'allergy' | 'vegetarian' | 'both';
 type Severity       = 'mild' | 'moderate' | 'severe';
@@ -207,7 +218,8 @@ function StepAllergyIngredients({ selected, onChange, onNext, isFinal }: {
   const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [modalSel, setModalSel] = useState<string[]>([]);
-  const available = ALLERGY_CATEGORIES.filter(c => !selected.has(c));
+  const categoryCodes = useCategoryCodes();
+  const available = categoryCodes.filter(c => !selected.has(c));
 
   function toggleItem(cat: string) {
     const next = new Set<string>(selected);
@@ -349,7 +361,8 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalSel, setModalSel] = useState<string[]>([]);
-  const available = ALLERGY_CATEGORIES.filter(c => !items.includes(c));
+  const categoryCodes = useCategoryCodes();
+  const available = categoryCodes.filter(c => !items.includes(c));
   const titleLabel = DIET_TITLE_KEY[dietKey] ?? dietKey;
 
   function openModal() { setModalSel([]); setShowModal(true); }
