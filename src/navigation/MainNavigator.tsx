@@ -56,7 +56,13 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     );
   }
 
-  const bottomPad = insets.bottom > 0 ? insets.bottom : 12;
+  // 현재 탭의 중첩 스택에서 포커스된 화면 이름 추출
+  const activeTabState = state.routes[state.index].state;
+  const focusedStackRoute = activeTabState
+    ? activeTabState.routes[activeTabState.index ?? 0]?.name
+    : null;
+
+const bottomPad = insets.bottom > 0 ? insets.bottom : 12;
 
   return (
     <View style={[tabStyles.bar, { paddingBottom: bottomPad }]}>

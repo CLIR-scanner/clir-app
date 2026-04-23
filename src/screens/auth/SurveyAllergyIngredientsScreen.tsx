@@ -6,6 +6,8 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import SurveyHeader from '../../components/common/SurveyHeader';
+import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
@@ -20,6 +22,7 @@ export default function SurveyAllergyIngredientsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const params = route.params;
+  const { step, total } = getSurveyProgress('SurveyAllergyIngredients', params.dietaryType);
 
   const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [selection, setSelection] = useState<SelectionMap>({});
@@ -75,15 +78,7 @@ export default function SurveyAllergyIngredientsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{'←'}</Text>
-        </TouchableOpacity>
-        <View style={styles.progressBar}>
-          <View style={styles.progressFill} />
-        </View>
-      </View>
+      <SurveyHeader step={step} total={total} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Select ingredients to avoid.</Text>
@@ -191,70 +186,34 @@ export default function SurveyAllergyIngredientsScreen() {
   );
 }
 
+const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 28,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 32,
-  },
-  backText: { fontSize: 22, color: Colors.black },
-  progressBar: { flex: 1, height: 4, backgroundColor: Colors.gray100, borderRadius: 2 },
-  progressFill: { width: '75%', height: '100%', backgroundColor: Colors.black, borderRadius: 2 },
+  container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
   scroll: { flex: 1 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.black, marginBottom: 10 },
-  subtitle: { fontSize: 13, color: Colors.gray500, lineHeight: 20, marginBottom: 28 },
+  title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 10 },
+  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 28 },
   group: { marginBottom: 20 },
-  groupLabel: { fontSize: 14, fontWeight: '700', color: Colors.black, marginBottom: 8 },
+  groupLabel: { fontSize: 14, fontWeight: '700', color: S.primary, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  chip: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 100,
-    paddingVertical: 7, paddingHorizontal: 14, backgroundColor: Colors.white,
-  },
-  chipSelected: { borderColor: Colors.black, backgroundColor: Colors.black },
-  chipText: { fontSize: 13, color: Colors.black, fontWeight: '600' },
-  chipTextSelected: { color: Colors.white },
-  addChip: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 100,
-    paddingVertical: 7, paddingHorizontal: 14, backgroundColor: Colors.white,
-  },
-  addChipText: { fontSize: 13, color: Colors.gray700 },
-  continueButton: {
-    backgroundColor: Colors.white, borderRadius: 100,
-    paddingVertical: 18, alignItems: 'center', marginTop: 8,
-  },
-  continueText: { fontSize: 15, fontWeight: '700', color: Colors.black },
-  // 모달
+  chip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
+  chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
+  chipText: { fontSize: 13, color: S.primary, fontWeight: '600' },
+  chipTextSelected: { color: '#FFFFFF' },
+  addChip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
+  addChipText: { fontSize: 13, color: S.primary },
+  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  continueText: { fontSize: 16, fontWeight: '700', color: S.textLight },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalSheet: {
-    backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, maxHeight: '75%',
-  },
-  modalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 16,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.black },
-  modalSubtitle: { fontSize: 12, color: Colors.gray500, marginTop: 4 },
-  modalClose: { fontSize: 18, color: Colors.black, paddingLeft: 8 },
-  searchInput: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14,
-    color: Colors.black, marginBottom: 16,
-  },
+  modalSheet: { backgroundColor: S.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, maxHeight: '75%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#000000' },
+  modalSubtitle: { fontSize: 12, color: S.primary, marginTop: 4 },
+  modalClose: { fontSize: 18, color: S.primary, paddingLeft: 8 },
+  searchInput: { borderWidth: 1, borderColor: S.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: S.primary, marginBottom: 16, backgroundColor: S.bg },
   modalScroll: { maxHeight: 220 },
   modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 8 },
-  saveButton: {
-    backgroundColor: Colors.black, borderRadius: 100,
-    paddingVertical: 16, alignItems: 'center', marginTop: 16,
-  },
-  saveText: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  saveButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  saveText: { fontSize: 16, fontWeight: '700', color: S.textLight },
 });

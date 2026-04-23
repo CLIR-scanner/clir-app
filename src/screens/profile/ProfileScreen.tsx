@@ -134,6 +134,7 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
         <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
+
     </ScrollView>
   );
 }

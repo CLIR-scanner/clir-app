@@ -212,6 +212,8 @@ export type SurveyParams = {
 export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
+  /** Survey 0: 설문 시작 랜딩 (Skip 가능) */
+  SurveyLanding: SurveyParams;
   /** Survey 1: 식이 유형 선택 */
   Survey: SurveyParams;
   /** Survey 2-A: 알러지 진단 여부 확인 */
