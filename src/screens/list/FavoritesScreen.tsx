@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ListStackParamList, FavoriteItem, RiskLevel } from '../../types';
 import { useListStore } from '../../store/list.store';
 import { getFavorites, removeFavorite } from '../../services/list.service';
@@ -29,6 +30,7 @@ const BADGE: Record<RiskLevel, { dot: string; label: string }> = {
 };
 
 export default function FavoritesScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const insets       = useSafeAreaInsets();
   const favorites             = useListStore(s => s.favorites);
   const setFavorites          = useListStore(s => s.setFavorites);
@@ -144,9 +146,9 @@ export default function FavoritesScreen({ navigation }: Props) {
         </View>
       ) : isError ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>즐겨찾기를 불러오지 못했습니다.</Text>
+          <Text style={styles.emptyText}>{t('favorites.errorLoad')}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={fetchFavorites}>
-            <Text style={styles.retryText}>다시 시도</Text>
+            <Text style={styles.retryText}>{t('favorites.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -158,13 +160,13 @@ export default function FavoritesScreen({ navigation }: Props) {
           ListHeaderComponent={
             <View style={styles.pillWrap}>
               <View style={styles.pill}>
-                <Text style={styles.pillText}>My Favorite Products</Text>
+                <Text style={styles.pillText}>{t('favorites.title')}</Text>
               </View>
             </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>아직 즐겨찾기가 없습니다.</Text>
+              <Text style={styles.emptyText}>{t('favorites.empty')}</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}

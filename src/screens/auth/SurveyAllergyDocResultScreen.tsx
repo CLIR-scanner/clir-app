@@ -161,7 +161,7 @@ export default function SurveyAllergyDocResultScreen() {
     : null;
   const candidates = activeCategory
     ? activeCategory.items.map(i => i.name)
-    : DEFAULT_CANDIDATES;
+    : [];
   const filteredCandidates = modalSearch.trim()
     ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
     : candidates;
@@ -296,12 +296,12 @@ export default function SurveyAllergyDocResultScreen() {
             <TextInput style={styles.searchInput} value={catModalSearch} onChangeText={setCatModalSearch} placeholder="Search categories" placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
-                {ALLERGY_CATEGORIES
-                  .filter(name =>
+                {(catalog?.categories.map(c => c.name) ?? [])
+                  .filter((name: string) =>
                     !categories.some(c => c.category.toLowerCase() === name.toLowerCase()) &&
                     (catModalSearch.trim() ? name.toLowerCase().includes(catModalSearch.toLowerCase()) : true),
                   )
-                  .map(name => (
+                  .map((name: string) => (
                     <TouchableOpacity
                       key={name}
                       style={[styles.chip, catModalSelected.has(name) && styles.chipSelected]}

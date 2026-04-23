@@ -240,6 +240,13 @@ const ko = {
     errorPwLen:             '비밀번호는 8자 이상이어야 합니다.',
     errorPwMatch:           '비밀번호가 일치하지 않습니다.',
   },
+  // ── Favorites ─────────────────────────────────────────────────────────────
+  favorites: {
+    title:        '즐겨찾기 상품',
+    empty:        '아직 즐겨찾기가 없습니다.',
+    errorLoad:    '즐겨찾기를 불러오지 못했습니다.',
+    retry:        '다시 시도',
+  },
 } as const;
 
 export default ko;

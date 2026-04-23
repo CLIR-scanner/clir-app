@@ -239,6 +239,13 @@ const en = {
     errorPwLen:             'Password must be at least 8 characters.',
     errorPwMatch:           'Passwords do not match.',
   },
+  // ── Favorites ─────────────────────────────────────────────────────────────
+  favorites: {
+    title:        'Favorite Products',
+    empty:        'No favorites yet.',
+    errorLoad:    'Failed to load favorites.',
+    retry:        'Try again',
+  },
 } as const;
 
 export default en;
