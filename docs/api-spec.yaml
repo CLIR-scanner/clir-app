@@ -1,0 +1,1034 @@
+openapi: 3.0.3
+info:
+  title: CLIR API
+  description: |
+    식품 바코드/OCR 스캔 → 성분 분석 → 알러지·식이 프로필 대조 → 개인화 위협 판정
+
+    ## 인증
+    소셜 로그인(Google / Apple) 후 Supabase OAuth에서 발급받은 access token을
+    모든 보호된 엔드포인트의 Authorization 헤더에 포함해야 합니다.
+    Authorization: Bearer {token}
+
+    토큰 발급·갱신은 클라이언트가 Supabase Auth와 직접 통신하며,
+    백엔드는 verifyToken 미들웨어로 토큰을 검증만 합니다.
+    자체 서버에서 발급하는 JWT는 더 이상 존재하지 않습니다.
+
+    ## OCR
+    이미지 분석은 OpenAI Vision API (gpt-4o)를 사용합니다.
+    이미지 파일을 multipart/form-data로 전송하면
+    서버가 OpenAI API를 호출해 성분 텍스트를 추출·파싱합니다.
+
+    ## MVP 범위
+    - 소셜 로그인 (Google / Apple) / 프로필 조회 / 설문조사
+    - 바코드 또는 OCR 스캔 후 성분 분석
+    - 알러지·식이 위험도 판정 (safe / caution / danger)
+    - 즐겨찾기 등록·조회·삭제
+    - 스캔 이력 저장·조회
+    - 제품 검색 / 자동완성
+  version: 1.1.0
+
+servers:
+  - url: http://localhost:3000
+    description: 로컬 개발 서버
+  - url: https://api.clir.app
+    description: 프로덕션 서버
+
+security:
+  - BearerAuth: []
+
+paths:
+
+  # ─────────────────────────────────────
+  # 인증 (Auth)
+  # ─────────────────────────────────────
+  #
+  # 자체 로그인(/auth/signup, /auth/login)은 제거되었습니다.
+  # 회원가입·로그인 흐름은 모두 Supabase OAuth가 담당합니다:
+  #   supabase.auth.signInWithOAuth({ provider: 'google' | 'apple' })
+  #   → WebBrowser 세션 → access_token / refresh_token 수신
+  #   → supabase.auth.setSession
+  #   → GET /auth/me 로 프로필 조회 (hasCompletedSurvey 분기)
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 내 프로필 조회 (소셜 로그인 후)
+      description: |
+        Authorization 헤더의 Supabase access token으로 현재 로그인된 사용자의
+        CLIR 프로필과 설문 완료 여부(hasCompletedSurvey)를 반환합니다.
+        기존 POST /auth/login 응답의 user 객체 역할을 대체합니다.
+
+        소셜 로그인은 "회원가입"과 "로그인"이 구분되지 않으므로
+        클라이언트는 이 응답의 hasCompletedSurvey 플래그로 분기합니다:
+        - false → 설문(Survey) 화면으로 이동 (POST /auth/survey)
+        - true  → 메인 탭으로 이동
+
+        호출 시점:
+        1) 소셜 로그인 직후 — 최초 로그인 여부 판단
+        2) 세션 복원 시 — 앱 재시작 후 저장된 토큰 유효성 확인 + 최신 프로필 로드
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: uuid-1234
+                email: user@example.com
+                name: 홍길동
+                allergyProfile: [ing-peanut]
+                dietaryRestrictions: [vegan]
+                sensitivityLevel: strict
+                hasCompletedSurvey: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/survey:
+    post:
+      tags: [Auth]
+      summary: 설문조사 제출 / 프로필 편집
+      description: |
+        두 가지 맥락에서 호출되는 단일 엔드포인트입니다.
+        1) 최초 소셜 로그인 직후 — `GET /auth/me`의 `hasCompletedSurvey`가 false일 때
+           알러지 프로필·식이 제한·민감도를 최초 저장합니다.
+        2) 프로필 편집 시 — 프로필 탭의 "내 프로필" 편집 화면에서
+           알러지 프로필·민감도를 갱신할 때도 같은 엔드포인트를 재사용합니다.
+
+        전체-치환 시맨틱: 클라이언트는 3필드를 항상 현재 값 기준으로 모두 보내야 합니다.
+        부분 업데이트가 필요한 화면도 나머지 필드는 로컬 상태의 현재 값을 그대로 포함합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [allergyProfile, dietaryRestrictions, sensitivityLevel]
+              properties:
+                allergyProfile:
+                  type: array
+                  items:
+                    type: string
+                  example: [ing-peanut, ing-gluten]
+                  description: |
+                    알러지 성분 ID 목록.
+                    가능한 값: ing-peanut, ing-gluten, ing-dairy,
+                               ing-egg, ing-shellfish, ing-treenut
+                dietaryRestrictions:
+                  type: array
+                  items:
+                    type: string
+                  example: [vegan]
+                  description: |
+                    식이 제한 목록.
+                    가능한 값: vegan, vegetarian, halal, kosher
+                sensitivityLevel:
+                  type: string
+                  enum: [strict, normal]
+                  example: strict
+                  description: |
+                    strict: 엄격 모드 — may contain 포함 경고
+                    normal: 일반 모드 — 직접 함유만 경고
+      responses:
+        '200':
+          description: 설문 저장 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 설문이 저장되었습니다.
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─────────────────────────────────────
+  # 제품 / 스캔
+  # ─────────────────────────────────────
+
+  /products/{barcode}:
+    get:
+      tags: [Products]
+      summary: 바코드로 제품 조회
+      description: |
+        바코드 번호로 제품 정보를 조회합니다.
+        자체 DB를 먼저 조회하고, 없으면 Open Food Facts API에서 가져옵니다.
+        반환된 ingredients 목록을 POST /analysis에 전달해 위험도를 판정합니다.
+      parameters:
+        - name: barcode
+          in: path
+          required: true
+          schema:
+            type: string
+          example: '0034000020430'
+      responses:
+        '200':
+          description: 제품 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 등록되지 않은 바코드
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: PRODUCT_NOT_FOUND
+                message: 등록되지 않은 제품입니다.
+
+  /products/{id}/alternatives:
+    get:
+      tags: [Products]
+      summary: 대체 제품 추천
+      description: |
+        분석 결과 danger 또는 caution 판정이 났을 때 호출합니다.
+        같은 카테고리 내에서 현재 사용자 프로필 기준으로 안전한 제품 목록을 반환합니다.
+        대체 제품이 없을 경우 빈 배열을 반환합니다.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: prod-001
+      responses:
+        '200':
+          description: 대체 제품 목록 반환 (없으면 빈 배열)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alternatives:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 제품을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: PRODUCT_NOT_FOUND
+                message: 해당 제품을 찾을 수 없습니다.
+
+  /ocr:
+    post:
+      tags: [Scan]
+      summary: OCR 성분 추출
+      description: |
+        식품 성분표 이미지를 업로드하면 OpenAI Vision API (gpt-4o)를 통해
+        성분 텍스트를 추출하고 성분 ID 목록으로 파싱해 반환합니다.
+        바코드가 없거나 인식이 안 될 때 사용합니다.
+
+        반환된 ingredients를 POST /analysis에 전달해 위험도를 판정합니다.
+
+        POST를 사용하는 이유:
+        이미지 파일을 서버로 전송해야 하므로 body가 필요합니다.
+        GET으로는 파일을 전송할 수 없습니다.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: 성분표가 포함된 식품 이미지 파일 (jpg, png)
+      responses:
+        '200':
+          description: OCR 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  extractedText:
+                    type: string
+                    description: OpenAI가 이미지에서 추출한 원문 텍스트
+                    example: Ingredients: Peanuts, Sugar, Palm Oil, Salt
+                  ingredients:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IngredientSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: 이미지에서 성분 텍스트를 인식하지 못함
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: OCR_FAILED
+                message: 성분표를 인식할 수 없습니다. 다시 촬영해 주세요.
+
+  /analysis:
+    post:
+      tags: [Scan]
+      summary: 성분 위험도 판정
+      description: |
+        바코드 조회 또는 OCR로 얻은 성분 목록을 전달하면
+        현재 로그인된 사용자의 알러지·식이 프로필과 대조해 위험도를 판정합니다.
+        이 API가 "먹어도 되는지"를 최종 결정합니다.
+
+        verdict 기준:
+        - safe    : 모든 성분 이상 없음
+        - caution : 주의 성분 포함 (may contain 등, strict 모드에서 활성화)
+        - danger  : 알러지 유발 성분 직접 포함
+
+        호출 후 POST /scan-history로 결과를 저장해야 이력이 쌓입니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ingredientIds]
+              properties:
+                productId:
+                  type: string
+                  description: 바코드 스캔 시 함께 전달 (OCR 시 생략 가능)
+                  example: prod-001
+                ingredientIds:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  example: [ing-peanut, ing-dairy, ing-sugar]
+      responses:
+        '200':
+          description: 분석 완료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─────────────────────────────────────
+  # 성분 상세
+  # ─────────────────────────────────────
+
+  /ingredients/{id}:
+    get:
+      tags: [Ingredients]
+      summary: 성분 상세 조회
+      description: |
+        분석 결과 화면에서 특정 성분을 탭했을 때 바텀시트로 보여줄
+        상세 설명과 근거 자료 링크를 반환합니다.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ing-peanut
+      responses:
+        '200':
+          description: 성분 상세 반환
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ingredient'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 성분 정보 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: INGREDIENT_NOT_FOUND
+                message: 해당 성분 정보를 찾을 수 없습니다.
+
+  # ─────────────────────────────────────
+  # 스캔 이력
+  # ─────────────────────────────────────
+
+  /scan-history:
+    post:
+      tags: [Scan History]
+      summary: 스캔 이력 저장
+      description: |
+        POST /analysis 호출 후 결과를 이력으로 저장합니다.
+        이 데이터가 쌓여야 스캔 이력 화면과 개인 안전 식품 DB가 동작합니다.
+        분석 직후 클라이언트에서 자동으로 호출해야 합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result]
+              properties:
+                productId:
+                  type: string
+                  description: 바코드 스캔 시 포함 (OCR 시 생략 가능)
+                  example: prod-001
+                result:
+                  type: string
+                  enum: [safe, caution, danger]
+                  example: danger
+      responses:
+        '201':
+          description: 이력 저장 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: hist-001
+                  productId:
+                    type: string
+                    example: prod-001
+                  result:
+                    type: string
+                    enum: [safe, caution, danger]
+                    example: danger
+                  scannedAt:
+                    type: string
+                    format: date-time
+                    example: '2026-04-08T10:30:00Z'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      tags: [Scan History]
+      summary: 스캔 이력 조회
+      description: |
+        현재 로그인된 사용자의 스캔 이력 전체를 최신순으로 반환합니다.
+        스캔 이력 화면(/scan/history)에서 사용합니다.
+      responses:
+        '200':
+          description: 이력 목록 반환
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: hist-001
+                        product:
+                          $ref: '#/components/schemas/ProductSummary'
+                        result:
+                          type: string
+                          enum: [safe, caution, danger]
+                          example: danger
+                        scannedAt:
+                          type: string
+                          format: date-time
+                          example: '2026-04-08T10:30:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─────────────────────────────────────
+  # 즐겨찾기
+  # ─────────────────────────────────────
+
+  /favorites:
+    post:
+      tags: [Favorites]
+      summary: 즐겨찾기 추가
+      description: |
+        스캔 결과 화면의 별표(★) 버튼을 눌렀을 때 호출합니다.
+        이미 추가된 제품이면 409를 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId]
+              properties:
+                productId:
+                  type: string
+                  example: prod-001
+      responses:
+        '201':
+          description: 즐겨찾기 추가 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: fav-001
+                  productId:
+                    type: string
+                    example: prod-001
+                  addedAt:
+                    type: string
+                    format: date-time
+                    example: '2026-04-08T10:35:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: 이미 즐겨찾기에 추가된 제품
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: ALREADY_FAVORITED
+                message: 이미 즐겨찾기에 추가된 제품입니다.
+
+    get:
+      tags: [Favorites]
+      summary: 즐겨찾기 목록 조회
+      description: |
+        현재 로그인된 사용자의 즐겨찾기 목록을 최신순으로 반환합니다.
+        즐겨찾기 화면(/list/favorites)에서 사용합니다.
+      responses:
+        '200':
+          description: 즐겨찾기 목록 반환
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favorites:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: fav-001
+                        product:
+                          $ref: '#/components/schemas/ProductSummary'
+                        addedAt:
+                          type: string
+                          format: date-time
+                          example: '2026-04-08T10:35:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /favorites/{id}:
+    delete:
+      tags: [Favorites]
+      summary: 즐겨찾기 삭제
+      description: |
+        즐겨찾기 목록에서 특정 항목을 삭제합니다.
+        id는 GET /favorites 응답의 favorites[].id 값입니다.
+
+        DELETE를 사용하는 이유:
+        리소스 삭제 의미를 명확히 표현하기 위함입니다.
+        POST나 GET으로 삭제를 구현하는 것은 HTTP 메서드 의미에 맞지 않습니다.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: fav-001
+      responses:
+        '200':
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 즐겨찾기에서 삭제되었습니다.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 즐겨찾기 항목 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: FAVORITE_NOT_FOUND
+                message: 즐겨찾기 항목을 찾을 수 없습니다.
+
+  # ─────────────────────────────────────
+  # 검색
+  # ─────────────────────────────────────
+
+  /search/products:
+    get:
+      tags: [Search]
+      summary: 제품 검색
+      description: |
+        검색 탭에서 사용자가 제품명 또는 브랜드명을 입력했을 때, 매칭되는 제품 목록을
+        개인화된 위험도(riskLevel) · 안전 여부(isSafe) · 즐겨찾기 여부(isFavorited)와
+        함께 반환합니다.
+
+        정렬 방식:
+        - relevance : 트라이그램 유사도 기준 (기본)
+        - safety    : 안전 제품이 먼저 오도록 (safe → caution → danger)
+        - name      : 이름 오름차순
+
+        riskLevel / isSafe는 서버에서 사용자 프로필 기준으로 계산되므로
+        클라이언트에서 재계산하지 않습니다.
+
+        Rate limit: 사용자당 분당 60회. 초과 시 429 TOO_MANY_REQUESTS.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: 검색어 (최소 1자)
+          example: peanut
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [relevance, safety, name]
+            default: relevance
+        - name: safeOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: true면 현재 프로필 기준 안전한 제품만 반환
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 300
+            default: 0
+      responses:
+        '200':
+          description: 검색 결과 반환
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchResultItem'
+                  total:
+                    type: integer
+                    example: 42
+                  hasMore:
+                    type: boolean
+                    example: true
+        '400':
+          description: q 비어있음 또는 limit/offset 범위 외
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: INVALID_QUERY
+                message: 검색어는 1자 이상이어야 합니다.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /search/suggestions:
+    get:
+      tags: [Search]
+      summary: 검색어 자동완성
+      description: |
+        검색 탭에서 사용자가 검색어를 입력하는 동안, 제품명/브랜드명에 매칭되는
+        자동완성 후보를 실시간으로 반환합니다. 개인화 없이 prefix 매칭만 수행하므로
+        응답이 빠릅니다.
+
+        highlight는 자동완성 UI에서 매칭 구간을 강조하기 위한 인덱스 정보입니다
+        (field: "name" | "brand", start/end: 문자 인덱스).
+
+        타임아웃 300ms — 서버가 응답하지 못하면 빈 배열을 반환합니다.
+        자동완성은 필수 UX가 아니므로 장애 시에도 앱 흐름을 막지 않습니다.
+
+        Rate limit: 사용자당 분당 120회. FE에서도 200ms 디바운스 적용 권장.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: 검색어 (최소 2자)
+          example: pea
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 5
+      responses:
+        '200':
+          description: 자동완성 후보 목록 반환
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchSuggestion'
+        '400':
+          description: q 2자 미만
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: INVALID_QUERY
+                message: 검색어는 2자 이상이어야 합니다.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+# ─────────────────────────────────────
+# 공통 스키마 및 응답
+# ─────────────────────────────────────
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase Auth access token (supabase.auth.signInWithOAuth 결과)
+
+  schemas:
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: uuid-1234
+        name:
+          type: string
+          example: 홍길동
+        email:
+          type: string
+          example: user@example.com
+        allergyProfile:
+          type: array
+          items:
+            type: string
+          example: [ing-peanut, ing-gluten]
+        dietaryRestrictions:
+          type: array
+          items:
+            type: string
+          example: [vegan]
+        sensitivityLevel:
+          type: string
+          enum: [strict, normal]
+          example: strict
+        hasCompletedSurvey:
+          type: boolean
+          description: |
+            POST /auth/survey를 한 번이라도 호출해 프로필을 저장한 적이 있으면 true.
+            소셜 로그인 직후 false면 설문 화면으로, true면 메인 탭으로 분기.
+          example: true
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: prod-001
+        barcode:
+          type: string
+          example: '0034000020430'
+        name:
+          type: string
+          example: Reese's Peanut Butter Cups
+        brand:
+          type: string
+          example: Hershey's
+        image:
+          type: string
+          format: uri
+          example: https://images.openfoodfacts.org/...
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientSummary'
+
+    ProductSummary:
+      type: object
+      description: 목록 표시용 제품 요약 (ingredients 미포함)
+      properties:
+        id:
+          type: string
+          example: prod-001
+        name:
+          type: string
+          example: Reese's Peanut Butter Cups
+        brand:
+          type: string
+          example: Hershey's
+        image:
+          type: string
+          format: uri
+          example: https://images.openfoodfacts.org/...
+        isSafe:
+          type: boolean
+          description: 현재 사용자 프로필 기준 안전 여부
+          example: false
+
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ing-peanut
+        name:
+          type: string
+          example: Peanuts
+        nameKo:
+          type: string
+          example: 땅콩
+        description:
+          type: string
+          example: 땅콩은 대표적인 알러지 유발 식품으로 심한 경우 아나필락시스를 일으킬 수 있습니다.
+        riskLevel:
+          type: string
+          enum: [safe, caution, danger]
+          example: danger
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                example: FDA - Major Food Allergens
+              url:
+                type: string
+                format: uri
+                example: https://www.fda.gov/food/food-allergens
+
+    IngredientSummary:
+      type: object
+      description: 목록 표시용 성분 요약 (description, sources 미포함)
+      properties:
+        id:
+          type: string
+          example: ing-peanut
+        name:
+          type: string
+          example: Peanuts
+        nameKo:
+          type: string
+          example: 땅콩
+
+    AnalysisResult:
+      type: object
+      properties:
+        verdict:
+          type: string
+          enum: [safe, caution, danger]
+          description: |
+            safe    : 모든 성분 이상 없음
+            caution : 주의 성분 포함 (strict 모드에서 may contain 경고)
+            danger  : 알러지 유발 성분 직접 포함
+          example: danger
+        isSafe:
+          type: boolean
+          example: false
+        triggeredBy:
+          type: array
+          description: 위험 또는 주의 판정을 유발한 성분 목록
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: ing-peanut
+              name:
+                type: string
+                example: Peanuts
+              nameKo:
+                type: string
+                example: 땅콩
+              reason:
+                type: string
+                example: 알러지 프로필에 등록된 성분입니다.
+              riskLevel:
+                type: string
+                enum: [caution, danger]
+                example: danger
+        safeIngredients:
+          type: array
+          description: 문제없는 성분 목록
+          items:
+            $ref: '#/components/schemas/IngredientSummary'
+        dataCompleteness:
+          type: string
+          enum: [complete, partial]
+          description: |
+            분석 대상 성분 데이터의 신뢰도.
+
+            complete : productId가 서버 DB에 존재 — 서버사이드 성분으로 판정.
+                       클라이언트 ingredientIds는 무시되며 DB 값이 권위 있는 기준.
+            partial  : 아래 중 하나에 해당 — 결과 신뢰도 낮음:
+                       (1) productId 미제공 (OCR 경로) — 클라이언트 ingredientIds 사용
+                       (2) productId가 DB에 없는 제품 (Open Food Facts 경유) — 클라이언트 폴백
+
+            클라이언트 대응 지침:
+            - partial 판정 시 UI에 "성분 정보가 불완전할 수 있습니다" 경고 표시 권장.
+            - safe + partial 조합은 "안전 확인됨"이 아닌 "위험 성분 미감지" 로 표시할 것.
+            - danger/caution + partial도 실제보다 더 많은 위험이 있을 수 있음을 안내할 것.
+          example: complete
+
+    SearchResultItem:
+      type: object
+      description: |
+        GET /search/products items[]. 개인화된 riskLevel · isSafe · isFavorited 포함.
+      properties:
+        id:
+          type: string
+          example: prod-001
+        name:
+          type: string
+          example: Reese's Peanut Butter Cups
+        brand:
+          type: string
+          example: Hershey's
+        image:
+          type: string
+          format: uri
+          nullable: true
+          example: https://images.openfoodfacts.org/...
+        riskLevel:
+          type: string
+          enum: [safe, caution, danger]
+          description: 현재 사용자 프로필 기준 위험도
+          example: danger
+        isSafe:
+          type: boolean
+          description: 현재 사용자 프로필 기준 안전 여부
+          example: false
+        isFavorited:
+          type: boolean
+          description: 현재 사용자의 즐겨찾기 등록 여부
+          example: true
+
+    SearchSuggestion:
+      type: object
+      description: GET /search/suggestions suggestions[]. 개인화되지 않은 범용 prefix 매칭 결과.
+      properties:
+        productId:
+          type: string
+          example: prod-001
+        name:
+          type: string
+          example: Reese's Peanut Butter Cups
+        brand:
+          type: string
+          example: Hershey's
+        highlight:
+          type: array
+          description: 매칭 구간 인덱스 정보 (자동완성 UI 강조용)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                enum: [name, brand]
+              start:
+                type: integer
+                minimum: 0
+              end:
+                type: integer
+                minimum: 0
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: |
+            에러 코드 (클라이언트 분기 처리용).
+            표준 코드: UNAUTHORIZED · INVALID_INPUT · INVALID_QUERY ·
+                      TOO_MANY_REQUESTS · PRODUCT_NOT_FOUND · OCR_FAILED ·
+                      INGREDIENT_NOT_FOUND · ALREADY_FAVORITED · FAVORITE_NOT_FOUND
+          example: INVALID_INPUT
+        message:
+          type: string
+          description: 사람이 읽을 수 있는 에러 메시지
+          example: 요청 데이터가 올바르지 않습니다.
+
+  responses:
+
+    Unauthorized:
+      description: 토큰 없음 또는 만료 (Supabase 검증 실패 포함)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: UNAUTHORIZED
+            message: 인증이 필요합니다. 다시 로그인해 주세요.
+
+    InvalidInput:
+      description: 요청 데이터 유효성 오류
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: INVALID_INPUT
+            message: 요청 데이터가 올바르지 않습니다.
+
+    TooManyRequests:
+      description: Rate limit 초과 (Retry-After 헤더 포함)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: TOO_MANY_REQUESTS
+            message: 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.

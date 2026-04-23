@@ -1,0 +1,161 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { AuthStackParamList, SurveyParams } from '../../types';
+import { Colors } from '../../constants/colors';
+
+type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergySelect'>;
+type Route = RouteProp<AuthStackParamList, 'SurveyAllergySelect'>;
+
+type Severity = 'mild' | 'moderate' | 'severe';
+
+const OPTIONS: { value: Severity; label: string }[] = [
+  { value: 'mild',     label: 'Mild' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'severe',   label: 'Severe' },
+];
+
+export default function SurveyAllergySelectScreen() {
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<Route>();
+  const params = route.params;
+
+  const [selected, setSelected] = useState<Severity | null>(null);
+
+  function handleContinue() {
+    if (!selected) return;
+    const next: SurveyParams = { ...params, allergySeverity: selected };
+    navigation.navigate('SurveyAllergyReaction', next);
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>{'←'}</Text>
+        </TouchableOpacity>
+        <View style={styles.progressBar}>
+          <View style={styles.progressFill} />
+        </View>
+      </View>
+
+      {/* 본문 */}
+      <View style={styles.body}>
+        <Text style={styles.title}>How severe is your allergy?</Text>
+        <Text style={styles.subtitle}>
+          Understanding your allergy type helps us recommend safer ingredients for you.
+        </Text>
+
+        <View style={styles.options}>
+          {OPTIONS.map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[styles.option, selected === opt.value && styles.optionSelected]}
+              onPress={() => setSelected(opt.value)}
+            >
+              <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* 하단 버튼 */}
+      <TouchableOpacity
+        style={[styles.continueButton, !selected && styles.continueDisabled]}
+        onPress={handleContinue}
+        disabled={!selected}
+      >
+        <Text style={styles.continueText}>Continue</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 28,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 40,
+  },
+  backText: {
+    fontSize: 22,
+    color: Colors.black,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: Colors.gray100,
+    borderRadius: 2,
+  },
+  progressFill: {
+    width: '50%',
+    height: '100%',
+    backgroundColor: Colors.black,
+    borderRadius: 2,
+  },
+  body: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.black,
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: Colors.gray500,
+    lineHeight: 20,
+    marginBottom: 32,
+  },
+  options: {
+    gap: 12,
+  },
+  option: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.white,
+  },
+  optionSelected: {
+    borderColor: Colors.black,
+    backgroundColor: Colors.black,
+  },
+  optionText: {
+    fontSize: 15,
+    color: Colors.black,
+    fontWeight: '500',
+  },
+  optionTextSelected: {
+    color: Colors.white,
+    fontWeight: '600',
+  },
+  continueButton: {
+    backgroundColor: Colors.white,
+    borderRadius: 100,
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  continueDisabled: {
+    opacity: 0.4,
+  },
+  continueText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.black,
+  },
+});
