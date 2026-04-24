@@ -15,9 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
-import { ScanStackParamList, Product, AnalysisResult, RiskLevel } from '../../types';
+import { ScanStackParamList, MainTabParamList, Product, AnalysisResult, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import { scanBarcode, analyzeProduct, saveScanHistory, getScanHistory } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
@@ -80,6 +80,8 @@ const VERDICT_DISPLAY: Record<RiskLevel, { label: string; color: string }> = {
 
 export default function ScanScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const route  = useRoute<RouteProp<ScanStackParamList, 'Scan'>>();
+  const previousTab = route.params?.previousTab;
 
   // OCR 프레임 높이: 상하 safe area + 헤더(80) + 촬영버튼 영역(100) 제외
   const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 340;
@@ -278,14 +280,26 @@ export default function ScanScreen({ navigation }: Props) {
   function handleBack() {
     if (scanResult) {
       dismissOverlay();
-    } else if (processingRef.current || barcodeDetected) {
+      return;
+    }
+    if (processingRef.current || barcodeDetected) {
       processingRef.current    = false;
       latestBarcodeRef.current = null;
       setBarcodeDetected(false);
       setProcessing(false);
       setScanPreviewUri(null);
-    } else {
-      navigation.canGoBack() && navigation.goBack();
+      return;
+    }
+    // 스캔 탭은 Tab.Navigator의 한 탭 — 직전 탭으로 돌아가려면 부모(탭) 네비게이터로 이동.
+    // previousTab 없으면 기본 탭(Search)로 폴백.
+    const target: keyof MainTabParamList = previousTab ?? 'SearchTab';
+    const parent = navigation.getParent<
+      import('@react-navigation/native').NavigationProp<MainTabParamList>
+    >();
+    if (parent) {
+      parent.navigate(target);
+    } else if (navigation.canGoBack()) {
+      navigation.goBack();
     }
   }
 
