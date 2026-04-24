@@ -12,12 +12,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
-import { getIngredient, getAlternatives, getProductById } from '../../services/scan.service';
+import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types';
+import { getIngredient, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
 
-type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
+type Props = NativeStackScreenProps<ListStackParamList, 'FavoriteProductDetail'>;
 
 // ── Dummy data (Good verdict) ─────────────────────────────────────────────────
 const DUMMY_GOOD_PRODUCT: Product = {
@@ -41,7 +41,7 @@ const DUMMY_GOOD_PRODUCT: Product = {
   ] as unknown as Product['ingredients'],
 };
 
-// ── Design tokens (Figma: node 223:9111) ─────────────────────────────────────
+// ── Design tokens (Figma: node 223:9111 / 223:9138) ──────────────────────────
 const BG         = '#F9FFF3';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
@@ -58,21 +58,12 @@ const VERDICT_BORDER: Record<RiskLevel, string> = {
   danger:  '#FF3434',
 };
 
-const VERDICT_LABEL: Record<RiskLevel, string> = {
-  safe:    'Good',
-  caution: 'Poor',
-  danger:  'Bad',
-};
-
-export default function HistoryProductDetailScreen({ navigation, route }: Props) {
+export default function FavoriteProductDetailScreen({ navigation, route }: Props) {
   const { product: initialProduct, hideTitle = false } = route.params;
   const insets = useSafeAreaInsets();
 
   const [product, setProduct] = useState<Product>(initialProduct ?? DUMMY_GOOD_PRODUCT);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-
-  const [alts,        setAlts]        = useState<Product[]>(product.alternatives);
-  const [altsLoading, setAltsLoading] = useState(false);
 
   useEffect(() => {
     if (product.ingredients.length > 0 || !product.id) return;
@@ -82,16 +73,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
       .catch(() => { /* silent */ })
       .finally(() => { setIsLoadingDetails(false); });
   }, [product.id]);
-
-  useEffect(() => {
-    if (product.isSafe || alts.length > 0 || !product.id) return;
-    setAltsLoading(true);
-    getAlternatives(product.id)
-      .then(fetched => { if (fetched.length > 0) setAlts(fetched); })
-      .catch(() => { /* silent */ })
-      .finally(() => { setAltsLoading(false); });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   const [favorited,  setFavorited]  = useState(() =>
@@ -203,18 +184,12 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   const riskTitle    = isBad ? 'Ingredients to avoid' : 'Suspected Allergens';
 
   const allIngredients = product.ingredients.map(i => i.name);
-  const alternatives   = alts.slice(0, 3);
-
-  function handleAltPress(alt: Product) {
-    navigation.push('HistoryProductDetail', { product: alt, hideTitle: true });
-  }
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        {/* Back button (left) */}
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={() => navigation.goBack()}
@@ -223,13 +198,11 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
 
-        {/* Title (center) */}
         {!hideTitle
-          ? <Text style={styles.headerTitle}>History</Text>
+          ? <Text style={styles.headerTitle}>List</Text>
           : <View style={{ flex: 1 }} />
         }
 
-        {/* Heart button (right — symmetric with back) */}
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={handleFavorite}
@@ -261,11 +234,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         <View style={styles.imgWrap}>
           <View style={styles.imgBox}>
             {product.image ? (
-              <Image
-                source={{ uri: product.image }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-              />
+              <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : null}
           </View>
         </View>
@@ -273,11 +242,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         {/* 2. Verdict icon + product name */}
         <View style={styles.nameRow}>
           <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
-            <Image
-              source={VERDICT_IMAGE[riskLevel]}
-              style={styles.verdictImg}
-              resizeMode="contain"
-            />
+            <Image source={VERDICT_IMAGE[riskLevel]} style={styles.verdictImg} resizeMode="contain" />
           </View>
           <Text style={styles.productName}>{product.name}</Text>
         </View>
@@ -288,13 +253,11 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         {/* 3-A. All Ingredients (Good only) */}
         {!showRisk && allIngredients.length > 0 && (
           <View style={styles.ingredientSection}>
-            {/* Bordered box */}
             <View style={styles.ingredientBox}>
               {allIngredients.map((name, idx) => (
                 <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
               ))}
             </View>
-            {/* Pill floating on top border */}
             <View style={styles.ingredientLabelWrap} pointerEvents="none">
               <View style={styles.ingredientLabel}>
                 <Text style={styles.ingredientLabelText}>All Ingredients</Text>
@@ -303,81 +266,38 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* 3-B. Risk box (Bad / Poor) — fieldset style with floating pill */}
+        {/* 3-B. Risk box (Bad / Poor) — fieldset style */}
         {showRisk && (
           <View style={styles.riskSection}>
-            {/* Bordered box */}
             <View style={[styles.riskBoxOuter, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
-              <Text style={styles.riskWarning}>
+              <Text
+                style={styles.riskWarning}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
                 ** This product contains ingredients that may not be suitable for you.
               </Text>
 
               {(() => {
                 const displayIngredients = isBad ? product.riskIngredients : product.mayContainIngredients;
                 return displayIngredients.length > 0 ? (
-                  <>
-                    {displayIngredients.map(ing => (
-                      <TouchableOpacity key={ing.id} onPress={() => handleIngredientPress(ing)} activeOpacity={0.7}>
-                        <Text style={styles.riskIngredient}>{ing.name}</Text>
-                      </TouchableOpacity>
-                    ))}
-                    <Text style={styles.riskTapHint}>Tap an ingredient for details</Text>
-                  </>
+                  displayIngredients.map(ing => (
+                    <TouchableOpacity key={ing.id} onPress={() => handleIngredientPress(ing)} activeOpacity={0.7}>
+                      <Text style={styles.riskIngredient}>{ing.name}</Text>
+                    </TouchableOpacity>
+                  ))
                 ) : (
                   <Text style={styles.riskIngredient}>—</Text>
                 );
               })()}
             </View>
 
-            {/* Pill floating on top border — icon + title */}
             <View style={styles.riskLabelWrap} pointerEvents="none">
               <View style={[styles.riskLabel, { borderColor: riskBoxBorder }]}>
                 <Image source={VERDICT_IMAGE[riskLevel]} style={styles.riskLabelIcon} resizeMode="contain" />
                 <Text style={[styles.riskLabelText, { color: riskBoxBorder }]}>{riskTitle}</Text>
               </View>
             </View>
-          </View>
-        )}
-
-        {/* 4. Alternative Products */}
-        {altsLoading && (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="small" color={DARK_GREEN} />
-          </View>
-        )}
-        {!altsLoading && alternatives.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.altPillWrap}>
-              <View style={styles.altPill}>
-                <Text style={styles.altPillText}>Alternative Products</Text>
-              </View>
-            </View>
-
-            {alternatives.map((alt, idx) => {
-              const altRisk = alt.riskLevel ?? 'safe';
-              const isLast  = idx === alternatives.length - 1;
-              return (
-                <View key={alt.id}>
-                  <TouchableOpacity style={styles.altRow} onPress={() => handleAltPress(alt)} activeOpacity={0.7}>
-                    <View style={styles.altThumb}>
-                      {alt.image ? (
-                        <Image source={{ uri: alt.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                      ) : null}
-                    </View>
-                    <View style={styles.altInfo}>
-                      <Text style={styles.altName} numberOfLines={1}>{alt.name}</Text>
-                      <Text style={styles.altBrand} numberOfLines={1}>{alt.brand || '—'}</Text>
-                      <View style={styles.altBadge}>
-                        <Image source={VERDICT_IMAGE[altRisk]} style={styles.altBadgeIcon} resizeMode="contain" />
-                        <Text style={styles.altBadgeText}>{VERDICT_LABEL[altRisk]}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.chevron}>›</Text>
-                  </TouchableOpacity>
-                  {!isLast && <View style={styles.divider} />}
-                </View>
-              );
-            })}
           </View>
         )}
 
@@ -449,8 +369,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   );
 }
 
-// ── PILL_H: half height of the "All Ingredients" pill ────────────────────────
-const PILL_H = 16; // ~half of pill's total height (py:3 + lineHeight:24 / 2)
+// ── PILL_H: half height of the floating pill ────────────────────────────────
+const PILL_H = 16;
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -484,7 +404,7 @@ const styles = StyleSheet.create({
     borderColor: DARK_GREEN,
   },
 
-  // ── Name row (verdict icon + product name)
+  // ── Name row
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -503,12 +423,8 @@ const styles = StyleSheet.create({
   productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38 },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
-  // ── All Ingredients fieldset-style box
-  ingredientSection: {
-    position: 'relative',
-    marginBottom: 28,
-    marginTop: PILL_H,
-  },
+  // ── All Ingredients fieldset
+  ingredientSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
   ingredientBox: {
     borderWidth: 1,
     borderColor: DARK_GREEN,
@@ -518,13 +434,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
   },
-  ingredientLabelWrap: {
-    position: 'absolute',
-    top: -PILL_H,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
+  ingredientLabelWrap: { position: 'absolute', top: -PILL_H, left: 0, right: 0, alignItems: 'center' },
   ingredientLabel: {
     backgroundColor: BG,
     borderWidth: 1,
@@ -533,20 +443,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 19,
   },
-  ingredientLabelText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: DARK_GREEN,
-    letterSpacing: -0.3,
-  },
-  ingredientItem: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: MID_GREEN,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 4,
-  },
+  ingredientLabelText: { fontSize: 16, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.3 },
+  ingredientItem:      { fontSize: 13, fontWeight: '500', color: MID_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
 
   // ── Disclaimer
   disclaimer: {
@@ -559,27 +457,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
 
-  // ── Risk box (fieldset style — pill floats on top border)
-  riskSection: {
-    position: 'relative',
-    marginBottom: 28,
-    marginTop: PILL_H,
-  },
+  // ── Risk box (fieldset)
+  riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
   riskBoxOuter: {
     borderWidth: 1,
     borderRadius: 16,
     paddingTop: PILL_H + 14,
     paddingBottom: 18,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     alignItems: 'center',
   },
-  riskLabelWrap: {
-    position: 'absolute',
-    top: -PILL_H,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
+  riskLabelWrap: { position: 'absolute', top: -PILL_H, left: 0, right: 0, alignItems: 'center' },
   riskLabel: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -609,24 +497,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     letterSpacing: -0.3,
   },
-  riskTapHint: { fontSize: 11, color: '#888', textAlign: 'center', marginTop: 8 },
-
-  // ── Alternative products
-  section:     { marginBottom: 28 },
-  altPillWrap: { alignItems: 'center', marginBottom: 16 },
-  altPill:     { borderWidth: 1, borderColor: DARK_GREEN, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 20 },
-  altPillText: { fontSize: 14, fontWeight: '600', color: DARK_GREEN },
-
-  altRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, gap: 16 },
-  altThumb:    { width: 80, height: 80, borderRadius: 11, backgroundColor: '#D9D9D9', overflow: 'hidden', flexShrink: 0 },
-  altInfo:     { flex: 1, gap: 4 },
-  altName:     { fontSize: 16, fontWeight: '700', color: MID_GREEN },
-  altBrand:    { fontSize: 12, color: MID_GREEN },
-  altBadge:    { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1, borderColor: MID_GREEN, borderRadius: 28, paddingVertical: 5, paddingLeft: 11, paddingRight: 18, gap: 6 },
-  altBadgeIcon: { width: 16, height: 16 },
-  altBadgeText: { fontSize: 12, color: MID_GREEN },
-  chevron:     { fontSize: 22, color: DARK_GREEN },
-  divider:     { height: StyleSheet.hairlineWidth, backgroundColor: '#D0D0C8' },
 
   // ── Loading
   loadingWrap: { paddingVertical: 24, alignItems: 'center' },

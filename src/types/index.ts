@@ -283,8 +283,8 @@ export type ListStackParamList = {
   Shopping: undefined;
   ShoppingItems: undefined;
   ShoppingPurchase: undefined;
-  /** ScanStack과 동일한 상세 화면 — ListStack 내 이동으로 back 시 List 탭으로 복귀 */
-  HistoryProductDetail: { product: Product; hideTitle?: boolean };
+  /** List 탭 전용 상세 화면 — 타이틀 "List", back 시 Favorites 로 복귀 */
+  FavoriteProductDetail: { product: Product; hideTitle?: boolean };
 };
 
 export type RecommendStackParamList = {

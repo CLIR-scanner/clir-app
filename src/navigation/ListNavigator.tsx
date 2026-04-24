@@ -9,8 +9,8 @@ import FavoritesAllScreen from '../screens/list/FavoritesAllScreen';
 import ShoppingScreen from '../screens/list/ShoppingScreen';
 import ShoppingItemsScreen from '../screens/list/ShoppingItemsScreen';
 import ShoppingPurchaseScreen from '../screens/list/ShoppingPurchaseScreen';
-// ScanStack과 동일한 화면을 ListStack에도 등록 — back 시 List 탭으로 정상 복귀
-import HistoryProductDetailScreen from '../screens/scan/HistoryProductDetailScreen';
+// List 탭 전용 상세 화면 — Scan 의 HistoryProductDetail 과 분리
+import FavoriteProductDetailScreen from '../screens/list/FavoriteProductDetailScreen';
 
 const Stack = createNativeStackNavigator<ListStackParamList>();
 
@@ -25,8 +25,7 @@ export default function ListNavigator() {
       <Stack.Screen name="Shopping" component={ShoppingScreen} />
       <Stack.Screen name="ShoppingItems" component={ShoppingItemsScreen} />
       <Stack.Screen name="ShoppingPurchase" component={ShoppingPurchaseScreen} />
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <Stack.Screen name="HistoryProductDetail" component={HistoryProductDetailScreen as React.ComponentType<any>} />
+      <Stack.Screen name="FavoriteProductDetail" component={FavoriteProductDetailScreen} />
     </Stack.Navigator>
   );
 }
