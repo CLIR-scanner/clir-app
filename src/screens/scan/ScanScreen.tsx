@@ -86,7 +86,6 @@ export default function ScanScreen({ navigation }: Props) {
   // OCR 프레임 높이: 상하 safe area + 헤더(80) + 촬영버튼 영역(100) 제외
   const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 340;
   const ocrDimTop  = insets.top + 130;
-  const ocrDimBot  = insets.bottom + 120;
   const [permission, requestPermission] = useCameraPermissions();
   const [barcodeDetected, setBarcodeDetected] = useState(false);
   const [processing, setProcessing]           = useState(false);
@@ -474,7 +473,7 @@ export default function ScanScreen({ navigation }: Props) {
             </View>
             <View style={styles.dimSide} />
           </View>
-          <View style={[styles.dimBottom, { flex: 0, height: ocrDimBot }]} />
+          <View style={styles.dimBottom} />
         </View>
       ) : (
         <BarcodeScanOverlay cornerColor={cornerColor}>
@@ -492,7 +491,6 @@ export default function ScanScreen({ navigation }: Props) {
         onBack={handleBack}
         onHistory={() => navigation.navigate('ScanHistory')}
         historyImageUri={lastProductImage}
-        subtitle={isOCRMode ? 'Scan OCR of the product' : undefined}
         toggleNode={!scanResult ? (
           <ModeToggle
             isOCRMode={isOCRMode}
