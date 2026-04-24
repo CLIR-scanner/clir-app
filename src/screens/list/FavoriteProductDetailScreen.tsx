@@ -16,6 +16,7 @@ import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types'
 import { getIngredient, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'FavoriteProductDetail'>;
 
@@ -45,12 +46,6 @@ const DUMMY_GOOD_PRODUCT: Product = {
 const BG         = '#F9FFF3';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
-
-const VERDICT_IMAGE: Record<RiskLevel, ReturnType<typeof require>> = {
-  safe:    require('../../../assets/good.png'),
-  caution: require('../../../assets/poor.png'),
-  danger:  require('../../../assets/bad.png'),
-};
 
 const VERDICT_BORDER: Record<RiskLevel, string> = {
   safe:    '#25FF81',
@@ -242,7 +237,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
         {/* 2. Verdict icon + product name */}
         <View style={styles.nameRow}>
           <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
-            <Image source={VERDICT_IMAGE[riskLevel]} style={styles.verdictImg} resizeMode="contain" />
+            <RiskBadgeIcon level={riskLevel} size={17} style={styles.verdictImg} />
           </View>
           <Text style={styles.productName}>{product.name}</Text>
         </View>
@@ -294,7 +289,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 
             <View style={styles.riskLabelWrap} pointerEvents="none">
               <View style={[styles.riskLabel, { borderColor: riskBoxBorder }]}>
-                <Image source={VERDICT_IMAGE[riskLevel]} style={styles.riskLabelIcon} resizeMode="contain" />
+                <RiskBadgeIcon level={riskLevel} size={22} style={styles.riskLabelIcon} />
                 <Text style={[styles.riskLabelText, { color: riskBoxBorder }]}>{riskTitle}</Text>
               </View>
             </View>

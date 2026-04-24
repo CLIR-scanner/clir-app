@@ -24,4 +24,11 @@ export const Colors = {
   background: '#FAFAFA',
   surface: '#FFFFFF',
   border: '#E8E8E8',
+
+  // Scan screen
+  scanLightGreen: '#F9FFF3',
+  scanSelectedGreen: '#556C53',
+  scanMutedGreen: '#A9B6A8',
+  scanCorrect: '#25FF81',
+  scanResultClose: '#A9B6A8',
 };
