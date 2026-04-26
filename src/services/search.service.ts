@@ -22,18 +22,60 @@ interface SearchSuggestionsResponse {
 
 const USE_PREVIEW_MOCK = true;
 
-// TEMP: 검색 UI 확인용 목업 1건. 실제 API 확인 후 USE_PREVIEW_MOCK=false 로 되돌리면 된다.
-const PREVIEW_PRODUCT: Product = {
-  id: 'preview-honey-barbeque-sauce',
-  name: 'Honey Barbeque Sauce',
-  brand: "Kellogg's",
-  ingredients: [],
-  isSafe: false,
-  riskLevel: 'danger',
-  riskIngredients: [],
-  mayContainIngredients: [],
-  alternatives: [],
-};
+// TEMP: 검색 UI 확인용 목업. 실제 API 확인 후 USE_PREVIEW_MOCK=false 로 되돌리면 된다.
+const PREVIEW_PRODUCTS: Product[] = [
+  {
+    id: 'preview-honey-barbeque-sauce',
+    name: 'Honey Barbeque Sauce',
+    brand: "Kellogg's",
+    ingredients: [],
+    isSafe: false,
+    riskLevel: 'danger',
+    riskIngredients: [],
+    mayContainIngredients: [],
+    alternatives: [],
+    category: 'packaged',
+  },
+  {
+    id: 'preview-sprite',
+    name: 'Sprite',
+    brand: 'The Coca-Cola Company',
+    image: 'https://images.openfoodfacts.org/images/products/005/449/000/1520/front_en.4.400.jpg',
+    ingredients: [],
+    isSafe: true,
+    riskLevel: 'safe',
+    riskIngredients: [],
+    mayContainIngredients: [],
+    alternatives: [],
+    category: 'beverages',
+  },
+  {
+    id: 'preview-oreo',
+    name: 'Oreo Original',
+    brand: 'Nabisco',
+    image: 'https://images.openfoodfacts.org/images/products/004/400/000/2687/front_en.12.400.jpg',
+    ingredients: [],
+    isSafe: false,
+    riskLevel: 'caution',
+    riskIngredients: [],
+    mayContainIngredients: [],
+    alternatives: [],
+    category: 'desserts',
+  },
+  {
+    id: 'preview-pringles',
+    name: 'Pringles Original',
+    brand: 'Pringles',
+    image: 'https://images.openfoodfacts.org/images/products/038/000/845/7839/front_en.11.400.jpg',
+    ingredients: [],
+    isSafe: true,
+    riskLevel: 'safe',
+    riskIngredients: [],
+    mayContainIngredients: [],
+    alternatives: [],
+    category: 'packaged',
+  },
+];
 
 function toSearchProduct(item: SearchResultItemWire): Product {
   return {
@@ -58,7 +100,10 @@ export async function searchProducts(query: string): Promise<Product[]> {
   if (!q) return [];
 
   if (USE_PREVIEW_MOCK) {
-    return [PREVIEW_PRODUCT];
+    return PREVIEW_PRODUCTS.filter(p =>
+      p.name.toLowerCase().includes(q.toLowerCase()) ||
+      (p.brand ?? '').toLowerCase().includes(q.toLowerCase()),
+    );
   }
 
   const params = new URLSearchParams({
@@ -76,7 +121,7 @@ export async function searchProducts(query: string): Promise<Product[]> {
  * 전체 제품 목록 반환 (검색 전 그리드 표시용).
  */
 export async function getAllProducts(): Promise<Product[]> {
-  return USE_PREVIEW_MOCK ? [PREVIEW_PRODUCT] : [];
+  return USE_PREVIEW_MOCK ? PREVIEW_PRODUCTS : [];
 }
 
 /**
@@ -87,7 +132,9 @@ export async function getSearchSuggestions(query: string): Promise<string[]> {
   if (q.length < 2) return [];
 
   if (USE_PREVIEW_MOCK) {
-    return [PREVIEW_PRODUCT.name];
+    return PREVIEW_PRODUCTS
+      .filter(p => p.name.toLowerCase().includes(q.toLowerCase()))
+      .map(p => p.name);
   }
 
   const params = new URLSearchParams({

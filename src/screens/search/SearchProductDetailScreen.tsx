@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,75 +7,122 @@ import {
   ScrollView,
   Image,
   Modal,
-  ActivityIndicator, // ingredient 모달 로딩에 사용
+  ActivityIndicator,
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { SearchStackParamList, RiskLevel, Ingredient } from '../../types';
-import { getIngredient } from '../../services/scan.service';
-import { addFavorite, removeFavorite } from '../../services/list.service';
+import { SearchStackParamList, Product, RiskLevel, Ingredient } from '../../types';
+import { getIngredient, getProductById } from '../../services/scan.service';
+import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
-import { ApiError } from '../../lib/api';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<SearchStackParamList, 'SearchProductDetail'>;
 
-const BG        = '#F9FFF3';
-const TITLE_CLR = '#1A2E1A';
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const BG         = '#F9FFF3';
+const DARK_GREEN = '#1C3A19';
+const MID_GREEN  = '#556C53';
 
-const VERDICT = {
-  danger:  { dot: '#FF0000', label: 'Bad',  iconBg: '#FF0000', icon: '✕' },
-  safe:    { dot: '#25FF81', label: 'Good', iconBg: '#25FF81', icon: '✓' },
-  caution: { dot: '#FF9D00', label: 'Poor', iconBg: '#FF9D00', icon: '!' },
-} satisfies Record<RiskLevel, { dot: string; label: string; iconBg: string; icon: string }>;
+const VERDICT_BORDER: Record<RiskLevel, string> = {
+  safe:    '#25FF81',
+  caution: '#FF9D00',
+  danger:  '#FF3434',
+};
 
 export default function SearchProductDetailScreen({ navigation, route }: Props) {
-  const { product } = route.params;
+  const { product: initialProduct } = route.params;
   const insets = useSafeAreaInsets();
 
+  const [product, setProduct] = useState<Product>(initialProduct);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  useEffect(() => {
+    if (product.ingredients.length > 0 || !product.id) return;
+    setIsLoadingDetails(true);
+    getProductById(product.id)
+      .then(fullProduct => { setProduct(fullProduct); })
+      .catch(() => { /* silent */ })
+      .finally(() => { setIsLoadingDetails(false); });
+  }, [product.id]);
+
+  // ── Favorites ─────────────────────────────────────────────────────────────
+  const [favorited,  setFavorited]  = useState(() =>
+    useListStore.getState().favorites.some(
+      f => f.productId === product.id || f.product?.id === product.id,
+    ),
+  );
+  const [favLoading, setFavLoading] = useState(false);
+  const addFavoriteToStore      = useListStore(s => s.addFavorite);
+  const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
+  const setFavoritesInStore     = useListStore(s => s.setFavorites);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function syncFavoritedState() {
+      let current = useListStore.getState().favorites;
+      if (current.length === 0) {
+        try {
+          current = await getFavorites();
+          if (!cancelled) setFavoritesInStore(current);
+        } catch {
+          return;
+        }
+      }
+      if (cancelled) return;
+      const isFav = current.some(
+        f => f.productId === product.id || f.product?.id === product.id,
+      );
+      setFavorited(isFav);
+    }
+    syncFavoritedState();
+    return () => { cancelled = true; };
+  }, [product.id, setFavoritesInStore]);
+
+  async function handleFavorite() {
+    if (favLoading) return;
+
+    const prevFavorited = favorited;
+    setFavorited(!prevFavorited);
+    setFavLoading(true);
+
+    try {
+      if (prevFavorited) {
+        let favItem = useListStore.getState().favorites.find(
+          f => f.productId === product.id || f.product?.id === product.id,
+        );
+        if (!favItem) {
+          const fresh = await getFavorites();
+          setFavoritesInStore(fresh);
+          favItem = fresh.find(
+            f => f.productId === product.id || f.product?.id === product.id,
+          );
+        }
+        if (favItem) {
+          await removeFavorite(favItem.id);
+          removeFavoriteFromStore(favItem.id);
+        }
+      } else {
+        const item = await addFavorite(product.id);
+        addFavoriteToStore({ ...item, product });
+      }
+    } catch {
+      setFavorited(prevFavorited);
+    } finally {
+      setFavLoading(false);
+    }
+  }
+
+  // ── Ingredient detail modal ────────────────────────────────────────────────
   const [modalOpen,        setModalOpen]        = useState(false);
   const [detailIngredient, setDetailIngredient] = useState<Ingredient | null>(null);
   const [detailLoading,    setDetailLoading]    = useState(false);
   const cancelRef = useRef(false);
 
-  const addFavoriteToStore    = useListStore(s => s.addFavorite);
-  const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
-  const favorites             = useListStore(s => s.favorites);
-
-  const existingFav = favorites.find(f => f.productId === product.id);
-  const [favorited,   setFavorited]   = useState(() => !!existingFav);
-  const [favoriteId,  setFavoriteId]  = useState<string>(() => existingFav?.id ?? '');
-
-  function handleFavorite() {
-    if (favorited) {
-      // 해제: 스토어에서 즉시 제거
-      removeFavoriteFromStore(favoriteId);
-      setFavorited(false);
-      setFavoriteId('');
-      removeFavorite(favoriteId).catch(() => {});
-    } else {
-      // 추가: 스토어에 즉시 반영
-      const newItem: import('../../types').FavoriteItem = {
-        id: `fav-${Date.now()}`,
-        productId: product.id,
-        userId: 'dev-user',
-        memo: '',
-        addedAt: new Date(),
-        product,
-      };
-      addFavoriteToStore(newItem);
-      setFavorited(true);
-      setFavoriteId(newItem.id);
-      addFavorite(product.id).catch((err) => {
-        if (err instanceof ApiError && err.status === 409) return;
-      });
-    }
-  }
-
   async function handleIngredientPress(ing: Ingredient) {
     const lookupId = ing.relatedAllergenId ?? ing.id;
     if (!lookupId.startsWith('ing-')) return;
-
     cancelRef.current = false;
     setModalOpen(true);
     setDetailIngredient(null);
@@ -96,56 +143,71 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
     setDetailIngredient(null);
   }
 
-  const v        = VERDICT[product.riskLevel] ?? VERDICT.safe;
-  const isBad    = product.riskLevel === 'danger';
-  const isPoor   = product.riskLevel === 'caution';
-  const showRisk = isBad || isPoor;
-
-  const riskBoxBg     = isBad ? '#FFECEC' : '#FFE9C5';
-  const riskBoxBorder = isBad ? '#FF0000' : '#FF9D00';
-  const riskTitle     = isBad ? 'Ingredients to avoid' : 'Suspected Allergens';
+  const riskLevel    = product.riskLevel ?? 'safe';
+  const isBad        = riskLevel === 'danger';
+  const isPoor       = riskLevel === 'caution';
+  const showRisk     = isBad || isPoor;
+  const riskBoxBg    = isBad ? '#FFECEC' : '#FFF4E0';
+  const riskBoxBorder= isBad ? '#FF3434' : '#FF9D00';
+  const riskTitle    = isBad ? 'Ingredients to avoid' : 'Suspected Allergens';
 
   const allIngredients = product.ingredients.map(i => i.name);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backBtn}
+          style={styles.iconBtn}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Product Detail</Text>
-        <View style={styles.backBtn} />
+
+        <Text style={styles.headerTitle}>Product Detail</Text>
+
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={handleFavorite}
+          disabled={favLoading}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          {favLoading
+            ? <ActivityIndicator size="small" color="#FF3B3B" />
+            : <Text style={[styles.heartIcon, favorited && styles.heartActive]}>
+                {favorited ? '♥' : '♡'}
+              </Text>
+          }
+        </TouchableOpacity>
       </View>
 
-      {/* ── Scrollable content ─────────────────────────────────────────────── */}
+      {/* ── Scrollable content ──────────────────────────────────────────────── */}
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
+
+        {isLoadingDetails && (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="small" color={DARK_GREEN} />
+          </View>
+        )}
 
         {/* 1. Product image */}
         <View style={styles.imgWrap}>
           <View style={styles.imgBox}>
             {product.image ? (
-              <Image
-                source={{ uri: product.image }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-              />
+              <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : null}
           </View>
         </View>
 
-        {/* 2. Product name + verdict icon */}
+        {/* 2. Verdict icon + product name */}
         <View style={styles.nameRow}>
-          <View style={[styles.verdictIcon, { backgroundColor: v.iconBg }]}>
-            <Text style={styles.verdictIconText}>{v.icon}</Text>
+          <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
+            <RiskBadgeIcon level={riskLevel} size={17} style={styles.verdictImg} />
           </View>
           <Text style={styles.productName}>{product.name}</Text>
         </View>
@@ -153,95 +215,91 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
-        {/* Add to Favorites */}
-        <TouchableOpacity
-          style={[styles.favBtn, favorited && styles.favBtnDone]}
-          onPress={handleFavorite}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.favBtnHeart, favorited && styles.favBtnHeartDone]}>
-            {favorited ? '♥' : '♡'}
-          </Text>
-          <Text style={[styles.favBtnText, favorited && styles.favBtnTextDone]}>
-            {favorited ? 'Saved · Tap to remove' : 'Add to Favorites'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* 3. Risk ingredients box (Bad / Poor only) */}
-        {showRisk && (
-          <View style={[styles.riskBox, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
-            <View style={styles.riskHeader}>
-              <View style={[styles.riskIconCircle, { borderColor: riskBoxBorder }]}>
-                <Text style={[styles.riskIconText, { color: riskBoxBorder }]}>✕</Text>
-              </View>
-              <Text style={[styles.riskTitle, { color: riskBoxBorder }]}>{riskTitle}</Text>
+        {/* 3-A. All Ingredients (Good only) */}
+        {!showRisk && allIngredients.length > 0 && (
+          <View style={styles.ingredientSection}>
+            <View style={styles.ingredientBox}>
+              {allIngredients.map((name, idx) => (
+                <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
+              ))}
             </View>
-
-            <Text style={styles.riskWarning}>
-              ** This product contains ingredients that may not be suitable for you.
-            </Text>
-
-            {(() => {
-              const displayIngredients = isBad
-                ? product.riskIngredients
-                : product.mayContainIngredients;
-              return displayIngredients.length > 0 ? (
-                <>
-                  {displayIngredients.map(ing => (
-                    <TouchableOpacity
-                      key={ing.id}
-                      onPress={() => handleIngredientPress(ing)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.riskIngredient, styles.riskIngredientLink]}>
-                        {ing.name} ›
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                  <Text style={styles.riskTapHint}>Tap an ingredient for details</Text>
-                </>
-              ) : (
-                <Text style={styles.riskIngredient}>—</Text>
-              );
-            })()}
+            <View style={styles.ingredientLabelWrap} pointerEvents="none">
+              <View style={styles.ingredientLabel}>
+                <Text style={styles.ingredientLabelText}>All Ingredients</Text>
+              </View>
+            </View>
           </View>
         )}
 
-        {/* 4. All Ingredients */}
-        {allIngredients.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.pillWrap}>
-              <View style={styles.pill}>
-                <Text style={styles.pillText}>All Ingredients</Text>
-              </View>
+        {/* 3-B. Risk box (Bad / Poor) — fieldset style */}
+        {showRisk && (
+          <View style={styles.riskSection}>
+            <View style={[styles.riskBoxOuter, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
+              <Text
+                style={styles.riskWarning}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                ** This product contains ingredients that may not be suitable for you.
+              </Text>
+
+              {(() => {
+                const displayIngredients = isBad ? product.riskIngredients : product.mayContainIngredients;
+                return displayIngredients.length > 0 ? (
+                  displayIngredients.map(ing => (
+                    <TouchableOpacity key={ing.id} onPress={() => handleIngredientPress(ing)} activeOpacity={0.7}>
+                      <Text style={styles.riskIngredient}>{ing.name}</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text style={styles.riskIngredient}>—</Text>
+                );
+              })()}
             </View>
 
-            {allIngredients.map((name, idx) => (
-              <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
-            ))}
-
-            <Text style={styles.disclaimer}>
-              {'** For severe allergies,\nplease double-check all ingredients before consuming.'}
-            </Text>
+            <View style={styles.riskLabelWrap} pointerEvents="none">
+              <View style={[styles.riskLabel, { borderColor: riskBoxBorder }]}>
+                <RiskBadgeIcon level={riskLevel} size={22} style={styles.riskLabelIcon} />
+                <Text style={[styles.riskLabelText, { color: riskBoxBorder }]}>{riskTitle}</Text>
+              </View>
+            </View>
           </View>
+        )}
+
+        {/* 4. All Ingredients (Bad / Poor — bottom) */}
+        {showRisk && allIngredients.length > 0 && (
+          <View style={styles.ingredientSection}>
+            <View style={styles.ingredientBox}>
+              {allIngredients.map((name, idx) => (
+                <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
+              ))}
+            </View>
+            <View style={styles.ingredientLabelWrap} pointerEvents="none">
+              <View style={styles.ingredientLabel}>
+                <Text style={styles.ingredientLabelText}>All Ingredients</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Disclaimer */}
+        {allIngredients.length > 0 && (
+          <Text style={styles.disclaimer}>
+            {'** For severe allergies,\n      please double-check all ingredients before consuming.'}
+          </Text>
         )}
 
       </ScrollView>
 
-      {/* ── Ingredient detail bottom sheet ─────────────────────────────────── */}
-      <Modal
-        visible={modalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={closeModal}
-      >
+      {/* ── Ingredient detail modal ───────────────────────────────────────── */}
+      <Modal visible={modalOpen} transparent animationType="slide" onRequestClose={closeModal}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeModal}>
           <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
             <View style={styles.modalHandle} />
 
             {detailLoading ? (
               <View style={styles.modalLoadingWrap}>
-                <ActivityIndicator size="large" color={TITLE_CLR} />
+                <ActivityIndicator size="large" color={DARK_GREEN} />
               </View>
             ) : detailIngredient ? (
               <>
@@ -261,11 +319,7 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
                   <View style={styles.modalSources}>
                     <Text style={styles.modalSourcesTitle}>References</Text>
                     {detailIngredient.sources.map(s => (
-                      <TouchableOpacity
-                        key={s.url}
-                        onPress={() => Linking.openURL(s.url)}
-                        activeOpacity={0.7}
-                      >
+                      <TouchableOpacity key={s.url} onPress={() => Linking.openURL(s.url)} activeOpacity={0.7}>
                         <Text style={styles.modalSourceLink}>↗ {s.title}</Text>
                       </TouchableOpacity>
                     ))}
@@ -280,64 +334,139 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
   );
 }
 
+// ── PILL_H: half height of the floating pill ────────────────────────────────
+const PILL_H = 16;
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root:             { flex: 1, backgroundColor: BG },
+  root: { flex: 1, backgroundColor: BG },
 
-  header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
-  backBtn:          { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backArrow:        { fontSize: 22, color: TITLE_CLR },
-  title:            { fontSize: 20, fontWeight: '700', color: TITLE_CLR },
+  // ── Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  iconBtn:     { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  backArrow:   { fontSize: 22, color: DARK_GREEN },
+  heartIcon:   { fontSize: 22, color: '#CCCCCC' },
+  heartActive: { color: '#FF3B3B' },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, lineHeight: 32 },
 
-  scroll:           { paddingHorizontal: 20, paddingTop: 8 },
+  // ── Scroll
+  scroll: { paddingHorizontal: 24, paddingTop: 8 },
 
-  imgWrap:          { alignItems: 'center', marginBottom: 20 },
-  imgBox:           { width: 200, height: 200, borderRadius: 20, backgroundColor: '#E8E8E8', overflow: 'hidden', borderWidth: 1, borderColor: '#D0D0D0' },
+  // ── Product image
+  imgWrap: { alignItems: 'center', marginBottom: 20 },
+  imgBox: {
+    width: 182, height: 182,
+    borderRadius: 18,
+    backgroundColor: '#E8E8E8',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: DARK_GREEN,
+  },
 
-  nameRow:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 6 },
-  verdictIcon:      { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  verdictIconText:  { fontSize: 15, color: '#fff', fontWeight: '900' },
-  productName:      { fontSize: 22, fontWeight: '800', color: '#1A1A1A' },
-  brandName:        { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 24 },
-
-  // Favorites button
-  favBtn: {
+  // ── Name row
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: TITLE_CLR,
-    borderRadius: 50,
-    paddingVertical: 5,
-    paddingHorizontal: 14,
-    gap: 5,
-    marginBottom: 28,
+    gap: 8,
+    marginBottom: 6,
   },
-  favBtnDone:      { backgroundColor: TITLE_CLR },
-  favBtnHeart:     { fontSize: 11, color: TITLE_CLR },
-  favBtnHeartDone: { color: '#fff' },
-  favBtnText:      { fontSize: 11, fontWeight: '500', color: TITLE_CLR },
-  favBtnTextDone:  { color: '#fff' },
+  verdictCircle: {
+    width: 30, height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verdictImg:  { width: 17, height: 17 },
+  productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38 },
+  brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
-  riskBox:          { borderWidth: 1.5, borderRadius: 16, padding: 16, marginBottom: 28 },
-  riskHeader:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10 },
-  riskIconCircle:   { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  riskIconText:     { fontSize: 11, fontWeight: '900', lineHeight: 13 },
-  riskTitle:        { fontSize: 16, fontWeight: '700' },
-  riskWarning:      { fontSize: 11, color: '#555', textAlign: 'center', marginBottom: 12, lineHeight: 16 },
-  riskIngredient:   { fontSize: 15, fontWeight: '700', color: '#1A1A1A', textAlign: 'center', marginBottom: 4 },
-  riskIngredientLink: { textDecorationLine: 'underline' },
-  riskTapHint:      { fontSize: 11, color: '#888', textAlign: 'center', marginTop: 8 },
+  // ── All Ingredients fieldset
+  ingredientSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
+  ingredientBox: {
+    borderWidth: 1,
+    borderColor: DARK_GREEN,
+    borderRadius: 22,
+    paddingTop: PILL_H + 16,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  ingredientLabelWrap: { position: 'absolute', top: -PILL_H, left: 0, right: 0, alignItems: 'center' },
+  ingredientLabel: {
+    backgroundColor: BG,
+    borderWidth: 1,
+    borderColor: DARK_GREEN,
+    borderRadius: 50,
+    paddingVertical: 3,
+    paddingHorizontal: 19,
+  },
+  ingredientLabelText: { fontSize: 16, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.3 },
+  ingredientItem:      { fontSize: 13, fontWeight: '500', color: MID_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
 
-  section:          { marginBottom: 28 },
-  pillWrap:         { alignItems: 'center', marginBottom: 16 },
-  pill:             { borderWidth: 1.5, borderColor: TITLE_CLR, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 20 },
-  pillText:         { fontSize: 14, fontWeight: '600', color: TITLE_CLR },
+  // ── Disclaimer
+  disclaimer: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#333',
+    textAlign: 'left',
+    lineHeight: 14,
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
 
-  ingredientItem:   { fontSize: 14, color: '#1A1A1A', textAlign: 'center', marginBottom: 6 },
-  disclaimer:       { fontSize: 11, color: '#555', textAlign: 'left', lineHeight: 17, marginTop: 16 },
+  // ── Risk box (fieldset)
+  riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
+  riskBoxOuter: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingTop: PILL_H + 14,
+    paddingBottom: 18,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  riskLabelWrap: { position: 'absolute', top: -PILL_H, left: 0, right: 0, alignItems: 'center' },
+  riskLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: BG,
+    borderWidth: 1,
+    borderRadius: 50,
+    paddingVertical: 3,
+    paddingHorizontal: 19,
+    gap: 10,
+  },
+  riskLabelIcon: { width: 22, height: 22 },
+  riskLabelText: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
+  riskWarning: {
+    fontSize: 10,
+    fontWeight: '300',
+    color: DARK_GREEN,
+    textAlign: 'center',
+    lineHeight: 13,
+    marginBottom: 10,
+    letterSpacing: -0.19,
+  },
+  riskIngredient: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
 
+  // ── Loading
+  loadingWrap: { paddingVertical: 24, alignItems: 'center' },
+
+  // ── Ingredient detail modal
   modalOverlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalSheet:       { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingBottom: 40, paddingTop: 12, minHeight: 200 },
   modalHandle:      { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#D0D0D0', marginBottom: 16 },

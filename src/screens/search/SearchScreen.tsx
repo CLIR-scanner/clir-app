@@ -8,15 +8,18 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { SearchStackParamList, Product, RiskLevel } from '../../types';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
 import FilterTuneIcon from '../../components/common/FilterTuneIcon';
-import { getSearchSuggestions, getAllProducts } from '../../services/search.service';
+import { getSearchSuggestions, getAllProducts, searchProducts } from '../../services/search.service';
 import { useListStore } from '../../store/list.store';
 import { clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
@@ -28,6 +31,8 @@ const GRID_PAD = 29;
 const GRID_GAP  = 10;
 const CARD_W    = (SCREEN_W - GRID_PAD * 2 - GRID_GAP) / 2;
 const CARD_IMG_H = CARD_W * 1.2;
+
+const THUMB_SIZE = 80;
 
 const BADGE_COLOR: Record<RiskLevel, string> = {
   safe:    Colors.scanCorrect,
@@ -77,14 +82,46 @@ function ProductCard({ item, onPress, favorited, onFavorite }: {
         </TouchableOpacity>
       </View>
 
-      {/* Risk badge pill — below image */}
+      {/* Risk badge pill — dot replaced by RiskBadgeIcon */}
       <View style={[styles.riskBadge, { borderColor: color }]}>
-        <View style={[styles.riskDot, { backgroundColor: color }]} />
+        <RiskBadgeIcon level={item.riskLevel} size={16} />
         <Text style={[styles.riskLabel, { color }]}>{label}</Text>
       </View>
 
       <Text style={styles.cardName} numberOfLines={2}>{item.name}</Text>
       <Text style={styles.cardBrand} numberOfLines={1}>{item.brand}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function ListDivider() {
+  return <View style={styles.listDivider} />;
+}
+
+// ── Product Row (검색 결과 리스트용) ─────────────────────────────────────────
+
+function ProductRow({ item, onPress }: { item: Product; onPress: () => void }) {
+  const color = BADGE_COLOR[item.riskLevel];
+  const label = BADGE_LABEL[item.riskLevel];
+  return (
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+      <View style={styles.rowThumb}>
+        {item.image
+          ? <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+          : <View style={styles.rowThumbPlaceholder} />
+        }
+      </View>
+
+      <View style={styles.rowInfo}>
+        <Text style={styles.rowProductName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.rowBrandName}   numberOfLines={1}>{item.brand}</Text>
+        <View style={[styles.rowBadge, { borderColor: color }]}>
+          <RiskBadgeIcon level={item.riskLevel} size={16} />
+          <Text style={[styles.rowBadgeText, { color }]}>{label}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.rowChevron}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -97,6 +134,8 @@ export default function SearchScreen({ navigation }: Props) {
   const inputRef = useRef<TextInput>(null);
 
   const [query,         setQuery]         = useState('');
+  const [isFocused,     setIsFocused]     = useState(false);
+  const [isSearching,   setIsSearching]   = useState(false);
   const [showFilter,    setShowFilter]    = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [suggestions,   setSuggestions]  = useState<string[]>([]);
@@ -113,25 +152,56 @@ export default function SearchScreen({ navigation }: Props) {
     (activeFilters.safeOnly ? 1 : 0);
 
   const visibleProducts = useMemo(() => {
-    if (!isAlphabeticalSort) return allProducts;
-    return [...allProducts].sort((a, b) =>
+    const selectedCategories = activeFilters.categories
+      .filter(c => c.selected)
+      .map(c => c.id);
+
+    let filtered = allProducts;
+
+    if (activeFilters.safeOnly) {
+      filtered = filtered.filter(p => p.riskLevel === 'safe');
+    }
+
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(p =>
+        p.category !== undefined && selectedCategories.includes(p.category),
+      );
+    }
+
+    if (!isAlphabeticalSort) return filtered;
+    return [...filtered].sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
     );
-  }, [allProducts, isAlphabeticalSort]);
+  }, [allProducts, activeFilters, isAlphabeticalSort]);
 
-  // 전체 제품 로드
+  // query 변경 시 인플레이스 검색 (300ms 디바운스)
+  // query가 빈 문자열이면 즉시 전체 목록 복원
   useEffect(() => {
-    getAllProducts().then(setAllProducts);
-  }, []);
+    const q = query.trim();
+    let cancelled = false;
+
+    if (!q) {
+      getAllProducts().then(p => { if (!cancelled) setAllProducts(p); });
+      return () => { cancelled = true; };
+    }
+
+    const timer = setTimeout(() => {
+      setIsSearching(true);
+      searchProducts(q)
+        .then(p => { if (!cancelled) setAllProducts(p); })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setIsSearching(false); });
+    }, 300);
+
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [query]);
 
   // 자동완성: query 변경 시 제안 목록 업데이트
   useEffect(() => {
     if (!query.trim()) { setSuggestions([]); return; }
     let cancelled = false;
     getSearchSuggestions(query)
-      .then(next => {
-        if (!cancelled) setSuggestions(next);
-      })
+      .then(next => { if (!cancelled) setSuggestions(next); })
       .catch((err: unknown) => {
         if (!cancelled) setSuggestions([]);
         if (err instanceof UnauthorizedError) {
@@ -146,19 +216,31 @@ export default function SearchScreen({ navigation }: Props) {
     const q = query.trim();
     if (!q) return;
     setSuggestions([]);
-    navigation.navigate('SearchResult', { query: q });
+    Keyboard.dismiss();
+    // 디바운스 대기 없이 즉시 검색
+    setIsSearching(true);
+    searchProducts(q)
+      .then(setAllProducts)
+      .catch(() => {})
+      .finally(() => setIsSearching(false));
   }
 
   function handleSelectSuggestion(name: string) {
     setQuery(name);
     setSuggestions([]);
-    navigation.navigate('SearchResult', { query: name });
+    Keyboard.dismiss();
+    setIsSearching(true);
+    searchProducts(name)
+      .then(setAllProducts)
+      .catch(() => {})
+      .finally(() => setIsSearching(false));
   }
 
   function handleClear() {
     setQuery('');
     setSuggestions([]);
-    inputRef.current?.focus();
+    Keyboard.dismiss();
+    // query → '' 에 의해 useEffect가 전체 목록 복원을 처리
   }
 
   function handleSortSelect(nextAlphabetical: boolean) {
@@ -217,12 +299,14 @@ export default function SearchScreen({ navigation }: Props) {
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={handleSubmit}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"
           />
 
-          {query.length > 0 && (
+          {(query.length > 0 || isFocused) && (
             <TouchableOpacity
               onPress={handleClear}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -318,17 +402,44 @@ export default function SearchScreen({ navigation }: Props) {
         </View>
       )}
 
-      {/* ── Product grid ────────────────────────────────────────── */}
-      <FlatList
-        data={visibleProducts}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        extraData={favorites}
-        contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 32 }]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        renderItem={renderCard}
-      />
+      {/* ── 검색 결과 / 전체 그리드 ──────────────────────────────── */}
+      {isSearching ? (
+        <ActivityIndicator
+          size="small"
+          color={Colors.searchDarkGreen}
+          style={styles.searchSpinner}
+        />
+      ) : query.trim() ? (
+        /* 검색어 있음 → SearchResultScreen 스타일 리스트 */
+        <FlatList
+          key="list"
+          data={visibleProducts}
+          keyExtractor={item => item.id}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          ItemSeparatorComponent={ListDivider}
+          renderItem={({ item }) => (
+            <ProductRow
+              item={item}
+              onPress={() => navigation.navigate('SearchProductDetail', { product: item })}
+            />
+          )}
+        />
+      ) : (
+        /* 검색어 없음 → 2열 그리드 */
+        <FlatList
+          key="grid"
+          data={visibleProducts}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          extraData={favorites}
+          contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          renderItem={renderCard}
+        />
+      )}
 
       {/* ── Filter bottom sheet ──────────────────────────────────── */}
       <FilterBottomSheet
@@ -518,6 +629,78 @@ const styles = StyleSheet.create({
   suggestText: { flex: 1, fontSize: 14, color: Colors.searchDarkGreen, letterSpacing: -0.27 },
   suggestDivider: { height: 1, backgroundColor: Colors.searchBorder, marginHorizontal: 14 },
 
+  searchSpinner: {
+    flex: 1,
+    alignSelf: 'center',
+    marginTop: 40,
+  },
+
+  // Search result list
+  listContent: {
+    paddingHorizontal: 22,
+    paddingTop: 4,
+  },
+  listDivider: {
+    height: 1,
+    backgroundColor: Colors.searchBorder,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 16,
+    minHeight: 94,
+  },
+  rowThumb: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: 11,
+    backgroundColor: '#D9D9D9',
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  rowThumbPlaceholder: {
+    flex: 1,
+    backgroundColor: '#D9D9D9',
+  },
+  rowInfo: {
+    flex: 1,
+    gap: 7,
+  },
+  rowProductName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.searchMutedGreen,
+    lineHeight: 22,
+  },
+  rowBrandName: {
+    fontSize: 12,
+    color: Colors.searchMutedGreen,
+    lineHeight: 16,
+    marginTop: -7,
+  },
+  rowBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 5,
+    paddingHorizontal: 11,
+    gap: 6,
+    minWidth: 74,
+  },
+  rowBadgeText: {
+    fontSize: 12,
+    fontWeight: '400',
+  },
+  rowChevron: {
+    fontSize: 48,
+    color: Colors.searchBorder,
+    lineHeight: 50,
+    marginLeft: 4,
+  },
+
   // Product grid
   gridContent: {
     paddingHorizontal: GRID_PAD,
@@ -554,18 +737,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     gap: 6,
     marginLeft: 5,
+    marginTop: 4,
     marginBottom: 5,
-    minWidth: 68,
-  },
-  riskDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   riskLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    letterSpacing: -0.2,
+    letterSpacing: -0.23,
   },
   bookmarkBtn: {
     position: 'absolute',

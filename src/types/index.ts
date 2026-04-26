@@ -68,6 +68,8 @@ export interface Product {
   phash?: string;
   /** 레코드 출처 */
   source?: ProductSource;
+  /** 제품 카테고리 (FE 검색 필터용) */
+  category?: string;
 }
 
 /** POST /ocr 응답 (SSE 스트림 종료 후 합산 결과 또는 캐시 히트 즉시 응답) */

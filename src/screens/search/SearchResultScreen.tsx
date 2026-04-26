@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { SearchStackParamList, Product, RiskLevel } from '../../types';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import { searchProducts } from '../../services/search.service';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
 import FilterTuneIcon from '../../components/common/FilterTuneIcon';
@@ -41,7 +42,7 @@ function RiskBadge({ riskLevel }: { riskLevel: Product['riskLevel'] }) {
   const label = BADGE_LABEL[riskLevel];
   return (
     <View style={[styles.badge, { borderColor: color }]}>
-      <View style={[styles.badgeDot, { backgroundColor: color }]} />
+      <RiskBadgeIcon level={riskLevel} size={16} />
       <Text style={[styles.badgeText, { color }]}>{label}</Text>
     </View>
   );
@@ -483,11 +484,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     gap: 6,
     minWidth: 74,
-  },
-  badgeDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
   },
   badgeText: {
     fontSize: 12,
