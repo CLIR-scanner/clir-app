@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
@@ -37,6 +38,18 @@ const SECTION_LABEL: Record<Tab, string> = {
   'Similar Trends': "Similar Users' Picks",
   'Q&A':            'Q&A',
   'Magazine':       'Clir Magazine',
+};
+
+// ── Design tokens (from Figma) ────────────────────────────────────────────────
+
+const C = {
+  bg:      Colors.scanLightGreen,   // #F9FFF3
+  dark:    Colors.searchDarkGreen,  // #1C3A19
+  mid:     Colors.searchMutedGreen, // #556C53
+  muted:   Colors.scanMutedGreen,   // #A9B6A8
+  cardBg:  'rgba(169,182,168,0.3)',
+  thumbBg: '#D9D9D9',
+  line:    '#D9D9D9',
 };
 
 // ── Dummy Data ────────────────────────────────────────────────────────────────
@@ -63,84 +76,170 @@ const TRENDING_PRODUCTS: DummyProduct[] = [
     image: 'https://loremflickr.com/200/200/lays,potato,chips?lock=13' },
 ];
 
-const SIMILAR_PRODUCTS: (DummyProduct & { featuredReview?: string })[] = [
+const SIMILAR_PRODUCTS: (DummyProduct & { featuredReview: string })[] = [
   { id: 's1', name: 'Nutella',             brand: 'Ferrero',   riskLevel: 'danger',  rating: 4.90, reviewCount: 2391,
     image: 'https://loremflickr.com/200/200/nutella,chocolate,spread?lock=21',
-    featuredReview: '"This spread is absolutely delicious but contains dairy and hazelnuts. Always check the label carefully before purchasing for allergy concerns."' },
+    featuredReview: '"This spread is absolutely delicious, but contains dairy and hazelnuts. Always check the label carefully before purchasing if you have allergy concerns."' },
   { id: 's2', name: 'PopCorners Sea Salt', brand: 'PepsiCo',   riskLevel: 'safe',    rating: 4.90, reviewCount: 2391,
-    image: 'https://loremflickr.com/200/200/popcorn,snack?lock=22' },
+    image: 'https://loremflickr.com/200/200/popcorn,snack?lock=22',
+    featuredReview: '"Great allergen-free snack! Light and crispy with just the right amount of salt. I buy these every week — safe for my whole family including the kids."' },
   { id: 's3', name: 'Snickers Bar',        brand: 'Mars',      riskLevel: 'danger',  rating: 4.90, reviewCount: 2395,
-    image: 'https://loremflickr.com/200/200/snickers,chocolate,bar?lock=23' },
+    image: 'https://loremflickr.com/200/200/snickers,chocolate,bar?lock=23',
+    featuredReview: '"Tastes amazing but definitely not safe for peanut allergies. The label is clear about it. Would love a peanut-free version — please make one, Mars!"' },
 ];
 
 const QA_ITEMS: QAItem[] = [
-  { id: 'q1', title: 'Is oat milk safe for dairy allergy?',      user: 'sarah_m',     date: '2026.04.18' },
-  { id: 'q2', title: 'Best gluten-free snacks recommendation?',  user: 'john_k',      date: '2026.04.16' },
-  { id: 'q3', title: 'Hidden peanut ingredients to watch out',   user: 'allergy_dad', date: '2026.04.14' },
+  { id: 'q1', title: 'Is oat milk safe for dairy allergy?',      user: 'sarah_m',     date: '2026.04.19' },
+  { id: 'q2', title: 'Best gluten-free snacks recommendation?',  user: 'john_k',      date: '2026.04.19' },
+  { id: 'q3', title: 'Hidden peanut ingredients to watch out',   user: 'allergy_dad', date: '2026.04.19' },
 ];
 
 const MAGAZINE_ITEMS: MagazineItem[] = [
   { id: 'm1', title: 'Top 10 Allergen-Free Snacks of 2026',
-    description: 'Discover the best snacks that are free from the top 8 allergens without sacrificing taste.',
+    description: "Magazine's contents will be placed here. Discover the best snacks free from top 8 allergens.",
     image: 'https://loremflickr.com/400/240/healthy,snack,food?lock=31' },
   { id: 'm2', title: 'Reading Food Labels Like a Pro',
-    description: 'A complete guide to understanding ingredient lists and hidden allergen warnings on packaging.',
+    description: "Magazine's contents will be placed here. A complete guide to ingredient lists and allergen warnings.",
     image: 'https://loremflickr.com/400/240/food,label,package?lock=32' },
   { id: 'm3', title: 'Vegan Substitutes That Actually Work',
-    description: 'From dairy to eggs, these plant-based swaps will make your recipes just as delicious.',
+    description: "Magazine's contents will be placed here. Plant-based swaps that make recipes just as delicious.",
     image: 'https://loremflickr.com/400/240/vegan,plant,food?lock=33' },
 ];
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+
 const BADGE_LABEL: Record<RiskLevel, string> = { safe: 'Good', caution: 'Poor', danger: 'Bad' };
 const BADGE_COLOR: Record<RiskLevel, string> = {
-  safe:    '#4CD964',
-  caution: '#FF9500',
-  danger:  '#FF3B30',
+  safe:    Colors.scanCorrect,
+  caution: Colors.searchPoor,
+  danger:  Colors.searchWrong,
 };
-
-// ── Sub-components ────────────────────────────────────────────────────────────
 
 function RiskBadge({ riskLevel }: { riskLevel: RiskLevel }) {
   const color = BADGE_COLOR[riskLevel];
   return (
-    <View style={[styles.riskBadge, { borderColor: color }]}>
-      <View style={[styles.riskDot, { backgroundColor: color }]} />
-      <Text style={[styles.riskLabel, { color }]}>{BADGE_LABEL[riskLevel]}</Text>
+    <View style={[styles.badge, { borderColor: color }]}>
+      <RiskBadgeIcon level={riskLevel} size={16} />
+      <Text style={[styles.badgeText, { color }]}>{BADGE_LABEL[riskLevel]}</Text>
     </View>
   );
 }
 
-function ProductRow({ item, featuredReview }: { item: DummyProduct; featuredReview?: string }) {
+function ProductRow({
+  item,
+  showChevron = false,
+}: {
+  item: DummyProduct;
+  showChevron?: boolean;
+}) {
   return (
-    <View style={styles.productCard}>
-      <View style={styles.productRow}>
-        <View style={styles.productThumb}>
-          <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        </View>
-        <View style={styles.productInfo}>
-          <Text style={styles.productName}>{item.name}</Text>
-          <Text style={styles.productBrand}>{item.brand}</Text>
-          <View style={styles.productMeta}>
-            <RiskBadge riskLevel={item.riskLevel} />
-            <Text style={styles.productRating}>★ {item.rating.toFixed(2)} ({item.reviewCount.toLocaleString()})</Text>
-          </View>
-        </View>
-        <View style={styles.productThumbSm}>
-          <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+    <View style={styles.productRow}>
+      <View style={styles.productThumb}>
+        <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      </View>
+      <View style={styles.productInfo}>
+        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.productBrand}>{item.brand}</Text>
+        <View style={styles.productMeta}>
+          <RiskBadge riskLevel={item.riskLevel} />
+          <Text style={styles.productRating}>
+            ⭐️ {item.rating.toFixed(2)} ({item.reviewCount.toLocaleString()})
+          </Text>
         </View>
       </View>
-      {featuredReview && (
-        <Text style={styles.featuredReview}>{featuredReview}</Text>
-      )}
+      {showChevron && <Text style={styles.rowChevron}>›</Text>}
     </View>
   );
 }
+
+// 각 카드 리뷰가 순서대로 1개씩 표시
+function SimilarList() {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
+        setActiveIdx(prev => (prev + 1) % SIMILAR_PRODUCTS.length);
+        Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+      });
+    }, 3500);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <View style={styles.cardList}>
+      {SIMILAR_PRODUCTS.map((item, i) => (
+        <View key={item.id} style={styles.simCard}>
+          <View style={styles.simCardTop}>
+            <ProductRow item={item} showChevron />
+          </View>
+          {i === activeIdx && (
+            <Animated.View style={[styles.reviewBox, { opacity }]}>
+              <Text style={styles.reviewText}>{item.featuredReview}</Text>
+            </Animated.View>
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ── Banner ────────────────────────────────────────────────────────────────────
+
+function BannerAd() {
+  return (
+    <View style={bannerSt.wrap}>
+      <Image
+        source={{ uri: 'https://loremflickr.com/800/380/healthy,food,grocery?lock=77' }}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+      <View style={bannerSt.overlay} />
+      <Text style={bannerSt.tag}>FEATURED</Text>
+      <Text style={bannerSt.title}>{'Eat Smart,\nLive Allergy-Free'}</Text>
+      <Text style={bannerSt.sub}>Scan any product to check ingredients instantly</Text>
+    </View>
+  );
+}
+
+const bannerSt = StyleSheet.create({
+  wrap: {
+    height: 190,
+    borderRadius: 9,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    padding: 18,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+  },
+  tag: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#25FF81',
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 28,
+    marginBottom: 6,
+  },
+  sub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+  },
+});
 
 function SectionHeader({ title, onPress }: { title: string; onPress?: () => void }) {
   return (
     <TouchableOpacity style={styles.sectionHeader} onPress={onPress} activeOpacity={0.7}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionArrow}>›</Text>
+      <Text style={styles.sectionChevron}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -149,13 +248,12 @@ function CategoryPill() {
   return (
     <TouchableOpacity style={styles.categoryPill} activeOpacity={0.7}>
       <Text style={styles.categoryPillText}>All categories</Text>
-      <Text style={styles.categoryPillArrow}>▾</Text>
     </TouchableOpacity>
   );
 }
 
 function DragHandleIcon({ active }: { active: boolean }) {
-  const color = active ? Colors.primary : Colors.gray300;
+  const color = active ? C.dark : C.muted;
   return (
     <View style={dragStyles.wrap}>
       {[0, 1, 2].map(i => (
@@ -264,7 +362,6 @@ function ReorderSheet({
 
       <Animated.View style={[sheetStyles.sheet, { bottom: slideOffset }]}>
         <View style={sheetStyles.handle} />
-
         <View style={sheetStyles.header}>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Text style={sheetStyles.closeBtn}>✕</Text>
@@ -274,10 +371,8 @@ function ReorderSheet({
             <Text style={sheetStyles.doneBtn}>Done</Text>
           </TouchableOpacity>
         </View>
-
         <View style={sheetStyles.divider} />
         <Text style={sheetStyles.hint}>Drag to reorder sections</Text>
-
         {draft.map((id, index) => {
           const isDragging   = activeId === id;
           const isHoverAbove = hoverIdx === index && activeId !== null && !isDragging && draft.indexOf(activeId) > index;
@@ -311,22 +406,22 @@ const sheetStyles = StyleSheet.create({
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     paddingBottom: 40,
   },
-  handle:   { width: 40, height: 4, backgroundColor: Colors.gray300, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 6 },
+  handle:   { width: 40, height: 4, backgroundColor: C.muted, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 6 },
   header:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  title:    { fontSize: 16, fontWeight: '700', color: Colors.black },
-  closeBtn: { fontSize: 14, fontWeight: '600', color: Colors.black, minWidth: 44 },
-  doneBtn:  { fontSize: 14, fontWeight: '700', color: Colors.black, textAlign: 'right', minWidth: 44 },
-  divider:  { height: 1, backgroundColor: Colors.border, marginHorizontal: 12 },
-  hint:     { fontSize: 12, color: Colors.gray500, paddingHorizontal: 24, paddingTop: 14, paddingBottom: 6 },
+  title:    { fontSize: 16, fontWeight: '700', color: C.dark },
+  closeBtn: { fontSize: 14, fontWeight: '600', color: C.dark, minWidth: 44 },
+  doneBtn:  { fontSize: 14, fontWeight: '700', color: C.dark, textAlign: 'right', minWidth: 44 },
+  divider:  { height: 1, backgroundColor: C.line, marginHorizontal: 12 },
+  hint:     { fontSize: 12, color: C.muted, paddingHorizontal: 24, paddingTop: 14, paddingBottom: 6 },
   row: {
     flexDirection: 'row', alignItems: 'center', height: SECTION_ROW_H,
-    paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: C.line,
     backgroundColor: Colors.white,
   },
-  rowActive:      { backgroundColor: Colors.gray100 },
-  rowLabel:       { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.black },
-  rowLabelActive: { color: Colors.primary },
-  dropLine:       { height: 2, backgroundColor: Colors.primary, marginHorizontal: 24, borderRadius: 1 },
+  rowActive:      { backgroundColor: '#F0F5EF' },
+  rowLabel:       { flex: 1, fontSize: 15, fontWeight: '600', color: C.dark },
+  rowLabelActive: { color: C.mid },
+  dropLine:       { height: 2, backgroundColor: C.mid, marginHorizontal: 24, borderRadius: 1 },
 });
 
 // ── CommunityScreen ───────────────────────────────────────────────────────────
@@ -338,58 +433,91 @@ export default function CommunityScreen({ navigation }: Props) {
   const [sectionOrder, setSectionOrder] = useState<Tab[]>([...TABS]);
   const [showReorder,  setShowReorder]  = useState(false);
 
-  const mainScrollRef   = useRef<ScrollView>(null);
-  const tabScrollRef    = useRef<ScrollView>(null);
-  const sectionY        = useRef<Partial<Record<Tab, number>>>({});
-  const tabX            = useRef<Partial<Record<Tab, number>>>({});
-  const activeTabRef    = useRef<Tab>('Week Trends');
-  const isProgrammatic  = useRef(false);
-  // sectionOrder의 최신값을 클로저 없이 참조
-  const sectionOrderRef = useRef<Tab[]>([...TABS]);
+  const mainScrollRef    = useRef<ScrollView>(null);
+  const sectionY         = useRef<Partial<Record<Tab, number>>>({});
+  const sectionViewRefs  = useRef<Partial<Record<Tab, View | null>>>({});
+  const scrollOffset     = useRef(0);
+  const activeTabRef     = useRef<Tab>('Week Trends');
+  const isProgrammatic   = useRef(false);
+  const programmaticTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sectionOrderRef  = useRef<Tab[]>([...TABS]);
 
   function onSectionLayout(tab: Tab) {
     return (e: LayoutChangeEvent) => { sectionY.current[tab] = e.nativeEvent.layout.y; };
   }
-  function onTabLayout(tab: Tab) {
-    return (e: LayoutChangeEvent) => { tabX.current[tab] = e.nativeEvent.layout.x; };
+
+  // 섹션 Y 위치를 화면 측정으로 정밀 보정 (onLayout 오차 보완)
+  function remeasureSections() {
+    const scroll = mainScrollRef.current;
+    if (!scroll) return;
+    (scroll as unknown as { measure: (cb: (...n: number[]) => void) => void })
+      .measure((...sv: number[]) => {
+        const vPageY = sv[5] ?? 0;
+        sectionOrderRef.current.forEach(tab => {
+          const view = sectionViewRefs.current[tab];
+          if (!view) return;
+          view.measure((_x: number, _y: number, _w: number, _h: number, _px: number, sPageY: number) => {
+            sectionY.current[tab] = sPageY - vPageY + scrollOffset.current;
+          });
+        });
+      });
   }
 
-  function scrollTabIntoView(tab: Tab) {
-    const x = tabX.current[tab] ?? 0;
-    tabScrollRef.current?.scrollTo({ x: Math.max(0, x - 24), animated: true });
-  }
+  useEffect(() => {
+    const timer = setTimeout(remeasureSections, 600);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleTabPress(tab: Tab) {
     isProgrammatic.current = true;
     activeTabRef.current = tab;
     setActiveTab(tab);
-    scrollTabIntoView(tab);
-    mainScrollRef.current?.scrollTo({ y: sectionY.current[tab] ?? 0, animated: true });
+
+    if (programmaticTimer.current) clearTimeout(programmaticTimer.current);
+    programmaticTimer.current = setTimeout(() => {
+      isProgrammatic.current = false;
+    }, 900);
+
+    const sectionView = sectionViewRefs.current[tab];
+    const scrollView  = mainScrollRef.current;
+
+    if (sectionView && scrollView) {
+      sectionView.measure((_x: number, _y: number, _w: number, _h: number, _px: number, sPageY: number) => {
+        (scrollView as unknown as { measure: (cb: (...n: number[]) => void) => void })
+          .measure((...n: number[]) => {
+            const vPageY = n[5] ?? 0;
+            const targetY = Math.max(0, sPageY - vPageY + scrollOffset.current);
+            scrollView.scrollTo({ y: targetY, animated: true });
+          });
+      });
+      return;
+    }
+    scrollView?.scrollTo({ y: sectionY.current[tab] ?? 0, animated: true });
   }
 
-  function handleScrollEnd() { isProgrammatic.current = false; }
+  function handleScrollEnd() {
+    isProgrammatic.current = false;
+    if (programmaticTimer.current) { clearTimeout(programmaticTimer.current); programmaticTimer.current = null; }
+  }
 
   function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    scrollOffset.current = e.nativeEvent.contentOffset.y;
     if (isProgrammatic.current) return;
     const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
     const order = sectionOrderRef.current;
 
     if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 50) {
       const last = order[order.length - 1];
-      if (last !== activeTabRef.current) {
-        activeTabRef.current = last; setActiveTab(last); scrollTabIntoView(last);
-      }
+      if (last !== activeTabRef.current) { activeTabRef.current = last; setActiveTab(last); }
       return;
     }
-    const scrollY = contentOffset.y + 60;
+    const scrollY = contentOffset.y + layoutMeasurement.height * 0.25;
     let current: Tab = order[0];
     for (const tab of order) {
       const offset = sectionY.current[tab];
       if (offset !== undefined && scrollY >= offset) current = tab;
     }
-    if (current !== activeTabRef.current) {
-      activeTabRef.current = current; setActiveTab(current); scrollTabIntoView(current);
-    }
+    if (current !== activeTabRef.current) { activeTabRef.current = current; setActiveTab(current); }
   }
 
   function renderSection(tab: Tab) {
@@ -399,32 +527,45 @@ export default function CommunityScreen({ navigation }: Props) {
           <View style={styles.section}>
             <SectionHeader title="Trending This Week" onPress={() => navigation.navigate('WeekendPopular')} />
             <CategoryPill />
-            {TRENDING_PRODUCTS.map(item => <ProductRow key={item.id} item={item} />)}
+            <View style={styles.trendList}>
+              {TRENDING_PRODUCTS.map((item, idx) => (
+                <View key={item.id}>
+                  <ProductRow item={item} />
+                  {idx < TRENDING_PRODUCTS.length - 1 && <View style={styles.rowDivider} />}
+                </View>
+              ))}
+            </View>
           </View>
         );
+
       case 'Similar Trends':
         return (
           <View style={styles.section}>
             <SectionHeader title="Similar Users' Picks" onPress={() => navigation.navigate('SimilarUsersFavorites')} />
             <CategoryPill />
-            {SIMILAR_PRODUCTS.map(item => <ProductRow key={item.id} item={item} featuredReview={item.featuredReview} />)}
+            <SimilarList />
           </View>
         );
+
       case 'Q&A':
         return (
           <View style={styles.section}>
             <SectionHeader title="Q&A" />
-            {QA_ITEMS.map(item => (
-              <TouchableOpacity key={item.id} style={styles.qaRow} activeOpacity={0.7}>
-                <View style={styles.qaInfo}>
+            {QA_ITEMS.map((item, idx) => (
+              <View key={item.id}>
+                <TouchableOpacity style={styles.qaRow} activeOpacity={0.7}>
                   <Text style={styles.qaTitle}>{item.title}</Text>
-                  <Text style={styles.qaMeta}>{item.user}</Text>
-                </View>
-                <Text style={styles.qaDate}>{item.date}</Text>
-              </TouchableOpacity>
+                  <View style={styles.qaMeta}>
+                    <Text style={styles.qaUser}>{item.user}</Text>
+                    <Text style={styles.qaDate}>{item.date}</Text>
+                  </View>
+                </TouchableOpacity>
+                {idx < QA_ITEMS.length - 1 && <View style={styles.rowDivider} />}
+              </View>
             ))}
           </View>
         );
+
       case 'Magazine':
         return (
           <View style={styles.section}>
@@ -434,22 +575,24 @@ export default function CommunityScreen({ navigation }: Props) {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={item => item.id}
-              contentContainerStyle={styles.magazineList}
+              contentContainerStyle={styles.magList}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.magazineCard} activeOpacity={0.8}>
-                  <View style={styles.magazineImg}>
+                <TouchableOpacity style={styles.magCard} activeOpacity={0.85}>
+                  <View style={styles.magImgBox}>
                     <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                   </View>
-                  <View style={styles.magazineBody}>
-                    <Text style={styles.magazineTitle} numberOfLines={2}>{item.title}</Text>
-                    <Text style={styles.magazineDesc}  numberOfLines={3}>{item.description}</Text>
-                    <Text style={styles.magazineSeeMore}>See more</Text>
+                  <View style={styles.magContent}>
+                    <Text style={styles.magTitle} numberOfLines={2}>{item.title}</Text>
+                    <Text style={styles.magDesc}  numberOfLines={4}>{item.description}</Text>
+                    <Text style={styles.magSeeMore}>See more</Text>
                   </View>
                 </TouchableOpacity>
               )}
             />
           </View>
         );
+
+
     }
   }
 
@@ -459,22 +602,15 @@ export default function CommunityScreen({ navigation }: Props) {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Community</Text>
-        <TouchableOpacity
-          onPress={() => setShowReorder(true)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.menuIcon}>≡</Text>
-        </TouchableOpacity>
       </View>
 
       {/* ── Search bar ─────────────────────────────────────────────────── */}
-      <View style={styles.searchBarWrap}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>⌕</Text>
+      <View style={styles.searchRow}>
+        <View style={styles.searchInputWrap}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search your Product"
-            placeholderTextColor={Colors.gray500}
+            placeholder="Search Products"
+            placeholderTextColor={C.muted}
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
@@ -482,28 +618,35 @@ export default function CommunityScreen({ navigation }: Props) {
             autoCapitalize="none"
           />
         </View>
+        <TouchableOpacity
+          style={styles.searchFilterBtn}
+          onPress={() => setShowReorder(true)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.sortLine} />
+          <View style={[styles.sortLine, { width: 13 }]} />
+          <View style={[styles.sortLine, { width: 8 }]} />
+        </TouchableOpacity>
       </View>
 
-      {/* ── Tab pills (follows sectionOrder) ───────────────────────────── */}
-      <ScrollView
-        ref={tabScrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tabScroll}
-        contentContainerStyle={styles.tabScrollContent}
-      >
-        {sectionOrder.map(tab => (
-          <TouchableOpacity
-            key={tab}
-            onLayout={onTabLayout(tab)}
-            style={[styles.tab, activeTab === tab && styles.tabActive]}
-            onPress={() => handleTabPress(tab)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* ── Tab bar ────────────────────────────────────────────────────── */}
+      <View style={styles.tabRow}>
+        {sectionOrder.map(tab => {
+          const isActive = activeTab === tab;
+          return (
+            <TouchableOpacity
+              key={tab}
+              style={styles.tabItem}
+              onPress={() => handleTabPress(tab)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab}</Text>
+              {isActive && <View style={styles.tabUnderline} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+      <View style={styles.tabBarLine} />
 
       {/* ── Main scroll ────────────────────────────────────────────────── */}
       <ScrollView
@@ -514,33 +657,23 @@ export default function CommunityScreen({ navigation }: Props) {
         onScroll={handleScroll}
         onMomentumScrollEnd={handleScrollEnd}
         onScrollEndDrag={handleScrollEnd}
+        onContentSizeChange={remeasureSections}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
-        {/* ── Banner Ad ─────────────────────────────────────────────────── */}
+        {/* ── Promotional banner ─────────────────────────────────────── */}
         <View style={styles.bannerWrap}>
-          <View style={styles.banner}>
-            <Image
-              source={{ uri: 'https://loremflickr.com/800/320/healthy,food,market?lock=99' }}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-            />
-            <View style={styles.bannerOverlay} />
-            <View style={styles.bannerInner}>
-              <Text style={styles.bannerTag}>AD</Text>
-              <Text style={styles.bannerHeadline}>Discover Allergen-Free Products</Text>
-              <Text style={styles.bannerSub}>Safe picks curated just for you</Text>
-              <View style={styles.bannerCta}>
-                <Text style={styles.bannerCtaText}>Shop Now →</Text>
-              </View>
-            </View>
-          </View>
+          <BannerAd />
         </View>
 
-        {/* ── Sections in dynamic order ─────────────────────────────────── */}
+        {/* ── Sections ──────────────────────────────────────────────── */}
         {sectionOrder.map((tab, i) => (
-          <View key={`${i}-${tab}`} onLayout={onSectionLayout(tab)}>
+          <View
+            key={`${i}-${tab}`}
+            ref={r => { sectionViewRefs.current[tab] = r; }}
+            onLayout={onSectionLayout(tab)}
+          >
             {renderSection(tab)}
-            {i < sectionOrder.length - 1 && <View style={styles.divider} />}
+            {i < sectionOrder.length - 1 && <View style={styles.sectionDivider} />}
           </View>
         ))}
       </ScrollView>
@@ -550,14 +683,14 @@ export default function CommunityScreen({ navigation }: Props) {
         visible={showReorder}
         order={sectionOrder}
         onClose={() => setShowReorder(false)}
-        onApply={(next) => {
+        onApply={next => {
           sectionOrderRef.current = next;
           setSectionOrder(next);
           const first = next[0];
           activeTabRef.current = first;
           setActiveTab(first);
-          // sectionY 초기화 — 재렌더 후 onLayout이 새 위치로 다시 채움
           sectionY.current = {};
+          setTimeout(remeasureSections, 600);
         }}
       />
     </View>
@@ -567,115 +700,245 @@ export default function CommunityScreen({ navigation }: Props) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
+  root: { flex: 1, backgroundColor: C.bg },
 
+  // Header
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12,
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 10,
   },
-  headerTitle: { fontSize: 26, fontWeight: '700', color: Colors.black, letterSpacing: -0.38 },
-  menuIcon:    { fontSize: 24, color: Colors.black },
-
-  searchBarWrap: { paddingHorizontal: 24, marginBottom: 12 },
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.gray100, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10, gap: 8,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: C.dark,
+    letterSpacing: -0.38,
   },
-  searchIcon:  { fontSize: 18, color: Colors.gray500 },
-  searchInput: { flex: 1, fontSize: 14, color: Colors.black, padding: 0 },
 
-  tabScroll:        { maxHeight: 44 },
-  tabScrollContent: { paddingHorizontal: 24, gap: 8, alignItems: 'center' },
-  tab: {
-    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
-    borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.white,
+  // Search
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 25,
+    marginBottom: 12,
   },
-  tabActive:     { backgroundColor: Colors.black, borderColor: Colors.black },
-  tabText:       { fontSize: 13, fontWeight: '500', color: Colors.gray500 },
-  tabTextActive: { color: Colors.white, fontWeight: '700' },
+  searchInputWrap: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: C.dark,
+    borderRadius: 10,
+    paddingHorizontal: 17,
+    paddingVertical: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: C.muted,
+    padding: 0,
+  },
+  searchFilterBtn: {
+    width: 42,
+    height: 42,
+    borderWidth: 1,
+    borderColor: C.dark,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  sortLine: {
+    width: 18,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: C.dark,
+  },
 
-  scroll:  { flex: 1, marginTop: 12 },
-  section: { paddingHorizontal: 24, paddingVertical: 16 },
-  divider: { height: 1, backgroundColor: Colors.border },
+  // Tabs
+  tabRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 25,
+    paddingBottom: 6,
+    justifyContent: 'space-between',
+  },
+  tabItem: {
+    alignItems: 'center',
+    paddingBottom: 4,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: C.muted,
+    lineHeight: 18,
+  },
+  tabTextActive: {
+    color: C.dark,
+    fontWeight: '600',
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: C.dark,
+    borderRadius: 1,
+  },
+  tabBarLine: {
+    height: 1,
+    backgroundColor: C.line,
+    marginBottom: 4,
+  },
+
+  // Scroll / Sections
+  scroll:        { flex: 1 },
+  section:       { paddingHorizontal: 27, paddingTop: 36, paddingBottom: 32 },
+  sectionDivider:{ height: 14, backgroundColor: '#E6EBE5' },
 
   // Banner
-  bannerWrap: { paddingHorizontal: 24, paddingBottom: 4 },
-  banner: {
-    height: 160, borderRadius: 16,
-    overflow: 'hidden', justifyContent: 'center', alignItems: 'center',
-  },
-  bannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  bannerInner:    { alignItems: 'center', gap: 6 },
-  bannerTag:      { fontSize: 10, fontWeight: '800', color: '#FFD60A', letterSpacing: 1.5, textTransform: 'uppercase' },
-  bannerHeadline: { fontSize: 17, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' },
-  bannerSub:      { fontSize: 13, color: 'rgba(255,255,255,0.85)', textAlign: 'center' },
-  bannerCta: {
-    marginTop: 4, paddingHorizontal: 18, paddingVertical: 7,
-    backgroundColor: '#FFFFFF', borderRadius: 20,
-  },
-  bannerCtaText: { fontSize: 13, fontWeight: '700', color: '#1A1A1A' },
+  bannerWrap: { paddingHorizontal: 23, paddingTop: 16, paddingBottom: 8 },
+  banner:     { height: 190, borderRadius: 9, backgroundColor: C.thumbBg },
 
   // Section header
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  sectionTitle:  { fontSize: 17, fontWeight: '700', color: Colors.black, letterSpacing: -0.3 },
-  sectionArrow:  { fontSize: 24, color: Colors.gray300, lineHeight: 28 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle:  { fontSize: 16, fontWeight: '800', color: C.dark },
+  sectionChevron:{ fontSize: 18, color: C.dark, fontWeight: '400' },
 
   // Category pill
   categoryPill: {
-    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 20,
-    paddingHorizontal: 12, paddingVertical: 5, gap: 4, marginBottom: 12,
-    backgroundColor: Colors.white,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: C.mid,
+    borderRadius: 50,
+    paddingHorizontal: 19,
+    paddingVertical: 3,
+    marginBottom: 18,
   },
-  categoryPillText:  { fontSize: 13, color: Colors.black },
-  categoryPillArrow: { fontSize: 11, color: Colors.gray500 },
-
-  // Product card
-  productCard: {
-    backgroundColor: Colors.white, borderRadius: 16, padding: 14,
-    marginBottom: 10, borderWidth: 1, borderColor: Colors.border,
+  categoryPillText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: C.dark,
+    letterSpacing: -0.228,
   },
-  productRow:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  productThumb:   { width: 64, height: 64, borderRadius: 10, flexShrink: 0, overflow: 'hidden', backgroundColor: Colors.gray100 },
-  productThumbSm: { width: 44, height: 44, borderRadius: 8,  flexShrink: 0, overflow: 'hidden', backgroundColor: Colors.gray100 },
-  productInfo:    { flex: 1, gap: 2 },
-  productName:    { fontSize: 14, fontWeight: '700', color: Colors.black },
-  productBrand:   { fontSize: 12, color: Colors.gray500 },
-  productMeta:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  productRating:  { fontSize: 12, color: Colors.gray500 },
 
-  riskBadge: {
-    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-    borderWidth: 1, borderRadius: 28, paddingVertical: 4, paddingHorizontal: 9, gap: 5,
+  // Product row (shared for Trending + Similar inner)
+  productRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  productThumb: {
+    width: 68,
+    height: 68,
+    borderRadius: 9,
+    backgroundColor: C.thumbBg,
+    overflow: 'hidden',
+    flexShrink: 0,
   },
-  riskDot:   { width: 8, height: 8, borderRadius: 4 },
-  riskLabel: { fontSize: 11, fontWeight: '600', letterSpacing: -0.2 },
+  productInfo:  { flex: 1, gap: 3 },
+  productName:  { fontSize: 14, fontWeight: '700', color: C.mid, letterSpacing: -0.266 },
+  productBrand: { fontSize: 10, color: C.mid, letterSpacing: -0.19 },
+  productMeta:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  productRating:{ fontSize: 10, color: C.mid, letterSpacing: -0.19 },
+  rowChevron:   { fontSize: 18, color: C.dark, marginLeft: 4 },
 
-  featuredReview: { fontSize: 13, color: Colors.gray700, lineHeight: 19, marginTop: 10, fontStyle: 'italic' },
+  // Trending list
+  trendList: { gap: 0 },
+  rowDivider:{ height: 1, backgroundColor: C.line, marginVertical: 14 },
+
+  // Similar cards
+  cardList: { gap: 12 },
+  simCard: {
+    borderWidth: 1,
+    borderColor: C.muted,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  simCardTop: { padding: 14 },
+  reviewBox: {
+    backgroundColor: C.cardBg,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  reviewText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: C.mid,
+    letterSpacing: -0.285,
+    lineHeight: 21,
+  },
 
   // Q&A
-  qaRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.border,
+  qaRow:   { paddingVertical: 12 },
+  qaTitle: { fontSize: 14, fontWeight: '700', color: C.dark, letterSpacing: -0.266, marginBottom: 4 },
+  qaMeta:  { flexDirection: 'row', justifyContent: 'space-between' },
+  qaUser:  { fontSize: 10, color: C.dark, letterSpacing: -0.19 },
+  qaDate:  { fontSize: 10, color: C.dark, letterSpacing: -0.19 },
+
+  // Risk badge (icon + text, search-tab style)
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    gap: 5,
   },
-  qaInfo:  { flex: 1, gap: 3 },
-  qaTitle: { fontSize: 14, fontWeight: '600', color: Colors.black },
-  qaMeta:  { fontSize: 12, color: Colors.gray500 },
-  qaDate:  { fontSize: 12, color: Colors.gray500, marginLeft: 12 },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+
+  // Review cycling dots
+  reviewDots: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 5,
+    marginTop: 10,
+  },
+  reviewDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: C.muted,
+  },
+  reviewDotActive: {
+    width: 16,
+    backgroundColor: C.mid,
+  },
 
   // Magazine
-  magazineList: { gap: 12 },
-  magazineCard: {
-    width: 200, backgroundColor: Colors.white, borderRadius: 16,
-    overflow: 'hidden', borderWidth: 1, borderColor: Colors.border,
+  magList: { gap: 11 },
+  magCard: {
+    width: 288,
+    height: 229,
+    borderWidth: 1,
+    borderColor: C.dark,
+    borderRadius: 11,
+    backgroundColor: C.cardBg,
+    flexDirection: 'row',
+    overflow: 'hidden',
   },
-  magazineImg: { width: '100%', height: 120, backgroundColor: Colors.gray100, overflow: 'hidden' },
-  magazineBody:     { padding: 12, gap: 4 },
-  magazineTitle:    { fontSize: 13, fontWeight: '700', color: Colors.black, lineHeight: 18 },
-  magazineDesc:     { fontSize: 11, color: Colors.gray500, lineHeight: 16 },
-  magazineSeeMore:  { fontSize: 11, color: Colors.primary, marginTop: 4, fontWeight: '600' },
+  magImgBox: {
+    width: 145,
+    margin: 9,
+    borderRadius: 8,
+    backgroundColor: C.dark,
+    overflow: 'hidden',
+  },
+  magContent: {
+    flex: 1,
+    paddingTop: 19,
+    paddingRight: 10,
+    paddingBottom: 10,
+  },
+  magTitle:   { fontSize: 15, fontWeight: '700', color: C.dark, lineHeight: 20 },
+  magDesc:    { fontSize: 10, color: C.mid, lineHeight: 14, marginTop: 8 },
+  magSeeMore: { fontSize: 10, color: C.dark, textDecorationLine: 'underline', marginTop: 8 },
+
 });
