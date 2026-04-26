@@ -94,7 +94,9 @@ const es = {
   language: { title: 'Idioma', deviceDetected: 'Idioma del dispositivo detectado:', deviceBadge: 'Dispositivo' },
   search: {
     placeholder:   'Buscar producto o marca',
-    sortBy:        'Ordenar',
+    sortBy:        'Sorted by',
+    sortDefault:   'Predeterminado',
+    sortAlphabetical:'Alphabetical A-Z',
     sortRelevance: 'Relevancia',
     sortSafety:    'Seguridad',
     sortName:      'Nombre',

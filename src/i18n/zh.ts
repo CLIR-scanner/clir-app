@@ -93,7 +93,9 @@ const zh = {
   language: { title: '语言', deviceDetected: '已检测到设备语言:', deviceBadge: '设备' },
   search: {
     placeholder:   '搜索产品名称或品牌',
-    sortBy:        '排序',
+    sortBy:        'Sorted by',
+    sortDefault:   '默认',
+    sortAlphabetical:'Alphabetical A-Z',
     sortRelevance: '相关度',
     sortSafety:    '安全度',
     sortName:      '名称',

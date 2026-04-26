@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,21 +15,24 @@ import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { SearchStackParamList, Product, RiskLevel } from '../../types';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
+import FilterTuneIcon from '../../components/common/FilterTuneIcon';
 import { getSearchSuggestions, getAllProducts } from '../../services/search.service';
 import { useListStore } from '../../store/list.store';
+import { clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { useUserStore } from '../../store/user.store';
 
 type Props = NativeStackScreenProps<SearchStackParamList, 'Search'>;
 
 const SCREEN_W = Dimensions.get('window').width;
-const GRID_PAD = 24;
-const GRID_GAP  = 12;
+const GRID_PAD = 29;
+const GRID_GAP  = 10;
 const CARD_W    = (SCREEN_W - GRID_PAD * 2 - GRID_GAP) / 2;
-const CARD_IMG_H = CARD_W * 1.1;
+const CARD_IMG_H = CARD_W * 1.2;
 
 const BADGE_COLOR: Record<RiskLevel, string> = {
-  safe:    '#4CD964',
-  caution: '#FF9500',
-  danger:  '#FF3B30',
+  safe:    Colors.scanCorrect,
+  caution: Colors.searchPoor,
+  danger:  Colors.searchWrong,
 };
 
 const BADGE_LABEL: Record<RiskLevel, string> = {
@@ -56,7 +59,7 @@ function ProductCard({ item, onPress, favorited, onFavorite }: {
           <Image
             source={{ uri: item.image }}
             style={StyleSheet.absoluteFill}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <View style={styles.cardImgPlaceholder} />
@@ -94,11 +97,12 @@ export default function SearchScreen({ navigation }: Props) {
   const inputRef = useRef<TextInput>(null);
 
   const [query,         setQuery]         = useState('');
-  const [focused,       setFocused]       = useState(false);
   const [showFilter,    setShowFilter]    = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [suggestions,   setSuggestions]  = useState<string[]>([]);
   const [allProducts,   setAllProducts]  = useState<Product[]>([]);
+  const [isAlphabeticalSort, setIsAlphabeticalSort] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const favorites             = useListStore(s => s.favorites);
   const addFavoriteToStore    = useListStore(s => s.addFavorite);
@@ -106,8 +110,14 @@ export default function SearchScreen({ navigation }: Props) {
 
   const activeCount =
     activeFilters.categories.filter(c => c.selected).length +
-    (activeFilters.safeOnly ? 1 : 0) +
-    (activeFilters.minPrice || activeFilters.maxPrice ? 1 : 0);
+    (activeFilters.safeOnly ? 1 : 0);
+
+  const visibleProducts = useMemo(() => {
+    if (!isAlphabeticalSort) return allProducts;
+    return [...allProducts].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    );
+  }, [allProducts, isAlphabeticalSort]);
 
   // 전체 제품 로드
   useEffect(() => {
@@ -117,7 +127,19 @@ export default function SearchScreen({ navigation }: Props) {
   // 자동완성: query 변경 시 제안 목록 업데이트
   useEffect(() => {
     if (!query.trim()) { setSuggestions([]); return; }
-    getSearchSuggestions(query).then(setSuggestions);
+    let cancelled = false;
+    getSearchSuggestions(query)
+      .then(next => {
+        if (!cancelled) setSuggestions(next);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setSuggestions([]);
+        if (err instanceof UnauthorizedError) {
+          clearAuthToken();
+          useUserStore.getState().logout();
+        }
+      });
+    return () => { cancelled = true; };
   }, [query]);
 
   function handleSubmit() {
@@ -139,11 +161,9 @@ export default function SearchScreen({ navigation }: Props) {
     inputRef.current?.focus();
   }
 
-  function handleCancel() {
-    setQuery('');
-    setSuggestions([]);
-    setFocused(false);
-    inputRef.current?.blur();
+  function handleSortSelect(nextAlphabetical: boolean) {
+    setIsAlphabeticalSort(nextAlphabetical);
+    setShowSortMenu(false);
   }
 
   function handleFavoriteToggle(product: Product) {
@@ -189,20 +209,14 @@ export default function SearchScreen({ navigation }: Props) {
       {/* ── Search bar row ──────────────────────────────────────── */}
       <View style={styles.searchRow}>
         <View style={styles.searchBar}>
-          <View style={styles.searchIconBox}>
-            <Text style={styles.searchIconText}>⌕</Text>
-          </View>
-
           <TextInput
             ref={inputRef}
             style={styles.searchInput}
             placeholder={t('search.placeholder')}
-            placeholderTextColor={Colors.gray500}
+            placeholderTextColor={Colors.searchBorder}
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={handleSubmit}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
             returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"
@@ -219,50 +233,74 @@ export default function SearchScreen({ navigation }: Props) {
           )}
         </View>
 
-        {focused ? (
-          <TouchableOpacity onPress={handleCancel} style={styles.cancelBtn} activeOpacity={0.7}>
-            <Text style={styles.cancelBtnText}>Cancel</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.filterBtn, activeCount > 0 && styles.filterBtnActive]}
-            onPress={() => setShowFilter(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.filterBtnText, activeCount > 0 && styles.filterBtnTextActive]}>
-              ⊞
-            </Text>
-            {activeCount > 0 && (
-              <View style={styles.filterBadge}>
-                <Text style={styles.filterBadgeText}>{activeCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.filterBtn, activeCount > 0 && styles.filterBtnActive]}
+          onPress={() => {
+            setShowSortMenu(false);
+            setShowFilter(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <FilterTuneIcon active={activeCount > 0} />
+          {activeCount > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* ── Sort + filter pills ─────────────────────────────────── */}
       <View style={styles.toolbar}>
-        <TouchableOpacity
-          style={[styles.sortPill, activeCount > 0 && styles.sortPillActive]}
-          onPress={() => setShowFilter(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.sortPillLabel, activeCount > 0 && styles.sortPillLabelActive]}>
-            {t('search.sortBy')}
-          </Text>
-          <View style={styles.sortArrowWrap}>
-            <Text style={[styles.sortArrow, activeCount > 0 && styles.sortPillLabelActive]}>▾</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.sortControl}>
+          <TouchableOpacity
+            style={[styles.sortPill, isAlphabeticalSort && styles.sortPillActive]}
+            onPress={() => setShowSortMenu(prev => !prev)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.sortPillLabel, isAlphabeticalSort && styles.sortPillLabelActive]}>
+              {t('search.sortBy')}
+            </Text>
+            <View style={styles.sortArrowWrap}>
+              <Text style={[styles.sortArrow, isAlphabeticalSort && styles.sortPillLabelActive]}>
+                {showSortMenu ? '▴' : '▾'}
+              </Text>
+            </View>
+          </TouchableOpacity>
 
+          {showSortMenu && (
+            <View style={styles.sortMenu}>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => handleSortSelect(false)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.sortOptionText, !isAlphabeticalSort && styles.sortOptionTextActive]}>
+                  {t('search.sortDefault')}
+                </Text>
+                {!isAlphabeticalSort && <View style={styles.sortOptionDot} />}
+              </TouchableOpacity>
+              <View style={styles.sortOptionDivider} />
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => handleSortSelect(true)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.sortOptionText, isAlphabeticalSort && styles.sortOptionTextActive]}>
+                  {t('search.sortAlphabetical')}
+                </Text>
+                {isAlphabeticalSort && <View style={styles.sortOptionDot} />}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* ── Auto-suggest dropdown ───────────────────────────────── */}
       {suggestions.length > 0 && (
         <View style={styles.suggestBox}>
           <FlatList
-            data={suggestions}
+            data={suggestions.slice(0, 3)}
             keyExtractor={(item, i) => `${item}-${i}`}
             keyboardShouldPersistTaps="always"
             renderItem={({ item }) => (
@@ -282,7 +320,7 @@ export default function SearchScreen({ navigation }: Props) {
 
       {/* ── Product grid ────────────────────────────────────────── */}
       <FlatList
-        data={allProducts}
+        data={visibleProducts}
         keyExtractor={item => item.id}
         numColumns={2}
         extraData={favorites}
@@ -304,25 +342,25 @@ export default function SearchScreen({ navigation }: Props) {
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
-const SEARCH_BAR_H  = 47;
-const FILTER_BTN_SZ = 47;
-const BORDER_RADIUS = 8;
+const SEARCH_BAR_H  = 42;
+const FILTER_BTN_SZ = 42;
+const BORDER_RADIUS = 10;
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.searchBackground,
   },
 
   header: {
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingTop: 8,
+    paddingBottom: 50,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.black,
+    color: Colors.searchDarkGreen,
     letterSpacing: -0.38,
     textAlign: 'center',
   },
@@ -330,104 +368,144 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    gap: 8,
-    marginBottom: 10,
+    paddingHorizontal: 22,
+    gap: 5,
+    marginBottom: 8,
   },
   searchBar: {
     flex: 1,
     height: SEARCH_BAR_H,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.searchBackground,
+    borderWidth: 1,
+    borderColor: Colors.searchDarkGreen,
     borderRadius: BORDER_RADIUS,
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     gap: 6,
-  },
-  searchIconBox: {
-    width: 24, height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchIconText: {
-    fontSize: 20,
-    color: Colors.gray500,
-    lineHeight: 24,
   },
   searchInput: {
     flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.black,
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.searchDarkGreen,
     padding: 0,
   },
   clearBtn: { padding: 2 },
-  clearBtnText: { fontSize: 12, color: Colors.gray500 },
+  clearBtnText: { fontSize: 12, color: Colors.searchMutedGreen },
 
   filterBtn: {
     width: FILTER_BTN_SZ,
     height: FILTER_BTN_SZ,
     borderRadius: BORDER_RADIUS,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.searchBackground,
+    borderWidth: 1,
+    borderColor: Colors.searchDarkGreen,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnActive: { backgroundColor: Colors.black },
-  filterBtnText: { fontSize: 22, color: Colors.gray700, lineHeight: 26 },
-  filterBtnTextActive: { color: Colors.white },
+  filterBtnActive: { backgroundColor: Colors.searchMutedGreen },
   filterBadge: {
     position: 'absolute',
     top: 6, right: 6,
     minWidth: 14, height: 14,
     borderRadius: 7,
-    backgroundColor: Colors.danger,
+    backgroundColor: Colors.searchWrong,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
   filterBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
 
-  cancelBtn: { paddingHorizontal: 4, justifyContent: 'center' },
-  cancelBtnText: { fontSize: 15, color: Colors.black, fontWeight: '500' },
-
   toolbar: {
-    paddingHorizontal: 24,
-    marginBottom: 12,
+    paddingHorizontal: 22,
+    marginBottom: 45,
     alignItems: 'flex-start',
+    zIndex: 40,
+  },
+  sortControl: {
+    position: 'relative',
+    zIndex: 40,
   },
   sortPill: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.black,
+    borderColor: Colors.searchMutedGreen,
     borderRadius: 50,
-    paddingVertical: 4,
-    paddingHorizontal: 14,
-    gap: 6,
+    paddingVertical: 3,
+    paddingLeft: 19,
+    paddingRight: 12,
+    minWidth: 118,
+    justifyContent: 'center',
+    gap: 10,
   },
-  sortPillActive: { backgroundColor: Colors.black },
-  sortPillLabel: { fontSize: 13, fontWeight: '400', color: Colors.black, letterSpacing: -0.27 },
+  sortPillActive: { backgroundColor: Colors.searchMutedGreen },
+  sortPillLabel: { fontSize: 14, fontWeight: '400', color: Colors.searchMutedGreen, letterSpacing: -0.27 },
   sortPillLabelActive: { color: Colors.white },
   sortArrowWrap: { width: 14, height: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  sortArrow: { fontSize: 18, color: Colors.black, lineHeight: 18 },
+  sortArrow: { fontSize: 15, color: Colors.searchMutedGreen, lineHeight: 16 },
+  sortMenu: {
+    position: 'absolute',
+    top: 34,
+    left: 0,
+    width: 178,
+    borderWidth: 1,
+    borderColor: Colors.searchBorder,
+    borderRadius: 10,
+    backgroundColor: Colors.searchBackground,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  sortOption: {
+    minHeight: 42,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sortOptionText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.searchMutedGreen,
+  },
+  sortOptionTextActive: {
+    fontWeight: '700',
+    color: Colors.searchDarkGreen,
+  },
+  sortOptionDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.searchMutedGreen,
+  },
+  sortOptionDivider: {
+    height: 1,
+    backgroundColor: Colors.searchBorder,
+    marginHorizontal: 12,
+  },
 
   // Auto-suggest
   suggestBox: {
     position: 'absolute',
-    top: 130,
-    left: 24,
-    right: 24,
-    backgroundColor: Colors.white,
+    top: 186,
+    left: 22,
+    right: 22,
+    backgroundColor: Colors.searchBackground,
     borderRadius: BORDER_RADIUS,
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: '#000',
+    borderColor: Colors.searchBorder,
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
     zIndex: 99,
-    maxHeight: 240,
+    maxHeight: 132,
   },
   suggestItem: {
     flexDirection: 'row',
@@ -437,8 +515,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   suggestIcon: { fontSize: 16, color: Colors.gray500 },
-  suggestText: { flex: 1, fontSize: 14, color: Colors.black, letterSpacing: -0.27 },
-  suggestDivider: { height: 1, backgroundColor: Colors.border, marginHorizontal: 14 },
+  suggestText: { flex: 1, fontSize: 14, color: Colors.searchDarkGreen, letterSpacing: -0.27 },
+  suggestDivider: { height: 1, backgroundColor: Colors.searchBorder, marginHorizontal: 14 },
 
   // Product grid
   gridContent: {
@@ -447,7 +525,7 @@ const styles = StyleSheet.create({
   },
   cardWrap: {
     flex: 1,
-    marginBottom: GRID_GAP,
+    marginBottom: 28,
   },
 
   // Card
@@ -455,14 +533,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardImg: {
-    borderRadius: 14,
-    backgroundColor: Colors.gray100,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: Colors.searchBorder,
+    backgroundColor: Colors.searchCard,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 13,
   },
   cardImgPlaceholder: {
     flex: 1,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.searchCard,
   },
   riskBadge: {
     flexDirection: 'row',
@@ -470,10 +550,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     borderWidth: 1,
     borderRadius: 28,
-    paddingVertical: 4,
-    paddingHorizontal: 9,
-    gap: 5,
-    marginBottom: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    gap: 6,
+    marginLeft: 5,
+    marginBottom: 5,
+    minWidth: 68,
   },
   riskDot: {
     width: 8,
@@ -489,30 +571,37 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.searchBackground,
+    borderWidth: 1,
+    borderColor: Colors.searchBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bookmarkIcon: {
-    fontSize: 15,
-    color: Colors.gray500,
+    fontSize: 20,
+    color: Colors.searchBorder,
+    lineHeight: 24,
   },
   bookmarkIconActive: {
-    color: '#FF3B30',
+    color: Colors.searchWrong,
   },
   cardName: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.black,
-    letterSpacing: -0.25,
-    marginBottom: 2,
+    letterSpacing: 0,
+    lineHeight: 22,
+    marginLeft: 6,
   },
   cardBrand: {
     fontSize: 11,
-    color: Colors.gray500,
-    letterSpacing: -0.2,
+    fontWeight: '300',
+    color: Colors.black,
+    letterSpacing: 0,
+    lineHeight: 13,
+    marginLeft: 6,
   },
 });

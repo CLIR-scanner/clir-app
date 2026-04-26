@@ -200,8 +200,10 @@ const en = {
 
   // ── Search ────────────────────────────────────────────────────────────────
   search: {
-    placeholder:    'Search your Product',
-    sortBy:         'Sort by',
+    placeholder:    'Search Products',
+    sortBy:         'Sorted by',
+    sortDefault:    'Default',
+    sortAlphabetical:'Alphabetical A-Z',
     sortRelevance:  'Relevance',
     sortSafety:     'Safety',
     sortName:       'Name',
