@@ -337,6 +337,10 @@ export interface UserStore {
   addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
   updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;
   deleteMultiProfile: (profileId: string) => void;
+  /** 멀티 프로필 추가 설문 진행 중 여부 (FE 전용) */
+  multiProfileMode: boolean;
+  multiProfileName: string;
+  setMultiProfileMode: (active: boolean, name?: string) => void;
 }
 
 export interface ScanStore {

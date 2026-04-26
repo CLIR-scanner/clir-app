@@ -36,7 +36,7 @@ const es = {
   multiProfile: {
     title: 'Multi perfiles',
     subtitle: 'Cambia entre perfiles para filtrar recomendaciones de alimentos por persona.',
-    addProfile: '+ Añadir perfil', emptyHint: 'Aún no hay perfiles familiares.\nAñade uno para comenzar.',
+    addProfile: '+ Añadir perfil', emptyHint: 'Aún no hay perfiles múltiples.\nAñade uno para comenzar.',
     badgeMain: 'Principal', badgeActive: 'Activo',
     deleteTitle: 'Eliminar perfil', deleteMsg: '¿Estás seguro de que quieres eliminar "{{name}}"?',
     noAllergens: 'Sin alérgenos registrados',

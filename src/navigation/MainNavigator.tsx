@@ -38,6 +38,15 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   // 스캔 화면 진입 시 하단 탭바 숨김
   if (activeRoute === 'ScanTab') return null;
 
+  // 중첩 스택의 현재 화면 이름 추출 (탭바 숨김 여부 판단용)
+  const nestedState = state.routes[state.index].state;
+  const nestedRoute = nestedState
+    ? nestedState.routes[nestedState.index ?? 0]?.name
+    : null;
+
+  // 설문조사 화면 진입 시 탭바 숨김
+  if (nestedRoute === 'MultiProfileAdd') return null;
+
   function goTo(route: TabRoute) {
     navigation.navigate(route);
   }

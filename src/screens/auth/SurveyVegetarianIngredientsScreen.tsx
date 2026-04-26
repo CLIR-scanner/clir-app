@@ -54,7 +54,11 @@ export default function SurveyVegetarianIngredientsScreen() {
   const route = useRoute<Route>();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyVegetarianIngredients', params.dietaryType);
-  const setUser = useUserStore(s => s.setUser);
+  const setUser             = useUserStore(s => s.setUser);
+  const multiProfileMode    = useUserStore(s => s.multiProfileMode);
+  const multiProfileName    = useUserStore(s => s.multiProfileName);
+  const addMultiProfile     = useUserStore(s => s.addMultiProfile);
+  const setMultiProfileMode = useUserStore(s => s.setMultiProfileMode);
 
   const dietKey = getDietKey(params);
   const initialItems = AVOIDED_BY_DIET[dietKey] ?? [];
@@ -112,9 +116,23 @@ export default function SurveyVegetarianIngredientsScreen() {
       : [];
     const mergedAllergyProfile = [...new Set([...prevAllergyProfile, ...items])];
 
+    const sensitivityLevel = veganStrictness === 'strict' ? 'strict' : 'normal';
+
+    // 멀티 프로필 추가 모드
+    if (multiProfileMode) {
+      addMultiProfile({
+        name: multiProfileName || 'New Profile',
+        allergyProfile: mergedAllergyProfile,
+        dietaryRestrictions,
+        sensitivityLevel,
+      });
+      setMultiProfileMode(false);
+      navigation.getParent()?.goBack();
+      return;
+    }
+
     setLoading(true);
     try {
-      const sensitivityLevel = veganStrictness === 'strict' ? 'strict' : 'normal';
       await AuthService.submitSurvey({
         allergyProfile: mergedAllergyProfile,
         dietaryRestrictions,

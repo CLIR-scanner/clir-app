@@ -84,7 +84,7 @@ const ko = {
     title:        '멀티 프로필',
     subtitle:     '프로필을 전환하여 각 가족 구성원에 맞게 음식 추천을 필터링하세요.',
     addProfile:   '+ 프로필 추가',
-    emptyHint:    '아직 가족 프로필이 없습니다.\n추가하여 시작해 보세요.',
+    emptyHint:    '아직 멀티 프로필이 없습니다.\n추가하여 시작해 보세요.',
     badgeMain:    '메인',
     badgeActive:  '활성',
     deleteTitle:  '프로필 삭제',

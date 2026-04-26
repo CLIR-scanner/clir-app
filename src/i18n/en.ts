@@ -83,7 +83,7 @@ const en = {
     title:        'Multi Profiles',
     subtitle:     'Switch between profiles to filter food recommendations per person.',
     addProfile:   '+ Add Profile',
-    emptyHint:    'No family profiles yet.\nAdd one to get started.',
+    emptyHint:    'No multi profiles yet.\nAdd one to get started.',
     badgeMain:    'Main',
     badgeActive:  'Active',
     deleteTitle:  'Delete Profile',

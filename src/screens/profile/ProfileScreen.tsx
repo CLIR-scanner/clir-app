@@ -80,10 +80,16 @@ function getDietKey(dietaryRestrictions: string[]): string {
 // ── Caret up-down icon (Language 행용) ───────────────────────────────────────
 function CaretUpDown() {
   return (
-    <Svg width={23} height={23} viewBox="0 0 256 256" fill="none">
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M184.49 167.51a12 12 0 0 1 0 17l-48 48a12 12 0 0 1-17 0l-48-48a12 12 0 0 1 17-17L128 207l39.51-39.52a12 12 0 0 1 17 .03ZM71.51 88.49l48-48a12 12 0 0 1 17 0l48 48a12 12 0 0 1-17 17L128 57l-39.51 39.52a12 12 0 0 1-17-17Z"
-        fill={DARK_GREEN}
+        d="M7 9l5-5 5 5"
+        stroke={DARK_GREEN} strokeWidth={1.8}
+        strokeLinecap="round" strokeLinejoin="round"
+      />
+      <Path
+        d="M7 15l5 5 5-5"
+        stroke={DARK_GREEN} strokeWidth={1.8}
+        strokeLinecap="round" strokeLinejoin="round"
       />
     </Svg>
   );

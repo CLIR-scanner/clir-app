@@ -15,7 +15,7 @@ import PersonalizationRelatedScreen from '../screens/profile/PersonalizationRela
 import PersonalizationHealthCheckScreen from '../screens/profile/PersonalizationHealthCheckScreen';
 import PersonalizationBandAidScreen from '../screens/profile/PersonalizationBandAidScreen';
 import MultiProfileScreen from '../screens/profile/MultiProfileScreen';
-import MultiProfileAddScreen from '../screens/profile/MultiProfileAddScreen';
+import DevSurveyNavigator from './DevSurveyNavigator';
 import MultiProfileListScreen from '../screens/profile/MultiProfileListScreen';
 import MultiProfileDetailScreen from '../screens/profile/MultiProfileDetailScreen';
 import LanguageScreen from '../screens/profile/LanguageScreen';
@@ -45,7 +45,7 @@ export default function ProfileNavigator() {
       <Stack.Screen name="PersonalizationHealthCheck" component={PersonalizationHealthCheckScreen} />
       <Stack.Screen name="PersonalizationBandAid" component={PersonalizationBandAidScreen} />
       <Stack.Screen name="MultiProfile" component={MultiProfileScreen} />
-      <Stack.Screen name="MultiProfileAdd" component={MultiProfileAddScreen} />
+      <Stack.Screen name="MultiProfileAdd" component={DevSurveyNavigator} />
       <Stack.Screen name="MultiProfileList" component={MultiProfileListScreen} />
       <Stack.Screen name="MultiProfileDetail" component={MultiProfileDetailScreen} />
       <Stack.Screen name="Language" component={LanguageScreen} />

@@ -24,6 +24,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
   currentUser: EMPTY_USER,
   activeProfile: EMPTY_PROFILE,
   isInitialized: false,
+  multiProfileMode: false,
+  multiProfileName: '',
 
   initialize: async () => {
 
@@ -139,5 +141,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
         multiProfiles: state.currentUser.multiProfiles.filter(p => p.id !== profileId),
       },
     }));
+  },
+
+  setMultiProfileMode: (active: boolean, name = '') => {
+    set({ multiProfileMode: active, multiProfileName: name });
   },
 }));
