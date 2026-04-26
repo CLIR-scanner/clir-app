@@ -15,7 +15,7 @@ import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { ApiError } from '../../lib/api';
 import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives } from '../../services/scan.service';
-import { addFavorite } from '../../services/list.service';
+import { addFavorite, getFavorites } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
 
@@ -47,8 +47,9 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   const circleScale = useRef(new Animated.Value(0)).current;
   const sheetY      = useRef(new Animated.Value(320)).current;
 
-  const addHistory         = useScanStore(s => s.addHistory);
-  const addFavoriteToStore = useListStore(s => s.addFavorite);
+  const addHistory              = useScanStore(s => s.addHistory);
+  const addFavoriteToStore      = useListStore(s => s.addFavorite);
+  const setFavoritesInStore     = useListStore(s => s.setFavorites);
 
   useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -84,10 +85,17 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       setProduct({ ...prod, alternatives: alts });
       setAnalysis(result);
 
-      // 이미 즐겨찾기에 있는지 스토어에서 확인 — 버튼을 처음부터 빨간색으로 표시
-      // useListStore.getState()로 호출 시점의 최신 스토어 값을 읽음 (클로저 캡처 방지)
-      const currentFavorites = useListStore.getState().favorites;
-      if (currentFavorites.some(f => f.productId === prod.id)) {
+      // 이미 즐겨찾기에 있는지 확인 — store가 비어있으면 API에서 직접 조회
+      let currentFavorites = useListStore.getState().favorites;
+      if (currentFavorites.length === 0) {
+        try {
+          currentFavorites = await getFavorites();
+          setFavoritesInStore(currentFavorites);
+        } catch {
+          // 조회 실패 시 store 그대로 유지
+        }
+      }
+      if (currentFavorites.some(f => f.productId === prod.id || f.product?.id === prod.id)) {
         setFavorited(true);
       }
 
@@ -123,7 +131,17 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       setFavorited(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        // 이미 즐겨찾기에 있음 — 버튼만 활성화 (스토어에 이미 존재하거나 서버에 저장됨)
+        // 이미 즐겨찾기에 있음 — BE의 existing 레코드로 store를 보충해 favoriteId 확보
+        const existing = (err.body as { existing?: { id: string; productId: string; addedAt: string } } | undefined)?.existing;
+        if (existing && !useListStore.getState().favorites.some(f => f.id === existing.id)) {
+          addFavoriteToStore({
+            id: existing.id,
+            productId: existing.productId,
+            userId: '',
+            addedAt: new Date(existing.addedAt),
+            product,
+          });
+        }
         setFavorited(true);
       }
       // 그 외 에러는 무시
