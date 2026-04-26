@@ -174,8 +174,10 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           // HistoryProductDetailScreen의 성분 상세 조회 시 올바른 ID(ing-xxx)로 검색됨
           ...(t.id.startsWith('ing-may-') ? { relatedAllergenId: t.id.replace('ing-may-', 'ing-') } : {}),
         });
+        // product-upsert가 생성한 DB ID 우선 사용. 없으면 로컬 임시 ID.
+        const resolvedProductId = ocrResult.productId ?? barcode ?? `ocr-${Date.now()}`;
         product = {
-          id: barcode ?? `ocr-${Date.now()}`,
+          id: resolvedProductId,
           name: 'Scanned Product',
           brand: '',
           image: targetUri,
@@ -192,10 +194,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         };
       }
 
-      // 스캔 이력 저장 — OCR 제품은 productId 없이 저장 (product_id = null)
-      // barcode가 있어도 products 테이블에 미등록이므로 FK 위반 방지를 위해 omit
+      // 스캔 이력 저장 — product-upsert가 반환한 productId가 있으면 전달해 이력과 제품을 연결.
       try {
-        const historyItem = await saveScanHistory({ result: product.riskLevel });
+        const historyItem = await saveScanHistory({
+          productId: product.id.startsWith('ocr-') ? undefined : product.id,
+          result: product.riskLevel,
+        });
         addHistory({ ...historyItem, product });
       } catch { /* silent — 이력 저장 실패 시 분석 결과 표시는 유지 */ }
 

@@ -78,9 +78,12 @@ export async function apiFetch<T>(path: string, options: JsonFetchOptions = {}):
 /**
  * multipart/form-data 요청용 fetch 헬퍼 (OCR 이미지 업로드 등).
  * Content-Type 헤더를 명시하지 않음 — fetch가 boundary 포함해 자동 설정.
+ * Accept: application/json 명시 — BE /ocr는 헤더 없으면 SSE(text/event-stream)를 기본 반환.
  */
 export async function apiFormFetch<T>(path: string, body: FormData): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+  };
 
   if (_token) {
     headers['Authorization'] = `Bearer ${_token}`;
