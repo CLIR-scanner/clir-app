@@ -25,7 +25,11 @@ export default function SurveyAllergyConfirmScreen() {
   const route = useRoute<Route>();
   const { selectionJson, ...surveyParams } = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergyConfirm', surveyParams.dietaryType);
-  const setUser = useUserStore(s => s.setUser);
+  const setUser             = useUserStore(s => s.setUser);
+  const multiProfileMode    = useUserStore(s => s.multiProfileMode);
+  const multiProfileName    = useUserStore(s => s.multiProfileName);
+  const addMultiProfile     = useUserStore(s => s.addMultiProfile);
+  const setMultiProfileMode = useUserStore(s => s.setMultiProfileMode);
 
   const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [categories, setCategories] = useState<SelectionMap>(
@@ -103,6 +107,19 @@ export default function SurveyAllergyConfirmScreen() {
         ...surveyParams,
         allergyProfileJson: JSON.stringify(allergyProfile),
       });
+      return;
+    }
+
+    // 멀티 프로필 추가 모드: addMultiProfile 호출 후 ProfileStack으로 복귀
+    if (multiProfileMode) {
+      addMultiProfile({
+        name: multiProfileName || 'New Profile',
+        allergyProfile,
+        dietaryRestrictions: [],
+        sensitivityLevel: 'normal',
+      });
+      setMultiProfileMode(false);
+      navigation.getParent()?.goBack();
       return;
     }
 

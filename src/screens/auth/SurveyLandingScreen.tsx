@@ -14,11 +14,12 @@ export default function SurveyLandingScreen() {
   const navigation  = useNavigation<any>();
   const route       = useRoute<any>();
   const insets      = useSafeAreaInsets();
-  const setUser     = useUserStore(s => s.setUser);
-  const currentUser = useUserStore(s => s.currentUser);
+  const setUser            = useUserStore(s => s.setUser);
+  const currentUser        = useUserStore(s => s.currentUser);
+  const multiProfileMode   = useUserStore(s => s.multiProfileMode);
+  const setMultiProfileMode = useUserStore(s => s.setMultiProfileMode);
 
   const params: SurveyParams = route.params ?? {};
-  // DevSurveyLanding(Profile 스택)에서 온 경우 true
   const isDevMode = route.name === 'DevSurveyLanding';
 
   function handleContinue() {
@@ -26,10 +27,12 @@ export default function SurveyLandingScreen() {
   }
 
   function handleSkip() {
-    if (isDevMode) {
+    if (multiProfileMode) {
+      setMultiProfileMode(false);
+      navigation.getParent()?.goBack();
+    } else if (isDevMode) {
       navigation.goBack();
     } else {
-      // Auth 스택: setUser 호출 → RootNavigator가 자동으로 Main으로 전환
       setUser(currentUser);
     }
   }

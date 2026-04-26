@@ -35,7 +35,7 @@ const ja = {
   multiProfile: {
     title: 'マルチプロフィール',
     subtitle: 'プロフィールを切り替えて、各家族に合わせた食品推薦を受けましょう。',
-    addProfile: '+ プロフィール追加', emptyHint: 'ファミリープロフィールがありません。\n追加して始めましょう。',
+    addProfile: '+ プロフィール追加', emptyHint: 'マルチプロフィールがありません。\n追加して始めましょう。',
     badgeMain: 'メイン', badgeActive: '有効',
     deleteTitle: 'プロフィール削除', deleteMsg: '"{{name}}"を削除しますか？',
     noAllergens: 'アレルゲン未登録',

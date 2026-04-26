@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert,
+  ScrollView, Alert, Modal, TextInput, TouchableWithoutFeedback,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -76,10 +76,14 @@ function ProfileCard({
 export default function MultiProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { t } = useTranslation();
-  const currentUser        = useUserStore(s => s.currentUser);
-  const activeProfile      = useUserStore(s => s.activeProfile);
-  const switchProfile      = useUserStore(s => s.switchProfile);
-  const deleteMultiProfile = useUserStore(s => s.deleteMultiProfile);
+  const currentUser          = useUserStore(s => s.currentUser);
+  const activeProfile        = useUserStore(s => s.activeProfile);
+  const switchProfile        = useUserStore(s => s.switchProfile);
+  const deleteMultiProfile   = useUserStore(s => s.deleteMultiProfile);
+  const setMultiProfileMode  = useUserStore(s => s.setMultiProfileMode);
+
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [profileName,   setProfileName]   = useState('');
 
   function handleDelete(profile: Profile) {
     Alert.alert(
@@ -141,66 +145,128 @@ export default function MultiProfileScreen() {
 
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => navigation.navigate('MultiProfileAdd')}
+        onPress={() => { setProfileName(''); setShowNameModal(true); }}
       >
         <Text style={styles.addButtonText}>{t('multiProfile.addProfile')}</Text>
       </TouchableOpacity>
+
+      {/* ── Profile name modal ─────────────────────────────────────────── */}
+      <Modal visible={showNameModal} transparent animationType="fade" onRequestClose={() => setShowNameModal(false)}>
+        <TouchableWithoutFeedback onPress={() => setShowNameModal(false)}>
+          <View style={styles.modalBackdrop} />
+        </TouchableWithoutFeedback>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalTitle}>Profile Name</Text>
+          <Text style={styles.modalSub}>Enter a name for this profile.</Text>
+          <TextInput
+            style={styles.modalInput}
+            value={profileName}
+            onChangeText={setProfileName}
+            placeholder="e.g. Mom, Child, etc."
+            placeholderTextColor={BORDER}
+            autoFocus
+            autoCapitalize="words"
+            returnKeyType="done"
+          />
+          <TouchableOpacity
+            style={[styles.modalBtn, !profileName.trim() && { opacity: 0.4 }]}
+            disabled={!profileName.trim()}
+            onPress={() => {
+              setShowNameModal(false);
+              setMultiProfileMode(true, profileName.trim());
+              navigation.navigate('MultiProfileAdd');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.modalBtnText}>Start Survey</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
 
+const BG         = '#F9FFF3';
+const DARK_GREEN = '#1C3A19';
+const MID_GREEN  = '#556C53';
+const BORDER     = '#A9B6A8';
+const CARD_FILL  = '#E9F0E4';
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1, backgroundColor: Colors.background,
+    flex: 1, backgroundColor: BG,
     paddingTop: 60, paddingHorizontal: 24, paddingBottom: 40,
   },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  backText: { fontSize: 22, color: Colors.black, width: 32 },
+  backText: { fontSize: 22, color: DARK_GREEN, width: 32 },
   headerTitle: {
-    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: Colors.black,
+    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: DARK_GREEN,
   },
   headerRight: { width: 32 },
-  subtitle: { fontSize: 13, color: Colors.gray500, lineHeight: 20, marginBottom: 24 },
+  subtitle: { fontSize: 13, color: MID_GREEN, lineHeight: 20, marginBottom: 24 },
   scroll: { flex: 1 },
   list: { gap: 10 },
   card: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.white, borderRadius: 16,
-    borderWidth: 1.5, borderColor: Colors.border, padding: 16,
+    backgroundColor: BG, borderRadius: 16,
+    borderWidth: 1.5, borderColor: BORDER, padding: 16,
   },
-  cardActive: { borderColor: Colors.black },
+  cardActive: { borderColor: DARK_GREEN, backgroundColor: CARD_FILL },
   cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
   avatar: {
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: Colors.gray100, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: CARD_FILL, alignItems: 'center', justifyContent: 'center',
   },
-  avatarActive: { backgroundColor: Colors.black },
-  avatarText: { fontSize: 20, fontWeight: '700', color: Colors.gray500 },
-  avatarTextActive: { color: Colors.white },
+  avatarActive: { backgroundColor: DARK_GREEN },
+  avatarText: { fontSize: 20, fontWeight: '700', color: MID_GREEN },
+  avatarTextActive: { color: '#FFFFFF' },
   cardInfo: { flex: 1, gap: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  cardName: { fontSize: 15, fontWeight: '700', color: Colors.black },
-  cardSub: { fontSize: 12, color: Colors.gray500 },
+  cardName: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
+  cardSub: { fontSize: 12, color: MID_GREEN },
   mainBadge: {
-    backgroundColor: Colors.gray100, borderRadius: 100,
+    backgroundColor: CARD_FILL, borderRadius: 100,
     paddingVertical: 2, paddingHorizontal: 8,
+    borderWidth: 1, borderColor: BORDER,
   },
-  mainBadgeText: { fontSize: 11, fontWeight: '600', color: Colors.gray700 },
+  mainBadgeText: { fontSize: 11, fontWeight: '600', color: MID_GREEN },
   activeBadge: {
-    backgroundColor: Colors.black, borderRadius: 100,
+    backgroundColor: DARK_GREEN, borderRadius: 100,
     paddingVertical: 2, paddingHorizontal: 8,
   },
-  activeBadgeText: { fontSize: 11, fontWeight: '600', color: Colors.white },
+  activeBadgeText: { fontSize: 11, fontWeight: '600', color: '#FFFFFF' },
   deleteButton: { paddingLeft: 12 },
-  deleteText: { fontSize: 16, color: Colors.gray300 },
+  deleteText: { fontSize: 16, color: BORDER },
   emptyText: {
-    textAlign: 'center', fontSize: 14, color: Colors.gray300,
+    textAlign: 'center', fontSize: 14, color: BORDER,
     lineHeight: 22, marginTop: 32,
   },
   addButton: {
-    backgroundColor: Colors.white, borderRadius: 100,
+    backgroundColor: BG, borderRadius: 100,
     paddingVertical: 18, alignItems: 'center',
-    marginTop: 16, borderWidth: 1.5, borderColor: Colors.black,
+    marginTop: 16, borderWidth: 1.5, borderColor: DARK_GREEN,
   },
-  addButtonText: { fontSize: 15, fontWeight: '700', color: Colors.black },
+  addButtonText: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
+
+  // ── Name modal
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalCard: {
+    position: 'absolute', left: 24, right: 24,
+    top: '35%',
+    backgroundColor: BG, borderRadius: 20,
+    padding: 24, gap: 12,
+    borderWidth: 1, borderColor: BORDER,
+  },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: DARK_GREEN },
+  modalSub:   { fontSize: 13, color: MID_GREEN },
+  modalInput: {
+    borderWidth: 1, borderColor: BORDER, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, color: DARK_GREEN, backgroundColor: BG,
+  },
+  modalBtn: {
+    backgroundColor: DARK_GREEN, borderRadius: 100,
+    paddingVertical: 14, alignItems: 'center', marginTop: 4,
+  },
+  modalBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
 });

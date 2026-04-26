@@ -64,7 +64,7 @@ function StepLayout({ title, subtitle, children, footer }: {
   children: React.ReactNode; footer: React.ReactNode;
 }) {
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'height' : undefined} keyboardVerticalOffset={0}>
       <ScrollView
         style={s.stepScroll} contentContainerStyle={s.stepContent}
         showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
@@ -104,7 +104,7 @@ function StepName({ value, onChange, onNext }: {
       <TextInput
         style={s.textInput}
         placeholder={t('multiProfileAdd.namePlaceholder')}
-        placeholderTextColor={Colors.gray300}
+        placeholderTextColor={BORDER}
         value={value}
         onChangeText={onChange}
         autoFocus
@@ -397,7 +397,7 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
             activeOpacity={isEditing ? 0.7 : 1}
           >
             <Text style={s.optionLabelSel}>{item}</Text>
-            {isEditing && <Text style={{ color: Colors.white, fontSize: 16 }}>✕</Text>}
+            {isEditing && <Text style={{ color: '#FFFFFF', fontSize: 16 }}>✕</Text>}
           </TouchableOpacity>
         ))}
         {isEditing && (
@@ -551,82 +551,88 @@ export default function MultiProfileAddScreen() {
   );
 }
 
+const BG         = '#F9FFF3';
+const DARK_GREEN = '#1C3A19';
+const MID_GREEN  = '#556C53';
+const BORDER     = '#A9B6A8';
+const CARD_FILL  = '#E9F0E4';
+
 const s = StyleSheet.create({
   container: {
-    flex: 1, backgroundColor: Colors.background,
+    flex: 1, backgroundColor: BG,
     paddingTop: 60, paddingHorizontal: 24, paddingBottom: 0,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 32 },
-  backText: { fontSize: 22, color: Colors.black },
-  progressBar: { flex: 1, height: 4, backgroundColor: Colors.gray100, borderRadius: 2 },
-  progressFill: { height: '100%', backgroundColor: Colors.black, borderRadius: 2 },
+  backText: { fontSize: 22, color: DARK_GREEN },
+  progressBar: { flex: 1, height: 4, backgroundColor: CARD_FILL, borderRadius: 2 },
+  progressFill: { height: '100%', backgroundColor: DARK_GREEN, borderRadius: 2 },
   stepScroll: { flex: 1 },
   stepContent: { paddingBottom: 16 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.black, lineHeight: 30, marginBottom: 10 },
-  subtitle: { fontSize: 13, color: Colors.gray500, lineHeight: 20, marginBottom: 28 },
+  title: { fontSize: 22, fontWeight: '700', color: DARK_GREEN, lineHeight: 30, marginBottom: 10 },
+  subtitle: { fontSize: 13, color: MID_GREEN, lineHeight: 20, marginBottom: 28 },
   footer: { paddingBottom: 40, paddingTop: 12 },
-  btn: { backgroundColor: Colors.white, borderRadius: 100, paddingVertical: 18, alignItems: 'center' },
+  btn: { backgroundColor: DARK_GREEN, borderRadius: 100, paddingVertical: 18, alignItems: 'center' },
   btnDisabled: { opacity: 0.4 },
-  btnText: { fontSize: 15, fontWeight: '700', color: Colors.black },
+  btnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   options: { gap: 12 },
   option: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 12,
-    paddingVertical: 18, paddingHorizontal: 20, backgroundColor: Colors.white, gap: 4,
+    borderWidth: 1, borderColor: BORDER, borderRadius: 12,
+    paddingVertical: 18, paddingHorizontal: 20, backgroundColor: BG, gap: 4,
   },
-  optionSelected: { borderColor: Colors.black, backgroundColor: Colors.black },
-  optionLabel: { fontSize: 15, fontWeight: '600', color: Colors.black },
-  optionLabelSel: { color: Colors.white },
-  optionDesc: { fontSize: 13, color: Colors.gray500 },
-  optionDescSel: { color: Colors.gray300 },
+  optionSelected: { borderColor: DARK_GREEN, backgroundColor: DARK_GREEN },
+  optionLabel: { fontSize: 15, fontWeight: '600', color: DARK_GREEN },
+  optionLabelSel: { color: '#FFFFFF' },
+  optionDesc: { fontSize: 13, color: MID_GREEN },
+  optionDescSel: { color: BORDER },
   optionRow: {
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 12,
-    paddingVertical: 20, paddingHorizontal: 20, backgroundColor: Colors.white,
+    borderWidth: 1, borderColor: BORDER, borderRadius: 12,
+    paddingVertical: 20, paddingHorizontal: 20, backgroundColor: BG,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  optionRowSelected: { borderColor: Colors.black, backgroundColor: Colors.black },
+  optionRowSelected: { borderColor: DARK_GREEN, backgroundColor: DARK_GREEN },
   textInput: {
-    backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: BG, borderWidth: 1, borderColor: BORDER,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 15, color: Colors.black,
+    fontSize: 15, color: DARK_GREEN,
   },
   addBtn: {
-    borderWidth: 1.5, borderColor: Colors.black, borderStyle: 'dashed',
+    borderWidth: 1.5, borderColor: DARK_GREEN, borderStyle: 'dashed',
     borderRadius: 12, paddingVertical: 18, alignItems: 'center',
   },
-  addBtnText: { fontSize: 15, fontWeight: '600', color: Colors.black },
+  addBtnText: { fontSize: 15, fontWeight: '600', color: DARK_GREEN },
   editBtn: {
-    borderWidth: 2, borderColor: Colors.black, borderRadius: 100,
-    paddingVertical: 16, alignItems: 'center', backgroundColor: Colors.background,
+    borderWidth: 2, borderColor: DARK_GREEN, borderRadius: 100,
+    paddingVertical: 16, alignItems: 'center', backgroundColor: BG,
   },
-  editBtnActive: { backgroundColor: Colors.gray100 },
-  editBtnText: { fontSize: 15, fontWeight: '700', color: Colors.black },
+  editBtnActive: { backgroundColor: CARD_FILL },
+  editBtnText: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24,
   },
   modalCard: {
     width: '100%', maxHeight: '75%',
-    backgroundColor: Colors.surface, borderRadius: 20,
+    backgroundColor: BG, borderRadius: 20,
     paddingTop: 28, paddingHorizontal: 20, paddingBottom: 20,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Colors.black, marginBottom: 6 },
-  modalSubtitle: { fontSize: 13, color: Colors.gray500, marginBottom: 20, lineHeight: 18 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: DARK_GREEN, marginBottom: 6 },
+  modalSubtitle: { fontSize: 13, color: MID_GREEN, marginBottom: 20, lineHeight: 18 },
   modalList: { gap: 10, paddingBottom: 8 },
   modalItem: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 12,
-    paddingVertical: 18, paddingHorizontal: 16, backgroundColor: Colors.white,
+    borderWidth: 1, borderColor: BORDER, borderRadius: 12,
+    paddingVertical: 18, paddingHorizontal: 16, backgroundColor: CARD_FILL,
   },
-  modalItemText: { fontSize: 14, color: Colors.black, fontWeight: '500' },
-  emptyText: { fontSize: 14, color: Colors.gray500, textAlign: 'center', paddingVertical: 20 },
+  modalItemText: { fontSize: 14, color: DARK_GREEN, fontWeight: '500' },
+  emptyText: { fontSize: 14, color: MID_GREEN, textAlign: 'center', paddingVertical: 20 },
   modalSaveBtn: {
-    marginTop: 16, backgroundColor: Colors.white, borderRadius: 100,
-    paddingVertical: 16, alignItems: 'center', borderWidth: 2, borderColor: Colors.black,
+    marginTop: 16, backgroundColor: DARK_GREEN, borderRadius: 100,
+    paddingVertical: 16, alignItems: 'center', borderWidth: 2, borderColor: DARK_GREEN,
   },
-  modalSaveBtnText: { fontSize: 15, fontWeight: '700', color: Colors.black },
+  modalSaveBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   checkbox: {
     width: 20, height: 20, borderRadius: 4, borderWidth: 2,
-    borderColor: Colors.gray300, backgroundColor: Colors.white,
+    borderColor: BORDER, backgroundColor: BG,
   },
-  checkboxChecked: { backgroundColor: Colors.black, borderColor: Colors.black },
+  checkboxChecked: { backgroundColor: DARK_GREEN, borderColor: DARK_GREEN },
 });

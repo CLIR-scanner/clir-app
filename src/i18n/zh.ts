@@ -35,7 +35,7 @@ const zh = {
   multiProfile: {
     title: '多档案',
     subtitle: '切换档案，为每位家庭成员筛选食品推荐。',
-    addProfile: '+ 添加档案', emptyHint: '暂无家庭档案。\n添加一个开始吧。',
+    addProfile: '+ 添加档案', emptyHint: '暂无多个档案。\n添加一个开始吧。',
     badgeMain: '主要', badgeActive: '已激活',
     deleteTitle: '删除档案', deleteMsg: '确定要删除"{{name}}"吗？',
     noAllergens: '未登记过敏原',
