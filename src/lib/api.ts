@@ -34,6 +34,7 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
+    public readonly body?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -109,11 +110,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     let code = 'UNKNOWN_ERROR';
     let message = `HTTP ${response.status}`;
+    let rawBody: unknown;
     // BE 계약: { error: 'CODE', message: '...' } (플랫). Fastify 디폴트 에러
     // 핸들러는 { statusCode, error, message } 형태로 error가 이름 문자열이므로
     // 같은 키에서 파싱된다. 방어적으로 nested form도 허용.
     try {
-      const body = (await response.json()) as {
+      rawBody = await response.json();
+      const body = rawBody as {
         error?: string | { code?: string; message?: string };
         message?: string;
       };
@@ -131,7 +134,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       // JSON 파싱 실패 시 기본 메시지 유지
     }
 
-    throw new ApiError(response.status, code, message);
+    throw new ApiError(response.status, code, message, rawBody);
   }
 
   return response.json() as Promise<T>;
