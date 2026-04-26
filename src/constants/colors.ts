@@ -31,4 +31,13 @@ export const Colors = {
   scanMutedGreen: '#A9B6A8',
   scanCorrect: '#25FF81',
   scanResultClose: '#A9B6A8',
+
+  // Search design
+  searchBackground: '#F9FFF3',
+  searchCard: '#E1E9DC',
+  searchBorder: '#A9B6A8',
+  searchDarkGreen: '#1C3A19',
+  searchMutedGreen: '#556C53',
+  searchPoor: '#FF9D00',
+  searchWrong: '#FF3434',
 };

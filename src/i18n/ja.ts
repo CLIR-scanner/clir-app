@@ -93,7 +93,9 @@ const ja = {
   language: { title: '言語', deviceDetected: '端末の言語を検出しました:', deviceBadge: '端末' },
   search: {
     placeholder:   '製品名またはブランドを検索',
-    sortBy:        '並び替え',
+    sortBy:        'Sorted by',
+    sortDefault:   'デフォルト',
+    sortAlphabetical:'Alphabetical A-Z',
     sortRelevance: '関連度順',
     sortSafety:    '安全度順',
     sortName:      '名前順',

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,28 +8,36 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { SearchStackParamList, Product, RiskLevel } from '../../types';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
-import { getSearchSuggestions, getAllProducts } from '../../services/search.service';
+import FilterTuneIcon from '../../components/common/FilterTuneIcon';
+import { getSearchSuggestions, getAllProducts, searchProducts } from '../../services/search.service';
 import { useListStore } from '../../store/list.store';
+import { clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { useUserStore } from '../../store/user.store';
 
 type Props = NativeStackScreenProps<SearchStackParamList, 'Search'>;
 
 const SCREEN_W = Dimensions.get('window').width;
-const GRID_PAD = 24;
-const GRID_GAP  = 12;
+const GRID_PAD = 29;
+const GRID_GAP  = 10;
 const CARD_W    = (SCREEN_W - GRID_PAD * 2 - GRID_GAP) / 2;
-const CARD_IMG_H = CARD_W * 1.1;
+const CARD_IMG_H = CARD_W * 1.2;
+
+const THUMB_SIZE = 80;
 
 const BADGE_COLOR: Record<RiskLevel, string> = {
-  safe:    '#4CD964',
-  caution: '#FF9500',
-  danger:  '#FF3B30',
+  safe:    Colors.scanCorrect,
+  caution: Colors.searchPoor,
+  danger:  Colors.searchWrong,
 };
 
 const BADGE_LABEL: Record<RiskLevel, string> = {
@@ -56,7 +64,7 @@ function ProductCard({ item, onPress, favorited, onFavorite }: {
           <Image
             source={{ uri: item.image }}
             style={StyleSheet.absoluteFill}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <View style={styles.cardImgPlaceholder} />
@@ -74,14 +82,46 @@ function ProductCard({ item, onPress, favorited, onFavorite }: {
         </TouchableOpacity>
       </View>
 
-      {/* Risk badge pill — below image */}
+      {/* Risk badge pill — dot replaced by RiskBadgeIcon */}
       <View style={[styles.riskBadge, { borderColor: color }]}>
-        <View style={[styles.riskDot, { backgroundColor: color }]} />
+        <RiskBadgeIcon level={item.riskLevel} size={16} />
         <Text style={[styles.riskLabel, { color }]}>{label}</Text>
       </View>
 
       <Text style={styles.cardName} numberOfLines={2}>{item.name}</Text>
       <Text style={styles.cardBrand} numberOfLines={1}>{item.brand}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function ListDivider() {
+  return <View style={styles.listDivider} />;
+}
+
+// ── Product Row (검색 결과 리스트용) ─────────────────────────────────────────
+
+function ProductRow({ item, onPress }: { item: Product; onPress: () => void }) {
+  const color = BADGE_COLOR[item.riskLevel];
+  const label = BADGE_LABEL[item.riskLevel];
+  return (
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+      <View style={styles.rowThumb}>
+        {item.image
+          ? <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+          : <View style={styles.rowThumbPlaceholder} />
+        }
+      </View>
+
+      <View style={styles.rowInfo}>
+        <Text style={styles.rowProductName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.rowBrandName}   numberOfLines={1}>{item.brand}</Text>
+        <View style={[styles.rowBadge, { borderColor: color }]}>
+          <RiskBadgeIcon level={item.riskLevel} size={16} />
+          <Text style={[styles.rowBadgeText, { color }]}>{label}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.rowChevron}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -94,11 +134,14 @@ export default function SearchScreen({ navigation }: Props) {
   const inputRef = useRef<TextInput>(null);
 
   const [query,         setQuery]         = useState('');
-  const [focused,       setFocused]       = useState(false);
+  const [isFocused,     setIsFocused]     = useState(false);
+  const [isSearching,   setIsSearching]   = useState(false);
   const [showFilter,    setShowFilter]    = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [suggestions,   setSuggestions]  = useState<string[]>([]);
   const [allProducts,   setAllProducts]  = useState<Product[]>([]);
+  const [isAlphabeticalSort, setIsAlphabeticalSort] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const favorites             = useListStore(s => s.favorites);
   const addFavoriteToStore    = useListStore(s => s.addFavorite);
@@ -106,44 +149,103 @@ export default function SearchScreen({ navigation }: Props) {
 
   const activeCount =
     activeFilters.categories.filter(c => c.selected).length +
-    (activeFilters.safeOnly ? 1 : 0) +
-    (activeFilters.minPrice || activeFilters.maxPrice ? 1 : 0);
+    (activeFilters.safeOnly ? 1 : 0);
 
-  // 전체 제품 로드
+  const visibleProducts = useMemo(() => {
+    const selectedCategories = activeFilters.categories
+      .filter(c => c.selected)
+      .map(c => c.id);
+
+    let filtered = allProducts;
+
+    if (activeFilters.safeOnly) {
+      filtered = filtered.filter(p => p.riskLevel === 'safe');
+    }
+
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(p =>
+        p.category !== undefined && selectedCategories.includes(p.category),
+      );
+    }
+
+    if (!isAlphabeticalSort) return filtered;
+    return [...filtered].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    );
+  }, [allProducts, activeFilters, isAlphabeticalSort]);
+
+  // query 변경 시 인플레이스 검색 (300ms 디바운스)
+  // query가 빈 문자열이면 즉시 전체 목록 복원
   useEffect(() => {
-    getAllProducts().then(setAllProducts);
-  }, []);
+    const q = query.trim();
+    let cancelled = false;
+
+    if (!q) {
+      getAllProducts().then(p => { if (!cancelled) setAllProducts(p); });
+      return () => { cancelled = true; };
+    }
+
+    const timer = setTimeout(() => {
+      setIsSearching(true);
+      searchProducts(q)
+        .then(p => { if (!cancelled) setAllProducts(p); })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setIsSearching(false); });
+    }, 300);
+
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [query]);
 
   // 자동완성: query 변경 시 제안 목록 업데이트
   useEffect(() => {
     if (!query.trim()) { setSuggestions([]); return; }
-    getSearchSuggestions(query).then(setSuggestions);
+    let cancelled = false;
+    getSearchSuggestions(query)
+      .then(next => { if (!cancelled) setSuggestions(next); })
+      .catch((err: unknown) => {
+        if (!cancelled) setSuggestions([]);
+        if (err instanceof UnauthorizedError) {
+          clearAuthToken();
+          useUserStore.getState().logout();
+        }
+      });
+    return () => { cancelled = true; };
   }, [query]);
 
   function handleSubmit() {
     const q = query.trim();
     if (!q) return;
     setSuggestions([]);
-    navigation.navigate('SearchResult', { query: q });
+    Keyboard.dismiss();
+    // 디바운스 대기 없이 즉시 검색
+    setIsSearching(true);
+    searchProducts(q)
+      .then(setAllProducts)
+      .catch(() => {})
+      .finally(() => setIsSearching(false));
   }
 
   function handleSelectSuggestion(name: string) {
     setQuery(name);
     setSuggestions([]);
-    navigation.navigate('SearchResult', { query: name });
+    Keyboard.dismiss();
+    setIsSearching(true);
+    searchProducts(name)
+      .then(setAllProducts)
+      .catch(() => {})
+      .finally(() => setIsSearching(false));
   }
 
   function handleClear() {
     setQuery('');
     setSuggestions([]);
-    inputRef.current?.focus();
+    Keyboard.dismiss();
+    // query → '' 에 의해 useEffect가 전체 목록 복원을 처리
   }
 
-  function handleCancel() {
-    setQuery('');
-    setSuggestions([]);
-    setFocused(false);
-    inputRef.current?.blur();
+  function handleSortSelect(nextAlphabetical: boolean) {
+    setIsAlphabeticalSort(nextAlphabetical);
+    setShowSortMenu(false);
   }
 
   function handleFavoriteToggle(product: Product) {
@@ -189,26 +291,22 @@ export default function SearchScreen({ navigation }: Props) {
       {/* ── Search bar row ──────────────────────────────────────── */}
       <View style={styles.searchRow}>
         <View style={styles.searchBar}>
-          <View style={styles.searchIconBox}>
-            <Text style={styles.searchIconText}>⌕</Text>
-          </View>
-
           <TextInput
             ref={inputRef}
             style={styles.searchInput}
             placeholder={t('search.placeholder')}
-            placeholderTextColor={Colors.gray500}
+            placeholderTextColor={Colors.searchBorder}
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={handleSubmit}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"
           />
 
-          {query.length > 0 && (
+          {(query.length > 0 || isFocused) && (
             <TouchableOpacity
               onPress={handleClear}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -219,50 +317,74 @@ export default function SearchScreen({ navigation }: Props) {
           )}
         </View>
 
-        {focused ? (
-          <TouchableOpacity onPress={handleCancel} style={styles.cancelBtn} activeOpacity={0.7}>
-            <Text style={styles.cancelBtnText}>Cancel</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.filterBtn, activeCount > 0 && styles.filterBtnActive]}
-            onPress={() => setShowFilter(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.filterBtnText, activeCount > 0 && styles.filterBtnTextActive]}>
-              ⊞
-            </Text>
-            {activeCount > 0 && (
-              <View style={styles.filterBadge}>
-                <Text style={styles.filterBadgeText}>{activeCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.filterBtn, activeCount > 0 && styles.filterBtnActive]}
+          onPress={() => {
+            setShowSortMenu(false);
+            setShowFilter(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <FilterTuneIcon active={activeCount > 0} />
+          {activeCount > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* ── Sort + filter pills ─────────────────────────────────── */}
       <View style={styles.toolbar}>
-        <TouchableOpacity
-          style={[styles.sortPill, activeCount > 0 && styles.sortPillActive]}
-          onPress={() => setShowFilter(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.sortPillLabel, activeCount > 0 && styles.sortPillLabelActive]}>
-            {t('search.sortBy')}
-          </Text>
-          <View style={styles.sortArrowWrap}>
-            <Text style={[styles.sortArrow, activeCount > 0 && styles.sortPillLabelActive]}>▾</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.sortControl}>
+          <TouchableOpacity
+            style={[styles.sortPill, isAlphabeticalSort && styles.sortPillActive]}
+            onPress={() => setShowSortMenu(prev => !prev)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.sortPillLabel, isAlphabeticalSort && styles.sortPillLabelActive]}>
+              {t('search.sortBy')}
+            </Text>
+            <View style={styles.sortArrowWrap}>
+              <Text style={[styles.sortArrow, isAlphabeticalSort && styles.sortPillLabelActive]}>
+                {showSortMenu ? '▴' : '▾'}
+              </Text>
+            </View>
+          </TouchableOpacity>
 
+          {showSortMenu && (
+            <View style={styles.sortMenu}>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => handleSortSelect(false)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.sortOptionText, !isAlphabeticalSort && styles.sortOptionTextActive]}>
+                  {t('search.sortDefault')}
+                </Text>
+                {!isAlphabeticalSort && <View style={styles.sortOptionDot} />}
+              </TouchableOpacity>
+              <View style={styles.sortOptionDivider} />
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => handleSortSelect(true)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.sortOptionText, isAlphabeticalSort && styles.sortOptionTextActive]}>
+                  {t('search.sortAlphabetical')}
+                </Text>
+                {isAlphabeticalSort && <View style={styles.sortOptionDot} />}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* ── Auto-suggest dropdown ───────────────────────────────── */}
       {suggestions.length > 0 && (
         <View style={styles.suggestBox}>
           <FlatList
-            data={suggestions}
+            data={suggestions.slice(0, 3)}
             keyExtractor={(item, i) => `${item}-${i}`}
             keyboardShouldPersistTaps="always"
             renderItem={({ item }) => (
@@ -280,17 +402,44 @@ export default function SearchScreen({ navigation }: Props) {
         </View>
       )}
 
-      {/* ── Product grid ────────────────────────────────────────── */}
-      <FlatList
-        data={allProducts}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        extraData={favorites}
-        contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 32 }]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        renderItem={renderCard}
-      />
+      {/* ── 검색 결과 / 전체 그리드 ──────────────────────────────── */}
+      {isSearching ? (
+        <ActivityIndicator
+          size="small"
+          color={Colors.searchDarkGreen}
+          style={styles.searchSpinner}
+        />
+      ) : query.trim() ? (
+        /* 검색어 있음 → SearchResultScreen 스타일 리스트 */
+        <FlatList
+          key="list"
+          data={visibleProducts}
+          keyExtractor={item => item.id}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          ItemSeparatorComponent={ListDivider}
+          renderItem={({ item }) => (
+            <ProductRow
+              item={item}
+              onPress={() => navigation.navigate('SearchProductDetail', { product: item })}
+            />
+          )}
+        />
+      ) : (
+        /* 검색어 없음 → 2열 그리드 */
+        <FlatList
+          key="grid"
+          data={visibleProducts}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          extraData={favorites}
+          contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          renderItem={renderCard}
+        />
+      )}
 
       {/* ── Filter bottom sheet ──────────────────────────────────── */}
       <FilterBottomSheet
@@ -304,25 +453,25 @@ export default function SearchScreen({ navigation }: Props) {
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
-const SEARCH_BAR_H  = 47;
-const FILTER_BTN_SZ = 47;
-const BORDER_RADIUS = 8;
+const SEARCH_BAR_H  = 42;
+const FILTER_BTN_SZ = 42;
+const BORDER_RADIUS = 10;
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.searchBackground,
   },
 
   header: {
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingTop: 8,
+    paddingBottom: 50,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.black,
+    color: Colors.searchDarkGreen,
     letterSpacing: -0.38,
     textAlign: 'center',
   },
@@ -330,104 +479,144 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    gap: 8,
-    marginBottom: 10,
+    paddingHorizontal: 22,
+    gap: 5,
+    marginBottom: 8,
   },
   searchBar: {
     flex: 1,
     height: SEARCH_BAR_H,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.searchBackground,
+    borderWidth: 1,
+    borderColor: Colors.searchDarkGreen,
     borderRadius: BORDER_RADIUS,
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     gap: 6,
-  },
-  searchIconBox: {
-    width: 24, height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchIconText: {
-    fontSize: 20,
-    color: Colors.gray500,
-    lineHeight: 24,
   },
   searchInput: {
     flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.black,
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.searchDarkGreen,
     padding: 0,
   },
   clearBtn: { padding: 2 },
-  clearBtnText: { fontSize: 12, color: Colors.gray500 },
+  clearBtnText: { fontSize: 12, color: Colors.searchMutedGreen },
 
   filterBtn: {
     width: FILTER_BTN_SZ,
     height: FILTER_BTN_SZ,
     borderRadius: BORDER_RADIUS,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.searchBackground,
+    borderWidth: 1,
+    borderColor: Colors.searchDarkGreen,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnActive: { backgroundColor: Colors.black },
-  filterBtnText: { fontSize: 22, color: Colors.gray700, lineHeight: 26 },
-  filterBtnTextActive: { color: Colors.white },
+  filterBtnActive: { backgroundColor: Colors.searchMutedGreen },
   filterBadge: {
     position: 'absolute',
     top: 6, right: 6,
     minWidth: 14, height: 14,
     borderRadius: 7,
-    backgroundColor: Colors.danger,
+    backgroundColor: Colors.searchWrong,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
   filterBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
 
-  cancelBtn: { paddingHorizontal: 4, justifyContent: 'center' },
-  cancelBtnText: { fontSize: 15, color: Colors.black, fontWeight: '500' },
-
   toolbar: {
-    paddingHorizontal: 24,
-    marginBottom: 12,
+    paddingHorizontal: 22,
+    marginBottom: 45,
     alignItems: 'flex-start',
+    zIndex: 40,
+  },
+  sortControl: {
+    position: 'relative',
+    zIndex: 40,
   },
   sortPill: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.black,
+    borderColor: Colors.searchMutedGreen,
     borderRadius: 50,
-    paddingVertical: 4,
-    paddingHorizontal: 14,
-    gap: 6,
+    paddingVertical: 3,
+    paddingLeft: 19,
+    paddingRight: 12,
+    minWidth: 118,
+    justifyContent: 'center',
+    gap: 10,
   },
-  sortPillActive: { backgroundColor: Colors.black },
-  sortPillLabel: { fontSize: 13, fontWeight: '400', color: Colors.black, letterSpacing: -0.27 },
+  sortPillActive: { backgroundColor: Colors.searchMutedGreen },
+  sortPillLabel: { fontSize: 14, fontWeight: '400', color: Colors.searchMutedGreen, letterSpacing: -0.27 },
   sortPillLabelActive: { color: Colors.white },
   sortArrowWrap: { width: 14, height: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  sortArrow: { fontSize: 18, color: Colors.black, lineHeight: 18 },
+  sortArrow: { fontSize: 15, color: Colors.searchMutedGreen, lineHeight: 16 },
+  sortMenu: {
+    position: 'absolute',
+    top: 34,
+    left: 0,
+    width: 178,
+    borderWidth: 1,
+    borderColor: Colors.searchBorder,
+    borderRadius: 10,
+    backgroundColor: Colors.searchBackground,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  sortOption: {
+    minHeight: 42,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sortOptionText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.searchMutedGreen,
+  },
+  sortOptionTextActive: {
+    fontWeight: '700',
+    color: Colors.searchDarkGreen,
+  },
+  sortOptionDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.searchMutedGreen,
+  },
+  sortOptionDivider: {
+    height: 1,
+    backgroundColor: Colors.searchBorder,
+    marginHorizontal: 12,
+  },
 
   // Auto-suggest
   suggestBox: {
     position: 'absolute',
-    top: 130,
-    left: 24,
-    right: 24,
-    backgroundColor: Colors.white,
+    top: 186,
+    left: 22,
+    right: 22,
+    backgroundColor: Colors.searchBackground,
     borderRadius: BORDER_RADIUS,
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: '#000',
+    borderColor: Colors.searchBorder,
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
     zIndex: 99,
-    maxHeight: 240,
+    maxHeight: 132,
   },
   suggestItem: {
     flexDirection: 'row',
@@ -437,8 +626,80 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   suggestIcon: { fontSize: 16, color: Colors.gray500 },
-  suggestText: { flex: 1, fontSize: 14, color: Colors.black, letterSpacing: -0.27 },
-  suggestDivider: { height: 1, backgroundColor: Colors.border, marginHorizontal: 14 },
+  suggestText: { flex: 1, fontSize: 14, color: Colors.searchDarkGreen, letterSpacing: -0.27 },
+  suggestDivider: { height: 1, backgroundColor: Colors.searchBorder, marginHorizontal: 14 },
+
+  searchSpinner: {
+    flex: 1,
+    alignSelf: 'center',
+    marginTop: 40,
+  },
+
+  // Search result list
+  listContent: {
+    paddingHorizontal: 22,
+    paddingTop: 4,
+  },
+  listDivider: {
+    height: 1,
+    backgroundColor: Colors.searchBorder,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 16,
+    minHeight: 94,
+  },
+  rowThumb: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: 11,
+    backgroundColor: '#D9D9D9',
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  rowThumbPlaceholder: {
+    flex: 1,
+    backgroundColor: '#D9D9D9',
+  },
+  rowInfo: {
+    flex: 1,
+    gap: 7,
+  },
+  rowProductName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.searchMutedGreen,
+    lineHeight: 22,
+  },
+  rowBrandName: {
+    fontSize: 12,
+    color: Colors.searchMutedGreen,
+    lineHeight: 16,
+    marginTop: -7,
+  },
+  rowBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 5,
+    paddingHorizontal: 11,
+    gap: 6,
+    minWidth: 74,
+  },
+  rowBadgeText: {
+    fontSize: 12,
+    fontWeight: '400',
+  },
+  rowChevron: {
+    fontSize: 48,
+    color: Colors.searchBorder,
+    lineHeight: 50,
+    marginLeft: 4,
+  },
 
   // Product grid
   gridContent: {
@@ -447,7 +708,7 @@ const styles = StyleSheet.create({
   },
   cardWrap: {
     flex: 1,
-    marginBottom: GRID_GAP,
+    marginBottom: 28,
   },
 
   // Card
@@ -455,14 +716,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardImg: {
-    borderRadius: 14,
-    backgroundColor: Colors.gray100,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: Colors.searchBorder,
+    backgroundColor: Colors.searchCard,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 13,
   },
   cardImgPlaceholder: {
     flex: 1,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.searchCard,
   },
   riskBadge: {
     flexDirection: 'row',
@@ -470,49 +733,53 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     borderWidth: 1,
     borderRadius: 28,
-    paddingVertical: 4,
-    paddingHorizontal: 9,
-    gap: 5,
-    marginBottom: 4,
-  },
-  riskDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    gap: 6,
+    marginLeft: 5,
+    marginTop: 4,
+    marginBottom: 5,
   },
   riskLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    letterSpacing: -0.2,
+    letterSpacing: -0.23,
   },
   bookmarkBtn: {
     position: 'absolute',
     bottom: 8,
     right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.searchBackground,
+    borderWidth: 1,
+    borderColor: Colors.searchBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bookmarkIcon: {
-    fontSize: 15,
-    color: Colors.gray500,
+    fontSize: 20,
+    color: Colors.searchBorder,
+    lineHeight: 24,
   },
   bookmarkIconActive: {
-    color: '#FF3B30',
+    color: Colors.searchWrong,
   },
   cardName: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.black,
-    letterSpacing: -0.25,
-    marginBottom: 2,
+    letterSpacing: 0,
+    lineHeight: 22,
+    marginLeft: 6,
   },
   cardBrand: {
     fontSize: 11,
-    color: Colors.gray500,
-    letterSpacing: -0.2,
+    fontWeight: '300',
+    color: Colors.black,
+    letterSpacing: 0,
+    lineHeight: 13,
+    marginLeft: 6,
   },
 });

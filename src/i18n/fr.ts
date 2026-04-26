@@ -94,7 +94,9 @@ const fr = {
   language: { title: 'Langue', deviceDetected: 'Langue de l\'appareil détectée :', deviceBadge: 'Appareil' },
   search: {
     placeholder:   'Rechercher un produit ou une marque',
-    sortBy:        'Trier',
+    sortBy:        'Sorted by',
+    sortDefault:   'Par defaut',
+    sortAlphabetical:'Alphabetical A-Z',
     sortRelevance: 'Pertinence',
     sortSafety:    'Sécurité',
     sortName:      'Nom',

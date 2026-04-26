@@ -202,7 +202,9 @@ const ko = {
   // ── Search ────────────────────────────────────────────────────────────────
   search: {
     placeholder:    '제품명 또는 브랜드 검색',
-    sortBy:         '보기 필터순',
+    sortBy:         'Sorted by',
+    sortDefault:    '기본순',
+    sortAlphabetical:'Alphabetical A-Z',
     sortRelevance:  '관련도순',
     sortSafety:     '안전도순',
     sortName:       '이름순',
