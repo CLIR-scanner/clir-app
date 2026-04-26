@@ -417,7 +417,8 @@ export type MainTabParamList = {
 };
 
 export type ScanStackParamList = {
-  Scan: undefined;
+  /** previousTab: 탭바 스캔 버튼 진입 시 직전 활성 탭 — 뒤로가기로 복귀 */
+  Scan: { previousTab?: keyof MainTabParamList } | undefined;
   /**
    * productId: 바코드 스캔 시 제품 ID
    * fromHistory: true 시 스캔 이력에 중복 추가하지 않음

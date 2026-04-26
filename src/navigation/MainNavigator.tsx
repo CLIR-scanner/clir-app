@@ -35,8 +35,24 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets     = useSafeAreaInsets();
   const activeRoute = state.routes[state.index].name as TabRoute;
 
+  // 스캔 화면 진입 시 하단 탭바 숨김
+  if (activeRoute === 'ScanTab') return null;
+
   function goTo(route: TabRoute) {
     navigation.navigate(route);
+  }
+
+  function goToScan() {
+    // 직전 탭(현재 활성 탭)을 ScanScreen에 넘겨 뒤로가기 시 복귀하도록 함.
+    // 이미 ScanTab이면 previousTab을 덮어쓰지 않음 — 같은 탭 재진입 방어.
+    if (activeRoute === 'ScanTab') {
+      navigation.navigate('ScanTab');
+      return;
+    }
+    navigation.navigate('ScanTab', {
+      screen: 'Scan',
+      params: { previousTab: activeRoute },
+    });
   }
 
   function renderTab(tab: { route: TabRoute; label: string }) {
@@ -73,7 +89,7 @@ const bottomPad = insets.bottom > 0 ? insets.bottom : 12;
       <View style={tabStyles.centerSlot}>
         <TouchableOpacity
           style={tabStyles.scanBtn}
-          onPress={() => goTo('ScanTab')}
+          onPress={goToScan}
           activeOpacity={0.8}
         >
           <View style={tabStyles.scanCircle} />

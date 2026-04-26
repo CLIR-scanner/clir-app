@@ -32,6 +32,21 @@ interface FavoritePostResponse {
   addedAt: string;
 }
 
+interface FavoritePostWire {
+  id?: string;
+  productId?: string;
+  product_id?: string;
+  addedAt?: string;
+  added_at?: string;
+  favorite?: {
+    id?: string;
+    productId?: string;
+    product_id?: string;
+    addedAt?: string;
+    added_at?: string;
+  };
+}
+
 function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem | null {
   if (!raw.product) return null;
 
@@ -80,6 +95,15 @@ function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem | null {
  * addFavoriteToStore({ ...item, product }); // product는 호출 측이 보유한 전체 Product 객체
  * ```
  */
+function normalizeFavoritePostResponse(raw: FavoritePostWire, fallbackProductId: string): FavoritePostResponse {
+  const source = raw.favorite ?? raw;
+  return {
+    id: source.id ?? `fav-local-${Date.now()}`,
+    productId: source.productId ?? source.product_id ?? fallbackProductId,
+    addedAt: source.addedAt ?? source.added_at ?? new Date().toISOString(),
+  };
+}
+
 function postResponseToFavoriteItem(raw: FavoritePostResponse): FavoriteItem {
   return {
     id: raw.id,
@@ -245,11 +269,11 @@ export async function addFavorite(productId: string): Promise<FavoriteItem> {
     MOCK_FAVORITES.push(newItem);
     return newItem;
   }
-  const raw = await apiFetch<FavoritePostResponse>('/favorites', {
+  const raw = await apiFetch<FavoritePostWire>('/favorites', {
     method: 'POST',
     body: JSON.stringify({ productId }),
   });
-  return postResponseToFavoriteItem(raw);
+  return postResponseToFavoriteItem(normalizeFavoritePostResponse(raw, productId));
 }
 
 /**

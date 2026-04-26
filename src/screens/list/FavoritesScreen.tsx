@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { ListStackParamList, FavoriteItem, RiskLevel } from '../../types';
 import { useListStore } from '../../store/list.store';
 import { getFavorites, removeFavorite } from '../../services/list.service';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 
@@ -23,12 +24,6 @@ type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 const BG         = '#F9FFF3';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
-
-const BADGE_ASSET: Record<RiskLevel, ReturnType<typeof require>> = {
-  safe:    require('../../../assets/good.png'),
-  caution: require('../../../assets/poor.png'),
-  danger:  require('../../../assets/bad.png'),
-};
 
 const BADGE_LABEL: Record<RiskLevel, string> = {
   safe:    'Good',
@@ -51,7 +46,17 @@ export default function FavoritesScreen({ navigation }: Props) {
     setIsLoading(true);
     setIsError(false);
     getFavorites()
-      .then(data  => { if (!cancelled) setFavorites(data); })
+      .then(data  => {
+        if (cancelled) return;
+        const localFavorites = useListStore.getState().favorites.filter(f => f.id.startsWith('fav-local-'));
+        const merged = [
+          ...localFavorites.filter(local =>
+            !data.some(item => item.productId === local.productId || item.product?.id === local.product?.id),
+          ),
+          ...data,
+        ];
+        setFavorites(merged);
+      })
       .catch(()   => { if (!cancelled) setIsError(true); })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
@@ -68,7 +73,9 @@ export default function FavoritesScreen({ navigation }: Props) {
     if (deletingId) return;
     setDeletingId(item.id);
     try {
-      await removeFavorite(item.id);
+      if (!item.id.startsWith('fav-local-')) {
+        await removeFavorite(item.id);
+      }
       removeFavoriteFromStore(item.id);
     } catch {
       Alert.alert('삭제 실패', '다시 시도해주세요.');
@@ -90,7 +97,6 @@ export default function FavoritesScreen({ navigation }: Props) {
 
   function renderItem({ item, index }: { item: FavoriteItem; index: number }) {
     const riskLevel = item.product.riskLevel ?? 'safe';
-    const badgeImg  = BADGE_ASSET[riskLevel] ?? BADGE_ASSET.safe;
     const badgeLbl  = BADGE_LABEL[riskLevel] ?? BADGE_LABEL.safe;
     const isLast    = index === sorted.length - 1;
 
@@ -123,7 +129,7 @@ export default function FavoritesScreen({ navigation }: Props) {
 
             {/* Risk badge — image 인증마크 + 텍스트 */}
             <View style={styles.badge}>
-              <Image source={badgeImg} style={styles.badgeIcon} resizeMode="contain" />
+              <RiskBadgeIcon level={riskLevel} size={16} style={styles.badgeIcon} />
               <Text style={styles.badgeText}>{badgeLbl}</Text>
             </View>
           </View>
