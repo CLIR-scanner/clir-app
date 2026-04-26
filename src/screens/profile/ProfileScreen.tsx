@@ -1,35 +1,124 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert,
+  ScrollView, Alert, Modal, TouchableWithoutFeedback,
 } from 'react-native';
+import i18n from '../../i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import Svg, { Path } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
-import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
 import { getAllergenDisplay } from '../../services/allergen.service';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
-const SENSITIVITY_KEY: Record<string, string> = {
-  strict: 'sensitivity.strictBadge',
-  normal: 'sensitivity.normalBadge',
+// ── Design tokens (Figma node 270:4667) ──────────────────────────────────────
+const BG          = '#F9FFF3';
+const DARK_GREEN  = '#1C3A19';
+const MID_GREEN   = '#556C53';
+const BORDER      = '#A9B6A8';
+const CARD_FILL   = '#E9F0E4';
+const STRICT_BG   = '#FFECEC';
+const STRICT_CLR  = '#FF3434';
+const CHIP_TEXT   = MID_GREEN;
+
+// ── Language options ──────────────────────────────────────────────────────────
+const LANGUAGES = [
+  { code: 'en', label: 'English',  native: 'English'  },
+  { code: 'ko', label: 'Korean',   native: '한국어'    },
+  { code: 'ja', label: 'Japanese', native: '日本語'    },
+  { code: 'zh', label: 'Chinese',  native: '中文'      },
+  { code: 'es', label: 'Spanish',  native: 'Español'   },
+  { code: 'fr', label: 'French',   native: 'Français'  },
+];
+
+// ── Dietary helpers ───────────────────────────────────────────────────────────
+
+const DIET_LABEL: Record<string, string> = {
+  pescatarian:          'Pescatarian',
+  vegan:                'Vegan',
+  lacto_vegetarian:     'Lacto-Vegetarian',
+  ovo_vegetarian:       'Ovo-Vegetarian',
+  lacto_ovo_vegetarian: 'Lacto-ovo Vegetarian',
+  pesco_vegetarian:     'Pesco-Vegetarian',
+  pollo_vegetarian:     'Pollo-Vegetarian',
+  flexitarian:          'Flexitarian',
+  strict:               'Strict Vegan',
+  flexible:             'Flexible Vegan',
 };
+
+const AVOIDED_BY_DIET: Record<string, string[]> = {
+  pescatarian:          ['Meat', 'Mollusks / Shellfish'],
+  vegan:                ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy'],
+  lacto_vegetarian:     ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs'],
+  ovo_vegetarian:       ['Meat', 'Fish', 'Mollusks / Shellfish', 'Dairy'],
+  lacto_ovo_vegetarian: ['Meat', 'Fish', 'Mollusks / Shellfish'],
+  pesco_vegetarian:     ['Meat'],
+  pollo_vegetarian:     ['Fish', 'Mollusks / Shellfish'],
+  flexitarian:          ['Meat'],
+  strict:               ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy', 'Food Additives'],
+  flexible:             ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy'],
+};
+
+function getDietDisplayLabel(dietaryRestrictions: string[]): string {
+  // vegan strictness가 우선
+  if (dietaryRestrictions.includes('strict'))   return DIET_LABEL.strict;
+  if (dietaryRestrictions.includes('flexible')) return DIET_LABEL.flexible;
+  const found = dietaryRestrictions.find(d => d in DIET_LABEL);
+  return found ? DIET_LABEL[found] : dietaryRestrictions[0] ?? '';
+}
+
+function getDietKey(dietaryRestrictions: string[]): string {
+  if (dietaryRestrictions.includes('strict'))   return 'strict';
+  if (dietaryRestrictions.includes('flexible')) return 'flexible';
+  return dietaryRestrictions[0] ?? '';
+}
+
+// ── Caret up-down icon (Language 행용) ───────────────────────────────────────
+function CaretUpDown() {
+  return (
+    <Svg width={23} height={23} viewBox="0 0 256 256" fill="none">
+      <Path
+        d="M184.49 167.51a12 12 0 0 1 0 17l-48 48a12 12 0 0 1-17 0l-48-48a12 12 0 0 1 17-17L128 207l39.51-39.52a12 12 0 0 1 17 .03ZM71.51 88.49l48-48a12 12 0 0 1 17 0l48 48a12 12 0 0 1-17 17L128 57l-39.51 39.52a12 12 0 0 1-17-17Z"
+        fill={DARK_GREEN}
+      />
+    </Svg>
+  );
+}
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
-  const { t } = useTranslation();
+  const { t }      = useTranslation();
+  const insets     = useSafeAreaInsets();
+
   const currentUser   = useUserStore(s => s.currentUser);
   const activeProfile = useUserStore(s => s.activeProfile);
   const logout        = useUserStore(s => s.logout);
 
-  const MENU_ITEMS: { label: string; screen: keyof ProfileStackParamList }[] = [
-    { label: t('profile.menuFamily'),    screen: 'MultiProfile' },
-    { label: t('profile.menuLanguage'),  screen: 'Language' },
-    { label: t('profile.menuSettings'), screen: 'Settings' },
-  ];
+  const initial = activeProfile.name ? activeProfile.name[0].toUpperCase() : '?';
+  const isStrict = activeProfile.sensitivityLevel === 'strict';
+
+  const hasAllergy = activeProfile.allergyProfile.length > 0;
+  const hasDiet    = activeProfile.dietaryRestrictions.length > 0;
+
+  const dietLabel    = hasDiet ? getDietDisplayLabel(activeProfile.dietaryRestrictions) : '';
+  const dietKey      = hasDiet ? getDietKey(activeProfile.dietaryRestrictions) : '';
+  const avoidedFoods = AVOIDED_BY_DIET[dietKey] ?? [];
+
+  const currentLanguage = useUserStore(s => s.currentUser.language);
+  const setLanguage     = useUserStore(s => s.setLanguage);
+  const [showLangPicker, setShowLangPicker] = useState(false);
+
+  const currentLangLabel = LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'English';
+
+  function handleSelectLanguage(code: string) {
+    setLanguage(code);
+    i18n.changeLanguage(code);
+    setShowLangPicker(false);
+  }
 
   function handleLogout() {
     Alert.alert(t('auth.signOut'), t('auth.signOutConfirm'), [
@@ -39,227 +128,430 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.screenTitle}>{t('profile.title')}</Text>
-      </View>
+    <View style={styles.root}>
+    <ScrollView
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 32 }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <Text style={styles.headerTitle}>Profile</Text>
 
-      {/* 프로필 카드 */}
+      {/* ── User card ────────────────────────────────────────────────────── */}
       <TouchableOpacity
-        style={styles.profileCard}
+        style={styles.userCard}
         onPress={() => navigation.navigate('PersonalName')}
-        activeOpacity={0.7}
+        activeOpacity={0.75}
       >
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {activeProfile.name ? activeProfile.name[0].toUpperCase() : '?'}
-          </Text>
+          <Text style={styles.avatarText}>{initial}</Text>
         </View>
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{activeProfile.name || '—'}</Text>
-          <Text style={styles.profileEmail}>{currentUser.email || '—'}</Text>
+
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{activeProfile.name || '—'}</Text>
+          <Text style={styles.userEmail}>{currentUser.email || '—'}</Text>
         </View>
-        <Text style={styles.menuArrow}>{'›'}</Text>
+
+        <Text style={styles.chevron}>›</Text>
       </TouchableOpacity>
 
-      {/* 알러지 & 민감도 */}
+      {/* ── My Allergy Profile section ───────────────────────────────────── */}
+      <Text style={styles.sectionLabel}>My Allergy Profile</Text>
+
       <TouchableOpacity
-        style={styles.myProfileCard}
-        onPress={() => navigation.navigate('MyProfileEdit')}
-        activeOpacity={0.7}
+        style={styles.allergyCard}
+        onPress={() => navigation.navigate('PersonalizationAllergy')}
+        activeOpacity={0.85}
       >
-        <View style={styles.myProfileContent}>
-          <Text style={styles.sectionTitle}>{t('profile.myProfile')}</Text>
 
-          {/* 민감도 */}
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('profile.sensitivity')}</Text>
-            <View style={[
-              styles.badge,
-              activeProfile.sensitivityLevel === 'strict' ? styles.badgeStrict : styles.badgeNormal,
-            ]}>
-              <Text style={[
-                styles.badgeText,
-                activeProfile.sensitivityLevel === 'strict' ? styles.badgeTextStrict : styles.badgeTextNormal,
-              ]}>
-                {t(SENSITIVITY_KEY[activeProfile.sensitivityLevel] ?? 'sensitivity.normalBadge')}
-              </Text>
+        {/* ── Case A: 알러지만 ──────────────────────────────────────── */}
+        {hasAllergy && !hasDiet && (
+          <>
+            <View style={styles.allergyRow}>
+              <Text style={styles.allergyRowLabel}>Sensitivity</Text>
+              <View style={[styles.sensitivityBadge, isStrict ? styles.sensitivityBadgeStrict : styles.sensitivityBadgeNormal]}>
+                <Text style={[styles.sensitivityBadgeText, isStrict ? styles.sensitivityBadgeTextStrict : styles.sensitivityBadgeTextNormal]}>
+                  {isStrict ? 'Strict Mode' : 'Normal Mode'}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          {/* 알러지 프로필 */}
-          <View style={styles.infoBlock}>
-            <Text style={styles.infoLabel}>{t('profile.allergyProfile')}</Text>
-            {activeProfile.allergyProfile.length === 0 ? (
-              <Text style={styles.emptyText}>{t('profile.noAllergens')}</Text>
-            ) : (
+            <View style={styles.cardDivider} />
+
+            <View style={styles.allergyBlock}>
+              <Text style={styles.allergyRowLabel}>My Allergy</Text>
               <View style={styles.chips}>
                 {activeProfile.allergyProfile.map(item => (
                   <View key={item} style={styles.chip}>
-                    <Text style={styles.chipText}>
-                      {getAllergenDisplay(item).name}
-                    </Text>
+                    <Text style={styles.chipText}>{getAllergenDisplay(item).name}</Text>
                   </View>
                 ))}
               </View>
-            )}
-          </View>
-        </View>
+            </View>
+          </>
+        )}
 
-        <Text style={styles.menuArrow}>{'›'}</Text>
+        {/* ── Case B: 식단만 ───────────────────────────────────────── */}
+        {!hasAllergy && hasDiet && (
+          <>
+            <View style={styles.allergyRow}>
+              <Text style={styles.allergyRowLabel}>Preference</Text>
+              <View style={styles.preferenceBadge}>
+                <Text style={styles.preferenceBadgeText}>{dietLabel}</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.allergyBlock}>
+              <Text style={styles.allergyRowLabel}>Diet Restriction</Text>
+              {avoidedFoods.length === 0 ? (
+                <Text style={styles.emptyChip}>—</Text>
+              ) : (
+                <View style={styles.chips}>
+                  {avoidedFoods.map(food => (
+                    <View key={food} style={styles.chip}>
+                      <Text style={styles.chipText}>{food}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </>
+        )}
+
+        {/* ── Case C: 둘 다 (Figma 294:5491) ─────────────────────── */}
+        {hasAllergy && hasDiet && (
+          <>
+            {/* Sensitivity row */}
+            <View style={styles.allergyRow}>
+              <Text style={styles.allergyRowLabel}>Sensitivity</Text>
+              <View style={[styles.sensitivityBadge, isStrict ? styles.sensitivityBadgeStrict : styles.sensitivityBadgeNormal]}>
+                <Text style={[styles.sensitivityBadgeText, isStrict ? styles.sensitivityBadgeTextStrict : styles.sensitivityBadgeTextNormal]}>
+                  {isStrict ? 'Strict Mode' : 'Normal Mode'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            {/* Preference row */}
+            <View style={styles.allergyRow}>
+              <Text style={styles.allergyRowLabel}>Preference</Text>
+              <View style={styles.preferenceBadge}>
+                <Text style={styles.preferenceBadgeText}>{dietLabel}</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            {/* Diet Restriction */}
+            <View style={styles.allergyBlock}>
+              <Text style={styles.allergyRowLabel}>Diet Restriction</Text>
+              {avoidedFoods.length === 0 ? (
+                <Text style={styles.emptyChip}>—</Text>
+              ) : (
+                <View style={styles.chips}>
+                  {avoidedFoods.map(food => (
+                    <View key={food} style={styles.chip}>
+                      <Text style={styles.chipText}>{food}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </>
+        )}
+
+        {/* ── Case D: 아무것도 없을 때 ─────────────────────────────── */}
+        {!hasAllergy && !hasDiet && (
+          <View style={styles.allergyBlock}>
+            <Text style={styles.emptyChip}>No profile set</Text>
+          </View>
+        )}
+
       </TouchableOpacity>
 
-      {/* 메뉴 */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.settingsSection')}</Text>
-        <View style={styles.menuList}>
-          {MENU_ITEMS.map((item, idx) => (
-            <React.Fragment key={item.screen}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => navigation.navigate(item.screen as any)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.menuLabel}>{item.label}</Text>
-                <Text style={styles.menuArrow}>{'›'}</Text>
-              </TouchableOpacity>
-              {idx < MENU_ITEMS.length - 1 && <View style={styles.divider} />}
-            </React.Fragment>
-          ))}
-        </View>
+      {/* ── Settings section ─────────────────────────────────────────────── */}
+      <Text style={styles.sectionLabel}>Settings</Text>
+
+      <View style={styles.settingsCard}>
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('MultiProfile')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.menuLabel}>Multi Profiles</Text>
+        </TouchableOpacity>
+
+        <View style={styles.cardDivider} />
+
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => setShowLangPicker(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.menuLabel}>{currentLangLabel}</Text>
+          <CaretUpDown />
+        </TouchableOpacity>
+
+        <View style={styles.cardDivider} />
+
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.menuLabel}>Settings</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 로그아웃 */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
+      {/* ── Logout ───────────────────────────────────────────────────────── */}
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
         <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
-
     </ScrollView>
+
+    {/* ── Language picker bottom sheet ──────────────────────────────────── */}
+    <Modal
+      visible={showLangPicker}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowLangPicker(false)}
+    >
+      <TouchableWithoutFeedback onPress={() => setShowLangPicker(false)}>
+        <View style={styles.langBackdrop} />
+      </TouchableWithoutFeedback>
+
+      <View style={[styles.langSheet, { paddingBottom: insets.bottom + 8 }]}>
+        <View style={styles.langHandle} />
+        <Text style={styles.langSheetTitle}>Language</Text>
+
+        <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+          {LANGUAGES.map((lang, idx) => {
+            const isSelected = currentLanguage === lang.code;
+            return (
+              <React.Fragment key={lang.code}>
+                <TouchableOpacity
+                  style={styles.langRow}
+                  onPress={() => handleSelectLanguage(lang.code)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.langRowLeft}>
+                    <Text style={styles.langNative}>{lang.native}</Text>
+                    <Text style={styles.langLabel}>{lang.label}</Text>
+                  </View>
+                  {isSelected && (
+                    <View style={styles.langCheckCircle}>
+                      <Text style={styles.langCheckMark}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                {idx < LANGUAGES.length - 1 && <View style={styles.langDivider} />}
+              </React.Fragment>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: BG,
   },
-  content: {
+  // ── Language bottom sheet
+  langBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  langSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: BG,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 48,
-    gap: 20,
+    paddingTop: 12,
+    maxHeight: '60%',
   },
-  header: {
-    marginBottom: 4,
+  langHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: BORDER,
+    marginBottom: 16,
   },
-  screenTitle: {
-    fontSize: 26,
+  langSheetTitle: {
+    fontSize: 16,
     fontWeight: '700',
-    color: Colors.black,
+    color: DARK_GREEN,
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  profileCard: {
+  langRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
+    justifyContent: 'space-between',
+    paddingVertical: 15,
+  },
+  langRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  langNative:  { fontSize: 16, fontWeight: '600', color: DARK_GREEN },
+  langLabel:   { fontSize: 13, color: MID_GREEN },
+  langCheckCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: DARK_GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langCheckMark: { fontSize: 13, color: '#FFFFFF', fontWeight: '700' },
+  langDivider:   { height: 1, backgroundColor: BORDER },
+  content: {
+    paddingHorizontal: 26,
+    gap: 12,
+  },
+
+  // ── Header
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: DARK_GREEN,
+    textAlign: 'center',
+    letterSpacing: -0.38,
+    marginBottom: 14,
+  },
+
+  // ── User card
+  userCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: CARD_FILL,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: BORDER,
+    borderRadius: 15,
+    height: 94,
+    paddingHorizontal: 17,
     gap: 16,
+    marginBottom: 4,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.black,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: MID_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.white,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 32,
   },
-  profileInfo: {
+  userInfo: {
     flex: 1,
     gap: 4,
   },
-  profileName: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.black,
+  userName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000000',
   },
-  profileEmail: {
+  userEmail: {
     fontSize: 13,
-    color: Colors.gray500,
+    fontWeight: '500',
+    color: MID_GREEN,
   },
-  section: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
+  chevron: {
+    fontSize: 22,
+    color: DARK_GREEN,
+    lineHeight: 28,
+  },
+
+  // ── Section label
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: DARK_GREEN,
+    marginLeft: 2,
+    marginTop: 4,
+    marginBottom: 2,
+  },
+
+  // ── Allergy card
+  allergyCard: {
+    backgroundColor: BG,
     borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.gray500,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    borderColor: BORDER,
+    borderRadius: 15,
+    overflow: 'hidden',
     marginBottom: 4,
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  myProfileCard: {
+  allergyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  myProfileContent: {
-    flex: 1,
-    gap: 12,
-    paddingRight: 8,
-  },
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
     justifyContent: 'space-between',
-    paddingVertical: 2,
+    paddingHorizontal: 17,
+    paddingVertical: 14,
   },
-  profileRowArrow: {
+  allergyRowLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: DARK_GREEN,
+  },
+  sensitivityBadge: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 16,
+  },
+  sensitivityBadgeStrict: {
+    backgroundColor: STRICT_BG,
+    borderColor: STRICT_CLR,
+  },
+  sensitivityBadgeNormal: {
+    backgroundColor: CARD_FILL,
+    borderColor: BORDER,
+  },
+  sensitivityBadgeText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  sensitivityBadgeTextStrict: {
+    color: STRICT_CLR,
+  },
+  sensitivityBadgeTextNormal: {
+    color: MID_GREEN,
+  },
+  // Preference 뱃지 — Figma 294:5491: #E9F0E4 bg, #556C53 border, #1C3A19 text
+  preferenceBadge: {
+    backgroundColor: CARD_FILL,
+    borderWidth: 1,
+    borderColor: MID_GREEN,
+    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 20,
+    height: 28,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  profileRowLeft: {
-    flex: 1,
-    gap: 14,
-    paddingRight: 8,
+  preferenceBadgeText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: DARK_GREEN,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  infoBlock: {
+  allergyBlock: {
+    paddingHorizontal: 17,
+    paddingTop: 12,
+    paddingBottom: 16,
     gap: 10,
-  },
-  infoLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.gray300,
   },
   chips: {
     flexDirection: 'row',
@@ -267,68 +559,64 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 100,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
+    backgroundColor: CARD_FILL,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 16,
   },
   chipText: {
+    fontSize: 12,
+    color: CHIP_TEXT,
+    lineHeight: 20,
+  },
+  emptyChip: {
     fontSize: 13,
-    color: Colors.black,
-    fontWeight: '500',
+    color: BORDER,
   },
-  badge: {
-    borderRadius: 100,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    alignSelf: 'flex-start',
+  cardDivider: {
+    height: 1,
+    backgroundColor: BORDER,
+    marginHorizontal: 9,
   },
-  badgeStrict: {
-    backgroundColor: Colors.dangerLight,
+
+  // ── Settings card
+  settingsCard: {
+    backgroundColor: BG,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginBottom: 8,
   },
-  badgeNormal: {
-    backgroundColor: Colors.safeLight,
-  },
-  badgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  badgeTextStrict: {
-    color: Colors.danger,
-  },
-  badgeTextNormal: {
-    color: Colors.safe,
-  },
-  menuList: {
-    gap: 0,
-  },
-  menuItem: {
+  menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    minHeight: 51,
   },
   menuLabel: {
-    fontSize: 15,
-    color: Colors.black,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#000000',
   },
-  menuArrow: {
-    fontSize: 20,
-    color: Colors.gray300,
-    lineHeight: 22,
-  },
-  logoutButton: {
+
+  // ── Logout
+  logoutBtn: {
     borderRadius: 100,
-    paddingVertical: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
+    borderColor: BORDER,
+    backgroundColor: BG,
+    marginTop: 4,
   },
   logoutText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: Colors.danger,
+    fontWeight: '600',
+    color: STRICT_CLR,
   },
 });
