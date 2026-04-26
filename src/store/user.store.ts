@@ -17,6 +17,7 @@ const EMPTY_USER: User = {
   email: '',
   language: 'en',
   multiProfiles: [],
+  consentFlags: { imageRetention: false, corrections: false },
 };
 
 export const useUserStore = create<UserStore>((set, get) => ({

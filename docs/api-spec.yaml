@@ -2,30 +2,56 @@ openapi: 3.0.3
 info:
   title: CLIR API
   description: |
-    식품 바코드/OCR 스캔 → 성분 분석 → 알러지·식이 프로필 대조 → 개인화 위협 판정
+    식품 바코드/OCR 스캔 → 성분 분석 → 알러지·식이 프로필 대조 → 개인화 위협 판정.
+
+    **MVP 종료. 이 명세는 Full Product 기준이다.**
+    상세 구현 맥락은 `docs/architecture.md`, OCR 파이프라인은 `docs/ocr-pipeline-rebuild-guide.md`.
 
     ## 인증
-    소셜 로그인(Google / Apple) 후 Supabase OAuth에서 발급받은 access token을
+    소셜 로그인(Google / Apple) 후 Supabase에서 발급받은 access token을
     모든 보호된 엔드포인트의 Authorization 헤더에 포함해야 합니다.
     Authorization: Bearer {token}
 
     토큰 발급·갱신은 클라이언트가 Supabase Auth와 직접 통신하며,
     백엔드는 verifyToken 미들웨어로 토큰을 검증만 합니다.
-    자체 서버에서 발급하는 JWT는 더 이상 존재하지 않습니다.
 
     ## OCR
-    이미지 분석은 OpenAI Vision API (gpt-4o)를 사용합니다.
-    이미지 파일을 multipart/form-data로 전송하면
-    서버가 OpenAI API를 호출해 성분 텍스트를 추출·파싱합니다.
+    1차 추출은 OpenAI Vision(gpt-4o-mini / gpt-4o). 저신뢰·CJK/아랍어에서는
+    Google Vision DOCUMENT_TEXT_DETECTION + gpt-4.1-mini 2단계 폴백으로 에스컬레이션됩니다.
 
-    ## MVP 범위
-    - 소셜 로그인 (Google / Apple) / 프로필 조회 / 설문조사
-    - 바코드 또는 OCR 스캔 후 성분 분석
-    - 알러지·식이 위험도 판정 (safe / caution / danger)
-    - 즐겨찾기 등록·조회·삭제
-    - 스캔 이력 저장·조회
-    - 제품 검색 / 자동완성
-  version: 1.1.0
+    `POST /ocr`은 기본 SSE 스트리밍입니다.
+      - Accept: text/event-stream  (기본) — ingredient 증분 이벤트 + done 메타
+      - Accept: application/json                — 동기 JSON 응답 (관리/자동화용)
+
+    요청 본문의 phash 필드가 L3(Redis) 캐시 조회에 사용됩니다. 히트 시 `cached` 이벤트로 즉시 응답.
+    pipeline 상세: `docs/ocr-pipeline-rebuild-guide.md §4`.
+
+    ## 캐싱 3계층
+    - L1 FE MMKV pHash          (클라 로컬)
+    - L2 바코드 → Supabase/OFF  (GET /products/:barcode)
+    - L3 BE Redis pHash          (POST /ocr 내부)
+
+    모든 캐시 키에 schemaVersion 포함 — 프롬프트/모델 변경 시 일괄 무효화.
+
+    ## 개인정보
+    - 스캔 이미지는 동의(`consentImageRetention=true`) 시에만 90일간 보존.
+    - POST /corrections는 `consentCorrections=true`일 때만 저장.
+    - GDPR: GET /users/me/export · DELETE /users/me 지원.
+
+    ## 제품 업서트
+    OCR 결과는 `product-upsert.service`가 pHash + 성분셋 Jaccard로 유사 레코드를 찾아
+    `products` 테이블에 병합·신규 insert 합니다. OCR 경로에서도 `productId`가 반환되므로
+    즐겨찾기·이력 저장 시 FK violation이 발생하지 않습니다.
+
+    ## Full Product 범위
+    - 소셜 로그인 (Google / Apple) / 설문조사 / 멀티 프로필
+    - 네이티브 문서 스캐너 + 실시간 블러 프리뷰 기반 캡처
+    - 폴백 사다리 5단계 + 3계층 캐시
+    - 유저 교정 수집 (데이터 플라이휠)
+    - 제품 검색 / 자동완성 (pg_trgm 기반)
+    - 관측성 · 비용 SLO · GDPR
+    - EAS Build 기반 앱스토어 배포
+  version: 2.1.0
 
 servers:
   - url: http://localhost:3000
@@ -41,48 +67,6 @@ paths:
   # ─────────────────────────────────────
   # 인증 (Auth)
   # ─────────────────────────────────────
-  #
-  # 자체 로그인(/auth/signup, /auth/login)은 제거되었습니다.
-  # 회원가입·로그인 흐름은 모두 Supabase OAuth가 담당합니다:
-  #   supabase.auth.signInWithOAuth({ provider: 'google' | 'apple' })
-  #   → WebBrowser 세션 → access_token / refresh_token 수신
-  #   → supabase.auth.setSession
-  #   → GET /auth/me 로 프로필 조회 (hasCompletedSurvey 분기)
-
-  /auth/me:
-    get:
-      tags: [Auth]
-      summary: 내 프로필 조회 (소셜 로그인 후)
-      description: |
-        Authorization 헤더의 Supabase access token으로 현재 로그인된 사용자의
-        CLIR 프로필과 설문 완료 여부(hasCompletedSurvey)를 반환합니다.
-        기존 POST /auth/login 응답의 user 객체 역할을 대체합니다.
-
-        소셜 로그인은 "회원가입"과 "로그인"이 구분되지 않으므로
-        클라이언트는 이 응답의 hasCompletedSurvey 플래그로 분기합니다:
-        - false → 설문(Survey) 화면으로 이동 (POST /auth/survey)
-        - true  → 메인 탭으로 이동
-
-        호출 시점:
-        1) 소셜 로그인 직후 — 최초 로그인 여부 판단
-        2) 세션 복원 시 — 앱 재시작 후 저장된 토큰 유효성 확인 + 최신 프로필 로드
-      responses:
-        '200':
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-              example:
-                id: uuid-1234
-                email: user@example.com
-                name: 홍길동
-                allergyProfile: [ing-peanut]
-                dietaryRestrictions: [vegan]
-                sensitivityLevel: strict
-                hasCompletedSurvey: true
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /auth/survey:
     post:
@@ -97,6 +81,10 @@ paths:
 
         전체-치환 시맨틱: 클라이언트는 3필드를 항상 현재 값 기준으로 모두 보내야 합니다.
         부분 업데이트가 필요한 화면도 나머지 필드는 로컬 상태의 현재 값을 그대로 포함합니다.
+
+        profiles row는 Supabase의 handle_new_user 트리거가
+        auth.users 생성 시점에 자동으로 만들어 두므로
+        이 엔드포인트는 update만 수행합니다.
       requestBody:
         required: true
         content:
@@ -145,6 +133,96 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 현재 사용자 프로필 조회
+      description: |
+        Authorization 헤더의 토큰으로 현재 로그인된 사용자의 프로필을 반환합니다.
+        프런트는 두 시점에 호출합니다:
+          1) 소셜 로그인 직후 — hasCompletedSurvey로 Survey 진입 여부 판단
+          2) 세션 복원 시 — 앱 재시작 후 저장된 토큰 유효성 확인 + 최신 프로필 로드
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 사용자 또는 프로필을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: PROFILE_NOT_FOUND
+                message: 프로필을 찾을 수 없습니다.
+
+  # ─────────────────────────────────────
+  # 사용자 (GDPR)
+  # ─────────────────────────────────────
+
+  /users/me/export:
+    get:
+      tags: [Users]
+      summary: 내 데이터 내보내기 (GDPR Art. 20)
+      description: |
+        현재 사용자의 계정·이력·즐겨찾기·교정 데이터를 JSON으로 반환합니다.
+        개인정보 처리방침에 따른 데이터 이동권 보장.
+      responses:
+        '200':
+          description: 데이터 JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile:
+                    $ref: '#/components/schemas/UserProfile'
+                  scanHistory:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScanHistoryItem'
+                  favorites:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FavoriteItem'
+                  corrections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Correction'
+                  exportedAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      tags: [Users]
+      summary: 계정 및 전체 데이터 삭제 (GDPR Art. 17)
+      description: |
+        계정 + 이력 + 즐겨찾기 + 교정 + 저장된 이미지를 30일 내 영구 삭제합니다.
+        호출 직후 세션은 무효화되며, 이후 모든 보호된 엔드포인트가 UNAUTHORIZED를 반환합니다.
+      responses:
+        '202':
+          description: 삭제 요청 접수 (30일 내 완료)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 삭제 요청이 접수되었습니다. 30일 내 완료됩니다.
+                  deletionScheduledAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   # ─────────────────────────────────────
   # 제품 / 스캔
   # ─────────────────────────────────────
@@ -188,15 +266,15 @@ paths:
       tags: [Products]
       summary: 제품 ID로 상세 조회 (비-바코드)
       description: |
-        UUID / seed-* / off-* / ocr-* 등 비-바코드 식별자로 제품 상세를 조회.
-        HistoryProductDetail 이 scan-history 요약에서 성분 보강 시 호출.
-        응답의 riskLevel, isSafe, riskIngredients, mayContainIngredients 는
-        현재 프로필 기준으로 주입된 상태.
+        UUID / seed-* / off-* / ocr-* 등 비-바코드 식별자로 제품 상세 조회.
+        HistoryProductDetail 화면이 scan-history 요약 → 전체 성분 보강 시 사용.
+        응답의 riskLevel, isSafe, riskIngredients, mayContainIngredients 는 현재 프로필 기준으로 주입된 상태.
       parameters:
         - name: id
           in: path
           required: true
           schema: { type: string }
+          example: 'off-0034000020430'
       responses:
         '200':
           description: 제품 상세
@@ -212,18 +290,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: PRODUCT_NOT_FOUND
+                message: 해당 제품을 찾을 수 없습니다.
 
   /allergens/catalog:
     get:
       tags: [Allergens]
-      summary: 알러지 카탈로그
+      summary: 알러지 카탈로그 (카테고리 + 항목 + ing-* 매핑)
       description: |
-        Survey/Personalization 화면 렌더용 카테고리 트리. 항목의 allergenId (ing-*)
-        가 있는 경우만 BE 판정 범위. 인증 불필요.
+        FE Survey/Personalization 화면이 렌더할 알러지 카테고리 트리를 반환한다.
+        기존에 FE 가 하드코딩하던 ALLERGY_CATEGORIES / ALLERGY_CANDIDATES 를 대체한다.
+        응답 items[].allergenId (ing-*) 가 있는 항목만 BE 판정 대상이며,
+        매핑 없는 항목은 UI 표시 가능하지만 판정 범위 밖.
+        인증 불필요.
       parameters:
         - name: lang
           in: query
-          schema: { type: string, enum: [en, ko] }
+          required: false
+          schema:
+            type: string
+            enum: [en, ko]
+          description: 표시명 언어 (기본 en)
       responses:
         '200':
           description: 카탈로그
@@ -231,30 +319,34 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [version, categories, allergens]
                 properties:
-                  version: { type: integer }
+                  version: { type: integer, example: 1 }
                   categories:
                     type: array
                     items:
                       type: object
+                      required: [code, name, items]
                       properties:
-                        code: { type: string }
-                        name: { type: string }
+                        code:  { type: string, example: Dairy }
+                        name:  { type: string, example: Dairy }
                         items:
                           type: array
                           items:
                             type: object
+                            required: [name]
                             properties:
-                              name: { type: string }
-                              allergenId: { type: string, nullable: true }
+                              name:        { type: string, example: Milk }
+                              allergenId:  { type: string, example: ing-milk, nullable: true }
                   allergens:
                     type: array
                     items:
                       type: object
+                      required: [id, name, category, riskDefault]
                       properties:
-                        id: { type: string }
-                        name: { type: string }
-                        category: { type: string }
+                        id:          { type: string, example: ing-milk }
+                        name:        { type: string, example: Milk }
+                        category:    { type: string, example: Dairy }
                         riskDefault: { type: string, enum: [danger, caution] }
 
   /products/{id}/alternatives:
@@ -299,17 +391,30 @@ paths:
   /ocr:
     post:
       tags: [Scan]
-      summary: OCR 성분 추출
+      summary: OCR 성분 추출 (SSE 기본)
       description: |
-        식품 성분표 이미지를 업로드하면 OpenAI Vision API (gpt-4o)를 통해
-        성분 텍스트를 추출하고 성분 ID 목록으로 파싱해 반환합니다.
-        바코드가 없거나 인식이 안 될 때 사용합니다.
+        식품 성분표 이미지를 업로드하면 폴백 사다리(`docs/ocr-pipeline-rebuild-guide.md §4.2`)로
+        성분을 추출해 반환합니다.
 
-        반환된 ingredients를 POST /analysis에 전달해 위험도를 판정합니다.
+        ## 응답 형식 선택
+        - Accept: text/event-stream  (기본) — SSE 증분 스트리밍
+        - Accept: application/json                — 동기 JSON 응답
 
-        POST를 사용하는 이유:
-        이미지 파일을 서버로 전송해야 하므로 body가 필요합니다.
-        GET으로는 파일을 전송할 수 없습니다.
+        ## SSE 이벤트
+        - event: cached     — L3 pHash 캐시 히트. data는 OCRResult 전체
+        - event: ingredient — 성분 1개 증분. data는 IngredientSummary
+        - event: done       — 최종 메타. data는 OCRDoneMeta
+        - event: error      — 에러. data는 ErrorEvent (retryable 포함)
+
+        ## 요청 필드
+        - image       (필수)  — 성분표 이미지 (jpg/png/webp)
+        - phash       (권장)  — FE에서 계산한 64-bit pHash (hex). L3 캐시 조회에 사용
+        - mlkitText   (선택)  — 온디바이스 OCR 프리패스 결과. 저품질이어도 전달 권장 (힌트로만 사용)
+        - languageHint (선택) — 사용자 언어 (BCP-47). 폴백 사다리 라우팅에 사용
+
+        ## 제품 업서트
+        성공 응답에는 `productId`가 포함됩니다. OCR 결과가 pHash + 성분셋 Jaccard ≥ 0.8로 기존
+        레코드와 유사하면 병합, 아니면 신규 insert. 즐겨찾기·이력 저장 시 이 ID 사용.
       requestBody:
         required: true
         content:
@@ -321,34 +426,74 @@ paths:
                 image:
                   type: string
                   format: binary
-                  description: 성분표가 포함된 식품 이미지 파일 (jpg, png)
+                  description: 성분표가 포함된 식품 이미지 파일 (jpg, png, webp)
+                phash:
+                  type: string
+                  pattern: '^[0-9a-f]{16}$'
+                  description: 64-bit perceptual hash (FE 계산)
+                  example: 'c3f1a0b8d4e60927'
+                mlkitText:
+                  type: string
+                  description: 온디바이스 OCR 프리패스 결과 (선택)
+                languageHint:
+                  type: string
+                  description: BCP-47 언어 코드 (선택)
+                  example: ko
       responses:
         '200':
-          description: OCR 성공
+          description: |
+            OCR 성공.
+            Accept 헤더에 따라 SSE 또는 JSON으로 응답.
           content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  SSE 이벤트 스트림. 예:
+
+                    event: cached
+                    data: {"extractedText":"Ingredients: Peanuts...","ingredients":[...],"overallConfidence":0.98,...}
+
+                    event: ingredient
+                    data: {"id":"ing-peanut","name":"Peanuts","nameKo":"땅콩","confidence":0.95}
+
+                    event: ingredient
+                    data: {"id":"ocr-2","name":"Sugar","nameKo":"설탕","confidence":0.98}
+
+                    event: done
+                    data: {"overallConfidence":0.92,"illegibleRegions":0,"detectedLanguages":["en"],"productId":"prod-abc","ladderStage":1}
             application/json:
               schema:
-                type: object
-                properties:
-                  extractedText:
-                    type: string
-                    description: OpenAI가 이미지에서 추출한 원문 텍스트
-                    example: Ingredients: Peanuts, Sugar, Palm Oil, Salt
-                  ingredients:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/IngredientSummary'
+                $ref: '#/components/schemas/OCRResult'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '422':
-          description: 이미지에서 성분 텍스트를 인식하지 못함
+        '413':
+          description: 이미지 파일 용량 초과 (10MB)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: OCR_FAILED
-                message: 성분표를 인식할 수 없습니다. 다시 촬영해 주세요.
+                error: IMAGE_TOO_LARGE
+                message: 이미지 파일이 너무 큽니다. 10MB 이하로 업로드해 주세요.
+        '415':
+          description: 지원하지 않는 이미지 형식
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: INVALID_FILE_TYPE
+                message: jpg/png/webp 이미지만 업로드 가능합니다.
+        '422':
+          description: 이미지에서 성분 텍스트를 인식하지 못함 (폴백 사다리 5단계 도달)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: OCR_UNREADABLE
+                message: 성분표를 인식할 수 없습니다. 조명을 밝게 하고 재촬영해 주세요.
 
   /analysis:
     post:
@@ -375,7 +520,7 @@ paths:
               properties:
                 productId:
                   type: string
-                  description: 바코드 스캔 시 함께 전달 (OCR 시 생략 가능)
+                  description: 바코드 또는 OCR 업서트로 얻은 제품 ID
                   example: prod-001
                 ingredientIds:
                   type: array
@@ -444,44 +589,41 @@ paths:
         POST /analysis 호출 후 결과를 이력으로 저장합니다.
         이 데이터가 쌓여야 스캔 이력 화면과 개인 안전 식품 DB가 동작합니다.
         분석 직후 클라이언트에서 자동으로 호출해야 합니다.
+
+        OCR 경로라도 POST /ocr 응답의 `productId`를 반드시 사용합니다
+        (product-upsert 파이프라인이 OCR 제품도 `products` 테이블에 insert하므로
+         productId 누락 시 플라이휠 데이터 연결이 끊김).
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [result]
+              required: [productId, result]
               properties:
                 productId:
                   type: string
-                  description: 바코드 스캔 시 포함 (OCR 시 생략 가능)
+                  description: |
+                    바코드 스캔 또는 OCR 업서트로 얻은 제품 ID.
+                    OCR 경로에서도 반드시 POST /ocr의 productId 사용.
                   example: prod-001
                 result:
                   type: string
                   enum: [safe, caution, danger]
                   example: danger
+                scanLogId:
+                  type: string
+                  description: |
+                    SSE done 이벤트에서 받은 scanLogId (있으면).
+                    플라이휠에서 이 이력과 교정 데이터를 연결하는 데 사용.
+                  example: log-001
       responses:
         '201':
           description: 이력 저장 성공
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: hist-001
-                  productId:
-                    type: string
-                    example: prod-001
-                  result:
-                    type: string
-                    enum: [safe, caution, danger]
-                    example: danger
-                  scannedAt:
-                    type: string
-                    format: date-time
-                    example: '2026-04-08T10:30:00Z'
+                $ref: '#/components/schemas/ScanHistoryItem'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '401':
@@ -491,8 +633,45 @@ paths:
       tags: [Scan History]
       summary: 스캔 이력 조회
       description: |
-        현재 로그인된 사용자의 스캔 이력 전체를 최신순으로 반환합니다.
+        현재 로그인된 사용자의 스캔 이력을 최신순으로 반환합니다.
+        from/to/result 필터와 limit/offset 페이지네이션을 지원합니다.
         스캔 이력 화면(/scan/history)에서 사용합니다.
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+          description: 조회 시작일 (YYYY-MM-DD). scanned_at >= from
+          example: '2024-01-01'
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+          description: 조회 종료일 (YYYY-MM-DD). scanned_at <= toT23:59:59
+          example: '2024-12-31'
+        - in: query
+          name: result
+          schema:
+            type: string
+            enum: [safe, caution, danger]
+          description: 판정 결과 필터
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 한 번에 반환할 최대 항목 수
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: 건너뛸 항목 수 (페이지네이션)
       responses:
         '200':
           description: 이력 목록 반환
@@ -500,25 +679,24 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [history, hasMore]
                 properties:
                   history:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          example: hist-001
-                        product:
-                          $ref: '#/components/schemas/ProductSummary'
-                        result:
-                          type: string
-                          enum: [safe, caution, danger]
-                          example: danger
-                        scannedAt:
-                          type: string
-                          format: date-time
-                          example: '2026-04-08T10:30:00Z'
+                      $ref: '#/components/schemas/ScanHistoryItem'
+                  hasMore:
+                    type: boolean
+                    description: 다음 페이지 존재 여부 (history.length === limit 이면 true)
+        '400':
+          description: 쿼리 파라미터 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: INVALID_QUERY
+                message: 요청 파라미터가 올바르지 않습니다.
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -533,6 +711,9 @@ paths:
       description: |
         스캔 결과 화면의 별표(★) 버튼을 눌렀을 때 호출합니다.
         이미 추가된 제품이면 409를 반환합니다.
+
+        OCR 경로에서도 POST /ocr 응답의 `productId`가 `products` 테이블에 존재하므로
+        FK violation은 발생하지 않습니다 (MVP 시절의 로컬 store 회피 패턴 폐기됨).
       requestBody:
         required: true
         content:
@@ -550,18 +731,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: fav-001
-                  productId:
-                    type: string
-                    example: prod-001
-                  addedAt:
-                    type: string
-                    format: date-time
-                    example: '2026-04-08T10:35:00Z'
+                $ref: '#/components/schemas/FavoriteItem'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '409':
@@ -591,17 +761,7 @@ paths:
                   favorites:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          example: fav-001
-                        product:
-                          $ref: '#/components/schemas/ProductSummary'
-                        addedAt:
-                          type: string
-                          format: date-time
-                          example: '2026-04-08T10:35:00Z'
+                      $ref: '#/components/schemas/FavoriteItem'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -612,10 +772,6 @@ paths:
       description: |
         즐겨찾기 목록에서 특정 항목을 삭제합니다.
         id는 GET /favorites 응답의 favorites[].id 값입니다.
-
-        DELETE를 사용하는 이유:
-        리소스 삭제 의미를 명확히 표현하기 위함입니다.
-        POST나 GET으로 삭제를 구현하는 것은 HTTP 메서드 의미에 맞지 않습니다.
       parameters:
         - name: id
           in: path
@@ -660,7 +816,7 @@ paths:
         함께 반환합니다.
 
         정렬 방식:
-        - relevance : 트라이그램 유사도 기준 (기본)
+        - relevance : pg_trgm 유사도 기준 (기본)
         - safety    : 안전 제품이 먼저 오도록 (safe → caution → danger)
         - name      : 이름 오름차순
 
@@ -746,7 +902,7 @@ paths:
       description: |
         검색 탭에서 사용자가 검색어를 입력하는 동안, 제품명/브랜드명에 매칭되는
         자동완성 후보를 실시간으로 반환합니다. 개인화 없이 prefix 매칭만 수행하므로
-        응답이 빠릅니다.
+        응답이 빠릅니다 (캐시 효율 극대화).
 
         highlight는 자동완성 UI에서 매칭 구간을 강조하기 위한 인덱스 정보입니다
         (field: "name" | "brand", start/end: 문자 인덱스).
@@ -754,7 +910,7 @@ paths:
         타임아웃 300ms — 서버가 응답하지 못하면 빈 배열을 반환합니다.
         자동완성은 필수 UX가 아니므로 장애 시에도 앱 흐름을 막지 않습니다.
 
-        Rate limit: 사용자당 분당 120회. FE에서도 200ms 디바운스 적용 권장.
+        Rate limit: 사용자당 분당 120회.
       parameters:
         - name: q
           in: query
@@ -798,6 +954,433 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+  # ─────────────────────────────────────
+  # 유저 교정 (데이터 플라이휠)
+  # ─────────────────────────────────────
+
+  /corrections:
+    post:
+      tags: [Corrections]
+      summary: 성분 교정 제출
+      description: |
+        사용자가 스캔 결과의 성분명을 수정한 내용을 제출합니다.
+        플라이휠 데이터로 수집되어 주 1회 배치로 골드 세트 후보(`eval/candidates/`)에 추가됩니다.
+
+        **사전 조건**: 사용자가 `consentCorrections=true`로 동의한 상태여야 합니다.
+        동의 없이 호출 시 CORRECTION_CONSENT_REQUIRED 반환.
+
+        상세: `docs/ocr-pipeline-rebuild-guide.md §7.4`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scanLogId, corrections]
+              properties:
+                scanLogId:
+                  type: string
+                  description: POST /ocr SSE done 이벤트의 scanLogId
+                  example: log-001
+                corrections:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [originalName, correctedName]
+                    properties:
+                      ingredientId:
+                        type: string
+                        description: 원본 성분 ID (있으면)
+                        example: ocr-3
+                      originalName:
+                        type: string
+                        example: Sugr
+                      correctedName:
+                        type: string
+                        example: Sugar
+      responses:
+        '201':
+          description: 교정 저장 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: corr-001
+                  acceptedCount:
+                    type: integer
+                    example: 2
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 교정 데이터 수집 미동의
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: CORRECTION_CONSENT_REQUIRED
+                message: 교정 데이터 수집 동의가 필요합니다. 프로필 → 개인정보에서 설정해 주세요.
+
+  # ─────────────────────────────────────
+  # 관리자 (내부)
+  # ─────────────────────────────────────
+
+  /admin/review-queue:
+    get:
+      tags: [Admin]
+      summary: 휴먼 리뷰 대기 큐 조회
+      description: |
+        폴백 사다리 5단계(추출 실패)에 도달한 스캔을 관리자가 검토하는 대기열입니다.
+        관리자 토큰 필요.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 페이지네이션 커서
+      responses:
+        '200':
+          description: 대기열 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReviewQueueItem'
+                  nextCursor:
+                    type: string
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 관리자 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: FORBIDDEN
+                message: 관리자 권한이 필요합니다.
+
+# ─────────────────────────────────────
+# Phase 2 — 멀티 프로필
+# ─────────────────────────────────────
+
+  /profiles/members:
+    post:
+      tags: [Profiles]
+      summary: 멤버 프로필 생성
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberProfileInput'
+      responses:
+        '201':
+          description: 생성된 멤버 프로필
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberProfile'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: DB 사용 불가
+    get:
+      tags: [Profiles]
+      summary: 내 멤버 프로필 목록
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 멤버 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemberProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /profiles/members/{id}:
+    get:
+      tags: [Profiles]
+      summary: 멤버 프로필 상세
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 멤버 프로필
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 다른 사용자의 프로필
+        '404':
+          description: 존재하지 않는 프로필
+    patch:
+      tags: [Profiles]
+      summary: 멤버 프로필 수정
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberProfileUpdate'
+      responses:
+        '200':
+          description: 수정된 멤버 프로필
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 다른 사용자의 프로필
+        '404':
+          description: 존재하지 않는 프로필
+    delete:
+      tags: [Profiles]
+      summary: 멤버 프로필 삭제
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 삭제 완료
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 다른 사용자의 프로필
+        '404':
+          description: 존재하지 않는 프로필
+
+# ─────────────────────────────────────
+# Phase 2 — 건강검진
+# ─────────────────────────────────────
+
+  /health-reports:
+    post:
+      tags: [HealthReports]
+      summary: 건강검진 파일 업로드
+      description: |
+        허용 MIME: `application/pdf`, `image/jpeg`, `image/png`. 최대 10MB.
+        multipart/form-data 필드: `file`(파일), `title`(필수), `reportDate`(선택, YYYY-MM-DD),
+        `notes`(선택), `extractedAllergenIds`(선택, JSON 배열 문자열).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, title]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                reportDate:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+                extractedAllergenIds:
+                  type: string
+                  description: JSON 배열 문자열 (예 ["ing-milk"])
+      responses:
+        '201':
+          description: 업로드된 건강검진 메타
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthReport'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      tags: [HealthReports]
+      summary: 건강검진 목록
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: 건강검진 목록 + 페이지 정보
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HealthReport'
+                  total:
+                    type: integer
+                  hasMore:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /health-reports/{id}:
+    get:
+      tags: [HealthReports]
+      summary: 건강검진 상세 + signed URL (TTL 5분)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 건강검진 상세 + 다운로드 URL
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/HealthReport'
+                  - type: object
+                    properties:
+                      downloadUrl:
+                        type: string
+                      expiresAt:
+                        type: string
+                        format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 존재하지 않거나 소유자 불일치
+    patch:
+      tags: [HealthReports]
+      summary: 건강검진 메타 수정
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                reportDate:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+                extractedAllergenIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 수정된 건강검진 메타
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 존재하지 않거나 소유자 불일치
+    delete:
+      tags: [HealthReports]
+      summary: 건강검진 삭제 (Storage + row)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 삭제 완료
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 존재하지 않거나 소유자 불일치
+
 # ─────────────────────────────────────
 # 공통 스키마 및 응답
 # ─────────────────────────────────────
@@ -809,27 +1392,27 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Supabase Auth access token (supabase.auth.signInWithOAuth 결과)
+      description: Supabase Auth access token
 
   schemas:
 
-    User:
+    UserProfile:
       type: object
       properties:
         id:
           type: string
           example: uuid-1234
-        name:
-          type: string
-          example: 홍길동
         email:
           type: string
           example: user@example.com
+        name:
+          type: string
+          example: 홍길동
         allergyProfile:
           type: array
           items:
             type: string
-          example: [ing-peanut, ing-gluten]
+          example: [ing-peanut]
         dietaryRestrictions:
           type: array
           items:
@@ -838,12 +1421,21 @@ components:
         sensitivityLevel:
           type: string
           enum: [strict, normal]
-          example: strict
+          example: normal
+        language:
+          type: string
+          example: ko
+        consentFlags:
+          type: object
+          properties:
+            imageRetention:
+              type: boolean
+              default: false
+            corrections:
+              type: boolean
+              default: false
         hasCompletedSurvey:
           type: boolean
-          description: |
-            POST /auth/survey를 한 번이라도 호출해 프로필을 저장한 적이 있으면 true.
-            소셜 로그인 직후 false면 설문 화면으로, true면 메인 탭으로 분기.
           example: true
 
     Product:
@@ -854,6 +1446,7 @@ components:
           example: prod-001
         barcode:
           type: string
+          nullable: true
           example: '0034000020430'
         name:
           type: string
@@ -865,10 +1458,22 @@ components:
           type: string
           format: uri
           example: https://images.openfoodfacts.org/...
+        phash:
+          type: string
+          nullable: true
+          description: 64-bit perceptual hash (OCR 업서트 시 설정)
+          example: 'c3f1a0b8d4e60927'
+        source:
+          type: string
+          enum: [seed, off, ocr]
+          description: 레코드 출처
         ingredients:
           type: array
           items:
             $ref: '#/components/schemas/IngredientSummary'
+        dataCompleteness:
+          type: string
+          enum: [complete, partial]
 
     ProductSummary:
       type: object
@@ -886,7 +1491,6 @@ components:
         image:
           type: string
           format: uri
-          example: https://images.openfoodfacts.org/...
         isSafe:
           type: boolean
           description: 현재 사용자 프로필 기준 안전 여부
@@ -926,7 +1530,12 @@ components:
 
     IngredientSummary:
       type: object
-      description: 목록 표시용 성분 요약 (description, sources 미포함)
+      description: |
+        목록 표시용 성분 요약 (description, sources 미포함).
+
+        `translations` 는 다국어 성분명 (en/ko/ja/zh/es/fr). 전환기에는 name/nameKo와 공존하며,
+        FE는 `translations[userLang] ?? name` 순으로 우선한다
+        (docs/ocr-pipeline-rebuild-guide.md §10.2).
       properties:
         id:
           type: string
@@ -937,6 +1546,98 @@ components:
         nameKo:
           type: string
           example: 땅콩
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: |
+            OCR 인식 신뢰도. 바코드 경로에서는 생략.
+            0이면 판독 실패 ([illegible] 표시). 0.85 미만은 클라이언트에서 저신뢰 경고.
+        translations:
+          type: object
+          description: |
+            BCP-47 로케일 → 성분명 매핑. OCR 경로에서는 6개 기본 로케일(en/ko/ja/zh/es/fr)이
+            항상 채워진다. 바코드/may-* 경로는 생략 가능(optional).
+          additionalProperties:
+            type: string
+          example:
+            en: Peanuts
+            ko: 땅콩
+            ja: ピーナッツ
+            zh: 花生
+            es: Cacahuetes
+            fr: Arachides
+
+    OCRResult:
+      type: object
+      description: |
+        POST /ocr의 JSON 응답 또는 SSE `cached` 이벤트 data.
+      properties:
+        extractedText:
+          type: string
+          description: 이미지에서 추출한 원문 텍스트
+          example: 'Ingredients: Peanuts, Sugar, Palm Oil, Salt'
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientSummary'
+        overallConfidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: |
+            OCR 추출의 전체 신뢰도. 0.85 미만이면 클라이언트에서 경고 배너.
+          example: 0.92
+        illegibleRegions:
+          type: integer
+          minimum: 0
+          description: 판독 불가 영역 수. > 0이면 일부 성분 누락 가능성.
+          example: 0
+        detectedLanguages:
+          type: array
+          items:
+            type: string
+          description: 감지된 언어 목록 (BCP-47)
+          example: [en]
+        productId:
+          type: string
+          description: |
+            product-upsert 파이프라인이 반환한 제품 ID.
+            즐겨찾기·이력 저장 시 이 ID 사용.
+          example: prod-abc
+        ladderStage:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 실제 추출에 도달한 폴백 사다리 단계 (관측성용)
+          example: 1
+        scanLogId:
+          type: string
+          description: scan_logs 테이블에 기록된 이 스캔의 로그 ID. 교정 제출 시 사용.
+          example: log-001
+        cacheHit:
+          type: string
+          enum: [none, 'phash-local', 'phash-server', barcode]
+
+    OCRDoneMeta:
+      type: object
+      description: SSE `done` 이벤트의 data. OCRResult에서 ingredients/extractedText를 뺀 메타 정보.
+      properties:
+        overallConfidence:
+          type: number
+        illegibleRegions:
+          type: integer
+        detectedLanguages:
+          type: array
+          items:
+            type: string
+        productId:
+          type: string
+        ladderStage:
+          type: integer
+        scanLogId:
+          type: string
 
     AnalysisResult:
       type: object
@@ -983,19 +1684,47 @@ components:
           type: string
           enum: [complete, partial]
           description: |
-            분석 대상 성분 데이터의 신뢰도.
+            complete : productId가 서버 DB에 존재 (OCR 업서트 후 포함) — 서버사이드 성분 권위
+            partial  : 서버 DB 미등록 제품 또는 OFF 폴백 — 결과 신뢰도 낮음
 
-            complete : productId가 서버 DB에 존재 — 서버사이드 성분으로 판정.
-                       클라이언트 ingredientIds는 무시되며 DB 값이 권위 있는 기준.
-            partial  : 아래 중 하나에 해당 — 결과 신뢰도 낮음:
-                       (1) productId 미제공 (OCR 경로) — 클라이언트 ingredientIds 사용
-                       (2) productId가 DB에 없는 제품 (Open Food Facts 경유) — 클라이언트 폴백
+    ScanHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: hist-001
+        productId:
+          type: string
+          example: prod-001
+        product:
+          $ref: '#/components/schemas/ProductSummary'
+        result:
+          type: string
+          enum: [safe, caution, danger]
+          example: danger
+        scannedAt:
+          type: string
+          format: date-time
+          example: '2026-04-08T10:30:00Z'
+        scanLogId:
+          type: string
+          nullable: true
 
-            클라이언트 대응 지침:
-            - partial 판정 시 UI에 "성분 정보가 불완전할 수 있습니다" 경고 표시 권장.
-            - safe + partial 조합은 "안전 확인됨"이 아닌 "위험 성분 미감지" 로 표시할 것.
-            - danger/caution + partial도 실제보다 더 많은 위험이 있을 수 있음을 안내할 것.
-          example: complete
+    FavoriteItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: fav-001
+        productId:
+          type: string
+          example: prod-001
+        product:
+          $ref: '#/components/schemas/ProductSummary'
+        addedAt:
+          type: string
+          format: date-time
+          example: '2026-04-08T10:35:00Z'
 
     SearchResultItem:
       type: object
@@ -1015,7 +1744,6 @@ components:
           type: string
           format: uri
           nullable: true
-          example: https://images.openfoodfacts.org/...
         riskLevel:
           type: string
           enum: [safe, caution, danger]
@@ -1059,6 +1787,169 @@ components:
                 type: integer
                 minimum: 0
 
+    Correction:
+      type: object
+      properties:
+        id:
+          type: string
+          example: corr-001
+        scanLogId:
+          type: string
+          example: log-001
+        corrections:
+          type: array
+          items:
+            type: object
+            properties:
+              ingredientId:
+                type: string
+                nullable: true
+              originalName:
+                type: string
+              correctedName:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewQueueItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: rev-001
+        phash:
+          type: string
+          example: 'c3f1a0b8d4e60927'
+        imageRef:
+          type: string
+          nullable: true
+          description: 사용자가 동의한 경우에만 존재 (Supabase Storage 경로)
+        lastExtraction:
+          $ref: '#/components/schemas/OCRResult'
+        reason:
+          type: string
+          enum: [low_confidence, parse_error, timeout, user_reported]
+        createdAt:
+          type: string
+          format: date-time
+
+    MemberProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        profileImage:
+          type: string
+          nullable: true
+        allergyProfile:
+          type: array
+          items:
+            type: string
+        dietaryRestrictions:
+          type: array
+          items:
+            type: string
+        sensitivityLevel:
+          type: string
+          enum: [strict, normal]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MemberProfileInput:
+      type: object
+      required: [name, allergyProfile, dietaryRestrictions, sensitivityLevel]
+      properties:
+        name:
+          type: string
+        profileImage:
+          type: string
+          nullable: true
+        allergyProfile:
+          type: array
+          items:
+            type: string
+        dietaryRestrictions:
+          type: array
+          items:
+            type: string
+        sensitivityLevel:
+          type: string
+          enum: [strict, normal]
+
+    MemberProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        profileImage:
+          type: string
+          nullable: true
+        allergyProfile:
+          type: array
+          items:
+            type: string
+        dietaryRestrictions:
+          type: array
+          items:
+            type: string
+        sensitivityLevel:
+          type: string
+          enum: [strict, normal]
+
+    HealthReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        reportDate:
+          type: string
+          format: date
+          nullable: true
+        fileMime:
+          type: string
+          enum: [application/pdf, image/jpeg, image/png]
+        fileSizeBytes:
+          type: integer
+        extractedAllergenIds:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+
+    HealthReportDownload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        downloadUrl:
+          type: string
+          description: Supabase Storage signed URL (TTL 5분)
+        expiresAt:
+          type: string
+          format: date-time
+
     ErrorResponse:
       type: object
       properties:
@@ -1066,19 +1957,38 @@ components:
           type: string
           description: |
             에러 코드 (클라이언트 분기 처리용).
-            표준 코드: UNAUTHORIZED · INVALID_INPUT · INVALID_QUERY ·
-                      TOO_MANY_REQUESTS · PRODUCT_NOT_FOUND · OCR_FAILED ·
-                      INGREDIENT_NOT_FOUND · ALREADY_FAVORITED · FAVORITE_NOT_FOUND
+            표준 코드: INVALID_INPUT · INVALID_QUERY · TOO_MANY_REQUESTS ·
+                      UNAUTHORIZED · FORBIDDEN · PRODUCT_NOT_FOUND ·
+                      OCR_FAILED · OCR_UNREADABLE · IMAGE_TOO_LARGE · INVALID_FILE_TYPE ·
+                      INGREDIENT_NOT_FOUND · ALREADY_FAVORITED · FAVORITE_NOT_FOUND ·
+                      CORRECTION_CONSENT_REQUIRED · PROFILE_NOT_FOUND · FORBIDDEN_PROFILE ·
+                      NOT_FOUND · STORAGE_UNAVAILABLE
           example: INVALID_INPUT
         message:
           type: string
           description: 사람이 읽을 수 있는 에러 메시지
           example: 요청 데이터가 올바르지 않습니다.
 
+    ErrorEvent:
+      type: object
+      description: SSE `error` 이벤트의 data.
+      properties:
+        error:
+          type: string
+          example: OCR_UNREADABLE
+        message:
+          type: string
+        retryable:
+          type: boolean
+          description: true면 같은 이미지로 재시도 가능, false면 재촬영 필요
+          example: false
+        ladderStage:
+          type: integer
+
   responses:
 
     Unauthorized:
-      description: 토큰 없음 또는 만료 (Supabase 검증 실패 포함)
+      description: 토큰 없음 또는 만료
       content:
         application/json:
           schema:

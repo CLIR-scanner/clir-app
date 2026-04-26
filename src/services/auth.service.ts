@@ -109,6 +109,7 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     sensitivityLevel: res.sensitivityLevel,
     language: 'en',
     multiProfiles: [],
+    consentFlags: { imageRetention: false, corrections: false },
   };
   return { user, hasCompletedSurvey: res.hasCompletedSurvey };
 }

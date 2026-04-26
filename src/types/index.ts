@@ -1,3 +1,10 @@
+// ⚠️  이 파일의 도메인 엔티티 타입(Product, Ingredient, OCRResult 등)은
+//     clir-api/src/types/index.ts와 항상 동일하게 유지해야 한다.
+//     변경 시 반드시 양쪽 동시 수정.
+//
+//     의도적 추가 항목 (FE 전용):
+//       - *Store 인터페이스, *ParamList 타입 — BE에 없음
+
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
 export type RiskLevel = 'safe' | 'caution' | 'danger';
@@ -6,6 +13,14 @@ export type SensitivityLevel = 'strict' | 'normal';
 export type ScanResult = RiskLevel;
 /** 바코드 DB에서 가져온 제품 성분 정보의 완성도 */
 export type DataCompleteness = 'complete' | 'partial' | 'not_found';
+/** BCP-47 언어 코드 */
+export type BCP47 = string;
+/** 제품 레코드 출처 */
+export type ProductSource = 'seed' | 'off' | 'ocr';
+/** OCR 캐시 히트 경로 */
+export type CacheHit = 'none' | 'phash-local' | 'phash-server' | 'barcode';
+/** 폴백 사다리 단계 */
+export type LadderStage = 1 | 2 | 3 | 4 | 5;
 
 // ─── Domain Entities ──────────────────────────────────────────────────────────
 
@@ -13,6 +28,16 @@ export interface IngredientSummary {
   id: string;
   name: string;
   nameKo: string;
+  /**
+   * OCR 인식 신뢰도 (0.0–1.0). 바코드 경로에서는 생략.
+   * 0이면 판독 실패 ([illegible]), 0.85 미만은 클라이언트에서 저신뢰 경고.
+   */
+  confidence?: number;
+  /**
+   * 과도기 — 다국어 성분명. 최종적으로 name/nameKo를 대체 예정
+   * (docs/ocr-pipeline-rebuild-guide.md §10.2). 전환기에는 name/nameKo와 공존.
+   */
+  translations?: Record<BCP47, string>;
 }
 
 export interface Ingredient extends IngredientSummary {
@@ -39,15 +64,59 @@ export interface Product {
   alternatives: Product[];
   /** 바코드 DB 성분 정보 완성도 */
   dataCompleteness?: DataCompleteness;
+  /** 64-bit perceptual hash — OCR 업서트 시 설정 */
+  phash?: string;
+  /** 레코드 출처 */
+  source?: ProductSource;
 }
 
-/** POST /ocr 응답 */
+/** POST /ocr 응답 (SSE 스트림 종료 후 합산 결과 또는 캐시 히트 즉시 응답) */
 export interface OCRResult {
   /** 이미지에서 추출한 원문 텍스트 */
   extractedText: string;
   /** 파싱된 성분 목록 (알러겐은 ing-* ID, 일반 성분은 ocr-{n} ID) */
   ingredients: IngredientSummary[];
+  /** OCR 추출의 전체 신뢰도 (0.0–1.0). 0.85 미만이면 클라에서 경고 배너. */
+  overallConfidence?: number;
+  /** 판독 불가 영역 수. > 0이면 일부 성분 누락 가능성. */
+  illegibleRegions?: number;
+  /** 감지된 언어 목록 (BCP-47) */
+  detectedLanguages?: BCP47[];
+  /** product-upsert 파이프라인이 반환한 제품 ID. 즐겨찾기·이력 저장 시 사용. */
+  productId?: string;
+  /** 실제 추출에 도달한 폴백 사다리 단계 (관측성용) */
+  ladderStage?: LadderStage;
+  /** scan_logs 테이블에 기록된 이 스캔의 로그 ID. 교정 제출 시 사용. */
+  scanLogId?: string;
+  /** 캐시 히트 경로 */
+  cacheHit?: CacheHit;
 }
+
+/** SSE `done` 이벤트의 data — OCRResult에서 ingredients/extractedText를 뺀 메타. */
+export interface OCRDoneMeta {
+  overallConfidence: number;
+  illegibleRegions: number;
+  detectedLanguages: BCP47[];
+  productId?: string;
+  ladderStage: LadderStage;
+  scanLogId?: string;
+  cacheHit: CacheHit;
+}
+
+/** SSE `error` 이벤트의 data. */
+export interface OCRErrorEvent {
+  error: string;
+  message: string;
+  retryable: boolean;
+  ladderStage?: LadderStage;
+}
+
+/** SSE 이벤트 판별 union — FE 이벤트 핸들러의 타입 가드 기준. */
+export type OCRSSEEvent =
+  | { type: 'cached';     data: OCRResult }
+  | { type: 'ingredient'; data: IngredientSummary }
+  | { type: 'done';       data: OCRDoneMeta }
+  | { type: 'error';      data: OCRErrorEvent };
 
 /** POST /analysis 응답 */
 export interface AnalysisResult {
@@ -67,7 +136,7 @@ export interface AnalysisResult {
 export interface TriggeredIngredient extends IngredientSummary {
   /** 판정 이유 (예: "알러지 프로필에 등록된 성분입니다.") */
   reason: string;
-  riskLevel: RiskLevel;
+  riskLevel: 'danger' | 'caution';
 }
 
 /** GET /search/products items[] — 서버에서 개인화 판정 후 반환 */
@@ -96,6 +165,12 @@ export interface SearchHighlight {
   end: number;
 }
 
+/** 개인정보 동의 플래그 — profiles 테이블 컬럼과 동일 shape. */
+export interface ConsentFlags {
+  imageRetention: boolean;
+  corrections: boolean;
+}
+
 export interface Profile {
   id: string;
   name: string;
@@ -109,6 +184,8 @@ export interface User extends Profile {
   email: string;
   language: string;
   multiProfiles: Profile[];
+  consentFlags: ConsentFlags;
+  hasCompletedSurvey?: boolean;
 }
 
 export interface ScanHistory {
@@ -118,6 +195,8 @@ export interface ScanHistory {
   scannedAt: Date;
   result: ScanResult;
   product: Product;
+  /** 플라이휠 — 이 이력과 scan_logs / corrections 연결. */
+  scanLogId?: string;
 }
 
 export interface FavoriteItem {
@@ -136,6 +215,93 @@ export interface ShoppingItem {
   isPurchased: boolean;
   addedAt: Date;
   product: Product;
+}
+
+// ─── Alternatives ────────────────────────────────────────────────────────────
+
+export type AlternativeReason = 'same_category' | 'brand_match' | 'user_frequent' | 'user_favorite' | 'fallback';
+
+export interface ProductAlternative {
+  id: string;
+  name: string;
+  brand: string;
+  image?: string;
+  isSafe: boolean;
+  reason?: AlternativeReason;
+}
+
+// ─── Health Reports ───────────────────────────────────────────────────────────
+
+export interface HealthReport {
+  id: string;
+  userId: string;
+  title: string;
+  reportDate?: string;
+  fileMime: 'application/pdf' | 'image/jpeg' | 'image/png';
+  fileSizeBytes: number;
+  extractedAllergenIds: string[];
+  notes: string;
+  uploadedAt: string;
+}
+
+export interface HealthReportDownload {
+  id: string;
+  downloadUrl: string;
+  expiresAt: string;
+}
+
+// ─── Multi-Profile ────────────────────────────────────────────────────────────
+
+export interface MemberProfile {
+  id: string;
+  ownerId: string;
+  name: string;
+  profileImage?: string;
+  allergyProfile: string[];
+  dietaryRestrictions: string[];
+  sensitivityLevel: SensitivityLevel;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MemberProfileInput = Pick<MemberProfile,
+  'name' | 'profileImage' | 'allergyProfile' | 'dietaryRestrictions' | 'sensitivityLevel'>;
+
+export type MemberProfileUpdate = Partial<MemberProfileInput>;
+
+// ─── Observability / Flywheel ────────────────────────────────────────────────
+
+/** Supabase scan_logs 테이블의 도메인 표현 (snake_case 컬럼 → camelCase). */
+export interface ScanLog {
+  id: string;
+  userId?: string;
+  phash: string;
+  model: string;
+  promptVersion: string;
+  schemaVersion: string;
+  extraction: unknown;
+  userCorrections?: unknown;
+  latencyMs: number;
+  cacheHit: CacheHit;
+  ladderStage: LadderStage;
+  estCostUsd: number;
+  createdAt: string;
+}
+
+/** 유저가 교정한 성분 1개. POST /corrections 요청/응답 공용. */
+export interface CorrectionEntry {
+  ingredientId?: string;
+  originalName: string;
+  correctedName: string;
+}
+
+/** Supabase corrections 테이블의 도메인 표현. */
+export interface Correction {
+  id: string;
+  scanLogId: string;
+  userId: string;
+  corrections: CorrectionEntry[];
+  createdAt: string;
 }
 
 // ─── Request Payloads ─────────────────────────────────────────────────────────
