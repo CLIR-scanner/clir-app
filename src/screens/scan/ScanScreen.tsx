@@ -17,11 +17,21 @@ import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
-import { ScanStackParamList, MainTabParamList, Product, AnalysisResult, RiskLevel } from '../../types';
+import { ScanStackParamList, MainTabParamList, Product, AnalysisResult, RiskLevel, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
-import { scanBarcode, analyzeProduct, saveScanHistory, getScanHistory } from '../../services/scan.service';
+import {
+  scanBarcode,
+  recognizeIngredients,
+  analyzeProduct,
+  saveScanHistory,
+  getScanHistory,
+} from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
-import { addFavorite } from '../../services/list.service';
+import {
+  addFavorite as apiAddFavorite,
+  removeFavorite as apiRemoveFavorite,
+  getFavorites,
+} from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
 import ScannerCamera, {
@@ -110,6 +120,8 @@ export default function ScanScreen({ navigation }: Props) {
   const setHistory         = useScanStore(s => s.setHistory);
   const history            = useScanStore(s => s.history);
   const addFavoriteToStore = useListStore(s => s.addFavorite);
+  const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
+  const setFavoritesInStore = useListStore(s => s.setFavorites);
   // favorites는 렌더 구독 대신 getState()로 스냅샷 조회 (showOverlay, handleFavorite)
 
   const lastProductImage = history[0]?.product.image;
@@ -175,7 +187,8 @@ export default function ScanScreen({ navigation }: Props) {
   function showOverlay(product: Product, analysis: AnalysisResult) {
     const currentFavs = useListStore.getState().favorites;
     setScanResult({ product, analysis });
-    setFavorited(currentFavs.some(f => f.productId === product.id));
+    setFavorited(currentFavs.some(f => isFavoriteForProduct(f, product.id)));
+    void syncFavoriteStatus(product.id);
     circleScale.setValue(0);
     sheetY.setValue(320);
     Animated.parallel([
@@ -187,6 +200,47 @@ export default function ScanScreen({ navigation }: Props) {
         easing: Easing.out(Easing.cubic), useNativeDriver: true,
       }),
     ]).start();
+  }
+
+  function isFavoriteForProduct(item: FavoriteItem, productId: string) {
+    return item.productId === productId || item.product?.id === productId;
+  }
+
+  function makeLocalFavorite(product: Product): FavoriteItem {
+    return {
+      id: `fav-local-${Date.now()}`,
+      productId: product.id,
+      userId: '',
+      memo: '',
+      addedAt: new Date(),
+      product,
+    };
+  }
+
+  function mergeWithLocalFavorites(fetched: FavoriteItem[]) {
+    const localFavorites = useListStore.getState().favorites.filter(f => f.id.startsWith('fav-local-'));
+    return [
+      ...localFavorites.filter(local =>
+        !fetched.some(item => isFavoriteForProduct(item, local.productId)),
+      ),
+      ...fetched,
+    ];
+  }
+
+  async function syncFavoriteStatus(productId: string) {
+    const current = useListStore.getState().favorites;
+    if (current.length > 0) {
+      setFavorited(current.some(f => isFavoriteForProduct(f, productId)));
+      return;
+    }
+    try {
+      const fetched = await getFavorites();
+      const merged = mergeWithLocalFavorites(fetched);
+      setFavoritesInStore(merged);
+      setFavorited(merged.some(f => isFavoriteForProduct(f, productId)));
+    } catch {
+      // Favorite status sync is best-effort; the button still works with local state.
+    }
   }
 
   function dismissOverlay() {
@@ -258,19 +312,82 @@ export default function ScanScreen({ navigation }: Props) {
       if (err instanceof ApiError) {
         if (err.code === 'PRODUCT_NOT_FOUND') {
           Alert.alert(
-            '등록되지 않은 제품입니다',
-            '성분표를 직접 촬영해서 분석할 수 있습니다.',
+            'Product Not Found',
+            'Scan the ingredient label with OCR instead.',
             [
-              { text: '취소', style: 'cancel' },
-              { text: '성분표 촬영', onPress: () => navigation.navigate('OCRCapture', {}) },
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Scan Label', onPress: () => handleToggleMode(true) },
             ],
           );
         } else {
-          Alert.alert('오류', err.message);
+          Alert.alert('Error', err.message);
         }
       } else {
-        Alert.alert('연결 오류', '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        Alert.alert('Connection Error', 'Unable to connect to the server. Please try again later.');
       }
+    }
+  }
+
+  async function processOCRPhoto(imageUri: string) {
+    if (processingRef.current) return;
+    processingRef.current = true;
+    setBarcodeDetected(false);
+    setProcessing(true);
+    setScanPreviewUri(imageUri);
+
+    try {
+      const ocrResult = await recognizeIngredients(imageUri);
+      const analysis  = await analyzeProduct({
+        ingredientIds: ocrResult.ingredients.map(i => i.id),
+      });
+      const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
+        id: t.id,
+        name: t.name,
+        nameKo: t.nameKo,
+        description: '',
+        riskLevel: t.riskLevel,
+        sources: [] as [],
+        ...(t.id.startsWith('ing-may-') ? { relatedAllergenId: t.id.replace('ing-may-', 'ing-') } : {}),
+      });
+      const product: Product = {
+        id: `ocr-${Date.now()}`,
+        name: 'Scanned Product',
+        brand: '',
+        image: imageUri,
+        ingredients: ocrResult.ingredients.map(i => ({
+          id: i.id,
+          name: i.name,
+          nameKo: i.nameKo,
+          description: '',
+          riskLevel: 'safe',
+          sources: [],
+        })),
+        isSafe: analysis.isSafe,
+        riskLevel: analysis.verdict,
+        riskIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
+        mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
+        alternatives: [],
+        dataCompleteness: 'partial',
+      };
+
+      try {
+        const historyItem = await saveScanHistory({ result: product.riskLevel });
+        addHistory({ ...historyItem, product });
+      } catch { /* silent */ }
+
+      setProcessing(false);
+      showOverlay(product, analysis);
+    } catch (err) {
+      processingRef.current = false;
+      setProcessing(false);
+      setScanPreviewUri(null);
+      const isOcrFail = err instanceof ApiError && err.code === 'OCR_FAILED';
+      Alert.alert(
+        isOcrFail ? 'Recognition Failed' : 'Analysis Failed',
+        isOcrFail
+          ? 'Please take a brighter, clearer photo of the ingredient label.'
+          : 'We could not analyze this ingredient label. Please try again.',
+      );
     }
   }
 
@@ -325,38 +442,99 @@ export default function ScanScreen({ navigation }: Props) {
       if (!cameraRef.current) return;
       try {
         const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-        navigation.navigate('OCRCapture', { photoUri: photo.uri });
+        void processOCRPhoto(photo.uri);
       } catch {
         // 촬영 실패 시 카메라 화면 그대로 유지
       }
       return;
     }
 
-    // Barcode mode: process captured barcode or fall back to OCRCapture
+    // Barcode mode: process captured barcode or switch to OCR in-place.
     if (latestBarcodeRef.current) {
       processBarcode(latestBarcodeRef.current);
       return;
     }
-    navigation.navigate('OCRCapture', {});
+    handleToggleMode(true);
   }
 
   // ── Add to Favorites ──────────────────────────────────────────────────────
 
   async function handleFavorite() {
-    if (!scanResult || favLoading || favorited) return;
+    if (!scanResult || favLoading) return;
     const { product } = scanResult;
-    // Already in favorites? (store 최신 스냅샷으로 확인)
-    if (useListStore.getState().favorites.some(f => f.productId === product.id)) {
-      setFavorited(true);
-      return;
-    }
     setFavLoading(true);
+
     try {
-      const item = await addFavorite(product.id);
-      addFavoriteToStore({ ...item, product });
+      let currentFavs = useListStore.getState().favorites;
+      let existing = currentFavs.find(f => isFavoriteForProduct(f, product.id));
+
+      if (!existing) {
+        try {
+          currentFavs = await getFavorites();
+          const merged = mergeWithLocalFavorites(currentFavs);
+          setFavoritesInStore(merged);
+          existing = merged.find(f => isFavoriteForProduct(f, product.id));
+        } catch {
+          // If the server list cannot be fetched, continue with local state.
+        }
+      }
+
+      if (existing) {
+        let favoriteToDelete = existing;
+        try {
+          const fetched = await getFavorites();
+          const merged = mergeWithLocalFavorites(fetched);
+          setFavoritesInStore(merged);
+          favoriteToDelete = merged.find(f => isFavoriteForProduct(f, product.id)) ?? existing;
+        } catch {
+          // Keep the existing local snapshot if refresh fails.
+        }
+
+        removeFavoriteFromStore(favoriteToDelete.id);
+        setFavorited(false);
+        if (!favoriteToDelete.id.startsWith('fav-local-')) {
+          try {
+            await apiRemoveFavorite(favoriteToDelete.id);
+          } catch (err) {
+            try {
+              const fetched = await getFavorites();
+              const serverExisting = fetched.find(f => isFavoriteForProduct(f, product.id));
+              setFavoritesInStore(mergeWithLocalFavorites(fetched));
+              if (serverExisting) {
+                setFavorited(true);
+              }
+            } catch {
+              addFavoriteToStore(favoriteToDelete);
+              setFavorited(true);
+            }
+          }
+        }
+        return;
+      }
+
+      const localItem = makeLocalFavorite(product);
+      addFavoriteToStore(localItem);
       setFavorited(true);
-    } catch { /* silent */ }
-    finally { setFavLoading(false); }
+
+      try {
+        const serverItem = await apiAddFavorite(product.id);
+        removeFavoriteFromStore(localItem.id);
+        addFavoriteToStore({ ...serverItem, product });
+      } catch (err) {
+        // OCR products may not exist in the products table yet; keep the local favorite.
+        // If this was a duplicate add race, refresh and prefer the server favorite id.
+        if (err instanceof ApiError && (err.status === 400 || err.status === 409)) {
+          try {
+            const fetched = await getFavorites();
+            setFavoritesInStore(mergeWithLocalFavorites(fetched));
+          } catch {
+            // Keep the optimistic local favorite.
+          }
+        }
+      }
+    } finally {
+      setFavLoading(false);
+    }
   }
 
   // ── See more detail ───────────────────────────────────────────────────────
@@ -434,7 +612,7 @@ export default function ScanScreen({ navigation }: Props) {
           source={{ uri: scanPreviewUri }}
           style={StyleSheet.absoluteFill}
           resizeMode="cover"
-          blurRadius={8}
+          blurRadius={isOCRMode ? 0 : 8}
         />
       ) : null}
       {scanResult ? <View style={styles.resultBackdropTint} pointerEvents="none" /> : null}
@@ -451,24 +629,12 @@ export default function ScanScreen({ navigation }: Props) {
               <ScanCorner pos="bottomLeft"  color={cornerColor} />
               <ScanCorner pos="bottomRight" color={cornerColor} />
               {scanResult && (
-                <Animated.View
-                  style={[
-                    styles.verdictWrap,
-                    {
-                      top: (ocrGuideH - CIRCLE_D) / 2,
-                      left: (OCR_GUIDE_W - CIRCLE_D) / 2,
-                      borderColor: verdictColor,
-                      transform: [{ scale: circleScale }],
-                    },
-                  ]}
-                >
-                  <View style={[styles.verdictBadge, { backgroundColor: verdictColor }]}>
-                    <Text style={styles.verdictBadgeIcon}>{isSafe ? '✓' : '✕'}</Text>
-                  </View>
-                  <Text style={[styles.verdictLabel, { color: verdictColor }]}>
-                    {isSafe ? 'Good!' : 'Bad!'}
-                  </Text>
-                </Animated.View>
+                <OcrResultVerdictBadge
+                  level={scanResult.analysis.verdict}
+                  scaleAnim={circleScale}
+                  top={(ocrGuideH - RESULT_BADGE_D) / 2}
+                  left={(OCR_GUIDE_W - RESULT_BADGE_D) / 2}
+                />
               )}
             </View>
             <View style={styles.dimSide} />
@@ -564,7 +730,7 @@ export default function ScanScreen({ navigation }: Props) {
                     favorited && (isSafe ? styles.goodFavBtnActive : styles.riskFavBtnActive),
                   ]}
                   onPress={handleFavorite}
-                  disabled={favLoading || favorited}
+                  disabled={favLoading}
                 >
                   {favLoading ? (
                     <ActivityIndicator size="small" color={Colors.danger} />
@@ -725,6 +891,39 @@ function ResultVerdictBadge({
       style={[
         styles.resultVerdictWrap,
         { transform: [{ scale: scaleAnim }] },
+      ]}
+    >
+      <View style={[styles.resultVerdictRing, { borderColor: verdict.color }]} />
+      <RiskBadgeIcon level={level} size={RESULT_BADGE_ICON_D} style={styles.resultVerdictIcon} />
+      <Text style={[styles.resultVerdictText, { color: verdict.color }]}>
+        {verdict.label}
+      </Text>
+    </Animated.View>
+  );
+}
+
+function OcrResultVerdictBadge({
+  level,
+  scaleAnim,
+  top,
+  left,
+}: {
+  level: RiskLevel;
+  scaleAnim: Animated.Value;
+  top: number;
+  left: number;
+}) {
+  const verdict = VERDICT_DISPLAY[level];
+
+  return (
+    <Animated.View
+      style={[
+        styles.resultVerdictWrap,
+        {
+          top,
+          left,
+          transform: [{ scale: scaleAnim }],
+        },
       ]}
     >
       <View style={[styles.resultVerdictRing, { borderColor: verdict.color }]} />

@@ -46,7 +46,17 @@ export default function FavoritesScreen({ navigation }: Props) {
     setIsLoading(true);
     setIsError(false);
     getFavorites()
-      .then(data  => { if (!cancelled) setFavorites(data); })
+      .then(data  => {
+        if (cancelled) return;
+        const localFavorites = useListStore.getState().favorites.filter(f => f.id.startsWith('fav-local-'));
+        const merged = [
+          ...localFavorites.filter(local =>
+            !data.some(item => item.productId === local.productId || item.product?.id === local.product?.id),
+          ),
+          ...data,
+        ];
+        setFavorites(merged);
+      })
       .catch(()   => { if (!cancelled) setIsError(true); })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
@@ -63,7 +73,9 @@ export default function FavoritesScreen({ navigation }: Props) {
     if (deletingId) return;
     setDeletingId(item.id);
     try {
-      await removeFavorite(item.id);
+      if (!item.id.startsWith('fav-local-')) {
+        await removeFavorite(item.id);
+      }
       removeFavoriteFromStore(item.id);
     } catch {
       Alert.alert('삭제 실패', '다시 시도해주세요.');

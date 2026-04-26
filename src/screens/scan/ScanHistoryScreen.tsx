@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
 import { useScanStore } from '../../store/scan.store';
 import { getScanHistory } from '../../services/scan.service';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 
@@ -21,10 +22,10 @@ type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 const BG          = '#F0F5EF';   // 연한 민트/크림 배경
 const TITLE_COLOR = '#1A2E1A';   // 진한 그린 계열 타이틀
 
-const BADGE: Record<RiskLevel, { dot: string; label: string; text: string; border: string }> = {
-  danger:  { dot: '#FF0000', label: 'Bad',  text: '#FF0000', border: '#FF0000' },
-  safe:    { dot: '#25FF81', label: 'Good', text: '#25FF81', border: '#25FF81' },
-  caution: { dot: '#FF9D00', label: 'Poor', text: '#FF9D00', border: '#FF9D00' },
+const BADGE: Record<RiskLevel, { label: string }> = {
+  danger:  { label: 'Bad' },
+  safe:    { label: 'Good' },
+  caution: { label: 'Poor' },
 };
 
 export default function ScanHistoryScreen({ navigation }: Props) {
@@ -97,11 +98,9 @@ export default function ScanHistoryScreen({ navigation }: Props) {
               {item.product.brand || '—'}
             </Text>
             {/* Risk badge */}
-            <View style={[styles.badge, { borderColor: badge.border }]}>
-              <View style={[styles.dot, { backgroundColor: badge.dot }]} />
-              <Text style={[styles.badgeText, { color: badge.text }]}>
-                {badge.label}
-              </Text>
+            <View style={styles.badge}>
+              <RiskBadgeIcon level={item.result} size={16} style={styles.badgeIcon} />
+              <Text style={styles.badgeText}>{badge.label}</Text>
             </View>
           </View>
 
@@ -244,14 +243,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    borderWidth: 1.5,
+    borderWidth: 1,
+    borderColor: '#1C3A19',
     borderRadius: 20,
     paddingVertical: 4,
     paddingHorizontal: 10,
-    gap: 5,
+    gap: 6,
   },
-  dot:       { width: 10, height: 10, borderRadius: 5 },
-  badgeText: { fontSize: 12, fontWeight: '600' },
+  badgeIcon: { width: 16, height: 16 },
+  badgeText: { fontSize: 12, fontWeight: '600', color: '#1C3A19' },
 
   // Chevron
   chevron: { fontSize: 22, color: '#1A1A1A', fontWeight: '300' },

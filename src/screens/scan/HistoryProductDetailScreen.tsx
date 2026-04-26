@@ -206,10 +206,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        {/* Back button (left) */}
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={() => navigation.goBack()}
@@ -218,13 +215,11 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
 
-        {/* Title (center) */}
         {!hideTitle
           ? <Text style={styles.headerTitle}>History</Text>
           : <View style={{ flex: 1 }} />
         }
 
-        {/* Heart button (right — symmetric with back) */}
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={handleFavorite}
@@ -240,32 +235,24 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         </TouchableOpacity>
       </View>
 
-      {/* ── Scrollable content ──────────────────────────────────────────────── */}
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-
         {isLoadingDetails && (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="small" color={DARK_GREEN} />
           </View>
         )}
 
-        {/* 1. Product image */}
         <View style={styles.imgWrap}>
           <View style={styles.imgBox}>
             {product.image ? (
-              <Image
-                source={{ uri: product.image }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-              />
+              <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : null}
           </View>
         </View>
 
-        {/* 2. Verdict icon + product name */}
         <View style={styles.nameRow}>
           <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
             <RiskBadgeIcon level={riskLevel} size={17} style={styles.verdictImg} />
@@ -273,19 +260,15 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           <Text style={styles.productName}>{product.name}</Text>
         </View>
 
-        {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
-        {/* 3-A. All Ingredients (Good only) */}
         {!showRisk && allIngredients.length > 0 && (
           <View style={styles.ingredientSection}>
-            {/* Bordered box */}
             <View style={styles.ingredientBox}>
               {allIngredients.map((name, idx) => (
                 <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
               ))}
             </View>
-            {/* Pill floating on top border */}
             <View style={styles.ingredientLabelWrap} pointerEvents="none">
               <View style={styles.ingredientLabel}>
                 <Text style={styles.ingredientLabelText}>All Ingredients</Text>
@@ -294,33 +277,27 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* 3-B. Risk box (Bad / Poor) — fieldset style with floating pill */}
         {showRisk && (
           <View style={styles.riskSection}>
-            {/* Bordered box */}
             <View style={[styles.riskBoxOuter, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
-              <Text style={styles.riskWarning}>
+              <Text style={styles.riskWarning} numberOfLines={1} adjustsFontSizeToFit>
                 ** This product contains ingredients that may not be suitable for you.
               </Text>
 
               {(() => {
                 const displayIngredients = isBad ? product.riskIngredients : product.mayContainIngredients;
                 return displayIngredients.length > 0 ? (
-                  <>
-                    {displayIngredients.map(ing => (
-                      <TouchableOpacity key={ing.id} onPress={() => handleIngredientPress(ing)} activeOpacity={0.7}>
-                        <Text style={styles.riskIngredient}>{ing.name}</Text>
-                      </TouchableOpacity>
-                    ))}
-                    <Text style={styles.riskTapHint}>Tap an ingredient for details</Text>
-                  </>
+                  displayIngredients.map(ing => (
+                    <TouchableOpacity key={ing.id} onPress={() => handleIngredientPress(ing)} activeOpacity={0.7}>
+                      <Text style={styles.riskIngredient}>{ing.name}</Text>
+                    </TouchableOpacity>
+                  ))
                 ) : (
                   <Text style={styles.riskIngredient}>—</Text>
                 );
               })()}
             </View>
 
-            {/* Pill floating on top border — icon + title */}
             <View style={styles.riskLabelWrap} pointerEvents="none">
               <View style={[styles.riskLabel, { borderColor: riskBoxBorder }]}>
                 <RiskBadgeIcon level={riskLevel} size={22} style={styles.riskLabelIcon} />
@@ -330,7 +307,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* 4. Alternative Products */}
         {altsLoading && (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="small" color={DARK_GREEN} />
@@ -372,7 +348,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* 5. All Ingredients (Bad / Poor — bottom) */}
         {showRisk && allIngredients.length > 0 && (
           <View style={styles.ingredientSection}>
             <View style={styles.ingredientBox}>
@@ -388,13 +363,11 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        {/* Disclaimer */}
         {allIngredients.length > 0 && (
           <Text style={styles.disclaimer}>
             {'** For severe allergies,\n      please double-check all ingredients before consuming.'}
           </Text>
         )}
-
       </ScrollView>
 
       {/* ── Ingredient detail modal ───────────────────────────────────────── */}
@@ -440,8 +413,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   );
 }
 
-// ── PILL_H: half height of the "All Ingredients" pill ────────────────────────
-const PILL_H = 16; // ~half of pill's total height (py:3 + lineHeight:24 / 2)
+// ── PILL_H: half height of the floating pill ────────────────────────────────
+const PILL_H = 16;
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -475,7 +448,7 @@ const styles = StyleSheet.create({
     borderColor: DARK_GREEN,
   },
 
-  // ── Name row (verdict icon + product name)
+  // ── Name row
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
