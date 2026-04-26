@@ -77,14 +77,16 @@ export default function SearchResultScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  const [query,        setQuery]       = useState(route.params.query);
-  const [results,      setResults]     = useState<Product[]>([]);
-  const [loading,      setLoading]     = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showFilter,   setShowFilter]  = useState(false);
+  const [query,         setQuery]        = useState(route.params.query);
+  const [results,       setResults]      = useState<Product[]>([]);
+  const [hasMore,       setHasMore]      = useState(false);
+  const [loading,       setLoading]      = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [errorMessage,  setErrorMessage] = useState('');
+  const [showFilter,    setShowFilter]   = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [isAlphabeticalSort, setIsAlphabeticalSort] = useState(false);
-  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showSortMenu,  setShowSortMenu] = useState(false);
 
   const inputRef = useRef<TextInput>(null);
 
@@ -99,27 +101,49 @@ export default function SearchResultScreen({ route, navigation }: Props) {
     );
   }, [results, isAlphabeticalSort]);
 
-  const runSearch = useCallback(async (q: string) => {
+  const runSearch = useCallback(async (q: string, offset = 0) => {
     const trimmed = q.trim();
     if (!trimmed) { setResults([]); return; }
-    setLoading(true);
-    setErrorMessage('');
-    try {
-      const data = await searchProducts(trimmed);
-      setResults(data);
-      setIsAlphabeticalSort(false);
-    } catch (err: unknown) {
+
+    if (offset === 0) {
+      setLoading(true);
+      setErrorMessage('');
       setResults([]);
+      setHasMore(false);
+      setIsAlphabeticalSort(false);
+    } else {
+      setIsLoadingMore(true);
+    }
+
+    try {
+      const data = await searchProducts(trimmed, offset);
+      if (offset === 0) {
+        setResults(data.items);
+      } else {
+        setResults(prev => [...prev, ...data.items]);
+      }
+      setHasMore(data.hasMore);
+    } catch (err: unknown) {
+      if (offset === 0) setResults([]);
       if (err instanceof UnauthorizedError) {
         clearAuthToken();
         useUserStore.getState().logout();
         return;
       }
-      setErrorMessage(err instanceof ApiError ? err.message : t('common.error'));
+      if (offset === 0) setErrorMessage(err instanceof ApiError ? err.message : t('common.error'));
     } finally {
-      setLoading(false);
+      if (offset === 0) {
+        setLoading(false);
+      } else {
+        setIsLoadingMore(false);
+      }
     }
   }, [t]);
+
+  function loadMore() {
+    if (!hasMore || isLoadingMore || loading) return;
+    runSearch(query, results.length);
+  }
 
   // 최초 진입 시 검색
   useEffect(() => { runSearch(route.params.query); }, [route.params.query, runSearch]);
@@ -255,6 +279,12 @@ export default function SearchResultScreen({ route, navigation }: Props) {
           keyExtractor={item => item.id}
           contentContainerStyle={visibleResults.length === 0 ? styles.emptyContainer : styles.listContent}
           showsVerticalScrollIndicator={false}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={isLoadingMore
+            ? <ActivityIndicator size="small" color={Colors.primary} style={styles.footerSpinner} />
+            : null
+          }
           renderItem={({ item }) => (
             <ProductRow item={item} onPress={() => navigation.navigate('SearchProductDetail', { product: item })} />
           )}
@@ -433,6 +463,7 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 26, paddingTop: 0, paddingBottom: 40 },
   emptyContainer: { flexGrow: 1 },
   divider: { height: 1, backgroundColor: Colors.searchBorder, marginHorizontal: 0 },
+  footerSpinner: { paddingVertical: 16 },
 
   // Product row
   row: {

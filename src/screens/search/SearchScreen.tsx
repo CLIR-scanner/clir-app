@@ -135,11 +135,13 @@ export default function SearchScreen({ navigation }: Props) {
 
   const [query,         setQuery]         = useState('');
   const [isFocused,     setIsFocused]     = useState(false);
-  const [isSearching,   setIsSearching]   = useState(false);
+  const [isLoading,     setIsLoading]     = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilter,    setShowFilter]    = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [suggestions,   setSuggestions]  = useState<string[]>([]);
-  const [allProducts,   setAllProducts]  = useState<Product[]>([]);
+  const [items,         setItems]        = useState<Product[]>([]);
+  const [hasMore,       setHasMore]      = useState(false);
   const [isAlphabeticalSort, setIsAlphabeticalSort] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
 
@@ -156,7 +158,7 @@ export default function SearchScreen({ navigation }: Props) {
       .filter(c => c.selected)
       .map(c => c.id);
 
-    let filtered = allProducts;
+    let filtered = items;
 
     if (activeFilters.safeOnly) {
       filtered = filtered.filter(p => p.riskLevel === 'safe');
@@ -172,27 +174,39 @@ export default function SearchScreen({ navigation }: Props) {
     return [...filtered].sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
     );
-  }, [allProducts, activeFilters, isAlphabeticalSort]);
+  }, [items, activeFilters, isAlphabeticalSort]);
 
-  // query 변경 시 인플레이스 검색 (300ms 디바운스)
-  // query가 빈 문자열이면 즉시 전체 목록 복원
+  // query 변경 시 인플레이스 검색 (비어있으면 즉시, 아니면 300ms 디바운스)
   useEffect(() => {
     const q = query.trim();
     let cancelled = false;
 
+    setItems([]);
+    setHasMore(false);
+
+    const fetch = () => {
+      setIsLoading(true);
+      (q ? searchProducts(q, 0) : getAllProducts(0))
+        .then(result => {
+          if (cancelled) return;
+          setItems(result.items);
+          setHasMore(result.hasMore);
+        })
+        .catch((err: unknown) => {
+          if (err instanceof UnauthorizedError) {
+            clearAuthToken();
+            useUserStore.getState().logout();
+          }
+        })
+        .finally(() => { if (!cancelled) setIsLoading(false); });
+    };
+
     if (!q) {
-      getAllProducts().then(p => { if (!cancelled) setAllProducts(p); });
+      fetch();
       return () => { cancelled = true; };
     }
 
-    const timer = setTimeout(() => {
-      setIsSearching(true);
-      searchProducts(q)
-        .then(p => { if (!cancelled) setAllProducts(p); })
-        .catch(() => {})
-        .finally(() => { if (!cancelled) setIsSearching(false); });
-    }, 300);
-
+    const timer = setTimeout(fetch, 300);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [query]);
 
@@ -212,28 +226,45 @@ export default function SearchScreen({ navigation }: Props) {
     return () => { cancelled = true; };
   }, [query]);
 
+  function loadMore() {
+    const q = query.trim();
+    if (!hasMore || isLoadingMore || isLoading) return;
+    const nextOffset = items.length;
+    setIsLoadingMore(true);
+    (q ? searchProducts(q, nextOffset) : getAllProducts(nextOffset))
+      .then(result => {
+        setItems(prev => [...prev, ...result.items]);
+        setHasMore(result.hasMore);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingMore(false));
+  }
+
   function handleSubmit() {
     const q = query.trim();
     if (!q) return;
     setSuggestions([]);
     Keyboard.dismiss();
-    // 디바운스 대기 없이 즉시 검색
-    setIsSearching(true);
-    searchProducts(q)
-      .then(setAllProducts)
+    setItems([]);
+    setHasMore(false);
+    setIsLoading(true);
+    searchProducts(q, 0)
+      .then(result => { setItems(result.items); setHasMore(result.hasMore); })
       .catch(() => {})
-      .finally(() => setIsSearching(false));
+      .finally(() => setIsLoading(false));
   }
 
   function handleSelectSuggestion(name: string) {
     setQuery(name);
     setSuggestions([]);
     Keyboard.dismiss();
-    setIsSearching(true);
-    searchProducts(name)
-      .then(setAllProducts)
+    setItems([]);
+    setHasMore(false);
+    setIsLoading(true);
+    searchProducts(name.trim(), 0)
+      .then(result => { setItems(result.items); setHasMore(result.hasMore); })
       .catch(() => {})
-      .finally(() => setIsSearching(false));
+      .finally(() => setIsLoading(false));
   }
 
   function handleClear() {
@@ -279,6 +310,10 @@ export default function SearchScreen({ navigation }: Props) {
       </View>
     );
   }
+
+  const loadMoreFooter = isLoadingMore ? (
+    <ActivityIndicator size="small" color={Colors.searchDarkGreen} style={styles.footerSpinner} />
+  ) : null;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -403,7 +438,7 @@ export default function SearchScreen({ navigation }: Props) {
       )}
 
       {/* ── 검색 결과 / 전체 그리드 ──────────────────────────────── */}
-      {isSearching ? (
+      {isLoading ? (
         <ActivityIndicator
           size="small"
           color={Colors.searchDarkGreen}
@@ -419,6 +454,9 @@ export default function SearchScreen({ navigation }: Props) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ItemSeparatorComponent={ListDivider}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={loadMoreFooter}
           renderItem={({ item }) => (
             <ProductRow
               item={item}
@@ -437,6 +475,9 @@ export default function SearchScreen({ navigation }: Props) {
           contentContainerStyle={[styles.gridContent, { paddingBottom: insets.bottom + 32 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={loadMoreFooter}
           renderItem={renderCard}
         />
       )}
@@ -633,6 +674,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignSelf: 'center',
     marginTop: 40,
+  },
+  footerSpinner: {
+    paddingVertical: 16,
   },
 
   // Search result list

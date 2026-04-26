@@ -20,7 +20,13 @@ interface SearchSuggestionsResponse {
   suggestions: SearchSuggestionWire[];
 }
 
-const USE_PREVIEW_MOCK = true;
+export interface SearchPage {
+  items: Product[];
+  total: number;
+  hasMore: boolean;
+}
+
+const USE_PREVIEW_MOCK = false;
 
 // TEMP: 검색 UI 확인용 목업. 실제 API 확인 후 USE_PREVIEW_MOCK=false 로 되돌리면 된다.
 const PREVIEW_PRODUCTS: Product[] = [
@@ -95,33 +101,45 @@ function toSearchProduct(item: SearchResultItemWire): Product {
 /**
  * 검색어로 제품 목록을 반환한다.
  */
-export async function searchProducts(query: string): Promise<Product[]> {
+export async function searchProducts(query: string, offset = 0): Promise<SearchPage> {
   const q = query.trim();
-  if (!q) return [];
+  if (!q) return { items: [], total: 0, hasMore: false };
 
   if (USE_PREVIEW_MOCK) {
-    return PREVIEW_PRODUCTS.filter(p =>
+    const filtered = PREVIEW_PRODUCTS.filter(p =>
       p.name.toLowerCase().includes(q.toLowerCase()) ||
       (p.brand ?? '').toLowerCase().includes(q.toLowerCase()),
     );
+    return { items: filtered, total: filtered.length, hasMore: false };
   }
 
   const params = new URLSearchParams({
     q,
     sort: 'relevance',
     limit: '20',
-    offset: '0',
+    offset: String(offset),
   });
 
   const res = await apiFetch<SearchProductsResponse>(`/search/products?${params.toString()}`);
-  return res.items.map(toSearchProduct);
+  return { items: res.items.map(toSearchProduct), total: res.total, hasMore: res.hasMore };
 }
 
 /**
- * 전체 제품 목록 반환 (검색 전 그리드 표시용).
+ * 전체 제품 목록 반환 (검색 전 그리드 표시용). q 없이 browse 모드 호출.
  */
-export async function getAllProducts(): Promise<Product[]> {
-  return USE_PREVIEW_MOCK ? PREVIEW_PRODUCTS : [];
+export async function getAllProducts(offset = 0): Promise<SearchPage> {
+  if (USE_PREVIEW_MOCK) {
+    return { items: PREVIEW_PRODUCTS, total: PREVIEW_PRODUCTS.length, hasMore: false };
+  }
+
+  const params = new URLSearchParams({
+    sort: 'name',
+    limit: '20',
+    offset: String(offset),
+  });
+
+  const res = await apiFetch<SearchProductsResponse>(`/search/products?${params.toString()}`);
+  return { items: res.items.map(toSearchProduct), total: res.total, hasMore: res.hasMore };
 }
 
 /**
