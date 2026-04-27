@@ -149,24 +149,28 @@ export default function SearchScreen({ navigation }: Props) {
   const addFavoriteToStore    = useListStore(s => s.addFavorite);
   const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
 
-  // 카테고리 필터는 BE 미지원(Coming soon)이므로 카운트에서 제외
-  const activeCount = activeFilters.safeOnly ? 1 : 0;
+  const activeCount =
+    activeFilters.categories.filter(c => c.selected).length +
+    (activeFilters.safeOnly ? 1 : 0);
 
+  // categories / safeOnly 필터는 BE 서버 사이드 처리.
+  // 클라이언트는 알파벳 정렬만 담당.
   const visibleProducts = useMemo(() => {
-    // 카테고리 필터는 BE 미지원(Coming soon) — safeOnly만 적용
-    const filtered = activeFilters.safeOnly
-      ? items.filter(p => p.riskLevel === 'safe')
-      : items;
-
-    if (!isAlphabeticalSort) return filtered;
-    return [...filtered].sort((a, b) =>
+    if (!isAlphabeticalSort) return items;
+    return [...items].sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
     );
-  }, [items, activeFilters, isAlphabeticalSort]);
+  }, [items, isAlphabeticalSort]);
 
-  // query 변경 시 인플레이스 검색 (비어있으면 즉시, 아니면 300ms 디바운스)
+  // query 또는 activeFilters 변경 시 서버 재조회
+  // - categories / safeOnly: 서버 사이드 필터로 전달
+  // - 비어있는 query: 즉시 fetch / 아니면 300ms 디바운스
   useEffect(() => {
     const q = query.trim();
+    const selectedCats = activeFilters.categories
+      .filter(c => c.selected)
+      .map(c => c.id);
+    const { safeOnly } = activeFilters;
     let cancelled = false;
 
     setItems([]);
@@ -174,7 +178,10 @@ export default function SearchScreen({ navigation }: Props) {
 
     const fetch = () => {
       setIsLoading(true);
-      (q ? searchProducts(q, 0) : getAllProducts(0))
+      (q
+        ? searchProducts(q, 0, selectedCats, safeOnly)
+        : getAllProducts(0, selectedCats, safeOnly)
+      )
         .then(result => {
           if (cancelled) return;
           setItems(result.items);
@@ -196,7 +203,8 @@ export default function SearchScreen({ navigation }: Props) {
 
     const timer = setTimeout(fetch, 300);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [query]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, activeFilters]);
 
   // 자동완성: query 변경 시 제안 목록 업데이트
   useEffect(() => {
@@ -218,8 +226,12 @@ export default function SearchScreen({ navigation }: Props) {
     const q = query.trim();
     if (!hasMore || isLoadingMore || isLoading) return;
     const nextOffset = items.length;
+    const selectedCats = activeFilters.categories.filter(c => c.selected).map(c => c.id);
     setIsLoadingMore(true);
-    (q ? searchProducts(q, nextOffset) : getAllProducts(nextOffset))
+    (q
+      ? searchProducts(q, nextOffset, selectedCats, activeFilters.safeOnly)
+      : getAllProducts(nextOffset, selectedCats, activeFilters.safeOnly)
+    )
       .then(result => {
         setItems(prev => [...prev, ...result.items]);
         setHasMore(result.hasMore);
@@ -233,10 +245,11 @@ export default function SearchScreen({ navigation }: Props) {
     if (!q) return;
     setSuggestions([]);
     Keyboard.dismiss();
+    const selectedCats = activeFilters.categories.filter(c => c.selected).map(c => c.id);
     setItems([]);
     setHasMore(false);
     setIsLoading(true);
-    searchProducts(q, 0)
+    searchProducts(q, 0, selectedCats, activeFilters.safeOnly)
       .then(result => { setItems(result.items); setHasMore(result.hasMore); })
       .catch(() => {})
       .finally(() => setIsLoading(false));

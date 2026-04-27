@@ -147,6 +147,7 @@ export interface SearchResultItem {
   name: string;
   brand: string;
   image?: string;
+  category?: string;
   riskLevel: RiskLevel;
   isSafe: boolean;
   isFavorited: boolean;
