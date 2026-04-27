@@ -456,7 +456,6 @@ export default function PersonalizationAllergyScreen() {
                       {label}
                     </Text>
                   </View>
-                  <ChevronRight />
                 </View>
               );
             })}
