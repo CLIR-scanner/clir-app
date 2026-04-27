@@ -41,6 +41,22 @@ interface ScanHistoryItem {
 // makeRiskIngredient / makeMayContainIngredient 는 allergen.service.ts 에서 import.
 // BE 카탈로그(/allergens/catalog) 응답이 캐시되면 표시명이 자동으로 반영됨.
 
+/**
+ * OCR product 가 BE products 테이블에 row 없는 *로컬 fallback* 인지 검사.
+ *
+ * 정상 OCR 흐름: BE upsertProductFromOCR(Step 8) 가 'ocr-{phash}' 형식으로 row
+ * 삽입 후 ocrResult.productId 에 채움 → FE 가 그대로 product.id 로 사용.
+ * Upsert 실패(BE 일시 오류 등) 시: FE 가 'ocr-local-{ts}' 접두사로 명시 fallback
+ * 생성. 이 ID 는 products 테이블에 없으므로 /favorites POST(FK 제약) /
+ * /scan-history POST 등 server-side 호출은 어차피 BE 404/400 로 거부된다.
+ *
+ * 이 헬퍼는 favorite/history 호출 *직전* 가드로 사용 — 무의미한 네트워크 호출 +
+ * 에러 로그를 막는다. 로컬 fallback 즐겨찾기는 store-only 로 유지.
+ */
+export function isLocalOcrProductId(productId: string): boolean {
+  return productId.startsWith('ocr-local-');
+}
+
 // productId 없는 OCR 이력의 폴백 객체.
 // name/brand를 빈 문자열로 두면 화면에 그대로 렌더링되므로 표시용 placeholder를 사용.
 const EMPTY_PRODUCT: Product = {

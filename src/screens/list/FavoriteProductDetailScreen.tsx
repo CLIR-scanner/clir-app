@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types';
-import { getIngredient, getProductById } from '../../services/scan.service';
+import { getIngredient, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
@@ -125,13 +125,17 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
     setFavorited(!prevFavorited);
     setFavLoading(true);
 
+    // OCR 로컬 fallback 제품(BE products 테이블에 row 없음) 은 BE 호출 자체를 스킵
+    // 하고 store-only 로 토글. HistoryProductDetailScreen 동일 패턴.
+    const isLocalProduct = isLocalOcrProductId(product.id);
+
     try {
       if (prevFavorited) {
         // 즐겨찾기 해제
         let favItem = useListStore.getState().favorites.find(
           f => f.productId === product.id || f.product?.id === product.id,
         );
-        if (!favItem) {
+        if (!favItem && !isLocalProduct) {
           const fresh = await getFavorites();
           setFavoritesInStore(fresh);
           favItem = fresh.find(
@@ -139,13 +143,25 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
           );
         }
         if (favItem) {
-          await removeFavorite(favItem.id);
+          if (!isLocalProduct && !favItem.id.startsWith('fav-local-')) {
+            await removeFavorite(favItem.id);
+          }
           removeFavoriteFromStore(favItem.id);
         }
       } else {
         // 즐겨찾기 추가
-        const item = await addFavorite(product.id);
-        addFavoriteToStore({ ...item, product });
+        if (isLocalProduct) {
+          addFavoriteToStore({
+            id: `fav-local-${Date.now()}`,
+            productId: product.id,
+            userId: '',
+            addedAt: new Date(),
+            product,
+          });
+        } else {
+          const item = await addFavorite(product.id);
+          addFavoriteToStore({ ...item, product });
+        }
       }
     } catch(e) {
       console.log('favorite error:', e);

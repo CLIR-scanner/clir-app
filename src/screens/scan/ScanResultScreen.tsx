@@ -14,7 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { ApiError } from '../../lib/api';
-import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives } from '../../services/scan.service';
+import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, getFavorites } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
@@ -134,6 +134,18 @@ export default function ScanResultScreen({ navigation, route }: Props) {
     if (!product || favLoading || favorited) return;
     setFavLoading(true);
     try {
+      // OCR 로컬 fallback 제품은 BE 호출 스킵 (어차피 404).
+      if (isLocalOcrProductId(product.id)) {
+        addFavoriteToStore({
+          id: `fav-local-${Date.now()}`,
+          productId: product.id,
+          userId: '',
+          addedAt: new Date(),
+          product,
+        });
+        setFavorited(true);
+        return;
+      }
       const apiItem = await addFavorite(product.id);
       // POST /favorites 응답에는 product 상세 없음 — 현재 화면의 product로 보완해 스토어에 저장
       addFavoriteToStore({ ...apiItem, product });
