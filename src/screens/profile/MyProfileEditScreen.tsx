@@ -31,25 +31,36 @@ export default function MyProfileEditScreen() {
     fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
   }, []);
 
-  // 카탈로그 로드 후 selectedAllergy 정화 — 카탈로그 항목명/ing-* 가 아닌 garbage
-  // (옛 Survey 의 AVOIDED_BY_DIET 가 저장한 'Meat'/'Moollusks / Shellfish'/...) 를
-  // 떨어뜨린다. 다음 Save 시 BE 에 깨끗한 값을 쓴다 — PersonalizationAllergyScreen 와
-  // 동일 패턴.
+  // 카탈로그 로드 후 selectedAllergy 정화 + 정규화. 표시 이름('Milk') 을 정규형
+  // ing-* ID('ing-milk') 로 변환해 단일 표현 유지. 카탈로그 항목명도 ing-* 도 아닌
+  // garbage(옛 Survey 의 'Meat'/'Moollusks / Shellfish'/...) 는 drop.
   useEffect(() => {
     if (!catalog) return;
-    const validNames = new Set<string>();
+    const nameToId = new Map<string, string>();
+    const validIds = new Set<string>();
     for (const cat of catalog.categories) {
       for (const item of cat.items) {
-        validNames.add(item.name);
-        if (item.allergenId) validNames.add(item.allergenId);
+        if (item.allergenId) {
+          nameToId.set(item.name, item.allergenId);
+          validIds.add(item.allergenId);
+        }
       }
     }
     setSelectedAllergy(prev => {
       const next = new Set<string>();
-      for (const v of prev) if (validNames.has(v)) next.add(v);
-      return next.size === prev.size ? prev : next;
+      for (const v of prev) {
+        if (validIds.has(v)) next.add(v);
+        else if (nameToId.has(v)) next.add(nameToId.get(v)!);
+      }
+      if (next.size === prev.size && [...prev].every(v => next.has(v))) return prev;
+      return next;
     });
   }, [catalog]);
+
+  function isItemChecked(item: { name: string; allergenId?: string }): boolean {
+    if (item.allergenId && selectedAllergy.has(item.allergenId)) return true;
+    return selectedAllergy.has(item.name);
+  }
 
   // ── 저장 ──────────────────────────────────────────────────────────────────
   const isDirty =
@@ -77,10 +88,13 @@ export default function MyProfileEditScreen() {
   }
 
   // ── 알러지 토글 ──────────────────────────────────────────────────────────
-  function toggleItem(item: string) {
+  function toggleItem(item: { name: string; allergenId?: string }) {
+    const checked = isItemChecked(item);
     setSelectedAllergy(prev => {
       const next = new Set(prev);
-      next.has(item) ? next.delete(item) : next.add(item);
+      next.delete(item.name);
+      if (item.allergenId) next.delete(item.allergenId);
+      if (!checked) next.add(item.allergenId ?? item.name);
       return next;
     });
   }
@@ -93,18 +107,21 @@ export default function MyProfileEditScreen() {
     });
   }
 
-  function itemsOfCategory(cat: string): string[] {
+  function itemsOfCategory(cat: string): { name: string; allergenId?: string }[] {
     const c = catalog?.categories.find(x => x.code === cat);
-    return c ? c.items.map(i => i.name) : [];
+    return c ? c.items : [];
   }
 
   function toggleAllInCategory(cat: string) {
     const items     = itemsOfCategory(cat);
-    const allChecked = items.length > 0 && items.every(i => selectedAllergy.has(i));
+    const allChecked = items.length > 0 && items.every(i => isItemChecked(i));
     setSelectedAllergy(prev => {
       const next = new Set(prev);
-      if (allChecked) items.forEach(i => next.delete(i));
-      else            items.forEach(i => next.add(i));
+      items.forEach(i => {
+        next.delete(i.name);
+        if (i.allergenId) next.delete(i.allergenId);
+      });
+      if (!allChecked) items.forEach(i => next.add(i.allergenId ?? i.name));
       return next;
     });
   }
@@ -208,10 +225,10 @@ export default function MyProfileEditScreen() {
             </View>
           )}
           {catalog?.categories.map(cat => {
-            const items        = cat.items.map(i => i.name);
-            const checkedCount = items.filter(i => selectedAllergy.has(i)).length;
+            const checkedCount = cat.items.filter(isItemChecked).length;
+            const totalItems   = cat.items.length;
             const isExpanded   = expandedCats.has(cat.code);
-            const allChecked   = items.length > 0 && checkedCount === items.length;
+            const allChecked   = totalItems > 0 && checkedCount === totalItems;
 
             return (
               <View key={cat.code} style={styles.categoryBlock}>
@@ -232,7 +249,7 @@ export default function MyProfileEditScreen() {
                   <View style={styles.categoryLabelWrap}>
                     <Text style={styles.categoryLabel}>{cat.name}</Text>
                     {checkedCount > 0 && (
-                      <Text style={styles.categoryCount}>{checkedCount}/{items.length}</Text>
+                      <Text style={styles.categoryCount}>{checkedCount}/{totalItems}</Text>
                     )}
                   </View>
                   <Text style={[styles.chevron, isExpanded && styles.chevronOpen]}>{'›'}</Text>
@@ -240,17 +257,17 @@ export default function MyProfileEditScreen() {
 
                 {isExpanded && (
                   <View style={styles.itemList}>
-                    {items.map(item => {
-                      const checked = selectedAllergy.has(item);
+                    {cat.items.map(item => {
+                      const checked = isItemChecked(item);
                       return (
                         <TouchableOpacity
-                          key={item}
+                          key={item.name}
                           style={styles.itemRow}
                           onPress={() => toggleItem(item)}
                           activeOpacity={0.7}
                         >
                           <View style={[styles.checkbox, checked && styles.checkboxChecked]} />
-                          <Text style={styles.itemText}>{item}</Text>
+                          <Text style={styles.itemText}>{item.name}</Text>
                         </TouchableOpacity>
                       );
                     })}
