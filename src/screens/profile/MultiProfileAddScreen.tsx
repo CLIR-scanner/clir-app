@@ -9,6 +9,10 @@ import { Colors } from '../../constants/colors';
 import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } from '../../constants/dietary';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
+import VegetarianDietConfirmCircle, {
+  VEGETARIAN_LABELS,
+  VEGAN_LABELS,
+} from '../../components/common/VegetarianDietConfirmCircle';
 
 // 각 subcomponent 에서 동일하게 호출 — 모듈 캐시 덕에 실제 fetch 는 1회만 발생.
 function useCategoryCodes(): string[] {
@@ -31,12 +35,12 @@ type VeganStrictness = 'strict' | 'flexible';
 type Step =
   | 'name' | 'diet'
   | 'allergy_severity' | 'allergy_reaction' | 'allergy_ingredients'
-  | 'vegetarian_type' | 'vegan_strictness' | 'vegetarian_ingredients';
+  | 'vegetarian_type' | 'vegan_strictness' | 'vege_confirm' | 'vegetarian_ingredients';
 
 const STEP_PROGRESS: Record<Step, number> = {
   name: 10, diet: 22,
   allergy_severity: 36, allergy_reaction: 50, allergy_ingredients: 64,
-  vegetarian_type: 70, vegan_strictness: 82, vegetarian_ingredients: 92,
+  vegetarian_type: 70, vegan_strictness: 78, vege_confirm: 85, vegetarian_ingredients: 92,
 };
 
 function StepLayout({ title, subtitle, children, footer }: {
@@ -334,6 +338,25 @@ function StepVeganStrictness({ selected, onSelect, onNext }: {
   );
 }
 
+function StepVegeConfirm({ label, onNext }: { label: string; onNext: () => void }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={s.title}>Your diet preference is ...</Text>
+        <Text style={s.subtitle}>
+          {'Your selected diet preference will be applied\nto your recommendations.'}
+        </Text>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <VegetarianDietConfirmCircle label={label} />
+        </View>
+      </View>
+      <View style={s.footer}>
+        <ContinueBtn onPress={onNext} />
+      </View>
+    </View>
+  );
+}
+
 function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
   items: string[]; onChange: (v: string[]) => void; dietKey: string; onSave: () => void;
 }) {
@@ -441,7 +464,8 @@ export default function MultiProfileAddScreen() {
     allergy_ingredients: 'allergy_reaction',
     vegetarian_type: dietaryType === 'both' ? 'allergy_ingredients' : 'diet',
     vegan_strictness: 'vegetarian_type',
-    vegetarian_ingredients: vegetarianType === 'vegan' ? 'vegan_strictness' : 'vegetarian_type',
+    vege_confirm: vegetarianType === 'vegan' ? 'vegan_strictness' : 'vegetarian_type',
+    vegetarian_ingredients: 'vege_confirm',
   };
 
   function goBack() {
@@ -494,7 +518,7 @@ export default function MultiProfileAddScreen() {
             selected={vegetarianType} onSelect={setVegetarianType}
             onNext={() => {
               if (vegetarianType === 'vegan') setStep('vegan_strictness');
-              else { setAvoidedItems(DIET_AVOIDED_CATEGORIES[vegetarianType ?? ''] ?? []); setStep('vegetarian_ingredients'); }
+              else setStep('vege_confirm');
             }}
           />
         );
@@ -502,9 +526,23 @@ export default function MultiProfileAddScreen() {
         return (
           <StepVeganStrictness
             selected={veganStrictness} onSelect={setVeganStrictness}
-            onNext={() => { setAvoidedItems(DIET_AVOIDED_CATEGORIES[veganStrictness ?? ''] ?? []); setStep('vegetarian_ingredients'); }}
+            onNext={() => setStep('vege_confirm')}
           />
         );
+      case 'vege_confirm': {
+        const confirmLabel = veganStrictness
+          ? VEGAN_LABELS[veganStrictness]
+          : VEGETARIAN_LABELS[vegetarianType ?? 'pescatarian'];
+        return (
+          <StepVegeConfirm
+            label={confirmLabel}
+            onNext={() => {
+              setAvoidedItems(DIET_AVOIDED_CATEGORIES[veganStrictness ?? vegetarianType ?? ''] ?? []);
+              setStep('vegetarian_ingredients');
+            }}
+          />
+        );
+      }
       case 'vegetarian_ingredients':
         return (
           <StepVegetarianIngredients
