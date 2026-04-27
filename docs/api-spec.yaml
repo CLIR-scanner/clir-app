@@ -856,7 +856,7 @@ paths:
             type: array
             items:
               type: string
-              enum: [beverages, snacks, bakery, dairy, cereals, cookies, chocolates, meat, seafood, condiments]
+              enum: [beverages, snacks, bakery, dairy, cereals, cookies, chocolates, spreads, meat, seafood, condiments]
           style: form
           explode: true
           description: 카테고리 필터. 복수 선택 시 OR 조건. BE 내부 OFF 카테고리 식별자와 일치해야 함.
@@ -1761,7 +1761,7 @@ components:
         category:
           type: string
           nullable: true
-          description: BE 내부 카테고리 식별자 (beverages / snacks / bakery / dairy / cereals / cookies / chocolates / meat / seafood / condiments)
+          description: BE 내부 카테고리 식별자 (beverages / snacks / bakery / dairy / cereals / cookies / chocolates / spreads / meat / seafood / condiments)
           example: snacks
         riskLevel:
           type: string
