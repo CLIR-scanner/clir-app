@@ -22,16 +22,19 @@ export interface FilterState {
   maxPrice: string;
 }
 
+// id는 BE products.category 컬럼 값과 정확히 일치해야 함 (OFF 내부 카테고리 기준).
+// BE lib/offCategoryMap.ts 참고.
 export const INITIAL_FILTER_CATEGORIES: FilterCategory[] = [
-  { id: 'bakery',    label: 'Bakery & Bread',  selected: false },
-  { id: 'desserts',  label: 'Desserts & Sweet', selected: false },
-  { id: 'beverages', label: 'Beverages',        selected: false },
-  { id: 'packaged',  label: 'Packaged Foods',   selected: false },
-  { id: 'instant',   label: 'Instant Meals',    selected: false },
-  { id: 'dairy',     label: 'Dairy Products',   selected: false },
-  { id: 'meat',      label: 'Meat & Poultry',   selected: false },
-  { id: 'seafood',   label: 'Seafood',          selected: false },
-  { id: 'produce',   label: 'Fresh Produce',    selected: false },
+  { id: 'beverages',  label: 'Beverages',           selected: false },
+  { id: 'snacks',     label: 'Snacks & Chips',       selected: false },
+  { id: 'bakery',     label: 'Bakery & Bread',       selected: false },
+  { id: 'dairy',      label: 'Dairy Products',       selected: false },
+  { id: 'cereals',    label: 'Cereals & Grains',     selected: false },
+  { id: 'cookies',    label: 'Cookies & Crackers',   selected: false },
+  { id: 'chocolates', label: 'Chocolates & Candy',   selected: false },
+  { id: 'meat',       label: 'Meat & Poultry',       selected: false },
+  { id: 'seafood',    label: 'Seafood',              selected: false },
+  { id: 'condiments', label: 'Sauces & Condiments',  selected: false },
 ];
 
 export const INITIAL_FILTERS: FilterState = {
@@ -108,18 +111,21 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
 
         <View style={styles.categoryHeader}>
           <Text style={styles.sectionTitle}>{t('search.categories')}</Text>
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonText}>Coming soon</Text>
-          </View>
         </View>
 
-        {/* 카테고리 필터는 BE 미지원 — 시각적으로 표시만 하고 터치 비활성화 */}
-        <View style={[styles.categoryList, styles.categoryListDisabled]} pointerEvents="none">
-          {filters.categories.map((cat) => (
-            <View key={cat.id} style={styles.categoryRow}>
-              <View style={styles.checkbox} />
-              <Text style={[styles.categoryLabel, styles.categoryLabelDisabled]}>{cat.label}</Text>
-            </View>
+        <View style={styles.categoryList}>
+          {filters.categories.map((cat, index) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.categoryRow}
+              onPress={() => toggleCategory(index)}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.checkbox, cat.selected && styles.checkboxSelected]}>
+                {cat.selected && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.categoryLabel}>{cat.label}</Text>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -193,19 +199,6 @@ const styles = StyleSheet.create({
     paddingRight: 24,
     paddingTop: 31,
     paddingBottom: 34,
-    gap: 10,
-  },
-  comingSoonBadge: {
-    borderWidth: 1,
-    borderColor: Colors.searchBorder,
-    borderRadius: 20,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-  },
-  comingSoonText: {
-    fontSize: 11,
-    color: Colors.searchBorder,
-    fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 16,
@@ -215,9 +208,6 @@ const styles = StyleSheet.create({
   },
   categoryList: {
     paddingLeft: 34,
-  },
-  categoryListDisabled: {
-    opacity: 0.35,
   },
   categoryRow: {
     height: 28,
@@ -246,9 +236,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: Colors.black,
     lineHeight: 27,
-  },
-  categoryLabelDisabled: {
-    color: Colors.searchBorder,
   },
   sectionDivider: {
     height: 1,

@@ -89,6 +89,7 @@ function toSearchProduct(item: SearchResultItemWire): Product {
     name: item.name,
     brand: item.brand,
     image: item.image ?? undefined,
+    category: item.category ?? undefined,
     ingredients: [],
     isSafe: item.isSafe,
     riskLevel: item.riskLevel,
@@ -100,8 +101,15 @@ function toSearchProduct(item: SearchResultItemWire): Product {
 
 /**
  * 검색어로 제품 목록을 반환한다.
+ * @param categories BE products.category 값 배열. 복수 선택 시 OR 필터.
+ * @param safeOnly 안전 제품만 반환.
  */
-export async function searchProducts(query: string, offset = 0): Promise<SearchPage> {
+export async function searchProducts(
+  query: string,
+  offset = 0,
+  categories: string[] = [],
+  safeOnly = false,
+): Promise<SearchPage> {
   const q = query.trim();
   if (!q) return { items: [], total: 0, hasMore: false };
 
@@ -119,6 +127,8 @@ export async function searchProducts(query: string, offset = 0): Promise<SearchP
     limit: '20',
     offset: String(offset),
   });
+  if (safeOnly) params.set('safeOnly', 'true');
+  categories.forEach(cat => params.append('categories', cat));
 
   const res = await apiFetch<SearchProductsResponse>(`/search/products?${params.toString()}`);
   return { items: res.items.map(toSearchProduct), total: res.total, hasMore: res.hasMore };
@@ -126,8 +136,14 @@ export async function searchProducts(query: string, offset = 0): Promise<SearchP
 
 /**
  * 전체 제품 목록 반환 (검색 전 그리드 표시용). q 없이 browse 모드 호출.
+ * @param categories BE products.category 값 배열. 복수 선택 시 OR 필터.
+ * @param safeOnly 안전 제품만 반환.
  */
-export async function getAllProducts(offset = 0): Promise<SearchPage> {
+export async function getAllProducts(
+  offset = 0,
+  categories: string[] = [],
+  safeOnly = false,
+): Promise<SearchPage> {
   if (USE_PREVIEW_MOCK) {
     return { items: PREVIEW_PRODUCTS, total: PREVIEW_PRODUCTS.length, hasMore: false };
   }
@@ -137,6 +153,8 @@ export async function getAllProducts(offset = 0): Promise<SearchPage> {
     limit: '20',
     offset: String(offset),
   });
+  if (safeOnly) params.set('safeOnly', 'true');
+  categories.forEach(cat => params.append('categories', cat));
 
   const res = await apiFetch<SearchProductsResponse>(`/search/products?${params.toString()}`);
   return { items: res.items.map(toSearchProduct), total: res.total, hasMore: res.hasMore };
