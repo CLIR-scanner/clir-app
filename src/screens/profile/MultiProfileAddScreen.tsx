@@ -447,6 +447,11 @@ export default function MultiProfileAddScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const addMultiProfile = useUserStore(s => s.addMultiProfile);
+  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
+
+  useEffect(() => {
+    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+  }, []);
 
   const [step, setStep]               = useState<Step>('name');
   const [name, setName]               = useState('');
@@ -478,11 +483,28 @@ export default function MultiProfileAddScreen() {
     const dietaryRestrictions: string[] = [];
     if (vegetarianType) dietaryRestrictions.push(vegetarianType);
     if (veganStrictness) dietaryRestrictions.push(veganStrictness);
+
+    // StepAllergyIngredients 가 카탈로그 카테고리 코드(예: 'Dairy', 'Crustaceans')
+    // 를 allergyItems 에 담는다. BE/표시 화면이 모두 ing-* ID 를 단일 표현으로
+    // 사용하므로, 저장 직전 각 카테고리의 항목들에서 ing-* allergenId 의 합집합
+    // 으로 변환. 매핑 없는 카테고리(Meat / Fruits / Food Additives 등) 는 drop —
+    // BE 알러지 판정 범위 밖.
+    const allergenIds = new Set<string>();
+    if (catalog) {
+      for (const code of allergyItems) {
+        const cat = catalog.categories.find(c => c.code === code);
+        if (!cat) continue;
+        for (const item of cat.items) {
+          if (item.allergenId) allergenIds.add(item.allergenId);
+        }
+      }
+    }
+
+    // ⚠️ avoidedItems (식이 회피 카테고리 라벨) 는 의도적으로 allergyProfile 에
+    // 합치지 않는다. 자세한 이유: SurveyVegetarianIngredientsScreen 동일 주석.
     addMultiProfile({
       name: name.trim(),
-      // ⚠️ avoidedItems (식이 회피 카테고리 라벨) 는 의도적으로 allergyProfile 에
-      // 합치지 않는다. 자세한 이유: SurveyVegetarianIngredientsScreen 동일 주석.
-      allergyProfile: Array.from(allergyItems),
+      allergyProfile: [...allergenIds],
       dietaryRestrictions,
       sensitivityLevel: severity === 'severe' || veganStrictness === 'strict' ? 'strict' : 'normal',
     });

@@ -138,8 +138,9 @@ export default function PersonalizationAllergyScreen() {
   const syncProfile   = useUserStore(s => s.syncActiveProfile);
   const updateActive  = useUserStore(s => s.updateActiveProfile);
 
-  const hasAllergy = activeProfile.allergyProfile.length > 0;
-  const hasDiet    = activeProfile.dietaryRestrictions.length > 0;
+  // 의도적으로 hasAllergy/hasDiet 게이트를 제거 — 사용자가 처음에 알러지/식이를
+  // 안 골랐어도 이 화면에서 *추가* 할 수 있어야 한다. 모든 섹션 항상 노출.
+  // 저장 시 selected/dietKey 상태를 직접 그대로 반영.
 
   // ── Sensitivity ────────────────────────────────────────────────────────────
   const [sensitivity, setSensitivity] = useState<SensitivityLevel>(
@@ -242,22 +243,23 @@ export default function PersonalizationAllergyScreen() {
   async function handleSave() {
     setSaving(true);
     try {
-      // 식단 restrictions 재구성
+      // 식단 restrictions 재구성 — dietKey 가 비어있으면 빈 배열(no diet).
       let newDiet: string[] = [];
-      if (hasDiet) {
+      if (dietKey) {
         if (dietKey === 'strict' || dietKey === 'flexible') {
           newDiet = ['vegan', dietKey];
         } else {
           newDiet = [dietKey];
         }
       }
+      const newAllergy = Array.from(selected);
       await syncProfile({
-        allergyProfile: hasAllergy ? Array.from(selected) : [],
+        allergyProfile: newAllergy,
         dietaryRestrictions: newDiet,
         sensitivityLevel: sensitivity,
       });
       updateActive({
-        allergyProfile: hasAllergy ? Array.from(selected) : [],
+        allergyProfile: newAllergy,
         dietaryRestrictions: newDiet,
         sensitivityLevel: sensitivity,
       });
@@ -313,97 +315,102 @@ export default function PersonalizationAllergyScreen() {
       >
 
         {/* ══════════════════════════════════════════════════════════════════
-            SECTION 1 — Allergy Sensitivity (allergy 있을 때)
+            SECTION 1 — Allergy Sensitivity (항상 노출 — 사용자가 알러지 0 인
+            상태에서도 sensitivity 를 미리 설정해 둘 수 있어야 한다)
         ══════════════════════════════════════════════════════════════════ */}
-        {hasAllergy && (
-          <>
-            <SectionHeader
-              title="Allergy Sensitivity Settings"
-              subtitle="Choose how strictly the app filters ingredients based on your allergy profile."
-            />
+        <SectionHeader
+          title="Allergy Sensitivity Settings"
+          subtitle="Choose how strictly the app filters ingredients based on your allergy profile."
+        />
 
-            {/* Strict Mode card */}
-            <TouchableOpacity
-              style={[styles.sensitivityCard, sensitivity === 'strict' && styles.sensitivityCardActive]}
-              onPress={() => setSensitivity('strict')}
-              activeOpacity={0.85}
-            >
-              <View style={styles.sensitivityCardTop}>
-                <Text style={styles.sensitivityCardTitle}>Strict Mode</Text>
-                <View style={styles.strictBadge}>
-                  <Text style={styles.strictBadgeText}>Strict</Text>
-                </View>
-              </View>
-              <Text style={styles.sensitivityCardDesc}>
-                Warns you about ingredients that may contain trace amounts of your allergens (may contain labelling).
-              </Text>
-              {sensitivity === 'strict' && (
-                <View style={styles.activeRow}>
-                  <RadioFilled size={19} />
-                  <Text style={styles.activeText}>Currently Active</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+        {/* Strict Mode card */}
+        <TouchableOpacity
+          style={[styles.sensitivityCard, sensitivity === 'strict' && styles.sensitivityCardActive]}
+          onPress={() => setSensitivity('strict')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.sensitivityCardTop}>
+            <Text style={styles.sensitivityCardTitle}>Strict Mode</Text>
+            <View style={styles.strictBadge}>
+              <Text style={styles.strictBadgeText}>Strict</Text>
+            </View>
+          </View>
+          <Text style={styles.sensitivityCardDesc}>
+            Warns you about ingredients that may contain trace amounts of your allergens (may contain labelling).
+          </Text>
+          {sensitivity === 'strict' && (
+            <View style={styles.activeRow}>
+              <RadioFilled size={19} />
+              <Text style={styles.activeText}>Currently Active</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
-            {/* Normal Mode card */}
-            <TouchableOpacity
-              style={[styles.sensitivityCard, sensitivity === 'normal' && styles.sensitivityCardActive]}
-              onPress={() => setSensitivity('normal')}
-              activeOpacity={0.85}
-            >
-              <View style={styles.sensitivityCardTop}>
-                <Text style={styles.sensitivityCardTitle}>Normal Mode</Text>
-                <View style={styles.normalBadge}>
-                  <Text style={styles.normalBadgeText}>Normal</Text>
-                </View>
-              </View>
-              <Text style={styles.sensitivityCardDesc}>
-                Only warns you about ingredients that are known to contain your allergens.
-              </Text>
-              {sensitivity === 'normal' && (
-                <View style={styles.activeRow}>
-                  <RadioFilled size={19} />
-                  <Text style={styles.activeText}>Currently Active</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+        {/* Normal Mode card */}
+        <TouchableOpacity
+          style={[styles.sensitivityCard, sensitivity === 'normal' && styles.sensitivityCardActive]}
+          onPress={() => setSensitivity('normal')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.sensitivityCardTop}>
+            <Text style={styles.sensitivityCardTitle}>Normal Mode</Text>
+            <View style={styles.normalBadge}>
+              <Text style={styles.normalBadgeText}>Normal</Text>
+            </View>
+          </View>
+          <Text style={styles.sensitivityCardDesc}>
+            Only warns you about ingredients that are known to contain your allergens.
+          </Text>
+          {sensitivity === 'normal' && (
+            <View style={styles.activeRow}>
+              <RadioFilled size={19} />
+              <Text style={styles.activeText}>Currently Active</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
-            <View style={styles.divider} />
-          </>
-        )}
+        <View style={styles.divider} />
 
         {/* ══════════════════════════════════════════════════════════════════
-            SECTION 2 — Vegetarian Option (dietary 있을 때)
+            SECTION 2 — Vegetarian Option (항상 노출 — 식이 미설정 사용자도
+            여기서 처음 추가 가능. 'None' 옵션으로 식이 해제도 허용)
         ══════════════════════════════════════════════════════════════════ */}
-        {hasDiet && (
-          <>
-            <SectionHeader
-              title="Vegetarian Option"
-              subtitle={'Select your vegetarian type.\nThis helps us filter food according to your dietary rules.'}
-            />
+        <SectionHeader
+          title="Vegetarian Option"
+          subtitle={'Select your vegetarian type.\nThis helps us filter food according to your dietary rules.'}
+        />
 
-            <View style={styles.radioList}>
-              {vegeOptions.map(opt => {
-                const active = dietKey === opt.key;
-                return (
-                  <TouchableOpacity
-                    key={opt.key}
-                    style={styles.radioRow}
-                    onPress={() => setDietKey(opt.key)}
-                    activeOpacity={0.7}
-                  >
-                    {active ? <RadioFilled /> : <RadioEmpty color={BORDER} />}
-                    <Text style={[styles.radioLabel, active && styles.radioLabelActive]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+        <View style={styles.radioList}>
+          {/* None 옵션 — 식이 미설정 상태로 돌릴 수 있게 */}
+          <TouchableOpacity
+            style={styles.radioRow}
+            onPress={() => setDietKey('')}
+            activeOpacity={0.7}
+          >
+            {dietKey === '' ? <RadioFilled /> : <RadioEmpty color={BORDER} />}
+            <Text style={[styles.radioLabel, dietKey === '' && styles.radioLabelActive]}>
+              None
+            </Text>
+          </TouchableOpacity>
+          {vegeOptions.map(opt => {
+            const active = dietKey === opt.key;
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                style={styles.radioRow}
+                onPress={() => setDietKey(opt.key)}
+                activeOpacity={0.7}
+              >
+                {active ? <RadioFilled /> : <RadioEmpty color={BORDER} />}
+                <Text style={[styles.radioLabel, active && styles.radioLabelActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-            <View style={styles.divider} />
-          </>
-        )}
+        <View style={styles.divider} />
 
         {/* ══════════════════════════════════════════════════════════════════
             SECTION 3 — Ingredients Restriction Profile
@@ -413,79 +420,75 @@ export default function PersonalizationAllergyScreen() {
           subtitle={'Select the ingredients you want to avoid. Changes apply to your active profile.'}
         />
 
-        {/* ── Allergens subsection (allergy 있을 때) ────────────────────── */}
-        {hasAllergy && (
-          <>
-            <Text style={styles.subLabel}>Allergens</Text>
+        {/* ── Allergens subsection (항상 노출) ──────────────────────────── */}
+        <Text style={styles.subLabel}>Allergens</Text>
 
-            {!catalog ? (
-              <ActivityIndicator color={DARK_GREEN} style={{ marginVertical: 16 }} />
-            ) : (
-              catalog.categories.map(cat => {
-                const checked    = cat.items.filter(isItemChecked).length;
-                const totalItems = cat.items.length;
-                const allChecked = totalItems > 0 && checked === totalItems;
-                const isExpanded = expanded.has(cat.code);
+        {!catalog ? (
+          <ActivityIndicator color={DARK_GREEN} style={{ marginVertical: 16 }} />
+        ) : (
+          catalog.categories.map(cat => {
+            const checked    = cat.items.filter(isItemChecked).length;
+            const totalItems = cat.items.length;
+            const allChecked = totalItems > 0 && checked === totalItems;
+            const isExpanded = expanded.has(cat.code);
 
-                return (
-                  <View key={cat.code} style={[styles.accordionItem, checked > 0 && styles.accordionItemChecked]}>
-                    <TouchableOpacity
-                      style={styles.accordionRow}
-                      onPress={() => toggleCategory(cat.code)}
-                      activeOpacity={0.8}
-                    >
-                      <TouchableOpacity
-                        onPress={() => toggleAllInCategory(cat.code)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        {allChecked && checked > 0
-                          ? <CheckboxFilled />
-                          : checked > 0
-                          ? <CheckboxFilled />
-                          : <CheckboxEmpty />
-                        }
-                      </TouchableOpacity>
+            return (
+              <View key={cat.code} style={[styles.accordionItem, checked > 0 && styles.accordionItemChecked]}>
+                <TouchableOpacity
+                  style={styles.accordionRow}
+                  onPress={() => toggleCategory(cat.code)}
+                  activeOpacity={0.8}
+                >
+                  <TouchableOpacity
+                    onPress={() => toggleAllInCategory(cat.code)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    {allChecked && checked > 0
+                      ? <CheckboxFilled />
+                      : checked > 0
+                      ? <CheckboxFilled />
+                      : <CheckboxEmpty />
+                    }
+                  </TouchableOpacity>
 
-                      <Text style={[styles.accordionLabel, checked > 0 && styles.accordionLabelChecked]}>
-                        {cat.name}
-                      </Text>
+                  <Text style={[styles.accordionLabel, checked > 0 && styles.accordionLabelChecked]}>
+                    {cat.name}
+                  </Text>
 
-                      <Text style={styles.accordionCount}>
-                        {checked > 0 ? `${checked}/${totalItems}` : ''}
-                      </Text>
+                  <Text style={styles.accordionCount}>
+                    {checked > 0 ? `${checked}/${totalItems}` : ''}
+                  </Text>
 
-                      <ChevronRight />
-                    </TouchableOpacity>
+                  <ChevronRight />
+                </TouchableOpacity>
 
-                    {isExpanded && (
-                      <View style={styles.accordionChildren}>
-                        {cat.items.map(item => {
-                          const isChecked = isItemChecked(item);
-                          return (
-                            <TouchableOpacity
-                              key={item.name}
-                              style={styles.childRow}
-                              onPress={() => toggleItem(item)}
-                              activeOpacity={0.7}
-                            >
-                              {isChecked ? <CheckboxFilled size={18} /> : <CheckboxEmpty size={18} />}
-                              <Text style={styles.childLabel}>{item.name}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    )}
+                {isExpanded && (
+                  <View style={styles.accordionChildren}>
+                    {cat.items.map(item => {
+                      const isChecked = isItemChecked(item);
+                      return (
+                        <TouchableOpacity
+                          key={item.name}
+                          style={styles.childRow}
+                          onPress={() => toggleItem(item)}
+                          activeOpacity={0.7}
+                        >
+                          {isChecked ? <CheckboxFilled size={18} /> : <CheckboxEmpty size={18} />}
+                          <Text style={styles.childLabel}>{item.name}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
-                );
-              })
-            )}
-          </>
+                )}
+              </View>
+            );
+          })
         )}
 
-        {/* ── Vegetarian Diet subsection (dietary 있을 때) ─────────────── */}
-        {hasDiet && (
+        {/* ── Vegetarian Diet subsection (식이 선택했을 때만 — 'None' 이면 의미 없음) ── */}
+        {dietKey !== '' && (
           <>
-            <Text style={[styles.subLabel, hasAllergy && { marginTop: 12 }]}>Vegetarian Diet</Text>
+            <Text style={[styles.subLabel, { marginTop: 12 }]}>Vegetarian Diet</Text>
 
             {orderedDietCategoryCodes.map(code => {
               const isActive = avoidedCategoryCodes.includes(code);
