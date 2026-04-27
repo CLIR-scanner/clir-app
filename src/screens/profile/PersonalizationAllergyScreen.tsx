@@ -13,8 +13,12 @@ import { useNavigation } from '@react-navigation/native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { SensitivityLevel } from '../../types';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
+import {
+  fetchDietCatalog,
+  getCachedDietCatalogOrBootstrap,
+  type DietCatalog,
+} from '../../services/diet.service';
 import { useUserStore } from '../../store/user.store';
-import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES } from '../../constants/dietary';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG         = '#F9FFF3';
@@ -26,22 +30,39 @@ const STRICT_CLR = '#FF3434';
 const STRICT_BG  = '#FFECEC';
 
 // ── Vegetarian types ──────────────────────────────────────────────────────────
-const VEGE_OPTIONS: { key: string; label: string }[] = [
-  { key: 'pescatarian',          label: 'Pescatarian' },
-  { key: 'strict',               label: 'Strict Vegan' },
-  { key: 'flexible',             label: 'Flexible Vegan' },
-  { key: 'lacto_vegetarian',     label: 'Lacto-Vegetarian' },
-  { key: 'ovo_vegetarian',       label: 'Ovo-Vegetarian' },
-  { key: 'lacto_ovo_vegetarian', label: 'Lacto-Ovo Vegetarian' },
-  { key: 'pesco_vegetarian',     label: 'Pesco-Vegetarian' },
-  { key: 'pollo_vegetarian',     label: 'Pollo-Vegetarian' },
-  { key: 'flexitarian',          label: 'Flexitarian' },
-];
+// strict/flexible 은 'vegan' modifier — DietCatalog 의 veganStrictness 와 동기.
+// 화면에선 단일 라디오로 표현하기 위해 분리된 항목으로 보여준다.
+function buildVegeOptions(dietCatalog: DietCatalog): { key: string; label: string }[] {
+  const result: { key: string; label: string }[] = [];
+  for (const t of dietCatalog.types) {
+    if (t.code === 'vegan') {
+      // vegan 타입은 strictness 분기로 표현
+      result.push({ key: 'strict',   label: 'Strict Vegan' });
+      result.push({ key: 'flexible', label: 'Flexible Vegan' });
+    } else {
+      result.push({ key: t.code, label: t.name });
+    }
+  }
+  return result;
+}
 
 function getDietKey(dietaryRestrictions: string[]): string {
   if (dietaryRestrictions.includes('strict'))   return 'strict';
   if (dietaryRestrictions.includes('flexible')) return 'flexible';
   return dietaryRestrictions[0] ?? '';
+}
+
+/** dietKey 가 vegan modifier 인지 여부. */
+function isVeganModifier(key: string): boolean {
+  return key === 'strict' || key === 'flexible';
+}
+
+/** dietKey → BE products.category 회피 코드 목록 (BE catalog 기반). */
+function getAvoidedCategories(dietKey: string, dietCatalog: DietCatalog): string[] {
+  const typeCode = isVeganModifier(dietKey) ? 'vegan' : dietKey;
+  const t = dietCatalog.types.find(x => x.code === typeCode);
+  if (!t) return [];
+  return [...new Set([...t.avoidedCategories, ...t.cautionCategories])];
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -131,13 +152,15 @@ export default function PersonalizationAllergyScreen() {
   );
 
   // ── Allergen accordion ─────────────────────────────────────────────────────
-  const [catalog,   setCatalog]   = useState<AllergenCatalog | null>(null);
-  const [selected,  setSelected]  = useState<Set<string>>(new Set(activeProfile.allergyProfile));
-  const [expanded,  setExpanded]  = useState<Set<string>>(new Set());
-  const [saving,    setSaving]    = useState(false);
+  const [catalog,     setCatalog]     = useState<AllergenCatalog | null>(null);
+  const [dietCatalog, setDietCatalog] = useState<DietCatalog>(() => getCachedDietCatalogOrBootstrap());
+  const [selected,    setSelected]    = useState<Set<string>>(new Set(activeProfile.allergyProfile));
+  const [expanded,    setExpanded]    = useState<Set<string>>(new Set());
+  const [saving,      setSaving]      = useState(false);
 
   useEffect(() => {
     fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
+    fetchDietCatalog('en').then(setDietCatalog).catch(() => {});
   }, []);
 
   function toggleItem(item: string) {
@@ -198,10 +221,12 @@ export default function PersonalizationAllergyScreen() {
     }
   }
 
-  const avoidedFoods = DIET_AVOIDED_CATEGORIES[dietKey] ?? [];
-  const orderedDietCategories = [
-    ...DIET_RESTRICTION_CATEGORIES.filter(food => avoidedFoods.includes(food)),
-    ...DIET_RESTRICTION_CATEGORIES.filter(food => !avoidedFoods.includes(food)),
+  const vegeOptions = buildVegeOptions(dietCatalog);
+  const avoidedCategoryCodes = getAvoidedCategories(dietKey, dietCatalog);
+  const allCategoryCodes = dietCatalog.categories.map(c => c.code);
+  const orderedDietCategoryCodes = [
+    ...allCategoryCodes.filter(code => avoidedCategoryCodes.includes(code)),
+    ...allCategoryCodes.filter(code => !avoidedCategoryCodes.includes(code)),
   ];
 
   return (
@@ -310,7 +335,7 @@ export default function PersonalizationAllergyScreen() {
             />
 
             <View style={styles.radioList}>
-              {VEGE_OPTIONS.map(opt => {
+              {vegeOptions.map(opt => {
                 const active = dietKey === opt.key;
                 return (
                   <TouchableOpacity
@@ -414,11 +439,12 @@ export default function PersonalizationAllergyScreen() {
           <>
             <Text style={[styles.subLabel, hasAllergy && { marginTop: 12 }]}>Vegetarian Diet</Text>
 
-            {orderedDietCategories.map(food => {
-              const isActive = avoidedFoods.includes(food);
+            {orderedDietCategoryCodes.map(code => {
+              const isActive = avoidedCategoryCodes.includes(code);
+              const label = dietCatalog.categories.find(c => c.code === code)?.name ?? code;
               return (
                 <View
-                  key={food}
+                  key={code}
                   style={[styles.dietRow, isActive ? styles.dietRowActive : styles.dietRowInactive]}
                 >
                   <View style={styles.dietLeft}>
@@ -427,7 +453,7 @@ export default function PersonalizationAllergyScreen() {
                       : <RadioEmpty size={21} color={BORDER} />
                     }
                     <Text style={[styles.dietLabel, isActive && styles.dietLabelActive]}>
-                      {food}
+                      {label}
                     </Text>
                   </View>
                   <ChevronRight />
