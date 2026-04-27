@@ -163,6 +163,26 @@ export default function PersonalizationAllergyScreen() {
     fetchDietCatalog('en').then(setDietCatalog).catch(() => {});
   }, []);
 
+  // 카탈로그 로드 후 selected 정화 — 카탈로그 항목명/ing-* 가 아닌 값(과거 Survey 가
+  // allergy_profile 에 저장한 'Dairy'/'Eggs'/'Poultry' 등 식이 회피 카테고리 라벨)은
+  // 이 화면 UI 가 인식하지 못해 영구히 따라다니던 데이터. 카탈로그가 로드되면 즉시
+  // 알 수 없는 항목을 떨어뜨려, 다음 Save 시 BE 에 깨끗한 값을 쓴다.
+  useEffect(() => {
+    if (!catalog) return;
+    const validNames = new Set<string>();
+    for (const cat of catalog.categories) {
+      for (const item of cat.items) {
+        validNames.add(item.name);
+        if (item.allergenId) validNames.add(item.allergenId);
+      }
+    }
+    setSelected(prev => {
+      const next = new Set<string>();
+      for (const v of prev) if (validNames.has(v)) next.add(v);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [catalog]);
+
   function toggleItem(item: string) {
     setSelected(prev => {
       const next = new Set(prev);
