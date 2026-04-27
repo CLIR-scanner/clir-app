@@ -456,9 +456,9 @@ export default function MultiProfileAddScreen() {
     if (veganStrictness) dietaryRestrictions.push(veganStrictness);
     addMultiProfile({
       name: name.trim(),
-      allergyProfile: [...Array.from(allergyItems), ...avoidedItems].filter(
-        (v, i, arr) => arr.indexOf(v) === i,
-      ),
+      // ⚠️ avoidedItems (식이 회피 카테고리 라벨) 는 의도적으로 allergyProfile 에
+      // 합치지 않는다. 자세한 이유: SurveyVegetarianIngredientsScreen 동일 주석.
+      allergyProfile: Array.from(allergyItems),
       dietaryRestrictions,
       sensitivityLevel: severity === 'severe' || veganStrictness === 'strict' ? 'strict' : 'normal',
     });

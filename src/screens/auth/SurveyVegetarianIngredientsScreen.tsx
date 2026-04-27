@@ -76,11 +76,16 @@ export default function SurveyVegetarianIngredientsScreen() {
     if (vegetarianType) dietaryRestrictions.push(vegetarianType);
     if (veganStrictness) dietaryRestrictions.push(veganStrictness);
 
-    // Both 플로우: 알러지 플로우에서 전달된 allergyProfile과 합산
-    const prevAllergyProfile: string[] = allergyProfileJson
+    // Both 플로우: 알러지 플로우에서 수집한 ing-* ID 만 그대로 전달.
+    // ⚠️ items (식이 회피 카테고리 라벨 — 'Dairy'/'Eggs'/'Poultry'/...) 는
+    // 의도적으로 allergy_profile 에 합치지 않는다. 합치면 BE 정규화 과정에서
+    // 'Dairy' → ing-milk, 'Eggs' → ing-egg 로 둔갑해 가짜 알러지가 영구히
+    // 박혔다(비건 사용자가 milk 알러지 인 것처럼 판정되던 버그).
+    // 식이 회피는 dietaryRestrictions 만으로 충분히 표현된다 — 동일 룰을
+    // BE DIET_RULES 가 카테고리/알러겐 단위로 적용한다.
+    const allergyProfile: string[] = allergyProfileJson
       ? (JSON.parse(allergyProfileJson) as string[])
       : [];
-    const mergedAllergyProfile = [...new Set([...prevAllergyProfile, ...items])];
 
     const sensitivityLevel = veganStrictness === 'strict' ? 'strict' : 'normal';
 
@@ -88,7 +93,7 @@ export default function SurveyVegetarianIngredientsScreen() {
     if (multiProfileMode) {
       addMultiProfile({
         name: multiProfileName || 'New Profile',
-        allergyProfile: mergedAllergyProfile,
+        allergyProfile,
         dietaryRestrictions,
         sensitivityLevel,
       });
@@ -100,7 +105,7 @@ export default function SurveyVegetarianIngredientsScreen() {
     setLoading(true);
     try {
       await AuthService.submitSurvey({
-        allergyProfile: mergedAllergyProfile,
+        allergyProfile,
         dietaryRestrictions,
         sensitivityLevel,
       });
