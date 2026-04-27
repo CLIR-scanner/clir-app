@@ -61,10 +61,13 @@ type JsonFetchOptions = Omit<RequestInit, 'headers'> & {
  * 저장된 토큰이 있으면 Authorization: Bearer {token} 자동 주입.
  */
 export async function apiFetch<T>(path: string, options: JsonFetchOptions = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const headers: Record<string, string> = { ...options.headers };
+
+  // body가 있을 때만 Content-Type 설정.
+  // body 없이 Content-Type: application/json을 보내면 Fastify가 FST_ERR_CTP_EMPTY_JSON_BODY(400)를 반환.
+  if (options.body !== undefined) {
+    headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+  }
 
   if (_token) {
     headers['Authorization'] = `Bearer ${_token}`;
