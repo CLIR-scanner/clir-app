@@ -243,16 +243,13 @@ export default function SearchScreen({ navigation }: Props) {
   }
 
   function handleSelectSuggestion(name: string) {
-    setQuery(name);
+    // setQuery → useEffect [query]가 단일 출처로 fetch 처리.
+    // 여기서 searchProducts를 직접 호출하면 useEffect와 중복 fetch race가 발생해
+    // 결과가 덮어씌워지거나 stale 상태가 될 수 있음.
     setSuggestions([]);
     Keyboard.dismiss();
-    setItems([]);
-    setHasMore(false);
-    setIsLoading(true);
-    searchProducts(name.trim(), 0)
-      .then(result => { setItems(result.items); setHasMore(result.hasMore); })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
+    setIsLoading(true); // debounce(300ms) 동안 스피너 표시
+    setQuery(name);     // useEffect [query] 트리거 → items 초기화 + 300ms 후 fetch
   }
 
   function handleClear() {
