@@ -163,6 +163,11 @@ export default function SearchScreen({ navigation }: Props) {
     );
   }, [items, isAlphabeticalSort]);
 
+  // 프로필 변경 시(알러지·식이·민감도 수정) 검색 결과를 자동 재조회.
+  // SearchResultScreen 만 처리한 PR #28 의 보완 — Search 탭 메인 화면에서도
+  // 사용자가 프로필 수정 후 돌아왔을 때 stale 한 'Bad/Good' 라벨을 보지 않게.
+  const profileVersion = useUserStore(s => s.profileVersion);
+
   // query 또는 activeFilters 변경 시 서버 재조회
   // - categories / safeOnly: 서버 사이드 필터로 전달
   // - 비어있는 query: 즉시 fetch / 아니면 300ms 디바운스
@@ -205,7 +210,7 @@ export default function SearchScreen({ navigation }: Props) {
     const timer = setTimeout(fetch, 300);
     return () => { cancelled = true; clearTimeout(timer); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, activeFilters]);
+  }, [query, activeFilters, profileVersion]);
 
   // 자동완성: query 변경 시 제안 목록 업데이트
   useEffect(() => {

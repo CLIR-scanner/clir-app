@@ -164,52 +164,56 @@ export default function PersonalizationAllergyScreen() {
     fetchDietCatalog('en').then(setDietCatalog).catch(() => {});
   }, []);
 
-  // 카탈로그 로드 후 selected 정화 — 표시 이름('Milk') 을 정규형 ing-* ID('ing-milk')
-  // 로 변환해 단일 표현 유지. BE 가 ing-* 를 저장하므로 /auth/me 응답이 ing-* 로
-  // 들어와도 UI 가 항목을 체크 표시 하지 못하던 문제 해결.
-  // 카탈로그 항목명도 ing-* 도 아닌 garbage(과거 Survey 의 'Dairy'/'Eggs'/...) 는 drop.
+  // 카탈로그 로드 후 selected 정화 — per-item 표시명을 보존한다.
+  // - catalog 항목명('Milk'/'Whey') → 그대로 (사용자가 선택한 단위 유지)
+  // - ing-* ID(legacy / 과거 PR 흔적) → 같은 allergenId 의 모든 항목명으로 *expand*.
+  //   ing-* 는 항목 단위 정보를 잃은 표현이므로 'all-or-nothing' 으로 펼쳐 사용자가
+  //   개별 토글로 정밀 조정할 수 있게 한다. 다음 Save 시 표시명만 DB 에 남아 정화.
+  // - 그 외(garbage 'Meat'/'Moollusks / Shellfish') → drop.
   useEffect(() => {
     if (!catalog) return;
-    const nameToId = new Map<string, string>();
-    const validIds = new Set<string>();
+    const validNames = new Set<string>();
+    const idToNames = new Map<string, string[]>();
     for (const cat of catalog.categories) {
       for (const item of cat.items) {
+        validNames.add(item.name);
         if (item.allergenId) {
-          nameToId.set(item.name, item.allergenId);
-          validIds.add(item.allergenId);
+          const arr = idToNames.get(item.allergenId) ?? [];
+          arr.push(item.name);
+          idToNames.set(item.allergenId, arr);
         }
       }
     }
     setSelected(prev => {
       const next = new Set<string>();
       for (const v of prev) {
-        if (validIds.has(v)) next.add(v);              // 이미 ing-* — 보존
-        else if (nameToId.has(v)) next.add(nameToId.get(v)!); // 표시 이름 → ing-* 변환
-        // 그 외 — 카테고리 라벨/오타 등 garbage. drop.
+        if (validNames.has(v)) next.add(v);
+        else if (idToNames.has(v)) idToNames.get(v)!.forEach(n => next.add(n));
+        // 그 외 garbage drop
       }
       if (next.size === prev.size && [...prev].every(v => next.has(v))) return prev;
       return next;
     });
   }, [catalog]);
 
-  // selected 가 ing-* ID 만 보유하므로 isChecked 비교는 item.allergenId 로 한다.
-  // 항목명 fallback 은 카탈로그 로드 직전(아주 짧은 첫 렌더) 에 한해 raw 표시 이름을
-  // 인식하기 위한 호환 — 정상 운영 경로엔 영향 없다.
+  // selected 는 catalog 항목명(raw 표시명) 단위로 보유. ing-* legacy 호환은
+  // canonicalize useEffect 가 catalog 로드 시점에 expand 로 처리.
   function isItemChecked(item: { name: string; allergenId?: string }): boolean {
-    if (item.allergenId && selected.has(item.allergenId)) return true;
-    return selected.has(item.name);
+    if (selected.has(item.name)) return true;
+    // ing-* legacy 잔존(canonicalize 직전 첫 렌더) 방어
+    return !!(item.allergenId && selected.has(item.allergenId));
   }
 
   function toggleItem(item: { name: string; allergenId?: string }) {
     const checked = isItemChecked(item);
     setSelected(prev => {
       const next = new Set(prev);
-      // 이전 표현(name)·정규형(allergenId) 양쪽 정리한 뒤 새 상태 적용
-      next.delete(item.name);
+      // legacy ing-* 표현이 남아 있다면 정리
       if (item.allergenId) next.delete(item.allergenId);
+      next.delete(item.name);
       if (!checked) {
-        // 체크 추가 — 가능하면 ing-* (정규형) 로 저장
-        next.add(item.allergenId ?? item.name);
+        // per-item 단위 보존을 위해 표시명을 저장 (ing-* 가 아니라 'Milk' 등)
+        next.add(item.name);
       }
       return next;
     });
@@ -234,7 +238,8 @@ export default function PersonalizationAllergyScreen() {
         if (i.allergenId) next.delete(i.allergenId);
       });
       if (!allChecked) {
-        cat.items.forEach(i => next.add(i.allergenId ?? i.name));
+        // per-item 단위 보존 — 항목 표시명만 추가
+        cat.items.forEach(i => next.add(i.name));
       }
       return next;
     });
