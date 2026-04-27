@@ -31,26 +31,27 @@ export default function MyProfileEditScreen() {
     fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
   }, []);
 
-  // 카탈로그 로드 후 selectedAllergy 정화 + 정규화. 표시 이름('Milk') 을 정규형
-  // ing-* ID('ing-milk') 로 변환해 단일 표현 유지. 카탈로그 항목명도 ing-* 도 아닌
-  // garbage(옛 Survey 의 'Meat'/'Moollusks / Shellfish'/...) 는 drop.
+  // 카탈로그 로드 후 selectedAllergy 정화 — per-item 표시명 보존. 자세한 정책은
+  // PersonalizationAllergyScreen 의 동일 useEffect 주석 참조.
   useEffect(() => {
     if (!catalog) return;
-    const nameToId = new Map<string, string>();
-    const validIds = new Set<string>();
+    const validNames = new Set<string>();
+    const idToNames = new Map<string, string[]>();
     for (const cat of catalog.categories) {
       for (const item of cat.items) {
+        validNames.add(item.name);
         if (item.allergenId) {
-          nameToId.set(item.name, item.allergenId);
-          validIds.add(item.allergenId);
+          const arr = idToNames.get(item.allergenId) ?? [];
+          arr.push(item.name);
+          idToNames.set(item.allergenId, arr);
         }
       }
     }
     setSelectedAllergy(prev => {
       const next = new Set<string>();
       for (const v of prev) {
-        if (validIds.has(v)) next.add(v);
-        else if (nameToId.has(v)) next.add(nameToId.get(v)!);
+        if (validNames.has(v)) next.add(v);
+        else if (idToNames.has(v)) idToNames.get(v)!.forEach(n => next.add(n));
       }
       if (next.size === prev.size && [...prev].every(v => next.has(v))) return prev;
       return next;
@@ -58,8 +59,8 @@ export default function MyProfileEditScreen() {
   }, [catalog]);
 
   function isItemChecked(item: { name: string; allergenId?: string }): boolean {
-    if (item.allergenId && selectedAllergy.has(item.allergenId)) return true;
-    return selectedAllergy.has(item.name);
+    if (selectedAllergy.has(item.name)) return true;
+    return !!(item.allergenId && selectedAllergy.has(item.allergenId));
   }
 
   // ── 저장 ──────────────────────────────────────────────────────────────────
@@ -92,9 +93,9 @@ export default function MyProfileEditScreen() {
     const checked = isItemChecked(item);
     setSelectedAllergy(prev => {
       const next = new Set(prev);
-      next.delete(item.name);
       if (item.allergenId) next.delete(item.allergenId);
-      if (!checked) next.add(item.allergenId ?? item.name);
+      next.delete(item.name);
+      if (!checked) next.add(item.name);  // per-item 표시명 저장
       return next;
     });
   }
@@ -121,7 +122,7 @@ export default function MyProfileEditScreen() {
         next.delete(i.name);
         if (i.allergenId) next.delete(i.allergenId);
       });
-      if (!allChecked) items.forEach(i => next.add(i.allergenId ?? i.name));
+      if (!allChecked) items.forEach(i => next.add(i.name));  // per-item 표시명만 추가
       return next;
     });
   }

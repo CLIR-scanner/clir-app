@@ -485,17 +485,17 @@ export default function MultiProfileAddScreen() {
     if (veganStrictness) dietaryRestrictions.push(veganStrictness);
 
     // StepAllergyIngredients 가 카탈로그 카테고리 코드(예: 'Dairy', 'Crustaceans')
-    // 를 allergyItems 에 담는다. BE/표시 화면이 모두 ing-* ID 를 단일 표현으로
-    // 사용하므로, 저장 직전 각 카테고리의 항목들에서 ing-* allergenId 의 합집합
-    // 으로 변환. 매핑 없는 카테고리(Meat / Fruits / Food Additives 등) 는 drop —
-    // BE 알러지 판정 범위 밖.
-    const allergenIds = new Set<string>();
+    // 를 allergyItems 에 담는다. per-item 표시명 단위 일관성을 위해 각 카테고리의
+    // 항목 *표시명* 들로 expand 한다. 매핑(allergenId) 없는 항목은 BE 판정 범위
+    // 밖이므로 제외 — Meat 카테고리의 Beef/Chicken 처럼 알러겐이 아닌 단순 식품
+    // 군 항목들. (BE sanitize 가 어차피 drop 함)
+    const allergenNames = new Set<string>();
     if (catalog) {
       for (const code of allergyItems) {
         const cat = catalog.categories.find(c => c.code === code);
         if (!cat) continue;
         for (const item of cat.items) {
-          if (item.allergenId) allergenIds.add(item.allergenId);
+          if (item.allergenId) allergenNames.add(item.name);
         }
       }
     }
@@ -504,7 +504,7 @@ export default function MultiProfileAddScreen() {
     // 합치지 않는다. 자세한 이유: SurveyVegetarianIngredientsScreen 동일 주석.
     addMultiProfile({
       name: name.trim(),
-      allergyProfile: [...allergenIds],
+      allergyProfile: [...allergenNames],
       dietaryRestrictions,
       sensitivityLevel: severity === 'severe' || veganStrictness === 'strict' ? 'strict' : 'normal',
     });

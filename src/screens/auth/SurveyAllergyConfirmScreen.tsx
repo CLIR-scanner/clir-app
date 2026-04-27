@@ -10,7 +10,7 @@ import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import {
-  fetchAllergenCatalog, selectionToAllergenIds, AllergenCatalog,
+  fetchAllergenCatalog, AllergenCatalog,
 } from '../../services/allergen.service';
 import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
@@ -95,11 +95,12 @@ export default function SurveyAllergyConfirmScreen() {
 
   async function handleComplete() {
     const { dietaryType } = surveyParams;
-    // 카탈로그 기반 정규화 — "Chicken Egg" 같은 항목명을 ing-* ID 로 변환.
-    // 카탈로그 로드 전 클릭 시에는 raw 항목명으로 폴백(BE 가 재차 정규화).
-    const allergyProfile = catalog
-      ? selectionToAllergenIds(categories, catalog)
-      : Object.values(categories).flat();
+    // ⚠️ 사용자가 명시 선택한 catalog 항목명을 그대로 저장한다 (이전엔
+    // selectionToAllergenIds 로 ing-* ID 로 변환했는데, ing-* 는 항목 단위
+    // 정보를 잃어 같은 allergenId 를 공유하는 모든 항목이 일괄 체크되는
+    // UX 버그가 있었다). BE 판정은 activeProfile 에서 normalize 가 알아서
+    // ing-* 로 변환하므로 보호 효과는 동일.
+    const allergyProfile: string[] = [...new Set(Object.values(categories).flat())];
 
     // Both 플로우: 알러지 데이터를 들고 채식 플로우로 이동
     if (dietaryType === 'both') {

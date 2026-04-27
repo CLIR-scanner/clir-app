@@ -115,21 +115,12 @@ export default function SurveyAllergyDocResultScreen() {
 
   async function handleComplete() {
     const { dietaryType } = params;
-    // 선택된 항목명(예: "Salmon")을 카탈로그로 lookup 해 ing-* 로 변환.
-    // 매핑 없는 항목은 drop. 카탈로그 로드 전이면 raw 폴백(BE 정규화가 catch).
-    const selectedNames = Array.from(selected);
-    const allergyProfile = catalog
-      ? (() => {
-          const ids = new Set<string>();
-          for (const name of selectedNames) {
-            for (const cat of catalog.categories) {
-              const item = cat.items.find(i => i.name === name);
-              if (item?.allergenId) { ids.add(item.allergenId); break; }
-            }
-          }
-          return [...ids];
-        })()
-      : selectedNames;
+    // ⚠️ 사용자가 명시 선택한 항목명("Salmon" 등) 을 그대로 저장한다.
+    // 이전엔 카탈로그로 ing-* ID 변환했는데, ing-* 는 항목 단위 정보를 잃어
+    // Personalization 진입 시 같은 allergenId 공유 항목 전체가 체크된 것처럼
+    // 보이는 UX 버그가 있었다. BE 판정의 normalize 가 raw → ing-* 변환을
+    // 런타임에 처리하므로 보호 효과는 동일.
+    const allergyProfile: string[] = Array.from(selected);
 
     if (dietaryType === 'both') {
       navigation.navigate('SurveyVegetarian', {
