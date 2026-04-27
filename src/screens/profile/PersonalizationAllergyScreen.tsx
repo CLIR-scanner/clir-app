@@ -163,30 +163,53 @@ export default function PersonalizationAllergyScreen() {
     fetchDietCatalog('en').then(setDietCatalog).catch(() => {});
   }, []);
 
-  // 카탈로그 로드 후 selected 정화 — 카탈로그 항목명/ing-* 가 아닌 값(과거 Survey 가
-  // allergy_profile 에 저장한 'Dairy'/'Eggs'/'Poultry' 등 식이 회피 카테고리 라벨)은
-  // 이 화면 UI 가 인식하지 못해 영구히 따라다니던 데이터. 카탈로그가 로드되면 즉시
-  // 알 수 없는 항목을 떨어뜨려, 다음 Save 시 BE 에 깨끗한 값을 쓴다.
+  // 카탈로그 로드 후 selected 정화 — 표시 이름('Milk') 을 정규형 ing-* ID('ing-milk')
+  // 로 변환해 단일 표현 유지. BE 가 ing-* 를 저장하므로 /auth/me 응답이 ing-* 로
+  // 들어와도 UI 가 항목을 체크 표시 하지 못하던 문제 해결.
+  // 카탈로그 항목명도 ing-* 도 아닌 garbage(과거 Survey 의 'Dairy'/'Eggs'/...) 는 drop.
   useEffect(() => {
     if (!catalog) return;
-    const validNames = new Set<string>();
+    const nameToId = new Map<string, string>();
+    const validIds = new Set<string>();
     for (const cat of catalog.categories) {
       for (const item of cat.items) {
-        validNames.add(item.name);
-        if (item.allergenId) validNames.add(item.allergenId);
+        if (item.allergenId) {
+          nameToId.set(item.name, item.allergenId);
+          validIds.add(item.allergenId);
+        }
       }
     }
     setSelected(prev => {
       const next = new Set<string>();
-      for (const v of prev) if (validNames.has(v)) next.add(v);
-      return next.size === prev.size ? prev : next;
+      for (const v of prev) {
+        if (validIds.has(v)) next.add(v);              // 이미 ing-* — 보존
+        else if (nameToId.has(v)) next.add(nameToId.get(v)!); // 표시 이름 → ing-* 변환
+        // 그 외 — 카테고리 라벨/오타 등 garbage. drop.
+      }
+      if (next.size === prev.size && [...prev].every(v => next.has(v))) return prev;
+      return next;
     });
   }, [catalog]);
 
-  function toggleItem(item: string) {
+  // selected 가 ing-* ID 만 보유하므로 isChecked 비교는 item.allergenId 로 한다.
+  // 항목명 fallback 은 카탈로그 로드 직전(아주 짧은 첫 렌더) 에 한해 raw 표시 이름을
+  // 인식하기 위한 호환 — 정상 운영 경로엔 영향 없다.
+  function isItemChecked(item: { name: string; allergenId?: string }): boolean {
+    if (item.allergenId && selected.has(item.allergenId)) return true;
+    return selected.has(item.name);
+  }
+
+  function toggleItem(item: { name: string; allergenId?: string }) {
+    const checked = isItemChecked(item);
     setSelected(prev => {
       const next = new Set(prev);
-      next.has(item) ? next.delete(item) : next.add(item);
+      // 이전 표현(name)·정규형(allergenId) 양쪽 정리한 뒤 새 상태 적용
+      next.delete(item.name);
+      if (item.allergenId) next.delete(item.allergenId);
+      if (!checked) {
+        // 체크 추가 — 가능하면 ing-* (정규형) 로 저장
+        next.add(item.allergenId ?? item.name);
+      }
       return next;
     });
   }
@@ -202,11 +225,16 @@ export default function PersonalizationAllergyScreen() {
   function toggleAllInCategory(code: string) {
     const cat = catalog?.categories.find(c => c.code === code);
     if (!cat) return;
-    const items = cat.items.map(i => i.name);
-    const allChecked = items.length > 0 && items.every(i => selected.has(i));
+    const allChecked = cat.items.length > 0 && cat.items.every(i => isItemChecked(i));
     setSelected(prev => {
       const next = new Set(prev);
-      allChecked ? items.forEach(i => next.delete(i)) : items.forEach(i => next.add(i));
+      cat.items.forEach(i => {
+        next.delete(i.name);
+        if (i.allergenId) next.delete(i.allergenId);
+      });
+      if (!allChecked) {
+        cat.items.forEach(i => next.add(i.allergenId ?? i.name));
+      }
       return next;
     });
   }
@@ -394,9 +422,9 @@ export default function PersonalizationAllergyScreen() {
               <ActivityIndicator color={DARK_GREEN} style={{ marginVertical: 16 }} />
             ) : (
               catalog.categories.map(cat => {
-                const items      = cat.items.map(i => i.name);
-                const checked    = items.filter(i => selected.has(i)).length;
-                const allChecked = items.length > 0 && checked === items.length;
+                const checked    = cat.items.filter(isItemChecked).length;
+                const totalItems = cat.items.length;
+                const allChecked = totalItems > 0 && checked === totalItems;
                 const isExpanded = expanded.has(cat.code);
 
                 return (
@@ -423,7 +451,7 @@ export default function PersonalizationAllergyScreen() {
                       </Text>
 
                       <Text style={styles.accordionCount}>
-                        {checked > 0 ? `${checked}/${items.length}` : ''}
+                        {checked > 0 ? `${checked}/${totalItems}` : ''}
                       </Text>
 
                       <ChevronRight />
@@ -431,17 +459,17 @@ export default function PersonalizationAllergyScreen() {
 
                     {isExpanded && (
                       <View style={styles.accordionChildren}>
-                        {items.map(item => {
-                          const isChecked = selected.has(item);
+                        {cat.items.map(item => {
+                          const isChecked = isItemChecked(item);
                           return (
                             <TouchableOpacity
-                              key={item}
+                              key={item.name}
                               style={styles.childRow}
                               onPress={() => toggleItem(item)}
                               activeOpacity={0.7}
                             >
                               {isChecked ? <CheckboxFilled size={18} /> : <CheckboxEmpty size={18} />}
-                              <Text style={styles.childLabel}>{item}</Text>
+                              <Text style={styles.childLabel}>{item.name}</Text>
                             </TouchableOpacity>
                           );
                         })}

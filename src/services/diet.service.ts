@@ -41,15 +41,18 @@ export interface DietCatalog {
 // 카탈로그 fetch 전에도 동기 표시가 가능하도록 8종 식이 타입을 보유.
 // fetch 성공 시 BE 데이터로 덮어쓴다.
 
+// avoidedCategories / cautionCategories 는 DIET_CATEGORIES 의 UI 코드(red_meat /
+// poultry / dairy / eggs / seafood / vegetables / fruits_grains). BE 는 판정 시점에
+// products.category(meat/seafood/...) 로 번역한다 (UI_CAT_TO_PRODUCT_CATS).
 const BOOTSTRAP_TYPES: DietTypeCatalog[] = [
-  { code: 'vegan',                name: 'Vegan',                avoidedAllergenIds: ['ing-milk','ing-egg','ing-fish','ing-shellfish'], avoidedCategories: ['meat','seafood','dairy'], cautionCategories: [] },
-  { code: 'pescatarian',          name: 'Pescatarian',          avoidedAllergenIds: [], avoidedCategories: ['meat'], cautionCategories: [] },
-  { code: 'lacto_vegetarian',     name: 'Lacto-Vegetarian',     avoidedAllergenIds: ['ing-egg','ing-fish','ing-shellfish'], avoidedCategories: ['meat','seafood'], cautionCategories: [] },
-  { code: 'ovo_vegetarian',       name: 'Ovo-Vegetarian',       avoidedAllergenIds: ['ing-milk','ing-fish','ing-shellfish'], avoidedCategories: ['meat','seafood','dairy'], cautionCategories: [] },
-  { code: 'lacto_ovo_vegetarian', name: 'Lacto-Ovo Vegetarian', avoidedAllergenIds: ['ing-fish','ing-shellfish'], avoidedCategories: ['meat','seafood'], cautionCategories: [] },
-  { code: 'pesco_vegetarian',     name: 'Pesco-Vegetarian',     avoidedAllergenIds: [], avoidedCategories: ['meat'], cautionCategories: [] },
-  { code: 'pollo_vegetarian',     name: 'Pollo-Vegetarian',     avoidedAllergenIds: ['ing-fish','ing-shellfish'], avoidedCategories: ['seafood'], cautionCategories: ['meat'] },
-  { code: 'flexitarian',          name: 'Flexitarian',          avoidedAllergenIds: [], avoidedCategories: [], cautionCategories: ['meat'] },
+  { code: 'vegan',                name: 'Vegan',                avoidedAllergenIds: ['ing-milk','ing-egg','ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood','dairy','eggs'], cautionCategories: [] },
+  { code: 'pescatarian',          name: 'Pescatarian',          avoidedAllergenIds: [], avoidedCategories: ['red_meat','poultry'], cautionCategories: [] },
+  { code: 'lacto_vegetarian',     name: 'Lacto-Vegetarian',     avoidedAllergenIds: ['ing-egg','ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood','eggs'], cautionCategories: [] },
+  { code: 'ovo_vegetarian',       name: 'Ovo-Vegetarian',       avoidedAllergenIds: ['ing-milk','ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood','dairy'], cautionCategories: [] },
+  { code: 'lacto_ovo_vegetarian', name: 'Lacto-Ovo Vegetarian', avoidedAllergenIds: ['ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood'], cautionCategories: [] },
+  { code: 'pesco_vegetarian',     name: 'Pesco-Vegetarian',     avoidedAllergenIds: [], avoidedCategories: ['red_meat','poultry'], cautionCategories: [] },
+  { code: 'pollo_vegetarian',     name: 'Pollo-Vegetarian',     avoidedAllergenIds: ['ing-fish','ing-shellfish'], avoidedCategories: ['seafood'], cautionCategories: ['red_meat','poultry'] },
+  { code: 'flexitarian',          name: 'Flexitarian',          avoidedAllergenIds: [], avoidedCategories: [], cautionCategories: ['red_meat','poultry'] },
 ];
 
 const BOOTSTRAP_CATEGORIES: DietCategory[] = [
