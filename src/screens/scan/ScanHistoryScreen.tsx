@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
 import { useScanStore } from '../../store/scan.store';
+import { useUserStore } from '../../store/user.store';
 import { getScanHistory } from '../../services/scan.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
@@ -47,12 +48,13 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     return () => { cancelled = true; };
   }
 
-  // 화면 진입 시마다 최신 데이터 fetch — cleanup으로 취소 처리
+  // 화면 진입 + 프로필 변경 시 최신 데이터 fetch — cleanup으로 취소 처리
+  const profileVersion = useUserStore(s => s.profileVersion);
   useFocusEffect(
     useCallback(() => {
       return fetchHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []),
+    }, [profileVersion]),
   );
 
   // 최신순 정렬 (store는 이미 최신순이지만 방어적으로 정렬)

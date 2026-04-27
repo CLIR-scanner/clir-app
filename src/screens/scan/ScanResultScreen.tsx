@@ -18,6 +18,7 @@ import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives } from '.
 import { addFavorite, getFavorites } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
+import { useUserStore } from '../../store/user.store';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanResult'>;
 
@@ -50,10 +51,17 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   const addHistory              = useScanStore(s => s.addHistory);
   const addFavoriteToStore      = useListStore(s => s.addFavorite);
   const setFavoritesInStore     = useListStore(s => s.setFavorites);
+  const profileVersion          = useUserStore(s => s.profileVersion);
 
-  useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 최초 mount: 전체 로드(스캔·분석·이력 저장).
+  // 프로필 변경 시(profileVersion 증가): 분석 + 대체제품만 재계산. 이력 중복 저장 안 함.
+  const didInitialLoad = useRef(false);
+  useEffect(() => {
+    loadData(didInitialLoad.current);
+    didInitialLoad.current = true;
+  }, [profileVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function loadData() {
+  async function loadData(skipHistorySave: boolean) {
     try {
       setLoading(true);
       setError(null);
@@ -70,12 +78,13 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       const ingredientIds = prod.ingredients.map(i => i.id);
       const result = await analyzeProduct({ productId: prod.id, ingredientIds });
 
-      // 대체 제품 조회(danger/caution 전용) + 스캔 이력 저장을 병렬 실행해 대기 최소화
+      // 대체 제품 조회(danger/caution 전용) + 스캔 이력 저장을 병렬 실행해 대기 최소화.
+      // 프로필 변경 후 재실행(skipHistorySave=true) 시엔 이력 중복 저장 안 함.
       const [alts] = await Promise.all([
         result.verdict !== 'safe'
           ? getAlternatives(prod.id).catch((): Product[] => [])
           : Promise.resolve([] as Product[]),
-        !fromHistory
+        !fromHistory && !skipHistorySave
           ? saveScanHistory({ productId: prod.id, result: result.verdict })
               .then(item => addHistory(item))
               .catch(() => {})
@@ -218,7 +227,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
         <View style={styles.centerOverlay}>
           <Text style={styles.errorIcon}>⚠️</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadData}>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => loadData(didInitialLoad.current)}>
             <Text style={styles.retryBtnText}>Try Again</Text>
           </TouchableOpacity>
         </View>

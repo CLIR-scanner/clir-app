@@ -24,6 +24,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
   currentUser: EMPTY_USER,
   activeProfile: EMPTY_PROFILE,
   isInitialized: false,
+  // 0 = 미초기화. setUser 가 처음 호출되면 1 부터 시작 → 첫 mount 시점의 dep 변화로 fetch 트리거.
+  profileVersion: 0,
   multiProfileMode: false,
   multiProfileName: '',
 
@@ -39,7 +41,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
     const normalized: User = { ...user, multiProfiles: user.multiProfiles ?? [], language: user.language ?? 'en' };
 
-    set({ currentUser: normalized, activeProfile: normalized });
+    set(state => ({
+      currentUser: normalized,
+      activeProfile: normalized,
+      profileVersion: state.profileVersion + 1,
+    }));
   },
 
   logout: () => {
@@ -51,11 +57,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
   switchProfile: (profileId: string) => {
     const { currentUser } = get();
     if (profileId === currentUser.id) {
-      set({ activeProfile: currentUser });
+      set(state => ({ activeProfile: currentUser, profileVersion: state.profileVersion + 1 }));
       return;
     }
     const target = currentUser.multiProfiles.find(p => p.id === profileId);
-    if (target) set({ activeProfile: target });
+    if (target) set(state => ({ activeProfile: target, profileVersion: state.profileVersion + 1 }));
   },
 
   updateActiveProfile: (updates: Partial<Profile>) => {
@@ -91,6 +97,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
       // 다음 화면 진입 시 최신 값을 받도록 강제.
       useScanStore.getState().clearHistory();
       useListStore.getState().setFavorites([]);
+      // 화면들이 useEffect dep 로 구독하므로 — 카운터 증가 시점에 자동 재조회 트리거.
+      set(state => ({ profileVersion: state.profileVersion + 1 }));
     } catch (err) {
       set({ activeProfile: prevActive, currentUser: prevUser });
       throw err;

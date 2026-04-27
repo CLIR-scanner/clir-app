@@ -16,6 +16,7 @@ import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types'
 import { getIngredient, getAlternatives, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
+import { useUserStore } from '../../store/user.store';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
@@ -69,24 +70,39 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   const [alts,        setAlts]        = useState<Product[]>(product.alternatives);
   const [altsLoading, setAltsLoading] = useState(false);
 
+  const profileVersion = useUserStore(s => s.profileVersion);
+
+  // 프로필 변경 시 → 강제 재조회. mount 시엔 ingredients 가 비어있을 때만 fetch.
+  // BE /products/by-id/:id 가 활성 프로필 기준 verdict + riskIngredients 를 다시 계산해 반환.
+  const didInitialFetch = useRef(false);
   useEffect(() => {
-    if (product.ingredients.length > 0 || !product.id) return;
+    if (!product.id) return;
+    const needFetch = !didInitialFetch.current
+      ? product.ingredients.length === 0
+      : true; // 이후 호출은 무조건 재조회
+    if (!needFetch) { didInitialFetch.current = true; return; }
     setIsLoadingDetails(true);
     getProductById(product.id)
       .then(fullProduct => { setProduct(fullProduct); })
       .catch(() => { /* silent */ })
-      .finally(() => { setIsLoadingDetails(false); });
-  }, [product.id]);
+      .finally(() => {
+        setIsLoadingDetails(false);
+        didInitialFetch.current = true;
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id, profileVersion]);
 
+  // 대체 제품도 프로필 변경 시 재조회. safe 가 되면 빈 배열로 비우기 위해 setAlts([]) 명시.
   useEffect(() => {
-    if (product.isSafe || alts.length > 0 || !product.id) return;
+    if (!product.id) return;
+    if (product.isSafe) { setAlts([]); return; }
     setAltsLoading(true);
     getAlternatives(product.id)
-      .then(fetched => { if (fetched.length > 0) setAlts(fetched); })
+      .then(fetched => { setAlts(fetched); })
       .catch(() => { /* silent */ })
       .finally(() => { setAltsLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [product.id, product.isSafe, profileVersion]);
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   const [favorited,  setFavorited]  = useState(() =>
