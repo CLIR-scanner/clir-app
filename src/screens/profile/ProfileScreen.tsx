@@ -244,11 +244,26 @@ export default function ProfileScreen() {
           </>
         )}
 
-        {/* ── Case D: 아무것도 없을 때 ─────────────────────────────── */}
+        {/* ── Case D: 아무것도 없을 때 — Sensitivity + 빈 알러지 블록 노출
+              사용자가 카드를 탭하면 Personalization 으로 이동해 추가 가능. */}
         {!hasAllergy && !hasDiet && (
-          <View style={styles.allergyBlock}>
-            <Text style={styles.emptyChip}>No profile set</Text>
-          </View>
+          <>
+            <View style={styles.allergyRow}>
+              <Text style={styles.allergyRowLabel}>Sensitivity</Text>
+              <View style={[styles.sensitivityBadge, isStrict ? styles.sensitivityBadgeStrict : styles.sensitivityBadgeNormal]}>
+                <Text style={[styles.sensitivityBadgeText, isStrict ? styles.sensitivityBadgeTextStrict : styles.sensitivityBadgeTextNormal]}>
+                  {isStrict ? 'Strict Mode' : 'Normal Mode'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.allergyBlock}>
+              <Text style={styles.allergyRowLabel}>My Allergy</Text>
+              <Text style={styles.emptyChip}>No allergens set — tap to add</Text>
+            </View>
+          </>
         )}
 
       </TouchableOpacity>
