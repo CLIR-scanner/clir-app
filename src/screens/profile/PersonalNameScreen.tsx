@@ -87,15 +87,17 @@ export default function PersonalNameScreen() {
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backBtn}>{'‹'}</Text>
-        </TouchableOpacity>
+        <View style={styles.headerSide}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtn}>{'‹'}</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 28 }} />
+        <View style={styles.headerSide} />
       </View>
 
       {/* ── Avatar ─────────────────────────────────────────────────────── */}
@@ -138,10 +140,11 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 4,
+    marginBottom: 4,
   },
+  headerSide:  { flex: 1 },
   backBtn:     { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontWeight: '300' },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
 
   avatarSection: { alignItems: 'center', gap: 12 },
   avatarWrap:    { position: 'relative' },

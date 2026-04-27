@@ -6,6 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
+import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } from '../../constants/dietary';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
 
@@ -31,27 +32,6 @@ type Step =
   | 'name' | 'diet'
   | 'allergy_severity' | 'allergy_reaction' | 'allergy_ingredients'
   | 'vegetarian_type' | 'vegan_strictness' | 'vegetarian_ingredients';
-
-const AVOIDED_BY_DIET: Record<string, string[]> = {
-  pescatarian:          ['Meat', 'Moollusks / Shellfish'],
-  vegan:                ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs', 'Dairy'],
-  lacto_vegetarian:     ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs'],
-  ovo_vegetarian:       ['Meat', 'Fish', 'Moollusks / Shellfish', 'Dairy'],
-  lacto_ovo_vegetarian: ['Meat', 'Fish', 'Moollusks / Shellfish'],
-  pesco_vegetarian:     ['Meat'],
-  pollo_vegetarian:     ['Fish', 'Moollusks / Shellfish'],
-  flexitarian:          ['Meat'],
-  strict:               ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs', 'Dairy', 'Food Additives'],
-  flexible:             ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs', 'Dairy'],
-};
-
-const DIET_TITLE_KEY: Record<string, string> = {
-  pescatarian: 'a Pescatarian', vegan: 'a Vegan',
-  lacto_vegetarian: 'a Lacto-Vegetarian', ovo_vegetarian: 'an Ovo-Vegetarian',
-  lacto_ovo_vegetarian: 'a Lacto-ovo-Vegetarian', pesco_vegetarian: 'a Pesco-Vegetarian',
-  pollo_vegetarian: 'a Pollo-Vegetarian', flexitarian: 'a Flexitarian',
-  strict: 'a Strict Vegan', flexible: 'a Flexible Vegan',
-};
 
 const STEP_PROGRESS: Record<Step, number> = {
   name: 10, diet: 22,
@@ -361,9 +341,8 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalSel, setModalSel] = useState<string[]>([]);
-  const categoryCodes = useCategoryCodes();
-  const available = categoryCodes.filter(c => !items.includes(c));
-  const titleLabel = DIET_TITLE_KEY[dietKey] ?? dietKey;
+  const available = DIET_RESTRICTION_CATEGORIES.filter(c => !items.includes(c));
+  const titleLabel = DIET_TITLES[dietKey] ?? dietKey;
 
   function openModal() { setModalSel([]); setShowModal(true); }
   function saveModal() {
@@ -515,7 +494,7 @@ export default function MultiProfileAddScreen() {
             selected={vegetarianType} onSelect={setVegetarianType}
             onNext={() => {
               if (vegetarianType === 'vegan') setStep('vegan_strictness');
-              else { setAvoidedItems(AVOIDED_BY_DIET[vegetarianType ?? ''] ?? []); setStep('vegetarian_ingredients'); }
+              else { setAvoidedItems(DIET_AVOIDED_CATEGORIES[vegetarianType ?? ''] ?? []); setStep('vegetarian_ingredients'); }
             }}
           />
         );
@@ -523,7 +502,7 @@ export default function MultiProfileAddScreen() {
         return (
           <StepVeganStrictness
             selected={veganStrictness} onSelect={setVeganStrictness}
-            onNext={() => { setAvoidedItems(AVOIDED_BY_DIET[veganStrictness ?? ''] ?? []); setStep('vegetarian_ingredients'); }}
+            onNext={() => { setAvoidedItems(DIET_AVOIDED_CATEGORIES[veganStrictness ?? ''] ?? []); setStep('vegetarian_ingredients'); }}
           />
         );
       case 'vegetarian_ingredients':
