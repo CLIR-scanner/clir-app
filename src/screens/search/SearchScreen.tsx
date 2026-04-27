@@ -149,26 +149,14 @@ export default function SearchScreen({ navigation }: Props) {
   const addFavoriteToStore    = useListStore(s => s.addFavorite);
   const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
 
-  const activeCount =
-    activeFilters.categories.filter(c => c.selected).length +
-    (activeFilters.safeOnly ? 1 : 0);
+  // 카테고리 필터는 BE 미지원(Coming soon)이므로 카운트에서 제외
+  const activeCount = activeFilters.safeOnly ? 1 : 0;
 
   const visibleProducts = useMemo(() => {
-    const selectedCategories = activeFilters.categories
-      .filter(c => c.selected)
-      .map(c => c.id);
-
-    let filtered = items;
-
-    if (activeFilters.safeOnly) {
-      filtered = filtered.filter(p => p.riskLevel === 'safe');
-    }
-
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(p =>
-        p.category !== undefined && selectedCategories.includes(p.category),
-      );
-    }
+    // 카테고리 필터는 BE 미지원(Coming soon) — safeOnly만 적용
+    const filtered = activeFilters.safeOnly
+      ? items.filter(p => p.riskLevel === 'safe')
+      : items;
 
     if (!isAlphabeticalSort) return filtered;
     return [...filtered].sort((a, b) =>
