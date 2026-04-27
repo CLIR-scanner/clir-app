@@ -164,7 +164,11 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         product = _ocrToggle ? MOCK_GOOD : MOCK_BAD;
       } else {
         const ocrResult = await recognizeIngredients(targetUri);
+        // BE-known productId — product-upsert(Step 8) 가 'ocr-{phash}' 형식으로
+        // 채움. 이 값이 있어야 scan_history / favorites FK 제약 통과.
+        const beProductId = ocrResult.productId;
         const analysis  = await analyzeProduct({
+          productId: beProductId,
           ingredientIds: ocrResult.ingredients.map(i => i.id),
         });
         const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
@@ -174,8 +178,9 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           // HistoryProductDetailScreen의 성분 상세 조회 시 올바른 ID(ing-xxx)로 검색됨
           ...(t.id.startsWith('ing-may-') ? { relatedAllergenId: t.id.replace('ing-may-', 'ing-') } : {}),
         });
-        // product-upsert가 생성한 DB ID 우선 사용. 없으면 로컬 임시 ID.
-        const resolvedProductId = ocrResult.productId ?? barcode ?? `ocr-${Date.now()}`;
+        // 우선순위: BE-known(ocr-{phash}) → barcode → 로컬 fallback('ocr-local-').
+        // 'ocr-local-' 접두사로 fallback 을 명시 분리 — server-side 저장 시도 스킵 판단용.
+        const resolvedProductId = beProductId ?? barcode ?? `ocr-local-${Date.now()}`;
         product = {
           id: resolvedProductId,
           name: 'Scanned Product',
@@ -194,14 +199,18 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         };
       }
 
-      // 스캔 이력 저장 — product-upsert가 반환한 productId가 있으면 전달해 이력과 제품을 연결.
-      try {
-        const historyItem = await saveScanHistory({
-          productId: product.id.startsWith('ocr-') ? undefined : product.id,
-          result: product.riskLevel,
-        });
-        addHistory({ ...historyItem, product });
-      } catch { /* silent — 이력 저장 실패 시 분석 결과 표시는 유지 */ }
+      // 스캔 이력 저장 — BE-known productId 또는 barcode 일 때만(둘 다 products 테이블
+      // 존재 보장). 로컬 fallback('ocr-local-') 은 FK 제약으로 BE 400/404 가 떨어지므로
+      // 호출 자체를 스킵 — 분석 결과 화면 표시는 유지.
+      if (!product.id.startsWith('ocr-local-')) {
+        try {
+          const historyItem = await saveScanHistory({
+            productId: product.id,
+            result: product.riskLevel,
+          });
+          addHistory({ ...historyItem, product });
+        } catch { /* silent */ }
+      }
 
       if (cancelledRef.current) return;
 
@@ -258,12 +267,13 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     if (!ocrProduct || favorited || favLoading) return;
     setFavLoading(true);
     try {
-      if (!USE_MOCK) {
+      // BE-known productId 일 때만 server-side 호출 (BE 의 OCR upsert 가 만든 'ocr-{phash}'
+      // 또는 barcode 경유 제품). 'ocr-local-' fallback 은 무의미한 호출이므로 로컬만.
+      if (!USE_MOCK && !ocrProduct.id.startsWith('ocr-local-')) {
         try {
           await apiFavorite(ocrProduct.id);
         } catch {
-          // OCR 제품은 products 테이블에 없어 FK violation으로 API 실패.
-          // API 실패 여부와 무관하게 로컬 store에는 저장 (세션 내 즐겨찾기 유지).
+          // BE 가 거부한 경우(예: products 테이블에 잔존하지 않음) 로컬만 유지.
         }
       }
       const item: FavoriteItem = {
