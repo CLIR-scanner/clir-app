@@ -15,6 +15,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { ListStackParamList, FavoriteItem, RiskLevel } from '../../types';
 import { useListStore } from '../../store/list.store';
+import { useUserStore } from '../../store/user.store';
 import { getFavorites, removeFavorite } from '../../services/list.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
@@ -62,11 +63,13 @@ export default function FavoritesScreen({ navigation }: Props) {
     return () => { cancelled = true; };
   }
 
+  // 화면 포커스 진입 + 프로필 변경 시 재조회 — 두 트리거 모두 커버
+  const profileVersion = useUserStore(s => s.profileVersion);
   useFocusEffect(
     useCallback(() => {
       return fetchFavorites();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []),
+    }, [profileVersion]),
   );
 
   async function handleDelete(item: FavoriteItem) {

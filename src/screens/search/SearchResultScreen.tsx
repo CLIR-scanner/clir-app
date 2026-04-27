@@ -145,8 +145,9 @@ export default function SearchResultScreen({ route, navigation }: Props) {
     runSearch(query, results.length);
   }
 
-  // 최초 진입 시 검색
-  useEffect(() => { runSearch(route.params.query); }, [route.params.query, runSearch]);
+  // 최초 진입 시 검색 + 프로필 변경 시 자동 재검색 (개인화 판정 갱신)
+  const profileVersion = useUserStore(s => s.profileVersion);
+  useEffect(() => { runSearch(route.params.query); }, [route.params.query, runSearch, profileVersion]);
 
   function handleSubmit() {
     const q = query.trim();

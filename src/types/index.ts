@@ -321,6 +321,12 @@ export interface UserStore {
   currentUser: User;
   activeProfile: Profile;
   isInitialized: boolean;
+  /**
+   * 활성 프로필 변경(로그인·전환·편집 동기화) 때마다 단조 증가하는 카운터.
+   * 화면들의 useEffect dependency 로 사용해 stale 데이터 자동 재조회 트리거.
+   * 값 자체엔 의미 없음 — "변경됐다"는 신호로만 사용.
+   */
+  profileVersion: number;
   initialize: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => void;

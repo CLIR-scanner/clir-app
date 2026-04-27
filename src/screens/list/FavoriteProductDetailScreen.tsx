@@ -16,6 +16,7 @@ import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types'
 import { getIngredient, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
+import { useUserStore } from '../../store/user.store';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'FavoriteProductDetail'>;
@@ -60,14 +61,27 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
   const [product, setProduct] = useState<Product>(initialProduct ?? DUMMY_GOOD_PRODUCT);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
+  const profileVersion = useUserStore(s => s.profileVersion);
+
+  // 프로필 변경 시 → 강제 재조회. mount 시엔 ingredients 가 비어있을 때만 fetch.
+  // BE /products/by-id/:id 가 활성 프로필 기준 verdict 를 새로 계산해 반환.
+  const didInitialFetch = useRef(false);
   useEffect(() => {
-    if (product.ingredients.length > 0 || !product.id) return;
+    if (!product.id) return;
+    const needFetch = !didInitialFetch.current
+      ? product.ingredients.length === 0
+      : true;
+    if (!needFetch) { didInitialFetch.current = true; return; }
     setIsLoadingDetails(true);
     getProductById(product.id)
       .then(fullProduct => { setProduct(fullProduct); })
       .catch(() => { /* silent */ })
-      .finally(() => { setIsLoadingDetails(false); });
-  }, [product.id]);
+      .finally(() => {
+        setIsLoadingDetails(false);
+        didInitialFetch.current = true;
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id, profileVersion]);
 
   // ── Favorites ─────────────────────────────────────────────────────────────
   const [favorited,  setFavorited]  = useState(() =>
