@@ -31,6 +31,26 @@ export default function MyProfileEditScreen() {
     fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
   }, []);
 
+  // 카탈로그 로드 후 selectedAllergy 정화 — 카탈로그 항목명/ing-* 가 아닌 garbage
+  // (옛 Survey 의 AVOIDED_BY_DIET 가 저장한 'Meat'/'Moollusks / Shellfish'/...) 를
+  // 떨어뜨린다. 다음 Save 시 BE 에 깨끗한 값을 쓴다 — PersonalizationAllergyScreen 와
+  // 동일 패턴.
+  useEffect(() => {
+    if (!catalog) return;
+    const validNames = new Set<string>();
+    for (const cat of catalog.categories) {
+      for (const item of cat.items) {
+        validNames.add(item.name);
+        if (item.allergenId) validNames.add(item.allergenId);
+      }
+    }
+    setSelectedAllergy(prev => {
+      const next = new Set<string>();
+      for (const v of prev) if (validNames.has(v)) next.add(v);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [catalog]);
+
   // ── 저장 ──────────────────────────────────────────────────────────────────
   const isDirty =
     selectedSensitivity !== sensitivityLevel ||
