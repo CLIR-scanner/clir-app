@@ -20,6 +20,7 @@ import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
 import FilterTuneIcon from '../../components/common/FilterTuneIcon';
 import { getSearchSuggestions, getAllProducts, searchProducts } from '../../services/search.service';
+import { addFavorite, removeFavorite } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
 import { clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
@@ -277,20 +278,22 @@ export default function SearchScreen({ navigation }: Props) {
     setShowSortMenu(false);
   }
 
-  function handleFavoriteToggle(product: Product) {
+  async function handleFavoriteToggle(product: Product) {
     const existing = favorites.find(f => f.productId === product.id);
-    if (existing) {
-      removeFavoriteFromStore(existing.id);
-    } else {
-      const newItem: import('../../types').FavoriteItem = {
-        id: `fav-${Date.now()}`,
-        productId: product.id,
-        userId: 'dev-user',
-        memo: '',
-        addedAt: new Date(),
-        product,
-      };
-      addFavoriteToStore(newItem);
+    try {
+      if (existing) {
+        await removeFavorite(existing.id);
+        removeFavoriteFromStore(existing.id);
+      } else {
+        const item = await addFavorite(product.id);
+        addFavoriteToStore({ ...item, product });
+      }
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+      }
+      // 그 외 네트워크/서버 에러는 silent — 사용자가 다시 누르면 재시도됨
     }
   }
 
