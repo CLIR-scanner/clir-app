@@ -32,6 +32,7 @@ export const INITIAL_FILTER_CATEGORIES: FilterCategory[] = [
   { id: 'cereals',    label: 'Cereals & Grains',     selected: false },
   { id: 'cookies',    label: 'Cookies & Crackers',   selected: false },
   { id: 'chocolates', label: 'Chocolates & Candy',   selected: false },
+  { id: 'spreads',    label: 'Spreads & Jams',       selected: false },
   { id: 'meat',       label: 'Meat & Poultry',       selected: false },
   { id: 'seafood',    label: 'Seafood',              selected: false },
   { id: 'condiments', label: 'Sauces & Condiments',  selected: false },
