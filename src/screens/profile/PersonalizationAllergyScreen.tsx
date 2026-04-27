@@ -14,6 +14,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { SensitivityLevel } from '../../types';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
+import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES } from '../../constants/dietary';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG         = '#F9FFF3';
@@ -35,24 +36,6 @@ const VEGE_OPTIONS: { key: string; label: string }[] = [
   { key: 'pesco_vegetarian',     label: 'Pesco-Vegetarian' },
   { key: 'pollo_vegetarian',     label: 'Pollo-Vegetarian' },
   { key: 'flexitarian',          label: 'Flexitarian' },
-];
-
-const AVOIDED_BY_DIET: Record<string, string[]> = {
-  pescatarian:          ['Meat', 'Mollusks / Shellfish'],
-  vegan:                ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy'],
-  lacto_vegetarian:     ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs'],
-  ovo_vegetarian:       ['Meat', 'Fish', 'Mollusks / Shellfish', 'Dairy'],
-  lacto_ovo_vegetarian: ['Meat', 'Fish', 'Mollusks / Shellfish'],
-  pesco_vegetarian:     ['Meat'],
-  pollo_vegetarian:     ['Fish', 'Mollusks / Shellfish'],
-  flexitarian:          ['Meat'],
-  strict:               ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy', 'Food Additives'],
-  flexible:             ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy'],
-};
-
-const DIET_RESTRICTION_ALL = [
-  'Egg', 'Seafood', 'Poultry', 'Red Meat',
-  'Vegetables', 'Fruits / Grains / Nuts', 'Dairy',
 ];
 
 function getDietKey(dietaryRestrictions: string[]): string {
@@ -215,31 +198,39 @@ export default function PersonalizationAllergyScreen() {
     }
   }
 
-  const avoidedFoods = AVOIDED_BY_DIET[dietKey] ?? [];
+  const avoidedFoods = DIET_AVOIDED_CATEGORIES[dietKey] ?? [];
+  const orderedDietCategories = [
+    ...DIET_RESTRICTION_CATEGORIES.filter(food => avoidedFoods.includes(food)),
+    ...DIET_RESTRICTION_CATEGORIES.filter(food => !avoidedFoods.includes(food)),
+  ];
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backBtn}>{'‹'}</Text>
-        </TouchableOpacity>
+        <View style={styles.headerSide}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtn}>{'‹'}</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.headerTitle}>My Allergy Profile</Text>
-        <TouchableOpacity
-          style={[styles.headerSaveBtn, saving && { opacity: 0.5 }]}
-          onPress={handleSave}
-          disabled={saving}
-          activeOpacity={0.7}
-        >
-          {saving
-            ? <ActivityIndicator size="small" color={DARK_GREEN} />
-            : <Text style={styles.headerSaveBtnText}>Save</Text>
-          }
-        </TouchableOpacity>
+        <View style={[styles.headerSide, { alignItems: 'flex-end' }]}>
+          <TouchableOpacity
+            style={[styles.headerSaveBtn, saving && { opacity: 0.5 }]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.7}
+          >
+            {saving
+              ? <ActivityIndicator size="small" color={DARK_GREEN} />
+              : <Text style={styles.headerSaveBtnText}>Save</Text>
+            }
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -364,7 +355,7 @@ export default function PersonalizationAllergyScreen() {
                 const isExpanded = expanded.has(cat.code);
 
                 return (
-                  <View key={cat.code} style={styles.accordionItem}>
+                  <View key={cat.code} style={[styles.accordionItem, checked > 0 && styles.accordionItemChecked]}>
                     <TouchableOpacity
                       style={styles.accordionRow}
                       onPress={() => toggleCategory(cat.code)}
@@ -377,12 +368,12 @@ export default function PersonalizationAllergyScreen() {
                         {allChecked && checked > 0
                           ? <CheckboxFilled />
                           : checked > 0
-                          ? <CheckboxPartial />
+                          ? <CheckboxFilled />
                           : <CheckboxEmpty />
                         }
                       </TouchableOpacity>
 
-                      <Text style={[styles.accordionLabel, allChecked && styles.accordionLabelChecked]}>
+                      <Text style={[styles.accordionLabel, checked > 0 && styles.accordionLabelChecked]}>
                         {cat.name}
                       </Text>
 
@@ -423,7 +414,7 @@ export default function PersonalizationAllergyScreen() {
           <>
             <Text style={[styles.subLabel, hasAllergy && { marginTop: 12 }]}>Vegetarian Diet</Text>
 
-            {DIET_RESTRICTION_ALL.map(food => {
+            {orderedDietCategories.map(food => {
               const isActive = avoidedFoods.includes(food);
               return (
                 <View
@@ -460,12 +451,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 26,
     paddingVertical: 12,
   },
+  headerSide:  { flex: 1 },
   backBtn:     { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontWeight: '300' },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
 
   // ── Section header
   sectionHeader: { gap: 4, marginTop: 12 },
@@ -527,11 +518,14 @@ const styles = StyleSheet.create({
 
   // ── Accordion (allergen)
   accordionItem: {
-    backgroundColor: CARD_FILL,
+    backgroundColor: BG,
     borderWidth: 1,
     borderColor: BORDER,
     borderRadius: 15,
     overflow: 'hidden',
+  },
+  accordionItemChecked: {
+    backgroundColor: CARD_FILL,
   },
   accordionRow: {
     flexDirection: 'row',
@@ -540,8 +534,8 @@ const styles = StyleSheet.create({
     height: 57,
     gap: 10,
   },
-  accordionLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: DARK_GREEN },
-  accordionLabelChecked: { color: DARK_GREEN },
+  accordionLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: MID_GREEN },
+  accordionLabelChecked: { fontWeight: '700', color: DARK_GREEN },
   accordionCount: { fontSize: 15, fontWeight: '500', color: BORDER, minWidth: 32, textAlign: 'right' },
   accordionChildren: {
     borderTopWidth: 1,

@@ -12,17 +12,19 @@ import Svg, { Path } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { getAllergenDisplay } from '../../services/allergen.service';
+import { Colors } from '../../constants/colors';
+import { DIET_AVOIDED_CATEGORIES, DIET_LABELS } from '../../constants/dietary';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
 // ── Design tokens (Figma node 270:4667) ──────────────────────────────────────
-const BG          = '#F9FFF3';
-const DARK_GREEN  = '#1C3A19';
-const MID_GREEN   = '#556C53';
-const BORDER      = '#A9B6A8';
-const CARD_FILL   = '#E9F0E4';
-const STRICT_BG   = '#FFECEC';
-const STRICT_CLR  = '#FF3434';
+const BG          = Colors.profileBackground;
+const DARK_GREEN  = Colors.profileDarkGreen;
+const MID_GREEN   = Colors.profileMutedGreen;
+const BORDER      = Colors.profileBorder;
+const CARD_FILL   = Colors.profileCard;
+const STRICT_BG   = Colors.profileStrictBackground;
+const STRICT_CLR  = Colors.profileStrict;
 const CHIP_TEXT   = MID_GREEN;
 
 // ── Language options ──────────────────────────────────────────────────────────
@@ -37,38 +39,12 @@ const LANGUAGES = [
 
 // ── Dietary helpers ───────────────────────────────────────────────────────────
 
-const DIET_LABEL: Record<string, string> = {
-  pescatarian:          'Pescatarian',
-  vegan:                'Vegan',
-  lacto_vegetarian:     'Lacto-Vegetarian',
-  ovo_vegetarian:       'Ovo-Vegetarian',
-  lacto_ovo_vegetarian: 'Lacto-ovo Vegetarian',
-  pesco_vegetarian:     'Pesco-Vegetarian',
-  pollo_vegetarian:     'Pollo-Vegetarian',
-  flexitarian:          'Flexitarian',
-  strict:               'Strict Vegan',
-  flexible:             'Flexible Vegan',
-};
-
-const AVOIDED_BY_DIET: Record<string, string[]> = {
-  pescatarian:          ['Meat', 'Mollusks / Shellfish'],
-  vegan:                ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy'],
-  lacto_vegetarian:     ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs'],
-  ovo_vegetarian:       ['Meat', 'Fish', 'Mollusks / Shellfish', 'Dairy'],
-  lacto_ovo_vegetarian: ['Meat', 'Fish', 'Mollusks / Shellfish'],
-  pesco_vegetarian:     ['Meat'],
-  pollo_vegetarian:     ['Fish', 'Mollusks / Shellfish'],
-  flexitarian:          ['Meat'],
-  strict:               ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy', 'Food Additives'],
-  flexible:             ['Meat', 'Fish', 'Mollusks / Shellfish', 'Eggs', 'Dairy'],
-};
-
 function getDietDisplayLabel(dietaryRestrictions: string[]): string {
   // vegan strictness가 우선
-  if (dietaryRestrictions.includes('strict'))   return DIET_LABEL.strict;
-  if (dietaryRestrictions.includes('flexible')) return DIET_LABEL.flexible;
-  const found = dietaryRestrictions.find(d => d in DIET_LABEL);
-  return found ? DIET_LABEL[found] : dietaryRestrictions[0] ?? '';
+  if (dietaryRestrictions.includes('strict'))   return DIET_LABELS.strict;
+  if (dietaryRestrictions.includes('flexible')) return DIET_LABELS.flexible;
+  const found = dietaryRestrictions.find(d => d in DIET_LABELS);
+  return found ? DIET_LABELS[found] : dietaryRestrictions[0] ?? '';
 }
 
 function getDietKey(dietaryRestrictions: string[]): string {
@@ -112,7 +88,7 @@ export default function ProfileScreen() {
 
   const dietLabel    = hasDiet ? getDietDisplayLabel(activeProfile.dietaryRestrictions) : '';
   const dietKey      = hasDiet ? getDietKey(activeProfile.dietaryRestrictions) : '';
-  const avoidedFoods = AVOIDED_BY_DIET[dietKey] ?? [];
+  const avoidedFoods = DIET_AVOIDED_CATEGORIES[dietKey] ?? [];
 
   const currentLanguage = useUserStore(s => s.currentUser.language);
   const setLanguage     = useUserStore(s => s.setLanguage);
@@ -371,7 +347,7 @@ const styles = StyleSheet.create({
   // ── Language bottom sheet
   langBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: Colors.profileBackdrop,
   },
   langSheet: {
     position: 'absolute',
@@ -417,7 +393,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  langCheckMark: { fontSize: 13, color: '#FFFFFF', fontWeight: '700' },
+  langCheckMark: { fontSize: 13, color: Colors.white, fontWeight: '700' },
   langDivider:   { height: 1, backgroundColor: BORDER },
   content: {
     paddingHorizontal: 26,
@@ -458,7 +434,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.white,
     lineHeight: 32,
   },
   userInfo: {
@@ -468,7 +444,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#000000',
+    color: Colors.profileText,
   },
   userEmail: {
     fontSize: 13,
@@ -536,7 +512,7 @@ const styles = StyleSheet.create({
   sensitivityBadgeTextNormal: {
     color: MID_GREEN,
   },
-  // Preference 뱃지 — Figma 294:5491: #E9F0E4 bg, #556C53 border, #1C3A19 text
+  // Preference badge follows the profile card, muted green border, and dark green text tokens.
   preferenceBadge: {
     backgroundColor: CARD_FILL,
     borderWidth: 1,
@@ -607,7 +583,7 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#000000',
+    color: Colors.profileText,
   },
 
   // ── Logout

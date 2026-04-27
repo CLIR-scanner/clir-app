@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Modal, Alert,
@@ -9,41 +9,12 @@ import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
-import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
 import * as AuthService from '../../services/auth.service';
+import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } from '../../constants/dietary';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarianIngredients'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyVegetarianIngredients'>;
-
-// ─── 식단별 더미 avoided 식품 리스트 ───────────────────────────────────────────
-const AVOIDED_BY_DIET: Record<string, string[]> = {
-  pescatarian:          ['Meat', 'Moollusks / Shellfish'],
-  vegan:                ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs', 'Dairy'],
-  lacto_vegetarian:     ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs'],
-  ovo_vegetarian:       ['Meat', 'Fish', 'Moollusks / Shellfish', 'Dairy'],
-  lacto_ovo_vegetarian: ['Meat', 'Fish', 'Moollusks / Shellfish'],
-  pesco_vegetarian:     ['Meat'],
-  pollo_vegetarian:     ['Fish', 'Moollusks / Shellfish'],
-  flexitarian:          ['Meat'],
-  // Vegan 엄격도 분기
-  strict:               ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs', 'Dairy', 'Food Additives'],
-  flexible:             ['Meat', 'Fish', 'Moollusks / Shellfish', 'Eggs', 'Dairy'],
-};
-
-// ─── 타이틀용 라벨 ──────────────────────────────────────────────────────────
-const DIET_TITLE: Record<string, string> = {
-  pescatarian:          'a Pescatarian',
-  vegan:                'a Vegan',
-  lacto_vegetarian:     'a Lacto-Vegetarian',
-  ovo_vegetarian:       'an Ovo-Vegetarian',
-  lacto_ovo_vegetarian: 'a Lacto-ovo-Vegetarian',
-  pesco_vegetarian:     'a Pesco-Vegetarian',
-  pollo_vegetarian:     'a Pollo-Vegetarian',
-  flexitarian:          'a Flexitarian',
-  strict:               'a Strict Vegan',
-  flexible:             'a Flexible Vegan',
-};
 
 function getDietKey(params: SurveyParams): string {
   return params.veganStrictness ?? params.vegetarianType ?? '';
@@ -61,18 +32,13 @@ export default function SurveyVegetarianIngredientsScreen() {
   const setMultiProfileMode = useUserStore(s => s.setMultiProfileMode);
 
   const dietKey = getDietKey(params);
-  const initialItems = AVOIDED_BY_DIET[dietKey] ?? [];
+  const initialItems = DIET_AVOIDED_CATEGORIES[dietKey] ?? [];
 
-  const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [items, setItems] = useState<string[]>(initialItems);
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalSelected, setModalSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
-  }, []);
 
   // 편집 모드: 기존 항목 토글 (제거/복원)
   function toggleItem(item: string) {
@@ -147,11 +113,9 @@ export default function SurveyVegetarianIngredientsScreen() {
     }
   }
 
-  const titleLabel = DIET_TITLE[dietKey] ?? dietKey;
+  const titleLabel = DIET_TITLES[dietKey] ?? dietKey;
 
-  // 모달에 표시할 카테고리 (이미 목록에 있는 것 제외) — 카탈로그 기반
-  const allCategoryCodes = catalog?.categories.map(c => c.code) ?? [];
-  const availableCategories = allCategoryCodes.filter(c => !items.includes(c));
+  const availableCategories = DIET_RESTRICTION_CATEGORIES.filter(c => !items.includes(c));
 
   return (
     <View style={styles.container}>

@@ -40,4 +40,15 @@ export const Colors = {
   searchMutedGreen: '#556C53',
   searchPoor: '#FF9D00',
   searchWrong: '#FF3434',
+
+  // Profile design
+  profileBackground: '#F9FFF3',
+  profileDarkGreen: '#1C3A19',
+  profileMutedGreen: '#556C53',
+  profileBorder: '#A9B6A8',
+  profileCard: '#E9F0E4',
+  profileStrictBackground: '#FFECEC',
+  profileStrict: '#FF3434',
+  profileBackdrop: 'rgba(0,0,0,0.45)',
+  profileText: '#000000',
 };
