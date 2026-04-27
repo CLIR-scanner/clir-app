@@ -106,10 +106,16 @@ paths:
                   type: array
                   items:
                     type: string
-                  example: [vegan]
+                  example: [vegan, strict]
                   description: |
-                    식이 제한 목록.
-                    가능한 값: vegan, vegetarian, halal, kosher
+                    식이 제한 목록. type + 선택적 vegan modifier 가 함께 저장된다.
+                    유효한 값:
+                      - DietaryRestriction enum: vegan / pescatarian / lacto_vegetarian /
+                        ovo_vegetarian / lacto_ovo_vegetarian / pesco_vegetarian /
+                        pollo_vegetarian / flexitarian
+                      - vegan 전용 modifier: strict / flexible
+                    그 외 값은 BE 가 400 INVALID_INPUT 으로 거부한다.
+                    SSOT: GET /diets/catalog
                 sensitivityLevel:
                   type: string
                   enum: [strict, normal]
@@ -348,6 +354,62 @@ paths:
                         name:        { type: string, example: Milk }
                         category:    { type: string, example: Dairy }
                         riskDefault: { type: string, enum: [danger, caution] }
+
+  /diets/catalog:
+    get:
+      tags: [Diets]
+      summary: 식이(채식) 카탈로그 (타입 + 회피 카테고리)
+      description: |
+        FE Survey/Personalization 화면이 렌더할 식이 타입과 회피 카테고리 트리를 반환한다.
+        기존에 FE 가 하드코딩하던 DIET_AVOIDED_CATEGORIES / VEGE_OPTIONS 를 대체한다.
+
+        - `categories`: 사용자에게 보여줄 식품군 (snake_case code).
+        - `types`: 8 종 식이 타입. 각 타입의 `avoidedAllergenIds` (ing-*) 와
+          `avoidedCategories` / `cautionCategories` (products.category) 가 BE 판정에 사용된다.
+        - `veganStrictness`: vegan 타입의 modifier — `dietary_restrictions` 에는
+          `['vegan','strict']` 처럼 type + modifier 가 함께 저장된다.
+
+        인증 불필요. 가입 전(설문)에도 호출 가능.
+      parameters:
+        - name: lang
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [en, ko]
+          description: 표시명 언어 (기본 en)
+      responses:
+        '200':
+          description: 카탈로그
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, categories, types, veganStrictness]
+                properties:
+                  version: { type: integer, example: 1 }
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      required: [code, name]
+                      properties:
+                        code: { type: string, example: red_meat }
+                        name: { type: string, example: Red Meat }
+                  types:
+                    type: array
+                    items:
+                      type: object
+                      required: [code, name, avoidedAllergenIds, avoidedCategories, cautionCategories]
+                      properties:
+                        code:               { $ref: '#/components/schemas/DietaryRestriction' }
+                        name:               { type: string, example: Vegan }
+                        avoidedAllergenIds: { type: array, items: { type: string }, example: [ing-milk, ing-egg] }
+                        avoidedCategories:  { type: array, items: { type: string }, example: [meat, seafood, dairy] }
+                        cautionCategories:  { type: array, items: { type: string }, example: [meat] }
+                  veganStrictness:
+                    type: array
+                    items: { type: string, enum: [strict, flexible] }
 
   /products/{id}/alternatives:
     get:
@@ -1409,6 +1471,21 @@ components:
       description: Supabase Auth access token
 
   schemas:
+
+    DietaryRestriction:
+      type: string
+      enum:
+        - vegan
+        - pescatarian
+        - lacto_vegetarian
+        - ovo_vegetarian
+        - lacto_ovo_vegetarian
+        - pesco_vegetarian
+        - pollo_vegetarian
+        - flexitarian
+      description: |
+        식이(채식) 타입. profiles.dietary_restrictions 배열에 이 enum 값 + 선택적
+        vegan modifier (strict / flexible) 가 함께 저장된다. SSOT: GET /diets/catalog.
 
     UserProfile:
       type: object
