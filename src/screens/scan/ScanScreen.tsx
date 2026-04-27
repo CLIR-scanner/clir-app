@@ -337,7 +337,13 @@ export default function ScanScreen({ navigation }: Props) {
 
     try {
       const ocrResult = await recognizeIngredients(imageUri);
+      // BE 의 product-upsert 파이프라인(Step 8) 이 성공하면 ocrResult.productId 가
+      // 채워져 있다(형식: 'ocr-{phash}'). 이 값을 product.id 로 그대로 써야
+      // scan_history / favorites 의 FK 제약을 통과한다 — 무시하고 ocr-${Date.now()}
+      // 로 생성하면 BE 400 / 404 가 떨어진다 (사용자 보고 버그).
+      const beProductId = ocrResult.productId;
       const analysis  = await analyzeProduct({
+        productId: beProductId,  // server-side reverify 가능하면 사용
         ingredientIds: ocrResult.ingredients.map(i => i.id),
       });
       const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
@@ -349,8 +355,10 @@ export default function ScanScreen({ navigation }: Props) {
         sources: [] as [],
         ...(t.id.startsWith('ing-may-') ? { relatedAllergenId: t.id.replace('ing-may-', 'ing-') } : {}),
       });
+      // BE 가 productId 를 못 만든 경우(upsert 실패) 만 로컬 fallback. 'ocr-local-'
+      // 접두사로 분리해 server-side 저장 시도를 명시적으로 스킵.
       const product: Product = {
-        id: `ocr-${Date.now()}`,
+        id: beProductId ?? `ocr-local-${Date.now()}`,
         name: 'Scanned Product',
         brand: '',
         image: imageUri,
@@ -370,10 +378,13 @@ export default function ScanScreen({ navigation }: Props) {
         dataCompleteness: 'partial',
       };
 
-      try {
-        const historyItem = await saveScanHistory({ result: product.riskLevel });
-        addHistory({ ...historyItem, product });
-      } catch { /* silent */ }
+      // BE-known productId 일 때만 server-side 이력 저장. 로컬 fallback 은 스킵.
+      if (beProductId) {
+        try {
+          const historyItem = await saveScanHistory({ productId: beProductId, result: product.riskLevel });
+          addHistory({ ...historyItem, product });
+        } catch { /* silent */ }
+      }
 
       setProcessing(false);
       showOverlay(product, analysis);
@@ -515,6 +526,13 @@ export default function ScanScreen({ navigation }: Props) {
       const localItem = makeLocalFavorite(product);
       addFavoriteToStore(localItem);
       setFavorited(true);
+
+      // 로컬 OCR fallback (products 테이블에 없는 임시 ID) 은 server-side 호출
+      // 자체를 스킵 — BE 가 어차피 404 PRODUCT_NOT_FOUND 를 반환하므로 무의미한
+      // 네트워크 호출 + 에러 로그를 만들 뿐. 로컬 즐겨찾기로만 유지.
+      if (product.id.startsWith('ocr-local-')) {
+        return;
+      }
 
       try {
         const serverItem = await apiAddFavorite(product.id);
