@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, Modal, TextInput, TouchableWithoutFeedback,
+  ScrollView, Modal, TextInput, TouchableWithoutFeedback,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,11 +13,14 @@ import { useUserStore } from '../../store/user.store';
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'MultiProfile'>;
 
 function ProfileCard({
-  profile, isActive, isMain, onSwitch, onDelete, t,
+  profile, isMain, isEnabled, onPress, onToggle, t,
 }: {
-  profile: Profile; isActive: boolean; isMain: boolean;
-  onSwitch: () => void; onDelete?: () => void;
-  t: (key: string, opts?: any) => string;
+  profile: Profile;
+  isMain: boolean;
+  isEnabled: boolean;
+  onPress: () => void;
+  onToggle?: () => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const allergenCount = profile.allergyProfile.length;
   const sub = allergenCount > 0
@@ -26,13 +29,13 @@ function ProfileCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, isActive && styles.cardActive]}
-      onPress={onSwitch}
+      style={[styles.card, isEnabled && !isMain && styles.cardEnabled]}
+      onPress={onPress}
       activeOpacity={0.8}
     >
       <View style={styles.cardLeft}>
-        <View style={[styles.avatar, isActive && styles.avatarActive]}>
-          <Text style={[styles.avatarText, isActive && styles.avatarTextActive]}>
+        <View style={[styles.avatar, (isMain || isEnabled) && styles.avatarActive]}>
+          <Text style={[styles.avatarText, (isMain || isEnabled) && styles.avatarTextActive]}>
             {profile.name ? profile.name[0].toUpperCase() : '?'}
           </Text>
         </View>
@@ -44,9 +47,9 @@ function ProfileCard({
                 <Text style={styles.mainBadgeText}>{t('multiProfile.badgeMain')}</Text>
               </View>
             )}
-            {isActive && (
-              <View style={styles.activeBadge}>
-                <Text style={styles.activeBadgeText}>{t('multiProfile.badgeActive')}</Text>
+            {!isMain && isEnabled && (
+              <View style={styles.enabledBadge}>
+                <Text style={styles.enabledBadgeText}>{t('multiProfile.badgeEnabled')}</Text>
               </View>
             )}
           </View>
@@ -60,13 +63,16 @@ function ProfileCard({
         </View>
       </View>
 
-      {!isMain && onDelete && (
+      {!isMain && onToggle && (
         <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={onDelete}
+          style={[styles.toggleBtn, isEnabled && styles.toggleBtnActive]}
+          onPress={onToggle}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.75}
         >
-          <Text style={styles.deleteText}>✕</Text>
+          <Text style={[styles.toggleBtnText, isEnabled && styles.toggleBtnTextActive]}>
+            {isEnabled ? 'ON' : 'OFF'}
+          </Text>
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -74,34 +80,15 @@ function ProfileCard({
 }
 
 export default function MultiProfileScreen() {
-  const navigation = useNavigation<Nav>();
-  const { t } = useTranslation();
+  const navigation          = useNavigation<Nav>();
+  const { t }               = useTranslation();
   const currentUser          = useUserStore(s => s.currentUser);
-  const activeProfile        = useUserStore(s => s.activeProfile);
-  const switchProfile        = useUserStore(s => s.switchProfile);
-  const deleteMultiProfile   = useUserStore(s => s.deleteMultiProfile);
+  const enabledProfileIds    = useUserStore(s => s.enabledProfileIds);
+  const toggleProfileEnabled = useUserStore(s => s.toggleProfileEnabled);
   const setMultiProfileMode  = useUserStore(s => s.setMultiProfileMode);
 
   const [showNameModal, setShowNameModal] = useState(false);
   const [profileName,   setProfileName]   = useState('');
-
-  function handleDelete(profile: Profile) {
-    Alert.alert(
-      t('multiProfile.deleteTitle'),
-      t('multiProfile.deleteMsg', { name: profile.name }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: () => {
-            if (activeProfile.id === profile.id) switchProfile(currentUser.id);
-            deleteMultiProfile(profile.id);
-          },
-        },
-      ],
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -117,21 +104,22 @@ export default function MultiProfileScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.list}>
+          {/* 메인 프로필 — 항상 스캔에 적용, 토글 없음 */}
           <ProfileCard
             profile={currentUser}
-            isActive={activeProfile.id === currentUser.id}
             isMain
-            onSwitch={() => navigation.navigate('MultiProfileDetail', { profileId: currentUser.id })}
+            isEnabled
+            onPress={() => navigation.navigate('MultiProfileDetail', { profileId: currentUser.id })}
             t={t}
           />
           {currentUser.multiProfiles.map(profile => (
             <ProfileCard
               key={profile.id}
               profile={profile}
-              isActive={activeProfile.id === profile.id}
               isMain={false}
-              onSwitch={() => navigation.navigate('MultiProfileDetail', { profileId: profile.id })}
-              onDelete={() => handleDelete(profile)}
+              isEnabled={enabledProfileIds.includes(profile.id)}
+              onPress={() => navigation.navigate('MultiProfileDetail', { profileId: profile.id })}
+              onToggle={() => toggleProfileEnabled(profile.id)}
               t={t}
             />
           ))}
@@ -206,13 +194,15 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, color: MID_GREEN, lineHeight: 20, marginBottom: 24 },
   scroll: { flex: 1 },
   list: { gap: 10 },
+
   card: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: BG, borderRadius: 16,
     borderWidth: 1.5, borderColor: BORDER, padding: 16,
   },
-  cardActive: { borderColor: DARK_GREEN, backgroundColor: CARD_FILL },
+  cardEnabled: { borderColor: DARK_GREEN, backgroundColor: CARD_FILL },
   cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+
   avatar: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: CARD_FILL, alignItems: 'center', justifyContent: 'center',
@@ -220,23 +210,35 @@ const styles = StyleSheet.create({
   avatarActive: { backgroundColor: DARK_GREEN },
   avatarText: { fontSize: 20, fontWeight: '700', color: MID_GREEN },
   avatarTextActive: { color: '#FFFFFF' },
+
   cardInfo: { flex: 1, gap: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   cardName: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
-  cardSub: { fontSize: 12, color: MID_GREEN },
+  cardSub:  { fontSize: 12, color: MID_GREEN },
+
   mainBadge: {
     backgroundColor: CARD_FILL, borderRadius: 100,
     paddingVertical: 2, paddingHorizontal: 8,
     borderWidth: 1, borderColor: BORDER,
   },
   mainBadgeText: { fontSize: 11, fontWeight: '600', color: MID_GREEN },
-  activeBadge: {
+
+  enabledBadge: {
     backgroundColor: DARK_GREEN, borderRadius: 100,
     paddingVertical: 2, paddingHorizontal: 8,
   },
-  activeBadgeText: { fontSize: 11, fontWeight: '600', color: '#FFFFFF' },
-  deleteButton: { paddingLeft: 12 },
-  deleteText: { fontSize: 16, color: BORDER },
+  enabledBadgeText: { fontSize: 11, fontWeight: '600', color: '#FFFFFF' },
+
+  // ON/OFF 토글 버튼
+  toggleBtn: {
+    borderWidth: 1.5, borderColor: BORDER, borderRadius: 20,
+    paddingVertical: 4, paddingHorizontal: 10,
+    backgroundColor: BG,
+  },
+  toggleBtnActive: { borderColor: DARK_GREEN, backgroundColor: DARK_GREEN },
+  toggleBtnText: { fontSize: 11, fontWeight: '700', color: BORDER },
+  toggleBtnTextActive: { color: '#FFFFFF' },
+
   emptyText: {
     textAlign: 'center', fontSize: 14, color: BORDER,
     lineHeight: 22, marginTop: 32,
@@ -248,14 +250,11 @@ const styles = StyleSheet.create({
   },
   addButtonText: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
 
-  // ── Name modal
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   modalCard: {
-    position: 'absolute', left: 24, right: 24,
-    top: '35%',
+    position: 'absolute', left: 24, right: 24, top: '35%',
     backgroundColor: BG, borderRadius: 20,
-    padding: 24, gap: 12,
-    borderWidth: 1, borderColor: BORDER,
+    padding: 24, gap: 12, borderWidth: 1, borderColor: BORDER,
   },
   modalTitle: { fontSize: 17, fontWeight: '700', color: DARK_GREEN },
   modalSub:   { fontSize: 13, color: MID_GREEN },

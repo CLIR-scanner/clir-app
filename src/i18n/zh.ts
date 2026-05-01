@@ -117,7 +117,7 @@ const zh = {
   },
   favoriteUi: { add: '添加到收藏', favorited: '已收藏' },
   profileUi: {
-    personalInformation: '个人信息', allergyProfileTitle: '我的过敏档案', sensitivity: '敏感度',
+    personalInformation: '个人信息', allergyProfileTitle: '我的过敏档案', dietaryProfileTitle: '我的饮食档案', healthProfileTitle: '我的健康档案', sensitivity: '敏感度',
     myAllergy: '我的过敏', preference: '偏好', dietRestriction: '饮食限制', dietPreference: '饮食偏好',
     strictMode: '严格模式', normalMode: '普通模式', strict: '严格', normal: '普通',
     allergySensitivitySettings: '过敏敏感度设置', vegetarianOption: '素食选项',

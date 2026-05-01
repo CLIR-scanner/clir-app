@@ -116,7 +116,7 @@ const ja = {
   },
   favoriteUi: { add: 'お気に入りに追加', favorited: 'お気に入り済み' },
   profileUi: {
-    personalInformation: '個人情報', allergyProfileTitle: 'マイアレルギープロフィール', sensitivity: '感度',
+    personalInformation: '個人情報', allergyProfileTitle: 'マイアレルギープロフィール', dietaryProfileTitle: '私の食事プロフィール', healthProfileTitle: '私の健康プロフィール', sensitivity: '感度',
     myAllergy: 'マイアレルギー', preference: '好み', dietRestriction: '食事制限', dietPreference: '食事の好み',
     strictMode: '厳格モード', normalMode: '通常モード', strict: '厳格', normal: '通常',
     allergySensitivitySettings: 'アレルギー感度設定', vegetarianOption: 'ベジタリアンオプション',

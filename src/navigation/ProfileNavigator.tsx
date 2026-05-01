@@ -18,6 +18,7 @@ import MultiProfileScreen from '../screens/profile/MultiProfileScreen';
 import DevSurveyNavigator from './DevSurveyNavigator';
 import MultiProfileListScreen from '../screens/profile/MultiProfileListScreen';
 import MultiProfileDetailScreen from '../screens/profile/MultiProfileDetailScreen';
+import MultiProfileEditScreen from '../screens/profile/MultiProfileEditScreen';
 import LanguageScreen from '../screens/profile/LanguageScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import SettingsHelpScreen from '../screens/profile/SettingsHelpScreen';
@@ -48,6 +49,7 @@ export default function ProfileNavigator() {
       <Stack.Screen name="MultiProfileAdd" component={DevSurveyNavigator} />
       <Stack.Screen name="MultiProfileList" component={MultiProfileListScreen} />
       <Stack.Screen name="MultiProfileDetail" component={MultiProfileDetailScreen} />
+      <Stack.Screen name="MultiProfileEdit"   component={MultiProfileEditScreen}   />
       <Stack.Screen name="Language" component={LanguageScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="SettingsHelp" component={SettingsHelpScreen} />

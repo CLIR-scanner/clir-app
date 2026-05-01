@@ -256,10 +256,14 @@ export async function recognizeIngredients(imageUri: string): Promise<OCRResult>
 /**
  * POST /analysis
  * 성분 ID 목록과 선택적 productId를 전달하면 사용자 프로필 기준 위험도를 판정한다.
+ *
+ * additionalAllergenIds: 활성화된 멀티 프로필의 알러지 합집합.
+ * TODO: 백엔드 연결 시 요청 body에 포함 — 현재는 stub으로만 수신.
  */
 export async function analyzeProduct(params: {
   productId?: string;
   ingredientIds: string[];
+  additionalAllergenIds?: string[];
 }): Promise<AnalysisResult> {
   if (USE_MOCK) {
     const hasDanger = params.ingredientIds.some(id =>
@@ -267,9 +271,11 @@ export async function analyzeProduct(params: {
     );
     return hasDanger ? MOCK_ANALYSIS_DANGER : MOCK_ANALYSIS_SAFE;
   }
+  // TODO: additionalAllergenIds 백엔드 지원 후 body에 포함
+  const { additionalAllergenIds: _, ...apiParams } = params;
   return apiFetch<AnalysisResult>('/analysis', {
     method: 'POST',
-    body: JSON.stringify(params),
+    body: JSON.stringify(apiParams),
   });
 }
 

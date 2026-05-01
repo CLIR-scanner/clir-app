@@ -327,10 +327,13 @@ export interface UserStore {
    * 값 자체엔 의미 없음 — "변경됐다"는 신호로만 사용.
    */
   profileVersion: number;
+  /** 스캔 시 메인 프로필에 추가로 적용할 멀티 프로필 ID 목록 */
+  enabledProfileIds: string[];
   initialize: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => void;
-  switchProfile: (profileId: string) => void;
+  /** 멀티 프로필 스캔 적용 토글 (메인 프로필은 항상 적용) */
+  toggleProfileEnabled: (profileId: string) => void;
   updateActiveProfile: (updates: Partial<Profile>) => void;
   /**
    * 서버(POST /auth/survey)에 알러지·식이·민감도를 전체-치환 저장.
@@ -491,6 +494,7 @@ export type ProfileStackParamList = {
   MultiProfileAdd: undefined;
   MultiProfileList: undefined;
   MultiProfileDetail: { profileId: string };
+  MultiProfileEdit: { profileId: string };
   Language: undefined;
   Settings: undefined;
   SettingsHelp: undefined;

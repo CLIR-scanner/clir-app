@@ -119,8 +119,14 @@ export default function ProfileScreen() {
         <Text style={styles.chevron}>›</Text>
       </TouchableOpacity>
 
-      {/* ── My Allergy Profile section ───────────────────────────────────── */}
-      <Text style={styles.sectionLabel}>{t('profileUi.allergyProfileTitle')}</Text>
+      {/* ── My Allergy / Dietary / Health Profile section ───────────────── */}
+      <Text style={styles.sectionLabel}>
+        {hasAllergy && !hasDiet
+          ? t('profileUi.allergyProfileTitle')
+          : !hasAllergy && hasDiet
+            ? t('profileUi.dietaryProfileTitle')
+            : t('profileUi.healthProfileTitle')}
+      </Text>
 
       <TouchableOpacity
         style={styles.allergyCard}

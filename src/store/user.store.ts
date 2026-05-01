@@ -26,6 +26,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
   isInitialized: false,
   // 0 = 미초기화. setUser 가 처음 호출되면 1 부터 시작 → 첫 mount 시점의 dep 변화로 fetch 트리거.
   profileVersion: 0,
+  enabledProfileIds: [],
   multiProfileMode: false,
   multiProfileName: '',
 
@@ -62,14 +63,15 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }));
   },
 
-  switchProfile: (profileId: string) => {
-    const { currentUser } = get();
-    if (profileId === currentUser.id) {
-      set(state => ({ activeProfile: currentUser, profileVersion: state.profileVersion + 1 }));
-      return;
-    }
-    const target = currentUser.multiProfiles.find(p => p.id === profileId);
-    if (target) set(state => ({ activeProfile: target, profileVersion: state.profileVersion + 1 }));
+  toggleProfileEnabled: (profileId: string) => {
+    set(state => {
+      const ids = state.enabledProfileIds;
+      return {
+        enabledProfileIds: ids.includes(profileId)
+          ? ids.filter(id => id !== profileId)
+          : [...ids, profileId],
+      };
+    });
   },
 
   updateActiveProfile: (updates: Partial<Profile>) => {
@@ -156,6 +158,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
         ...state.currentUser,
         multiProfiles: state.currentUser.multiProfiles.filter(p => p.id !== profileId),
       },
+      enabledProfileIds: state.enabledProfileIds.filter(id => id !== profileId),
     }));
   },
 
