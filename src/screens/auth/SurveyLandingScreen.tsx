@@ -59,33 +59,37 @@ export default function SurveyLandingScreen() {
           {t('survey.landingTitle')}
         </Text>
 
-        <View style={styles.languageBlock}>
-          <Text style={styles.languageLabel}>{t('survey.languageTitle')}</Text>
-          <Text style={styles.languageHint}>{t('survey.languageSubtitle')}</Text>
-          <View style={styles.languageOptions}>
-            {SUPPORTED_LANGUAGES.map(language => {
-              const isSelected = currentLanguage === language.code;
-              return (
-                <TouchableOpacity
-                  key={language.code}
-                  style={[styles.languageOption, isSelected && styles.languageOptionSelected]}
-                  onPress={() => handleSelectLanguage(language.code)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.languageText, isSelected && styles.languageTextSelected]}>
-                    {language.native}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+        {!multiProfileMode && (
+          <View style={styles.languageBlock}>
+            <Text style={styles.languageLabel}>{t('survey.languageTitle')}</Text>
+            <Text style={styles.languageHint}>{t('survey.languageSubtitle')}</Text>
+            <View style={styles.languageOptions}>
+              {SUPPORTED_LANGUAGES.map(language => {
+                const isSelected = currentLanguage === language.code;
+                return (
+                  <TouchableOpacity
+                    key={language.code}
+                    style={[styles.languageOption, isSelected && styles.languageOptionSelected]}
+                    onPress={() => handleSelectLanguage(language.code)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.languageText, isSelected && styles.languageTextSelected]}>
+                      {language.native}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
+        )}
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip} activeOpacity={0.7}>
-          <Text style={styles.skipText}>{t('survey.skip')}</Text>
-        </TouchableOpacity>
+        {!multiProfileMode && (
+          <TouchableOpacity style={styles.skipButton} onPress={handleSkip} activeOpacity={0.7}>
+            <Text style={styles.skipText}>{t('survey.skip')}</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.8}>
           <Text style={styles.continueText}>{t('common.continue')}</Text>

@@ -85,11 +85,11 @@ const en = {
   // ── Multi Profile ─────────────────────────────────────────────────────────
   multiProfile: {
     title:        'Multi Profiles',
-    subtitle:     'Switch between profiles to filter food recommendations per person.',
+    subtitle:     'Add profiles and apply their allergy restrictions to scanning.',
     addProfile:   '+ Add Profile',
     emptyHint:    'No multi profiles yet.\nAdd one to get started.',
     badgeMain:    'Main',
-    badgeActive:  'Active',
+    badgeEnabled: 'Applied',
     deleteTitle:  'Delete Profile',
     deleteMsg:    'Are you sure you want to delete "{{name}}"?',
     noAllergens:  'No allergens registered',
@@ -101,19 +101,20 @@ const en = {
 
   // ── Multi Profile Detail ──────────────────────────────────────────────────
   multiProfileDetail: {
-    headerTitle:         'Profile Detail',
-    badgeMain:           'Main',
-    deleteBtn:           'Delete',
-    currentlyActive:     'Currently Active',
-    sectionSensitivity:  'Sensitivity',
-    modeLabel:           'Mode',
-    strictDesc:          'Warns about ingredients that may contain trace amounts of allergens.',
-    normalDesc:          'Only warns about ingredients directly included in the product.',
-    sectionAllergy:      'Allergy Profile',
-    sectionDietary:      'Dietary Restrictions',
-    noAllergens:         'No allergens registered.',
-    setActive:           'Set as Active Profile',
-    notFound:            'Profile not found.',
+    headerTitle:     'Profile Detail',
+    badgeMain:       'Main',
+    deleteBtn:       'Delete',
+    scanEnabled:     'Applied to scanning',
+    sectionSensitivity: 'Sensitivity',
+    modeLabel:       'Mode',
+    strictDesc:      'Warns about ingredients that may contain trace amounts of allergens.',
+    normalDesc:      'Only warns about ingredients directly included in the product.',
+    sectionAllergy:  'Allergy Profile',
+    sectionDietary:  'Dietary Restrictions',
+    noAllergens:     'No allergens registered.',
+    enableProfile:   'Apply to Scanning',
+    disableProfile:  'Disable',
+    notFound:        'Profile not found.',
   },
 
   // ── Multi Profile Add ─────────────────────────────────────────────────────

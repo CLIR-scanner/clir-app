@@ -90,11 +90,11 @@ const ko = {
   // ── Multi Profile ─────────────────────────────────────────────────────────
   multiProfile: {
     title:        '멀티 프로필',
-    subtitle:     '프로필을 전환하여 각 가족 구성원에 맞게 음식 추천을 필터링하세요.',
+    subtitle:     '프로필을 추가하고, 스캔 시 적용할 알러지 제한을 설정하세요.',
     addProfile:   '+ 프로필 추가',
     emptyHint:    '아직 멀티 프로필이 없습니다.\n추가하여 시작해 보세요.',
     badgeMain:    '메인',
-    badgeActive:  '활성',
+    badgeEnabled: '적용 중',
     deleteTitle:  '프로필 삭제',
     deleteMsg:    '"{{name}}" 프로필을 삭제하시겠어요?',
     noAllergens:  '등록된 알러겐 없음',
@@ -106,19 +106,20 @@ const ko = {
 
   // ── Multi Profile Detail ──────────────────────────────────────────────────
   multiProfileDetail: {
-    headerTitle:         '프로필 상세',
-    badgeMain:           '메인',
-    deleteBtn:           '삭제',
-    currentlyActive:     '현재 활성 중',
-    sectionSensitivity:  '민감도',
-    modeLabel:           '모드',
-    strictDesc:          '알러겐이 미량 포함될 수 있는 성분에 대해서도 경고합니다.',
-    normalDesc:          '제품에 직접 포함된 성분에 대해서만 경고합니다.',
-    sectionAllergy:      '알러지 프로필',
-    sectionDietary:      '식이 제한',
-    noAllergens:         '등록된 알러겐이 없습니다.',
-    setActive:           '활성 프로필로 설정',
-    notFound:            '프로필을 찾을 수 없습니다.',
+    headerTitle:     '프로필 상세',
+    badgeMain:       '메인',
+    deleteBtn:       '삭제',
+    scanEnabled:     '스캔에 적용 중',
+    sectionSensitivity: '민감도',
+    modeLabel:       '모드',
+    strictDesc:      '알러겐이 미량 포함될 수 있는 성분에 대해서도 경고합니다.',
+    normalDesc:      '제품에 직접 포함된 성분에 대해서만 경고합니다.',
+    sectionAllergy:  '알러지 프로필',
+    sectionDietary:  '식이 제한',
+    noAllergens:     '등록된 알러겐이 없습니다.',
+    enableProfile:   '스캔에 적용',
+    disableProfile:  '적용 해제',
+    notFound:        '프로필을 찾을 수 없습니다.',
   },
 
   // ── Multi Profile Add ─────────────────────────────────────────────────────
