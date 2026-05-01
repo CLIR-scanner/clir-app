@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
@@ -14,22 +15,23 @@ type Route = RouteProp<AuthStackParamList, 'SurveyVeganStrictness'>;
 
 type VeganStrictness = NonNullable<SurveyParams['veganStrictness']>;
 
-const OPTIONS: { value: VeganStrictness; label: string; description: string }[] = [
+const OPTIONS: { value: VeganStrictness; labelKey: string; descriptionKey: string }[] = [
   {
     value: 'strict',
-    label: 'Strict Vegan',
-    description: 'No lecithin / milk sugar / honey / vitamin D3 / Omega-3',
+    labelKey: 'survey.strictVegan',
+    descriptionKey: 'survey.strictVeganDesc',
   },
   {
     value: 'flexible',
-    label: 'Flexible Vegan',
-    description: 'Try to avoid lecithin / milk sugar / honey / vitamin D3 / Omega-3',
+    labelKey: 'survey.flexibleVegan',
+    descriptionKey: 'survey.flexibleVeganDesc',
   },
 ];
 
 export default function SurveyVeganStrictnessScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyVeganStrictness', params.dietaryType);
   const [selected, setSelected] = useState<VeganStrictness | null>(null);
@@ -46,9 +48,9 @@ export default function SurveyVeganStrictnessScreen() {
       {/* 본문 */}
       <View style={styles.body}>
         <View style={styles.textBlock}>
-          <Text style={styles.title}>How strict is your{'\n'}vegan diet?</Text>
+          <Text style={styles.title}>{t('survey.veganStrictTitle')}</Text>
           <Text style={styles.subtitle}>
-            Choose the option that best matches what you avoid.
+            {t('survey.veganStrictSubtitle')}
           </Text>
         </View>
 
@@ -64,10 +66,10 @@ export default function SurveyVeganStrictnessScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
                 <Text style={[styles.optionDesc, isSelected && styles.optionDescSelected]}>
-                  {opt.description}
+                  {t(opt.descriptionKey)}
                 </Text>
               </TouchableOpacity>
             );
@@ -82,7 +84,7 @@ export default function SurveyVeganStrictnessScreen() {
         onPress={handleContinue}
         disabled={!selected}
       >
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );

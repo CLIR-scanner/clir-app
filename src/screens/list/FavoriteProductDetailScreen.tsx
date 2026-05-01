@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
@@ -55,6 +56,7 @@ const VERDICT_BORDER: Record<RiskLevel, string> = {
 };
 
 export default function FavoriteProductDetailScreen({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const { product: initialProduct, hideTitle = false } = route.params;
   const insets = useSafeAreaInsets();
 
@@ -206,7 +208,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
   const showRisk     = isBad || isPoor;
   const riskBoxBg    = isBad ? '#FFECEC' : '#FFF4E0';
   const riskBoxBorder= isBad ? '#FF3434' : '#FF9D00';
-  const riskTitle    = isBad ? 'Ingredients to avoid' : 'Suspected Allergens';
+  const riskTitle    = isBad ? t('product.ingredientsToAvoid') : t('product.suspectedAllergens');
 
   const allIngredients = product.ingredients.map(i => i.name);
 
@@ -224,7 +226,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
         </TouchableOpacity>
 
         {!hideTitle
-          ? <Text style={styles.headerTitle}>List</Text>
+          ? <Text style={styles.headerTitle}>{t('listUi.title')}</Text>
           : <View style={{ flex: 1 }} />
         }
 
@@ -285,7 +287,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
             </View>
             <View style={styles.ingredientLabelWrap} pointerEvents="none">
               <View style={styles.ingredientLabel}>
-                <Text style={styles.ingredientLabelText}>All Ingredients</Text>
+                <Text style={styles.ingredientLabelText}>{t('product.allIngredients')}</Text>
               </View>
             </View>
           </View>
@@ -300,7 +302,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
                 numberOfLines={1}
                 adjustsFontSizeToFit
               >
-                ** This product contains ingredients that may not be suitable for you.
+                {t('product.riskWarning')}
               </Text>
 
               {(() => {
@@ -336,7 +338,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
             </View>
             <View style={styles.ingredientLabelWrap} pointerEvents="none">
               <View style={styles.ingredientLabel}>
-                <Text style={styles.ingredientLabelText}>All Ingredients</Text>
+                <Text style={styles.ingredientLabelText}>{t('product.allIngredients')}</Text>
               </View>
             </View>
           </View>
@@ -345,7 +347,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
         {/* Disclaimer */}
         {allIngredients.length > 0 && (
           <Text style={styles.disclaimer}>
-            {'** For severe allergies,\n      please double-check all ingredients before consuming.'}
+            {t('product.severeDisclaimer')}
           </Text>
         )}
 
@@ -377,7 +379,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 
                 {detailIngredient.sources.length > 0 && (
                   <View style={styles.modalSources}>
-                    <Text style={styles.modalSourcesTitle}>References</Text>
+                    <Text style={styles.modalSourcesTitle}>{t('product.references')}</Text>
                     {detailIngredient.sources.map(s => (
                       <TouchableOpacity key={s.url} onPress={() => Linking.openURL(s.url)} activeOpacity={0.7}>
                         <Text style={styles.modalSourceLink}>↗ {s.title}</Text>

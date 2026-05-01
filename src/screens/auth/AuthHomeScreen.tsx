@@ -65,7 +65,7 @@ export default function AuthHomeScreen() {
       {/* 로고 — 화면 중앙 */}
       <View style={styles.logoArea}>
         <ClirLogo width={140} height={83} color={S.primary} />
-        <Text style={styles.slogan}>Scan clir, Eat clear.</Text>
+        <Text style={styles.slogan}>{t('auth.tagline')}</Text>
       </View>
 
       {/* 하단 버튼 + 약관 */}
@@ -93,10 +93,10 @@ export default function AuthHomeScreen() {
         </View>
 
         <Text style={styles.terms}>
-          {'By pressing "Continue with..." you agree to our '}
-          <Text style={styles.termsLink}>Terms of Service</Text>
-          {' and '}
-          <Text style={styles.termsLink}>Privacy Policy</Text>
+          {t('auth.termsPrefix')}
+          <Text style={styles.termsLink}>{t('auth.termsService')}</Text>
+          {t('auth.termsAnd')}
+          <Text style={styles.termsLink}>{t('auth.termsPrivacy')}</Text>
         </Text>
       </View>
     </View>

@@ -13,7 +13,8 @@ import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { getAllergenDisplay } from '../../services/allergen.service';
 import { Colors } from '../../constants/colors';
-import { DIET_AVOIDED_CATEGORIES, DIET_LABELS } from '../../constants/dietary';
+import { SUPPORTED_LANGUAGES } from '../../constants/languages';
+import { DIET_AVOIDED_CATEGORIES } from '../../constants/dietary';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -27,25 +28,7 @@ const STRICT_BG   = Colors.profileStrictBackground;
 const STRICT_CLR  = Colors.profileStrict;
 const CHIP_TEXT   = MID_GREEN;
 
-// ── Language options ──────────────────────────────────────────────────────────
-const LANGUAGES = [
-  { code: 'en', label: 'English',  native: 'English'  },
-  { code: 'ko', label: 'Korean',   native: '한국어'    },
-  { code: 'ja', label: 'Japanese', native: '日本語'    },
-  { code: 'zh', label: 'Chinese',  native: '中文'      },
-  { code: 'es', label: 'Spanish',  native: 'Español'   },
-  { code: 'fr', label: 'French',   native: 'Français'  },
-];
-
 // ── Dietary helpers ───────────────────────────────────────────────────────────
-
-function getDietDisplayLabel(dietaryRestrictions: string[]): string {
-  // vegan strictness가 우선
-  if (dietaryRestrictions.includes('strict'))   return DIET_LABELS.strict;
-  if (dietaryRestrictions.includes('flexible')) return DIET_LABELS.flexible;
-  const found = dietaryRestrictions.find(d => d in DIET_LABELS);
-  return found ? DIET_LABELS[found] : dietaryRestrictions[0] ?? '';
-}
 
 function getDietKey(dietaryRestrictions: string[]): string {
   if (dietaryRestrictions.includes('strict'))   return 'strict';
@@ -86,15 +69,15 @@ export default function ProfileScreen() {
   const hasAllergy = activeProfile.allergyProfile.length > 0;
   const hasDiet    = activeProfile.dietaryRestrictions.length > 0;
 
-  const dietLabel    = hasDiet ? getDietDisplayLabel(activeProfile.dietaryRestrictions) : '';
   const dietKey      = hasDiet ? getDietKey(activeProfile.dietaryRestrictions) : '';
+  const dietLabel    = dietKey ? t(`survey.dietTitles.${dietKey}`) : '';
   const avoidedFoods = DIET_AVOIDED_CATEGORIES[dietKey] ?? [];
 
   const currentLanguage = useUserStore(s => s.currentUser.language);
   const setLanguage     = useUserStore(s => s.setLanguage);
   const [showLangPicker, setShowLangPicker] = useState(false);
 
-  const currentLangLabel = LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'English';
+  const currentLangLabel = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'English';
 
   function handleSelectLanguage(code: string) {
     setLanguage(code);
@@ -116,7 +99,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <Text style={styles.headerTitle}>Profile</Text>
+      <Text style={styles.headerTitle}>{t('profile.title')}</Text>
 
       {/* ── User card ────────────────────────────────────────────────────── */}
       <TouchableOpacity
@@ -137,7 +120,7 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       {/* ── My Allergy Profile section ───────────────────────────────────── */}
-      <Text style={styles.sectionLabel}>My Allergy Profile</Text>
+      <Text style={styles.sectionLabel}>{t('profileUi.allergyProfileTitle')}</Text>
 
       <TouchableOpacity
         style={styles.allergyCard}
@@ -149,10 +132,10 @@ export default function ProfileScreen() {
         {hasAllergy && !hasDiet && (
           <>
             <View style={styles.allergyRow}>
-              <Text style={styles.allergyRowLabel}>Sensitivity</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.sensitivity')}</Text>
               <View style={[styles.sensitivityBadge, isStrict ? styles.sensitivityBadgeStrict : styles.sensitivityBadgeNormal]}>
                 <Text style={[styles.sensitivityBadgeText, isStrict ? styles.sensitivityBadgeTextStrict : styles.sensitivityBadgeTextNormal]}>
-                  {isStrict ? 'Strict Mode' : 'Normal Mode'}
+                  {isStrict ? t('profileUi.strictMode') : t('profileUi.normalMode')}
                 </Text>
               </View>
             </View>
@@ -160,7 +143,7 @@ export default function ProfileScreen() {
             <View style={styles.cardDivider} />
 
             <View style={styles.allergyBlock}>
-              <Text style={styles.allergyRowLabel}>My Allergy</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.myAllergy')}</Text>
               <View style={styles.chips}>
                 {activeProfile.allergyProfile.map(item => (
                   <View key={item} style={styles.chip}>
@@ -176,7 +159,7 @@ export default function ProfileScreen() {
         {!hasAllergy && hasDiet && (
           <>
             <View style={styles.allergyRow}>
-              <Text style={styles.allergyRowLabel}>Preference</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.preference')}</Text>
               <View style={styles.preferenceBadge}>
                 <Text style={styles.preferenceBadgeText}>{dietLabel}</Text>
               </View>
@@ -185,14 +168,14 @@ export default function ProfileScreen() {
             <View style={styles.cardDivider} />
 
             <View style={styles.allergyBlock}>
-              <Text style={styles.allergyRowLabel}>Diet Restriction</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.dietRestriction')}</Text>
               {avoidedFoods.length === 0 ? (
                 <Text style={styles.emptyChip}>—</Text>
               ) : (
                 <View style={styles.chips}>
                   {avoidedFoods.map(food => (
                     <View key={food} style={styles.chip}>
-                      <Text style={styles.chipText}>{food}</Text>
+                      <Text style={styles.chipText}>{t(`survey.dietCategories.${food === 'Fruits / Grains' ? 'fruitsGrains' : food === 'Red Meat' ? 'redMeat' : food.toLowerCase()}`)}</Text>
                     </View>
                   ))}
                 </View>
@@ -206,10 +189,10 @@ export default function ProfileScreen() {
           <>
             {/* Sensitivity row */}
             <View style={styles.allergyRow}>
-              <Text style={styles.allergyRowLabel}>Sensitivity</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.sensitivity')}</Text>
               <View style={[styles.sensitivityBadge, isStrict ? styles.sensitivityBadgeStrict : styles.sensitivityBadgeNormal]}>
                 <Text style={[styles.sensitivityBadgeText, isStrict ? styles.sensitivityBadgeTextStrict : styles.sensitivityBadgeTextNormal]}>
-                  {isStrict ? 'Strict Mode' : 'Normal Mode'}
+                  {isStrict ? t('profileUi.strictMode') : t('profileUi.normalMode')}
                 </Text>
               </View>
             </View>
@@ -218,7 +201,7 @@ export default function ProfileScreen() {
 
             {/* Preference row */}
             <View style={styles.allergyRow}>
-              <Text style={styles.allergyRowLabel}>Preference</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.preference')}</Text>
               <View style={styles.preferenceBadge}>
                 <Text style={styles.preferenceBadgeText}>{dietLabel}</Text>
               </View>
@@ -228,14 +211,14 @@ export default function ProfileScreen() {
 
             {/* Diet Restriction */}
             <View style={styles.allergyBlock}>
-              <Text style={styles.allergyRowLabel}>Diet Restriction</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.dietRestriction')}</Text>
               {avoidedFoods.length === 0 ? (
                 <Text style={styles.emptyChip}>—</Text>
               ) : (
                 <View style={styles.chips}>
                   {avoidedFoods.map(food => (
                     <View key={food} style={styles.chip}>
-                      <Text style={styles.chipText}>{food}</Text>
+                      <Text style={styles.chipText}>{t(`survey.dietCategories.${food === 'Fruits / Grains' ? 'fruitsGrains' : food === 'Red Meat' ? 'redMeat' : food.toLowerCase()}`)}</Text>
                     </View>
                   ))}
                 </View>
@@ -249,10 +232,10 @@ export default function ProfileScreen() {
         {!hasAllergy && !hasDiet && (
           <>
             <View style={styles.allergyRow}>
-              <Text style={styles.allergyRowLabel}>Sensitivity</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.sensitivity')}</Text>
               <View style={[styles.sensitivityBadge, isStrict ? styles.sensitivityBadgeStrict : styles.sensitivityBadgeNormal]}>
                 <Text style={[styles.sensitivityBadgeText, isStrict ? styles.sensitivityBadgeTextStrict : styles.sensitivityBadgeTextNormal]}>
-                  {isStrict ? 'Strict Mode' : 'Normal Mode'}
+                  {isStrict ? t('profileUi.strictMode') : t('profileUi.normalMode')}
                 </Text>
               </View>
             </View>
@@ -260,8 +243,8 @@ export default function ProfileScreen() {
             <View style={styles.cardDivider} />
 
             <View style={styles.allergyBlock}>
-              <Text style={styles.allergyRowLabel}>My Allergy</Text>
-              <Text style={styles.emptyChip}>No allergens set — tap to add</Text>
+              <Text style={styles.allergyRowLabel}>{t('profileUi.myAllergy')}</Text>
+              <Text style={styles.emptyChip}>{t('profileUi.noAllergensTap')}</Text>
             </View>
           </>
         )}
@@ -269,7 +252,7 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       {/* ── Settings section ─────────────────────────────────────────────── */}
-      <Text style={styles.sectionLabel}>Settings</Text>
+      <Text style={styles.sectionLabel}>{t('profile.settingsSection')}</Text>
 
       <View style={styles.settingsCard}>
         <TouchableOpacity
@@ -277,7 +260,7 @@ export default function ProfileScreen() {
           onPress={() => navigation.navigate('MultiProfile')}
           activeOpacity={0.7}
         >
-          <Text style={styles.menuLabel}>Multi Profiles</Text>
+          <Text style={styles.menuLabel}>{t('profileUi.multiProfiles')}</Text>
         </TouchableOpacity>
 
         <View style={styles.cardDivider} />
@@ -298,7 +281,7 @@ export default function ProfileScreen() {
           onPress={() => navigation.navigate('Settings')}
           activeOpacity={0.7}
         >
-          <Text style={styles.menuLabel}>Settings</Text>
+          <Text style={styles.menuLabel}>{t('profile.menuSettings')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -321,10 +304,10 @@ export default function ProfileScreen() {
 
       <View style={[styles.langSheet, { paddingBottom: insets.bottom + 8 }]}>
         <View style={styles.langHandle} />
-        <Text style={styles.langSheetTitle}>Language</Text>
+        <Text style={styles.langSheetTitle}>{t('language.title')}</Text>
 
         <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-          {LANGUAGES.map((lang, idx) => {
+          {SUPPORTED_LANGUAGES.map((lang, idx) => {
             const isSelected = currentLanguage === lang.code;
             return (
               <React.Fragment key={lang.code}>
@@ -343,7 +326,7 @@ export default function ProfileScreen() {
                     </View>
                   )}
                 </TouchableOpacity>
-                {idx < LANGUAGES.length - 1 && <View style={styles.langDivider} />}
+                {idx < SUPPORTED_LANGUAGES.length - 1 && <View style={styles.langDivider} />}
               </React.Fragment>
             );
           })}

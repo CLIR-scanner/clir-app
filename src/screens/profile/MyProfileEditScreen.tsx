@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackParamList, SensitivityLevel } from '../../types';
 import { Colors } from '../../constants/colors';
+import { getCatalogLanguage } from '../../constants/languages';
 import { useUserStore } from '../../store/user.store';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { ApiError } from '../../services/auth.service';
@@ -19,7 +20,9 @@ export default function MyProfileEditScreen() {
   const { t }             = useTranslation();
   const allergyProfile    = useUserStore(s => s.activeProfile.allergyProfile);
   const sensitivityLevel  = useUserStore(s => s.activeProfile.sensitivityLevel);
+  const currentLanguage   = useUserStore(s => s.currentUser.language);
   const syncActiveProfile = useUserStore(s => s.syncActiveProfile);
+  const catalogLanguage   = getCatalogLanguage(currentLanguage);
 
   const [selectedSensitivity, setSelectedSensitivity] = useState<SensitivityLevel>(sensitivityLevel);
   const [selectedAllergy, setSelectedAllergy]         = useState<Set<string>>(new Set(allergyProfile));
@@ -28,8 +31,8 @@ export default function MyProfileEditScreen() {
   const [catalog, setCatalog]                         = useState<AllergenCatalog | null>(null);
 
   useEffect(() => {
-    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
-  }, []);
+    fetchAllergenCatalog(catalogLanguage).then(setCatalog).catch(() => {});
+  }, [catalogLanguage]);
 
   // 카탈로그 로드 후 selectedAllergy 정화 — per-item 표시명 보존. 자세한 정책은
   // PersonalizationAllergyScreen 의 동일 useEffect 주석 참조.

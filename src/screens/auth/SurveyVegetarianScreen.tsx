@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
@@ -15,20 +16,21 @@ type Route = RouteProp<AuthStackParamList, 'SurveyVegetarian'>;
 
 type VegetarianType = NonNullable<SurveyParams['vegetarianType']>;
 
-const OPTIONS: { value: VegetarianType; label: string }[] = [
-  { value: 'pescatarian',          label: 'Pescatarian' },
-  { value: 'vegan',                label: 'Vegan' },
-  { value: 'lacto_vegetarian',     label: 'Lacto-vegetarian' },
-  { value: 'ovo_vegetarian',       label: 'Ovo-vegetarian' },
-  { value: 'lacto_ovo_vegetarian', label: 'Lacto-ovo-vegetarian' },
-  { value: 'pesco_vegetarian',     label: 'Pesco-vegetarian' },
-  { value: 'pollo_vegetarian',     label: 'Pollo-vegetarian' },
-  { value: 'flexitarian',          label: 'Flextarian' },
+const OPTIONS: { value: VegetarianType }[] = [
+  { value: 'pescatarian' },
+  { value: 'vegan' },
+  { value: 'lacto_vegetarian' },
+  { value: 'ovo_vegetarian' },
+  { value: 'lacto_ovo_vegetarian' },
+  { value: 'pesco_vegetarian' },
+  { value: 'pollo_vegetarian' },
+  { value: 'flexitarian' },
 ];
 
 export default function SurveyVegetarianScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyVegetarian', params.dietaryType);
   const [selected, setSelected] = useState<VegetarianType | null>(null);
@@ -53,9 +55,9 @@ export default function SurveyVegetarianScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>What kind of diet{'\n'}do you follow?</Text>
+        <Text style={styles.title}>{t('survey.dietKindTitle')}</Text>
         <Text style={styles.subtitle}>
-          Choose the option that best matches your eating preferences.
+          {t('survey.dietKindSubtitle')}
         </Text>
 
         <View style={styles.options}>
@@ -69,7 +71,7 @@ export default function SurveyVegetarianScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                  {opt.label}
+                  {t(`survey.vegetarianTypes.${opt.value}`)}
                 </Text>
               </TouchableOpacity>
             );
@@ -83,7 +85,7 @@ export default function SurveyVegetarianScreen() {
         onPress={handleContinue}
         disabled={!selected}
       >
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );

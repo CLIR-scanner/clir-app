@@ -41,12 +41,6 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
   danger:  Colors.searchWrong,
 };
 
-const BADGE_LABEL: Record<RiskLevel, string> = {
-  safe:    'Good',
-  caution: 'Poor',
-  danger:  'Bad',
-};
-
 // ── Product Card ─────────────────────────────────────────────────────────────
 
 function ProductCard({ item, onPress, favorited, onFavorite }: {
@@ -55,8 +49,9 @@ function ProductCard({ item, onPress, favorited, onFavorite }: {
   favorited: boolean;
   onFavorite: () => void;
 }) {
+  const { t } = useTranslation();
   const color = BADGE_COLOR[item.riskLevel];
-  const label = BADGE_LABEL[item.riskLevel];
+  const label = item.riskLevel === 'safe' ? t('scanUi.good') : item.riskLevel === 'caution' ? t('scanUi.poor') : t('scanUi.bad');
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
@@ -102,8 +97,9 @@ function ListDivider() {
 // ── Product Row (검색 결과 리스트용) ─────────────────────────────────────────
 
 function ProductRow({ item, onPress }: { item: Product; onPress: () => void }) {
+  const { t } = useTranslation();
   const color = BADGE_COLOR[item.riskLevel];
-  const label = BADGE_LABEL[item.riskLevel];
+  const label = item.riskLevel === 'safe' ? t('scanUi.good') : item.riskLevel === 'caution' ? t('scanUi.poor') : t('scanUi.bad');
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.rowThumb}>

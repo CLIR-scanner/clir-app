@@ -6,11 +6,14 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
+import { getCatalogLanguage } from '../../constants/languages';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
+import { useUserStore } from '../../store/user.store';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
@@ -21,8 +24,11 @@ type SelectionMap = Record<string, string[]>;
 export default function SurveyAllergyIngredientsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergyIngredients', params.dietaryType);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
+  const catalogLanguage = getCatalogLanguage(currentLanguage);
 
   const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [selection, setSelection] = useState<SelectionMap>({});
@@ -33,10 +39,10 @@ export default function SurveyAllergyIngredientsScreen() {
   const [modalSelected, setModalSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetchAllergenCatalog('en')
+    fetchAllergenCatalog(catalogLanguage)
       .then(setCatalog)
       .catch(() => { /* 네트워크 실패 시 빈 카탈로그 — 사용자는 Back 으로 재시도 */ });
-  }, []);
+  }, [catalogLanguage]);
 
   function openModal(category: string) {
     setModalSelected(new Set(selection[category] ?? []));
@@ -81,9 +87,9 @@ export default function SurveyAllergyIngredientsScreen() {
       <SurveyHeader step={step} total={total} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Select ingredients to avoid.</Text>
+        <Text style={styles.title}>{t('survey.ingredientsTitle')}</Text>
         <Text style={styles.subtitle}>
-          Choose the ingredients related to your allergy so we can personalise your filter settings.
+          {t('survey.ingredientsSubtitle')}
         </Text>
 
         {!catalog && (
@@ -104,7 +110,7 @@ export default function SurveyAllergyIngredientsScreen() {
                   </View>
                 ))}
                 <TouchableOpacity style={styles.addChip} onPress={() => openModal(cat.code)}>
-                  <Text style={styles.addChipText}>+ Add</Text>
+                  <Text style={styles.addChipText}>{t('survey.add')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -116,7 +122,7 @@ export default function SurveyAllergyIngredientsScreen() {
 
       {/* 하단 버튼 */}
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
 
       {/* 항목 선택 모달 */}
@@ -138,9 +144,11 @@ export default function SurveyAllergyIngredientsScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Select {activeCategory?.name ?? modalCategory}</Text>
+                <Text style={styles.modalTitle}>
+                  {t('survey.selectCategoryTitle', { category: activeCategory?.name ?? modalCategory })}
+                </Text>
                 <Text style={styles.modalSubtitle}>
-                  Choose {(activeCategory?.name ?? modalCategory ?? '').toLowerCase()} ingredients to avoid.
+                  {t('survey.selectCategorySubtitle', { category: activeCategory?.name ?? modalCategory ?? '' })}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setModalCategory(null)}>
@@ -152,7 +160,7 @@ export default function SurveyAllergyIngredientsScreen() {
               style={styles.searchInput}
               value={modalSearch}
               onChangeText={setModalSearch}
-              placeholder="Search your ingredients"
+              placeholder={t('survey.searchIngredients')}
               placeholderTextColor={Colors.gray300}
             />
 
@@ -177,7 +185,7 @@ export default function SurveyAllergyIngredientsScreen() {
             </ScrollView>
 
             <TouchableOpacity style={styles.saveButton} onPress={handleModalSave}>
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

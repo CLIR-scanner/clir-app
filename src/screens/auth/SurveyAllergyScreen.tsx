@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
@@ -13,6 +14,7 @@ type Route = RouteProp<AuthStackParamList, 'SurveyAllergy'>;
 export default function SurveyAllergyScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergy', params.dietaryType);
 
@@ -38,10 +40,10 @@ export default function SurveyAllergyScreen() {
       <View style={styles.body}>
         <View style={styles.textBlock}>
           <Text style={styles.title}>
-            Do you have a diagnosis{'\n'}or medical confirmation{'\n'}for your allergy?
+            {t('survey.allergyDocTitle')}
           </Text>
           <Text style={styles.subtitle}>
-            If you do, we can help identify ingredients to avoid{'\n'}more accurately.
+            {t('survey.allergyDocSubtitle')}
           </Text>
         </View>
 
@@ -52,7 +54,7 @@ export default function SurveyAllergyScreen() {
             onPress={() => setSelected(true)}
           >
             <Text style={[styles.optionText, selected === true && styles.optionTextSelected]}>
-              Yes, I have.
+              {t('survey.yesDiagnosis')}
             </Text>
           </TouchableOpacity>
 
@@ -61,7 +63,7 @@ export default function SurveyAllergyScreen() {
             onPress={() => setSelected(false)}
           >
             <Text style={[styles.optionText, selected === false && styles.optionTextSelected]}>
-              No, I don't have.
+              {t('survey.noDiagnosis')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -74,7 +76,7 @@ export default function SurveyAllergyScreen() {
         onPress={handleContinue}
         disabled={selected === null}
       >
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );

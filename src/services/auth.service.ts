@@ -94,6 +94,7 @@ type MeResponse = {
   allergyProfile: string[];
   dietaryRestrictions: string[];
   sensitivityLevel: 'strict' | 'normal';
+  language?: string;
   hasCompletedSurvey: boolean;
 };
 
@@ -107,7 +108,7 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     allergyProfile: res.allergyProfile,
     dietaryRestrictions: res.dietaryRestrictions,
     sensitivityLevel: res.sensitivityLevel,
-    language: 'en',
+    language: res.language ?? 'en',
     multiProfiles: [],
     consentFlags: { imageRetention: false, corrections: false },
   };

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { ApiError } from '../../lib/api';
@@ -34,6 +35,7 @@ const DARK_BG    = '#1A0800';  // warm dark background (camera feel)
 const DIM        = 'rgba(0,0,0,0.38)';
 
 export default function ScanResultScreen({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const { productId, fromHistory, ocrProduct } = route.params;
   const insets = useSafeAreaInsets();
 
@@ -230,7 +232,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       {loading && (
         <View style={styles.centerOverlay} pointerEvents="none">
           <ActivityIndicator color={Colors.white} size="large" />
-          <Text style={styles.loadingText}>Analyzing…</Text>
+          <Text style={styles.loadingText}>{t('scanUi.analyzing')}</Text>
         </View>
       )}
 
@@ -240,7 +242,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
           <Text style={styles.errorIcon}>⚠️</Text>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => loadData(didInitialLoad.current)}>
-            <Text style={styles.retryBtnText}>Try Again</Text>
+            <Text style={styles.retryBtnText}>{t('scanUi.tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -267,7 +269,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
             </View>
             {/* Verdict label */}
             <Text style={[styles.verdictLabel, { color: verdictColor }]}>
-              {isSafe ? 'Good!' : 'Bad!'}
+              {isSafe ? t('scanUi.goodBang') : t('scanUi.badBang')}
             </Text>
           </View>
         </Animated.View>
@@ -313,7 +315,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
                     <ActivityIndicator size="small" color={Colors.danger} />
                   ) : (
                     <Text style={[styles.favBtnText, favorited && styles.favBtnTextActive]}>
-                      {favorited ? '♥' : '♡'} Add to Favorites
+                      {favorited ? `♥ ${t('favoriteUi.favorited')}` : `♡ ${t('favoriteUi.add')}`}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -321,7 +323,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
                   onPress={handleSeeDetail}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={styles.seeDetailText}>see more detail</Text>
+                  <Text style={styles.seeDetailText}>{t('product.seeMoreDetail')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -330,7 +332,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
           {/* Alternative products — Bad only */}
           {hasAlts && (
             <View style={styles.altSection}>
-              <Text style={styles.altTitle}>Alternative products</Text>
+              <Text style={styles.altTitle}>{t('product.alternativeProducts')}</Text>
               <View style={styles.altRow}>
                 {product!.alternatives.slice(0, 3).map(alt => (
                   <TouchableOpacity

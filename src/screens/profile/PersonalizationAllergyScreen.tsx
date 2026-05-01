@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { SensitivityLevel } from '../../types';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
@@ -19,6 +20,7 @@ import {
   type DietCatalog,
 } from '../../services/diet.service';
 import { useUserStore } from '../../store/user.store';
+import { getCatalogLanguage } from '../../constants/languages';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG         = '#F9FFF3';
@@ -32,13 +34,16 @@ const STRICT_BG  = '#FFECEC';
 // ── Vegetarian types ──────────────────────────────────────────────────────────
 // strict/flexible 은 'vegan' modifier — DietCatalog 의 veganStrictness 와 동기.
 // 화면에선 단일 라디오로 표현하기 위해 분리된 항목으로 보여준다.
-function buildVegeOptions(dietCatalog: DietCatalog): { key: string; label: string }[] {
+function buildVegeOptions(
+  dietCatalog: DietCatalog,
+  veganLabels: { strict: string; flexible: string },
+): { key: string; label: string }[] {
   const result: { key: string; label: string }[] = [];
   for (const t of dietCatalog.types) {
     if (t.code === 'vegan') {
       // vegan 타입은 strictness 분기로 표현
-      result.push({ key: 'strict',   label: 'Strict Vegan' });
-      result.push({ key: 'flexible', label: 'Flexible Vegan' });
+      result.push({ key: 'strict',   label: veganLabels.strict });
+      result.push({ key: 'flexible', label: veganLabels.flexible });
     } else {
       result.push({ key: t.code, label: t.name });
     }
@@ -134,9 +139,12 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
 export default function PersonalizationAllergyScreen() {
   const navigation    = useNavigation();
   const insets        = useSafeAreaInsets();
+  const { t }         = useTranslation();
   const activeProfile = useUserStore(s => s.activeProfile);
   const syncProfile   = useUserStore(s => s.syncActiveProfile);
   const updateActive  = useUserStore(s => s.updateActiveProfile);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
+  const catalogLanguage = getCatalogLanguage(currentLanguage);
 
   // 의도적으로 hasAllergy/hasDiet 게이트를 제거 — 사용자가 처음에 알러지/식이를
   // 안 골랐어도 이 화면에서 *추가* 할 수 있어야 한다. 모든 섹션 항상 노출.
@@ -160,9 +168,9 @@ export default function PersonalizationAllergyScreen() {
   const [saving,      setSaving]      = useState(false);
 
   useEffect(() => {
-    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
-    fetchDietCatalog('en').then(setDietCatalog).catch(() => {});
-  }, []);
+    fetchAllergenCatalog(catalogLanguage).then(setCatalog).catch(() => {});
+    fetchDietCatalog(catalogLanguage).then(setDietCatalog).catch(() => {});
+  }, [catalogLanguage]);
 
   // 카탈로그 로드 후 selected 정화 — per-item 표시명을 보존한다.
   // - catalog 항목명('Milk'/'Whey') → 그대로 (사용자가 선택한 단위 유지)
@@ -270,13 +278,16 @@ export default function PersonalizationAllergyScreen() {
       });
       navigation.goBack();
     } catch {
-      Alert.alert('Error', 'Failed to save. Please try again.');
+      Alert.alert(t('common.error'), t('profileUi.saveFailed'));
     } finally {
       setSaving(false);
     }
   }
 
-  const vegeOptions = buildVegeOptions(dietCatalog);
+  const vegeOptions = buildVegeOptions(dietCatalog, {
+    strict: t('survey.strictVegan'),
+    flexible: t('survey.flexibleVegan'),
+  });
   const avoidedCategoryCodes = getAvoidedCategories(dietKey, dietCatalog);
   const allCategoryCodes = dietCatalog.categories.map(c => c.code);
   const orderedDietCategoryCodes = [
@@ -297,7 +308,7 @@ export default function PersonalizationAllergyScreen() {
             <Text style={styles.backBtn}>{'‹'}</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.headerTitle}>My Allergy Profile</Text>
+        <Text style={styles.headerTitle}>{t('profileUi.allergyProfileTitle')}</Text>
         <View style={[styles.headerSide, { alignItems: 'flex-end' }]}>
           <TouchableOpacity
             style={[styles.headerSaveBtn, saving && { opacity: 0.5 }]}
@@ -307,7 +318,7 @@ export default function PersonalizationAllergyScreen() {
           >
             {saving
               ? <ActivityIndicator size="small" color={DARK_GREEN} />
-              : <Text style={styles.headerSaveBtnText}>Save</Text>
+              : <Text style={styles.headerSaveBtnText}>{t('common.save')}</Text>
             }
           </TouchableOpacity>
         </View>
@@ -324,8 +335,8 @@ export default function PersonalizationAllergyScreen() {
             상태에서도 sensitivity 를 미리 설정해 둘 수 있어야 한다)
         ══════════════════════════════════════════════════════════════════ */}
         <SectionHeader
-          title="Allergy Sensitivity Settings"
-          subtitle="Choose how strictly the app filters ingredients based on your allergy profile."
+          title={t('profileUi.allergySensitivitySettings')}
+          subtitle={t('sensitivity.subtitle')}
         />
 
         {/* Strict Mode card */}
@@ -335,18 +346,18 @@ export default function PersonalizationAllergyScreen() {
           activeOpacity={0.85}
         >
           <View style={styles.sensitivityCardTop}>
-            <Text style={styles.sensitivityCardTitle}>Strict Mode</Text>
+            <Text style={styles.sensitivityCardTitle}>{t('profileUi.strictMode')}</Text>
             <View style={styles.strictBadge}>
-              <Text style={styles.strictBadgeText}>Strict</Text>
+              <Text style={styles.strictBadgeText}>{t('profileUi.strict')}</Text>
             </View>
           </View>
           <Text style={styles.sensitivityCardDesc}>
-            Warns you about ingredients that may contain trace amounts of your allergens (may contain labelling).
+            {t('sensitivity.strictDesc')}
           </Text>
           {sensitivity === 'strict' && (
             <View style={styles.activeRow}>
               <RadioFilled size={19} />
-              <Text style={styles.activeText}>Currently Active</Text>
+              <Text style={styles.activeText}>{t('common.currentlyActive')}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -358,18 +369,18 @@ export default function PersonalizationAllergyScreen() {
           activeOpacity={0.85}
         >
           <View style={styles.sensitivityCardTop}>
-            <Text style={styles.sensitivityCardTitle}>Normal Mode</Text>
+            <Text style={styles.sensitivityCardTitle}>{t('profileUi.normalMode')}</Text>
             <View style={styles.normalBadge}>
-              <Text style={styles.normalBadgeText}>Normal</Text>
+              <Text style={styles.normalBadgeText}>{t('profileUi.normal')}</Text>
             </View>
           </View>
           <Text style={styles.sensitivityCardDesc}>
-            Only warns you about ingredients that are known to contain your allergens.
+            {t('sensitivity.normalDesc')}
           </Text>
           {sensitivity === 'normal' && (
             <View style={styles.activeRow}>
               <RadioFilled size={19} />
-              <Text style={styles.activeText}>Currently Active</Text>
+              <Text style={styles.activeText}>{t('common.currentlyActive')}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -381,8 +392,8 @@ export default function PersonalizationAllergyScreen() {
             여기서 처음 추가 가능. 'None' 옵션으로 식이 해제도 허용)
         ══════════════════════════════════════════════════════════════════ */}
         <SectionHeader
-          title="Vegetarian Option"
-          subtitle={'Select your vegetarian type.\nThis helps us filter food according to your dietary rules.'}
+          title={t('profileUi.vegetarianOption')}
+          subtitle={t('profileUi.vegetarianOptionSubtitle')}
         />
 
         <View style={styles.radioList}>
@@ -394,7 +405,7 @@ export default function PersonalizationAllergyScreen() {
           >
             {dietKey === '' ? <RadioFilled /> : <RadioEmpty color={BORDER} />}
             <Text style={[styles.radioLabel, dietKey === '' && styles.radioLabelActive]}>
-              None
+              {t('profile.noAllergens')}
             </Text>
           </TouchableOpacity>
           {vegeOptions.map(opt => {
@@ -421,12 +432,12 @@ export default function PersonalizationAllergyScreen() {
             SECTION 3 — Ingredients Restriction Profile
         ══════════════════════════════════════════════════════════════════ */}
         <SectionHeader
-          title="Ingredients Restriction Profile"
-          subtitle={'Select the ingredients you want to avoid. Changes apply to your active profile.'}
+          title={t('profileUi.ingredientsRestrictionProfile')}
+          subtitle={t('dietary.subtitle')}
         />
 
         {/* ── Allergens subsection (항상 노출) ──────────────────────────── */}
-        <Text style={styles.subLabel}>Allergens</Text>
+        <Text style={styles.subLabel}>{t('profileUi.allergens')}</Text>
 
         {!catalog ? (
           <ActivityIndicator color={DARK_GREEN} style={{ marginVertical: 16 }} />
@@ -493,7 +504,7 @@ export default function PersonalizationAllergyScreen() {
         {/* ── Vegetarian Diet subsection (식이 선택했을 때만 — 'None' 이면 의미 없음) ── */}
         {dietKey !== '' && (
           <>
-            <Text style={[styles.subLabel, { marginTop: 12 }]}>Vegetarian Diet</Text>
+            <Text style={[styles.subLabel, { marginTop: 12 }]}>{t('profileUi.vegetarianDiet')}</Text>
 
             {orderedDietCategoryCodes.map(code => {
               const isActive = avoidedCategoryCodes.includes(code);

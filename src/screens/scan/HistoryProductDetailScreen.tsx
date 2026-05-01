@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getAlternatives, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
@@ -54,13 +55,8 @@ const VERDICT_BORDER: Record<RiskLevel, string> = {
   danger:  '#FF3434',
 };
 
-const VERDICT_LABEL: Record<RiskLevel, string> = {
-  safe:    'Good',
-  caution: 'Poor',
-  danger:  'Bad',
-};
-
 export default function HistoryProductDetailScreen({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const { product: initialProduct, hideTitle = false } = route.params;
   const insets = useSafeAreaInsets();
 
@@ -229,7 +225,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
   const showRisk     = isBad || isPoor;
   const riskBoxBg    = isBad ? '#FFECEC' : '#FFF4E0';
   const riskBoxBorder= isBad ? '#FF3434' : '#FF9D00';
-  const riskTitle    = isBad ? 'Ingredients to avoid' : 'Suspected Allergens';
+  const riskTitle    = isBad ? t('product.ingredientsToAvoid') : t('product.suspectedAllergens');
 
   const allIngredients = product.ingredients.map(i => i.name);
   const alternatives   = alts.slice(0, 3);
@@ -250,7 +246,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         </TouchableOpacity>
 
         {!hideTitle
-          ? <Text style={styles.headerTitle}>History</Text>
+          ? <Text style={styles.headerTitle}>{t('scanUi.history')}</Text>
           : <View style={{ flex: 1 }} />
         }
 
@@ -305,7 +301,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
             </View>
             <View style={styles.ingredientLabelWrap} pointerEvents="none">
               <View style={styles.ingredientLabel}>
-                <Text style={styles.ingredientLabelText}>All Ingredients</Text>
+                <Text style={styles.ingredientLabelText}>{t('product.allIngredients')}</Text>
               </View>
             </View>
           </View>
@@ -315,7 +311,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           <View style={styles.riskSection}>
             <View style={[styles.riskBoxOuter, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
               <Text style={styles.riskWarning} numberOfLines={1} adjustsFontSizeToFit>
-                ** This product contains ingredients that may not be suitable for you.
+                {t('product.riskWarning')}
               </Text>
 
               {(() => {
@@ -350,7 +346,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           <View style={styles.section}>
             <View style={styles.altPillWrap}>
               <View style={styles.altPill}>
-                <Text style={styles.altPillText}>Alternative Products</Text>
+                <Text style={styles.altPillText}>{t('product.alternativeProducts')}</Text>
               </View>
             </View>
 
@@ -370,7 +366,9 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
                       <Text style={styles.altBrand} numberOfLines={1}>{alt.brand || '—'}</Text>
                       <View style={styles.altBadge}>
                         <RiskBadgeIcon level={altRisk} size={16} style={styles.altBadgeIcon} />
-                        <Text style={styles.altBadgeText}>{VERDICT_LABEL[altRisk]}</Text>
+                        <Text style={styles.altBadgeText}>
+                          {altRisk === 'safe' ? t('scanUi.good') : altRisk === 'caution' ? t('scanUi.poor') : t('scanUi.bad')}
+                        </Text>
                       </View>
                     </View>
                     <Text style={styles.chevron}>›</Text>
@@ -391,7 +389,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
             </View>
             <View style={styles.ingredientLabelWrap} pointerEvents="none">
               <View style={styles.ingredientLabel}>
-                <Text style={styles.ingredientLabelText}>All Ingredients</Text>
+                <Text style={styles.ingredientLabelText}>{t('product.allIngredients')}</Text>
               </View>
             </View>
           </View>
@@ -399,7 +397,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
 
         {allIngredients.length > 0 && (
           <Text style={styles.disclaimer}>
-            {'** For severe allergies,\n      please double-check all ingredients before consuming.'}
+            {t('product.severeDisclaimer')}
           </Text>
         )}
       </ScrollView>
@@ -430,7 +428,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
 
                 {detailIngredient.sources.length > 0 && (
                   <View style={styles.modalSources}>
-                    <Text style={styles.modalSourcesTitle}>References</Text>
+                    <Text style={styles.modalSourcesTitle}>{t('product.references')}</Text>
                     {detailIngredient.sources.map(s => (
                       <TouchableOpacity key={s.url} onPress={() => Linking.openURL(s.url)} activeOpacity={0.7}>
                         <Text style={styles.modalSourceLink}>↗ {s.title}</Text>

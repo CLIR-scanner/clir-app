@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
@@ -20,12 +21,24 @@ function getDietKey(params: SurveyParams): string {
   return params.veganStrictness ?? params.vegetarianType ?? '';
 }
 
+const DIET_CATEGORY_TRANSLATION_KEYS: Record<string, string> = {
+  'Fruits / Grains': 'survey.dietCategories.fruitsGrains',
+  Vegetables:        'survey.dietCategories.vegetables',
+  Dairy:             'survey.dietCategories.dairy',
+  Eggs:              'survey.dietCategories.eggs',
+  Seafood:           'survey.dietCategories.seafood',
+  Poultry:           'survey.dietCategories.poultry',
+  'Red Meat':        'survey.dietCategories.redMeat',
+};
+
 export default function SurveyVegetarianIngredientsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyVegetarianIngredients', params.dietaryType);
   const setUser             = useUserStore(s => s.setUser);
+  const currentLanguage     = useUserStore(s => s.currentUser.language);
   const multiProfileMode    = useUserStore(s => s.multiProfileMode);
   const multiProfileName    = useUserStore(s => s.multiProfileName);
   const addMultiProfile     = useUserStore(s => s.addMultiProfile);
@@ -69,6 +82,11 @@ export default function SurveyVegetarianIngredientsScreen() {
     setShowModal(false);
   }
 
+  function getDietCategoryLabel(category: string): string {
+    const key = DIET_CATEGORY_TRANSLATION_KEYS[category];
+    return key ? t(key) : category;
+  }
+
   async function handleContinue() {
     const { vegetarianType, veganStrictness, allergyProfileJson } = params;
 
@@ -110,15 +128,15 @@ export default function SurveyVegetarianIngredientsScreen() {
         sensitivityLevel,
       });
       const { user } = await AuthService.fetchMe();
-      setUser(user);
+      setUser({ ...user, language: currentLanguage });
     } catch (e) {
-      Alert.alert('오류가 발생했습니다.', (e as Error).message);
+      Alert.alert(t('common.error'), (e as Error).message);
     } finally {
       setLoading(false);
     }
   }
 
-  const titleLabel = DIET_TITLES[dietKey] ?? dietKey;
+  const titleLabel = dietKey ? t(`survey.dietTitles.${dietKey}`) : (DIET_TITLES[dietKey] ?? dietKey);
 
   const availableCategories = DIET_RESTRICTION_CATEGORIES.filter(c => !items.includes(c));
 
@@ -128,10 +146,9 @@ export default function SurveyVegetarianIngredientsScreen() {
 
       {/* 본문 */}
       <View style={styles.body}>
-        <Text style={styles.title}>As {titleLabel},{'\n'}you avoid</Text>
+        <Text style={styles.title}>{t('survey.vegetarianAvoidTitle', { diet: titleLabel })}</Text>
         <Text style={styles.subtitle}>
-          Based on your diet preference, these ingredients will be{'\n'}
-          excluded from your food recommendations.
+          {t('survey.vegetarianAvoidSubtitle')}
         </Text>
 
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
@@ -143,7 +160,7 @@ export default function SurveyVegetarianIngredientsScreen() {
                 onPress={() => isEditing && toggleItem(item)}
                 activeOpacity={isEditing ? 0.7 : 1}
               >
-                <Text style={styles.itemText}>{item}</Text>
+                <Text style={styles.itemText}>{getDietCategoryLabel(item)}</Text>
                 {isEditing && (
                   <View style={styles.removeBox}>
                     <Text style={styles.removeIcon}>−</Text>
@@ -155,7 +172,7 @@ export default function SurveyVegetarianIngredientsScreen() {
             {/* 편집 모드: +Add 버튼 */}
             {isEditing && (
               <TouchableOpacity style={styles.addButton} onPress={openModal}>
-                <Text style={styles.addButtonText}>+ Add</Text>
+                <Text style={styles.addButtonText}>{t('survey.add')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -169,7 +186,7 @@ export default function SurveyVegetarianIngredientsScreen() {
           onPress={() => setIsEditing(e => !e)}
         >
           <Text style={styles.editButtonText}>
-            {isEditing ? 'Done' : 'Edit your list'}
+            {isEditing ? t('common.done') : t('survey.editList')}
           </Text>
         </TouchableOpacity>
 
@@ -178,7 +195,7 @@ export default function SurveyVegetarianIngredientsScreen() {
           onPress={handleContinue}
           disabled={loading}
         >
-          <Text style={styles.continueText}>{loading ? 'Loading...' : 'Complete'}</Text>
+          <Text style={styles.continueText}>{loading ? t('common.loading') : t('survey.complete')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -191,15 +208,15 @@ export default function SurveyVegetarianIngredientsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Add to your list</Text>
+            <Text style={styles.modalTitle}>{t('survey.addToListTitle')}</Text>
             <Text style={styles.modalSubtitle}>
-              Choose additional categories to avoid.
+              {t('survey.addToListSubtitle')}
             </Text>
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.modalList}>
                 {availableCategories.length === 0 ? (
-                  <Text style={styles.modalEmpty}>All categories are already added.</Text>
+                  <Text style={styles.modalEmpty}>{t('survey.allCategoriesAdded')}</Text>
                 ) : (
                   availableCategories.map(cat => {
                     const checked = modalSelected.includes(cat);
@@ -210,7 +227,7 @@ export default function SurveyVegetarianIngredientsScreen() {
                         onPress={() => toggleModalItem(cat)}
                         activeOpacity={0.8}
                       >
-                        <Text style={styles.modalItemText}>{cat}</Text>
+                        <Text style={styles.modalItemText}>{getDietCategoryLabel(cat)}</Text>
                         <View style={[styles.addBox, checked && styles.addBoxChecked]}>
                           <Text style={[styles.addBoxIcon, checked && styles.addBoxIconChecked]}>{checked ? '✓' : '+'}</Text>
                         </View>
@@ -222,7 +239,7 @@ export default function SurveyVegetarianIngredientsScreen() {
             </ScrollView>
 
             <TouchableOpacity style={styles.modalSave} onPress={handleModalSave}>
-              <Text style={styles.modalSaveText}>Save</Text>
+              <Text style={styles.modalSaveText}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         </View>

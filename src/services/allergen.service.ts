@@ -64,8 +64,8 @@ let liveDisplay: Record<string, { name: string; nameKo: string }> = { ...BOOTSTR
 
 // ─── 카탈로그 캐시 ────────────────────────────────────────────────────────────
 
-let catalogCache: AllergenCatalog | null = null;
-let catalogPromise: Promise<AllergenCatalog> | null = null;
+const catalogCache: Partial<Record<'en' | 'ko', AllergenCatalog>> = {};
+const catalogPromise: Partial<Record<'en' | 'ko', Promise<AllergenCatalog>>> = {};
 
 /**
  * 카탈로그를 fetch. 모듈 캐시 히트 시 즉시 반환. 동시 호출 merge.
@@ -73,12 +73,12 @@ let catalogPromise: Promise<AllergenCatalog> | null = null;
  * (BE 응답이 단일 lang 필드만 내려주므로).
  */
 export async function fetchAllergenCatalog(lang: 'en' | 'ko' = 'en'): Promise<AllergenCatalog> {
-  if (catalogCache) return catalogCache;
-  if (catalogPromise) return catalogPromise;
+  if (catalogCache[lang]) return catalogCache[lang];
+  if (catalogPromise[lang]) return catalogPromise[lang];
 
-  catalogPromise = apiFetch<AllergenCatalog>(`/allergens/catalog?lang=${lang}`)
+  const promise = apiFetch<AllergenCatalog>(`/allergens/catalog?lang=${lang}`)
     .then(res => {
-      catalogCache = res;
+      catalogCache[lang] = res;
       // allergens 응답으로 liveDisplay 갱신 (name 은 lang, nameKo 는 부트스트랩 유지).
       const next: Record<string, { name: string; nameKo: string }> = { ...BOOTSTRAP_DISPLAY };
       for (const a of res.allergens) {
@@ -88,19 +88,20 @@ export async function fetchAllergenCatalog(lang: 'en' | 'ko' = 'en'): Promise<Al
         };
       }
       liveDisplay = next;
-      catalogPromise = null;
+      catalogPromise[lang] = undefined;
       return res;
     })
     .catch(err => {
-      catalogPromise = null;
+      catalogPromise[lang] = undefined;
       throw err;
     });
-  return catalogPromise;
+  catalogPromise[lang] = promise;
+  return promise;
 }
 
 /** 이미 fetch 된 카탈로그 반환. 없으면 null — 대기가 허용되지 않는 sync 경로용. */
 export function getCachedCatalog(): AllergenCatalog | null {
-  return catalogCache;
+  return catalogCache.en ?? catalogCache.ko ?? null;
 }
 
 /** 동기 표시명 조회. 카탈로그 로드 전에도 부트스트랩 데이터로 정상 동작. */

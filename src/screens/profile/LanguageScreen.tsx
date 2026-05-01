@@ -9,18 +9,10 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { ProfileStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
+import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import { useUserStore } from '../../store/user.store';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Language'>;
-
-const LANGUAGES = [
-  { code: 'en', label: 'English',  native: 'English' },
-  { code: 'ko', label: 'Korean',   native: '한국어' },
-  { code: 'ja', label: 'Japanese', native: '日本語' },
-  { code: 'zh', label: 'Chinese',  native: '中文' },
-  { code: 'es', label: 'Spanish',  native: 'Español' },
-  { code: 'fr', label: 'French',   native: 'Français' },
-];
 
 function getDeviceLanguageCode(): string {
   try {
@@ -45,7 +37,7 @@ export default function LanguageScreen() {
   const [deviceCode] = useState<string>(getDeviceLanguageCode);
 
   useEffect(() => {
-    const supported = LANGUAGES.some(l => l.code === deviceCode);
+    const supported = SUPPORTED_LANGUAGES.some(l => l.code === deviceCode);
     if (currentLanguage === 'en' && supported && deviceCode !== 'en') {
       setLanguage(deviceCode);
       i18n.changeLanguage(deviceCode);
@@ -69,19 +61,19 @@ export default function LanguageScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {LANGUAGES.some(l => l.code === deviceCode) && (
+        {SUPPORTED_LANGUAGES.some(l => l.code === deviceCode) && (
           <View style={styles.notice}>
             <Text style={styles.noticeText}>
               {t('language.deviceDetected')}{' '}
               <Text style={styles.noticeHighlight}>
-                {LANGUAGES.find(l => l.code === deviceCode)?.native}
+                {SUPPORTED_LANGUAGES.find(l => l.code === deviceCode)?.native}
               </Text>
             </Text>
           </View>
         )}
 
         <View style={styles.section}>
-          {LANGUAGES.map((lang, idx) => {
+          {SUPPORTED_LANGUAGES.map((lang, idx) => {
             const isSelected = currentLanguage === lang.code;
             const isDevice   = deviceCode === lang.code;
             return (
@@ -102,7 +94,7 @@ export default function LanguageScreen() {
                   </View>
                   {isSelected && <Text style={styles.checkmark}>✓</Text>}
                 </TouchableOpacity>
-                {idx < LANGUAGES.length - 1 && <View style={styles.divider} />}
+                {idx < SUPPORTED_LANGUAGES.length - 1 && <View style={styles.divider} />}
               </React.Fragment>
             );
           })}

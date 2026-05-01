@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import SurveyHeader from '../../components/common/SurveyHeader';
 
@@ -15,15 +16,16 @@ type Route = RouteProp<AuthStackParamList, 'Survey'>;
 
 type DietaryType = 'allergy' | 'vegetarian' | 'both';
 
-const OPTIONS: { value: DietaryType; label: string }[] = [
-  { value: 'allergy',    label: 'Allergy' },
-  { value: 'vegetarian', label: 'Vegetarian (Vegan)' },
-  { value: 'both',       label: 'Both' },
+const OPTIONS: { value: DietaryType; labelKey: string }[] = [
+  { value: 'allergy',    labelKey: 'survey.dietAllergy' },
+  { value: 'vegetarian', labelKey: 'survey.dietVegetarian' },
+  { value: 'both',       labelKey: 'survey.dietBoth' },
 ];
 
 export default function SurveyScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
 
   const [selected, setSelected] = useState<DietaryType | null>(null);
@@ -47,9 +49,9 @@ export default function SurveyScreen() {
 
       {/* 본문 */}
       <View style={styles.body}>
-        <Text style={styles.title}>Tell us your{'\n'}dietary preferences.</Text>
+        <Text style={styles.title}>{t('survey.dietaryTitle')}</Text>
         <Text style={styles.subtitle}>
-          Select an option that applies so we can{'\n'}personalise your food experience.
+          {t('survey.dietarySubtitle')}
         </Text>
 
         <View style={styles.optionsBlock}>
@@ -61,7 +63,7 @@ export default function SurveyScreen() {
                 onPress={() => setSelected(opt.value)}
               >
                 <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -75,7 +77,7 @@ export default function SurveyScreen() {
         onPress={handleContinue}
         disabled={!selected}
       >
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );

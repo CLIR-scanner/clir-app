@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { ScanStackParamList, MainTabParamList, Product, AnalysisResult, RiskLevel, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
@@ -82,13 +83,14 @@ const TOGGLE_H   = 36.0213508605957;
 const TOGGLE_PAD = 3.430604934692383;
 const TOGGLE_PILL_W = 124.35942840576172;
 
-const VERDICT_DISPLAY: Record<RiskLevel, { label: string; color: string }> = {
-  safe:    { label: 'Good!', color: Colors.scanCorrect },
-  caution: { label: 'Poor!', color: '#FF9D00' },
-  danger:  { label: 'Bad!',  color: BAD_COLOR },
+const VERDICT_DISPLAY: Record<RiskLevel, { color: string }> = {
+  safe:    { color: Colors.scanCorrect },
+  caution: { color: '#FF9D00' },
+  danger:  { color: BAD_COLOR },
 };
 
 export default function ScanScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const route  = useRoute<RouteProp<ScanStackParamList, 'Scan'>>();
   const previousTab = route.params?.previousTab;
@@ -312,18 +314,18 @@ export default function ScanScreen({ navigation }: Props) {
       if (err instanceof ApiError) {
         if (err.code === 'PRODUCT_NOT_FOUND') {
           Alert.alert(
-            'Product Not Found',
-            'Scan the ingredient label with OCR instead.',
+            t('scanUi.productNotFound'),
+            t('scanUi.scanLabelInstead'),
             [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Scan Label', onPress: () => handleToggleMode(true) },
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('scanUi.scanLabel'), onPress: () => handleToggleMode(true) },
             ],
           );
         } else {
-          Alert.alert('Error', err.message);
+          Alert.alert(t('common.error'), err.message);
         }
       } else {
-        Alert.alert('Connection Error', 'Unable to connect to the server. Please try again later.');
+        Alert.alert(t('scanUi.connectionError'), t('scanUi.connectionMessage'));
       }
     }
   }
@@ -359,7 +361,7 @@ export default function ScanScreen({ navigation }: Props) {
       // 접두사로 분리해 server-side 저장 시도를 명시적으로 스킵.
       const product: Product = {
         id: beProductId ?? `ocr-local-${Date.now()}`,
-        name: 'Scanned Product',
+        name: t('product.scannedProduct'),
         brand: '',
         image: imageUri,
         ingredients: ocrResult.ingredients.map(i => ({
@@ -394,10 +396,10 @@ export default function ScanScreen({ navigation }: Props) {
       setScanPreviewUri(null);
       const isOcrFail = err instanceof ApiError && err.code === 'OCR_FAILED';
       Alert.alert(
-        isOcrFail ? 'Recognition Failed' : 'Analysis Failed',
+        isOcrFail ? t('scanUi.recognitionFailed') : t('scanUi.analysisFailed'),
         isOcrFail
-          ? 'Please take a brighter, clearer photo of the ingredient label.'
-          : 'We could not analyze this ingredient label. Please try again.',
+          ? t('scanUi.clearerPhoto')
+          : t('scanUi.analyzeFailed'),
       );
     }
   }
@@ -593,12 +595,12 @@ export default function ScanScreen({ navigation }: Props) {
       return (
         <View style={styles.permContainer}>
           <Text style={styles.permIcon}>📷</Text>
-          <Text style={styles.permTitle}>Camera Access Required</Text>
+          <Text style={styles.permTitle}>{t('scanUi.cameraPermission')}</Text>
           <Text style={styles.permDesc}>
-            CLIR needs camera access to scan barcodes and ingredient labels.
+            {t('scanUi.cameraDescBarcode')}
           </Text>
           <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-            <Text style={styles.permBtnText}>Grant Permission</Text>
+            <Text style={styles.permBtnText}>{t('scanUi.grantPermission')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -757,7 +759,7 @@ export default function ScanScreen({ navigation }: Props) {
                       isSafe ? styles.goodFavBtnText : styles.riskFavBtnText,
                       favorited && (isSafe ? styles.goodFavBtnTextActive : styles.riskFavBtnTextActive),
                     ]}>
-                      {favorited ? '♥ Favorited' : '♡  Add to Favorites'}
+                      {favorited ? `♥ ${t('favoriteUi.favorited')}` : `♡  ${t('favoriteUi.add')}`}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -767,7 +769,7 @@ export default function ScanScreen({ navigation }: Props) {
                   onPress={handleSeeDetail}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={isSafe ? styles.goodSeeDetailText : styles.riskSeeDetailText}>see more detail</Text>
+                  <Text style={isSafe ? styles.goodSeeDetailText : styles.riskSeeDetailText}>{t('product.seeMoreDetail')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -852,6 +854,7 @@ function ModeToggle({
   onToggle: (ocr: boolean) => void;
   slideAnim: Animated.Value;
 }) {
+  const { t } = useTranslation();
   const pillTranslateX = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, TOGGLE_W - TOGGLE_PAD * 2 - TOGGLE_PILL_W],
@@ -864,10 +867,10 @@ function ModeToggle({
         pointerEvents="none"
       />
       <TouchableOpacity style={toggleStyles.tab} onPress={() => onToggle(false)} activeOpacity={0.8}>
-        <Text style={[toggleStyles.tabText, !isOCRMode && toggleStyles.tabTextActive]}>BARCODE</Text>
+        <Text style={[toggleStyles.tabText, !isOCRMode && toggleStyles.tabTextActive]}>{t('scanUi.barcode')}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={toggleStyles.tab} onPress={() => onToggle(true)} activeOpacity={0.8}>
-        <Text style={[toggleStyles.tabText, isOCRMode && toggleStyles.tabTextActive]}>OCR</Text>
+        <Text style={[toggleStyles.tabText, isOCRMode && toggleStyles.tabTextActive]}>{t('scanUi.ocr')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -902,7 +905,9 @@ function ResultVerdictBadge({
   level: RiskLevel;
   scaleAnim: Animated.Value;
 }) {
+  const { t } = useTranslation();
   const verdict = VERDICT_DISPLAY[level];
+  const label = t(`scanUi.${level === 'safe' ? 'goodBang' : level === 'caution' ? 'poorBang' : 'badBang'}`);
 
   return (
     <Animated.View
@@ -914,7 +919,7 @@ function ResultVerdictBadge({
       <View style={[styles.resultVerdictRing, { borderColor: verdict.color }]} />
       <RiskBadgeIcon level={level} size={RESULT_BADGE_ICON_D} style={styles.resultVerdictIcon} />
       <Text style={[styles.resultVerdictText, { color: verdict.color }]}>
-        {verdict.label}
+        {label}
       </Text>
     </Animated.View>
   );
@@ -931,7 +936,9 @@ function OcrResultVerdictBadge({
   top: number;
   left: number;
 }) {
+  const { t } = useTranslation();
   const verdict = VERDICT_DISPLAY[level];
+  const label = t(`scanUi.${level === 'safe' ? 'goodBang' : level === 'caution' ? 'poorBang' : 'badBang'}`);
 
   return (
     <Animated.View
@@ -947,7 +954,7 @@ function OcrResultVerdictBadge({
       <View style={[styles.resultVerdictRing, { borderColor: verdict.color }]} />
       <RiskBadgeIcon level={level} size={RESULT_BADGE_ICON_D} style={styles.resultVerdictIcon} />
       <Text style={[styles.resultVerdictText, { color: verdict.color }]}>
-        {verdict.label}
+        {label}
       </Text>
     </Animated.View>
   );
@@ -955,11 +962,12 @@ function OcrResultVerdictBadge({
 
 // ── Risk result alternatives ──────────────────────────────────────────────────
 function RiskAlternatives({ alternatives }: { alternatives: Product[] }) {
+  const { t } = useTranslation();
   const slots = [0, 1, 2];
 
   return (
     <View style={styles.riskAltSection}>
-      <Text style={styles.riskAltTitle}>Alternative products</Text>
+      <Text style={styles.riskAltTitle}>{t('product.alternativeProducts')}</Text>
       <View style={styles.riskAltRow}>
         {slots.map(index => {
           const alt = alternatives[index];
@@ -973,7 +981,7 @@ function RiskAlternatives({ alternatives }: { alternatives: Product[] }) {
                 />
               ) : (
                 <Text style={styles.riskAltThumbText} numberOfLines={2}>
-                  {alt ? alt.name : 'image'}
+                  {alt ? alt.name : t('product.image')}
                 </Text>
               )}
             </View>
@@ -1000,6 +1008,7 @@ export function ScanHeader({
   historyImageUri?: string;
   toggleNode?: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <View>
       <View style={[headerStyles.wrap, { paddingTop: insetTop + 10 }]}>
@@ -1012,7 +1021,7 @@ export function ScanHeader({
         </TouchableOpacity>
 
         <View style={headerStyles.center}>
-          <Text style={headerStyles.title}>Scan</Text>
+          <Text style={headerStyles.title}>{t('scanUi.title')}</Text>
           {subtitle ? <Text style={headerStyles.subtitle}>{subtitle}</Text> : null}
         </View>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
@@ -12,15 +13,16 @@ type Route = RouteProp<AuthStackParamList, 'SurveyAllergyReaction'>;
 
 type ReactionType = 'immediate' | 'delayed' | 'not_sure';
 
-const OPTIONS: { value: ReactionType; label: string }[] = [
-  { value: 'immediate', label: 'Immediate' },
-  { value: 'delayed',   label: 'Delayed' },
-  { value: 'not_sure',  label: 'Not sure' },
+const OPTIONS: { value: ReactionType; labelKey: string }[] = [
+  { value: 'immediate', labelKey: 'survey.immediate' },
+  { value: 'delayed',   labelKey: 'survey.delayed' },
+  { value: 'not_sure',  labelKey: 'survey.notSure' },
 ];
 
 export default function SurveyAllergyReactionScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergyReaction', params.dietaryType);
 
@@ -38,9 +40,9 @@ export default function SurveyAllergyReactionScreen() {
 
       {/* 본문 */}
       <View style={styles.body}>
-        <Text style={styles.title}>When does your reaction usually happen?</Text>
+        <Text style={styles.title}>{t('survey.reactionTitle')}</Text>
         <Text style={styles.subtitle}>
-          Understanding your allergy type helps us recommend safer ingredient filters.
+          {t('survey.reactionSubtitle')}
         </Text>
 
         <View style={styles.optionsBlock}>
@@ -52,7 +54,7 @@ export default function SurveyAllergyReactionScreen() {
                 onPress={() => setSelected(opt.value)}
               >
                 <Text style={[styles.optionText, selected === opt.value && styles.optionTextSelected]}>
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -66,7 +68,7 @@ export default function SurveyAllergyReactionScreen() {
         onPress={handleContinue}
         disabled={!selected}
       >
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );
