@@ -266,6 +266,8 @@ const ko = {
   profileUi: {
     personalInformation:   '개인 정보',
     allergyProfileTitle:   '내 알러지 프로필',
+    dietaryProfileTitle:   '내 식이 프로필',
+    healthProfileTitle:    '내 건강 프로필',
     sensitivity:           '민감도',
     myAllergy:             '내 알러지',
     preference:            '선호',
@@ -294,6 +296,10 @@ const ko = {
     photoPermissionMine:   '내 프로필 사진을 변경하려면 사진 보관함 접근 권한이 필요합니다.',
     enterName:             '이름을 입력해주세요.',
     saveFailed:            '저장에 실패했습니다. 다시 시도해주세요.',
+    addAllergy:            '알러지 추가',
+    hideAllergySection:    '접기',
+    addDiet:               '식단 추가',
+    hideDietSection:       '접기',
   },
 
   listUi: {

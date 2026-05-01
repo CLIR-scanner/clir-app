@@ -119,7 +119,7 @@ const es = {
   },
   favoriteUi: { add: 'Añadir a favoritos', favorited: 'Favorito' },
   profileUi: {
-    personalInformation: 'Información personal', allergyProfileTitle: 'Mi perfil de alergias', sensitivity: 'Sensibilidad',
+    personalInformation: 'Información personal', allergyProfileTitle: 'Mi perfil de alergias', dietaryProfileTitle: 'Mi perfil dietético', healthProfileTitle: 'Mi perfil de salud', sensitivity: 'Sensibilidad',
     myAllergy: 'Mi alergia', preference: 'Preferencia', dietRestriction: 'Restricción alimentaria', dietPreference: 'Preferencia alimentaria',
     strictMode: 'Modo estricto', normalMode: 'Modo normal', strict: 'Estricto', normal: 'Normal',
     allergySensitivitySettings: 'Configuración de sensibilidad a alergias', vegetarianOption: 'Opción vegetariana',
