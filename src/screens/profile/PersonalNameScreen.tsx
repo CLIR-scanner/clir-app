@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from 'react-i18next';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
@@ -50,6 +51,7 @@ function FieldRow({ label, value, noDivider }: { label: string; value: string; n
 export default function PersonalNameScreen() {
   const navigation         = useNavigation<Nav>();
   const insets             = useSafeAreaInsets();
+  const { t }              = useTranslation();
   const currentUser        = useUserStore(s => s.currentUser);
   const updateActiveProfile = useUserStore(s => s.updateActiveProfile);
 
@@ -63,7 +65,7 @@ export default function PersonalNameScreen() {
   async function handlePickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Photo library access is needed to change your profile picture.');
+      Alert.alert(t('profileUi.permissionRequired'), t('profileUi.photoPermissionMine'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -96,7 +98,7 @@ export default function PersonalNameScreen() {
             <Text style={styles.backBtn}>{'‹'}</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
         <View style={styles.headerSide} />
       </View>
 
@@ -122,13 +124,13 @@ export default function PersonalNameScreen() {
 
       {/* ── Personal Information ────────────────────────────────────────── */}
       <View style={styles.sectionPill}>
-        <Text style={styles.sectionPillText}>Personal Information</Text>
+        <Text style={styles.sectionPillText}>{t('profileUi.personalInformation')}</Text>
       </View>
 
       <View style={styles.fieldsBlock}>
-        <FieldRow label="First name" value={firstName} />
-        <FieldRow label="Last name"  value={lastName} />
-        <FieldRow label="Email Address" value={currentUser.email || '—'} noDivider />
+        <FieldRow label={t('personalName.firstName')} value={firstName} />
+        <FieldRow label={t('personalName.lastName')}  value={lastName} />
+        <FieldRow label={t('personalName.emailAddress')} value={currentUser.email || '—'} noDivider />
       </View>
     </ScrollView>
   );

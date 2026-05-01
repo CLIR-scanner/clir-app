@@ -5,10 +5,12 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
+import { getCatalogLanguage } from '../../constants/languages';
 import {
   fetchAllergenCatalog, AllergenCatalog,
 } from '../../services/allergen.service';
@@ -23,13 +25,16 @@ type SelectionMap = Record<string, string[]>;
 export default function SurveyAllergyConfirmScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const { selectionJson, ...surveyParams } = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergyConfirm', surveyParams.dietaryType);
   const setUser             = useUserStore(s => s.setUser);
+  const currentLanguage     = useUserStore(s => s.currentUser.language);
   const multiProfileMode    = useUserStore(s => s.multiProfileMode);
   const multiProfileName    = useUserStore(s => s.multiProfileName);
   const addMultiProfile     = useUserStore(s => s.addMultiProfile);
   const setMultiProfileMode = useUserStore(s => s.setMultiProfileMode);
+  const catalogLanguage = getCatalogLanguage(currentLanguage);
 
   const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [categories, setCategories] = useState<SelectionMap>(
@@ -39,8 +44,8 @@ export default function SurveyAllergyConfirmScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
-  }, []);
+    fetchAllergenCatalog(catalogLanguage).then(setCatalog).catch(() => {});
+  }, [catalogLanguage]);
 
   // 항목 추가 모달
   const [modalCategory, setModalCategory] = useState<string | null>(null);
@@ -132,9 +137,9 @@ export default function SurveyAllergyConfirmScreen() {
         sensitivityLevel: 'normal',
       });
       const { user } = await AuthService.fetchMe();
-      setUser(user);
+      setUser({ ...user, language: currentLanguage });
     } catch (e) {
-      Alert.alert('오류가 발생했습니다.', (e as Error).message);
+      Alert.alert(t('common.error'), (e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -161,8 +166,8 @@ export default function SurveyAllergyConfirmScreen() {
       <SurveyHeader step={step} total={total} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Here are the ingredients{'\n'}you selected.</Text>
-        <Text style={styles.subtitle}>Review the list and confirm the ingredients you want to avoid.</Text>
+        <Text style={styles.title}>{t('survey.selectedTitle')}</Text>
+        <Text style={styles.subtitle}>{t('survey.selectedSubtitle')}</Text>
 
         {displayCategories.map(cat => {
           const items = categories[cat] ?? [];
@@ -177,7 +182,7 @@ export default function SurveyAllergyConfirmScreen() {
                 ))}
                 {isEditing && (
                   <TouchableOpacity style={styles.addChip} onPress={() => openModal(cat)}>
-                    <Text style={styles.addChipText}>+ Add</Text>
+                    <Text style={styles.addChipText}>{t('survey.add')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -190,7 +195,7 @@ export default function SurveyAllergyConfirmScreen() {
             style={styles.newCatButton}
             onPress={() => { setCatSelected(new Set()); setCatSearch(''); setShowCatModal(true); }}
           >
-            <Text style={styles.newCatText}>+ Add new Categories</Text>
+            <Text style={styles.newCatText}>{t('survey.addNewCategories')}</Text>
           </TouchableOpacity>
         )}
 
@@ -201,7 +206,7 @@ export default function SurveyAllergyConfirmScreen() {
       <View style={styles.buttons}>
         {!isEditing && (
           <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-            <Text style={styles.editText}>Edit your list</Text>
+            <Text style={styles.editText}>{t('survey.editList')}</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -209,7 +214,7 @@ export default function SurveyAllergyConfirmScreen() {
           onPress={handleComplete}
           disabled={loading}
         >
-          <Text style={styles.completeText}>{loading ? '처리 중...' : 'Complete'}</Text>
+          <Text style={styles.completeText}>{loading ? t('survey.processing') : t('survey.complete')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -220,14 +225,18 @@ export default function SurveyAllergyConfirmScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Select {modalCategory}</Text>
-                <Text style={styles.modalSubtitle}>Choose {modalCategory?.toLowerCase()} ingredients to avoid.</Text>
+                <Text style={styles.modalTitle}>
+                  {t('survey.selectCategoryTitle', { category: modalCategory })}
+                </Text>
+                <Text style={styles.modalSubtitle}>
+                  {t('survey.selectCategorySubtitle', { category: modalCategory ?? '' })}
+                </Text>
               </View>
               <TouchableOpacity onPress={() => setModalCategory(null)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={styles.searchInput} value={modalSearch} onChangeText={setModalSearch} placeholder="Search your ingredients" placeholderTextColor={Colors.gray300} />
+            <TextInput style={styles.searchInput} value={modalSearch} onChangeText={setModalSearch} placeholder={t('survey.searchIngredients')} placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
                 {filteredCandidates.map(item => (
@@ -238,7 +247,7 @@ export default function SurveyAllergyConfirmScreen() {
               </View>
             </ScrollView>
             <TouchableOpacity style={styles.saveButton} onPress={handleModalSave}>
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -251,14 +260,14 @@ export default function SurveyAllergyConfirmScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Add new Categories</Text>
-                <Text style={styles.modalSubtitle}>Choose allergy categories to add.</Text>
+                <Text style={styles.modalTitle}>{t('survey.addCategoryModalTitle')}</Text>
+                <Text style={styles.modalSubtitle}>{t('survey.addCategoryModalSubtitle')}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowCatModal(false)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={styles.searchInput} value={catSearch} onChangeText={setCatSearch} placeholder="Search categories" placeholderTextColor={Colors.gray300} />
+            <TextInput style={styles.searchInput} value={catSearch} onChangeText={setCatSearch} placeholder={t('survey.searchCategories')} placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
                 {filteredCats.map(name => (
@@ -270,7 +279,7 @@ export default function SurveyAllergyConfirmScreen() {
               </View>
             </ScrollView>
             <TouchableOpacity style={styles.saveButton} onPress={handleCatModalSave}>
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

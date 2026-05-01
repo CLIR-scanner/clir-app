@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 
@@ -24,6 +25,7 @@ interface Category {
 export default function SurveyAllergyEditListScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const { categoriesJson, ...surveyParams } = route.params;
 
   const [categories, setCategories] = useState<Category[]>(
@@ -63,7 +65,7 @@ export default function SurveyAllergyEditListScreen() {
     const name = newCatInput.trim();
     if (!name) return;
     if (categories.some(c => c.category.toLowerCase() === name.toLowerCase())) {
-      Alert.alert('이미 존재하는 카테고리입니다.');
+      Alert.alert(t('survey.duplicateCategory'));
       return;
     }
     setCategories(prev => [...prev, { category: name, items: [] }]);
@@ -88,8 +90,8 @@ export default function SurveyAllergyEditListScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Here are the ingredients{'\n'}we found.</Text>
-        <Text style={styles.subtitle}>Edit your Allergy ingredients and Confirm it.</Text>
+        <Text style={styles.title}>{t('survey.foundTitle')}</Text>
+        <Text style={styles.subtitle}>{t('survey.docEditSubtitle')}</Text>
 
         {categories.map(group => (
           <View key={group.category} style={styles.group}>
@@ -116,14 +118,14 @@ export default function SurveyAllergyEditListScreen() {
                     onChangeText={text =>
                       setAddingItem(prev => ({ ...prev, [group.category]: text }))
                     }
-                    placeholder="입력 후 확인"
+                    placeholder={t('survey.itemInputPlaceholder')}
                     placeholderTextColor={Colors.gray300}
                     autoFocus
                     onSubmitEditing={() => handleAddItem(group.category)}
                     returnKeyType="done"
                   />
                   <TouchableOpacity onPress={() => handleAddItem(group.category)}>
-                    <Text style={styles.addConfirm}>확인</Text>
+                    <Text style={styles.addConfirm}>{t('common.confirm')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -133,7 +135,7 @@ export default function SurveyAllergyEditListScreen() {
                     setAddingItem(prev => ({ ...prev, [group.category]: '' }))
                   }
                 >
-                  <Text style={styles.addChipText}>+ Add</Text>
+                  <Text style={styles.addChipText}>{t('survey.add')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -147,14 +149,14 @@ export default function SurveyAllergyEditListScreen() {
               style={styles.newCatInput}
               value={newCatInput}
               onChangeText={setNewCatInput}
-              placeholder="카테고리 이름"
+              placeholder={t('survey.categoryNamePlaceholder')}
               placeholderTextColor={Colors.gray300}
               autoFocus
               onSubmitEditing={handleAddCategory}
               returnKeyType="done"
             />
             <TouchableOpacity onPress={handleAddCategory}>
-              <Text style={styles.addConfirm}>추가</Text>
+              <Text style={styles.addConfirm}>{t('common.add')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -162,7 +164,7 @@ export default function SurveyAllergyEditListScreen() {
             style={styles.newCatButton}
             onPress={() => setShowNewCatInput(true)}
           >
-            <Text style={styles.newCatText}>+ Add new Categories</Text>
+            <Text style={styles.newCatText}>{t('survey.addNewCategories')}</Text>
           </TouchableOpacity>
         )}
 
@@ -171,7 +173,7 @@ export default function SurveyAllergyEditListScreen() {
 
       {/* 하단 버튼 */}
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -156,13 +156,13 @@ export default function MultiProfileScreen() {
           <View style={styles.modalBackdrop} />
         </TouchableWithoutFeedback>
         <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Profile Name</Text>
-          <Text style={styles.modalSub}>Enter a name for this profile.</Text>
+          <Text style={styles.modalTitle}>{t('profileUi.profileName')}</Text>
+          <Text style={styles.modalSub}>{t('profileUi.profileNamePrompt')}</Text>
           <TextInput
             style={styles.modalInput}
             value={profileName}
             onChangeText={setProfileName}
-            placeholder="e.g. Mom, Child, etc."
+            placeholder={t('profileUi.profileNamePlaceholder')}
             placeholderTextColor={BORDER}
             autoFocus
             autoCapitalize="words"
@@ -178,7 +178,7 @@ export default function MultiProfileScreen() {
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.modalBtnText}>Start Survey</Text>
+            <Text style={styles.modalBtnText}>{t('profileUi.startSurvey')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>

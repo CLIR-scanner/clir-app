@@ -74,29 +74,30 @@ const BOOTSTRAP_CATALOG: DietCatalog = {
 
 // ─── 카탈로그 캐시 ────────────────────────────────────────────────────────────
 
-let dietCache: DietCatalog | null = null;
-let dietPromise: Promise<DietCatalog> | null = null;
+const dietCache: Partial<Record<'en' | 'ko', DietCatalog>> = {};
+const dietPromise: Partial<Record<'en' | 'ko', Promise<DietCatalog>>> = {};
 
 export async function fetchDietCatalog(lang: 'en' | 'ko' = 'en'): Promise<DietCatalog> {
-  if (dietCache) return dietCache;
-  if (dietPromise) return dietPromise;
+  if (dietCache[lang]) return dietCache[lang];
+  if (dietPromise[lang]) return dietPromise[lang];
 
-  dietPromise = apiFetch<DietCatalog>(`/diets/catalog?lang=${lang}`)
+  const promise = apiFetch<DietCatalog>(`/diets/catalog?lang=${lang}`)
     .then(res => {
-      dietCache = res;
-      dietPromise = null;
+      dietCache[lang] = res;
+      dietPromise[lang] = undefined;
       return res;
     })
     .catch(err => {
-      dietPromise = null;
+      dietPromise[lang] = undefined;
       throw err;
     });
-  return dietPromise;
+  dietPromise[lang] = promise;
+  return promise;
 }
 
 /** 이미 fetch 된 카탈로그 반환. 없으면 부트스트랩으로 폴백 — sync 경로용. */
 export function getCachedDietCatalogOrBootstrap(): DietCatalog {
-  return dietCache ?? BOOTSTRAP_CATALOG;
+  return dietCache.en ?? dietCache.ko ?? BOOTSTRAP_CATALOG;
 }
 
 // ─── 헬퍼 ──────────────────────────────────────────────────────────────────────

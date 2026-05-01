@@ -21,12 +21,6 @@ import FilterTuneIcon from '../../components/common/FilterTuneIcon';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
 
-const BADGE_LABEL: Record<RiskLevel, string> = {
-  safe:    'Good',
-  caution: 'Poor',
-  danger:  'Bad',
-};
-
 const BADGE_COLOR: Record<RiskLevel, string> = {
   safe:    Colors.scanCorrect,
   caution: Colors.searchPoor,
@@ -38,8 +32,9 @@ type Props = NativeStackScreenProps<SearchStackParamList, 'SearchResult'>;
 // ── Risk Badge ────────────────────────────────────────────────────────────────
 
 function RiskBadge({ riskLevel }: { riskLevel: Product['riskLevel'] }) {
+  const { t } = useTranslation();
   const color = BADGE_COLOR[riskLevel];
-  const label = BADGE_LABEL[riskLevel];
+  const label = riskLevel === 'safe' ? t('scanUi.good') : riskLevel === 'caution' ? t('scanUi.poor') : t('scanUi.bad');
   return (
     <View style={[styles.badge, { borderColor: color }]}>
       <RiskBadgeIcon level={riskLevel} size={16} />

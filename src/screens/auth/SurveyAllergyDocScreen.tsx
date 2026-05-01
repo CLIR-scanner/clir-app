@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
@@ -13,6 +14,7 @@ type Route = RouteProp<AuthStackParamList, 'SurveyAllergyDoc'>;
 export default function SurveyAllergyDocScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergyDoc', params.dietaryType);
 
@@ -38,10 +40,9 @@ export default function SurveyAllergyDocScreen() {
 
       {/* 본문 */}
       <View style={styles.body}>
-        <Text style={styles.title}>Upload your document.</Text>
+        <Text style={styles.title}>{t('survey.uploadTitle')}</Text>
         <Text style={styles.subtitle}>
-          Upload a medical document or take a photo so we can review it
-          and identify ingredients you may need to avoid.
+          {t('survey.uploadSubtitle')}
         </Text>
 
         <TouchableOpacity style={styles.uploadArea} onPress={handlePickDocument}>
@@ -49,13 +50,13 @@ export default function SurveyAllergyDocScreen() {
             <>
               <Text style={styles.uploadIcon}>✓</Text>
               <Text style={styles.uploadedName} numberOfLines={2}>{fileName}</Text>
-              <Text style={styles.uploadHint}>tap to change</Text>
+              <Text style={styles.uploadHint}>{t('survey.uploadChangeHint')}</Text>
             </>
           ) : (
             <>
               <Text style={styles.uploadIcon}>↑</Text>
-              <Text style={styles.uploadLabel}>Tap to upload</Text>
-              <Text style={styles.uploadHint}>PDF or image</Text>
+              <Text style={styles.uploadLabel}>{t('survey.uploadLabel')}</Text>
+              <Text style={styles.uploadHint}>{t('survey.uploadHint')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -64,10 +65,10 @@ export default function SurveyAllergyDocScreen() {
       {/* 하단 */}
       <View style={styles.footer}>
         <Text style={styles.disclaimer}>
-          ** Your document is only used to help set up your allergy preferences.
+          {t('survey.docDisclaimer')}
         </Text>
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueText}>Continue</Text>
+          <Text style={styles.continueText}>{t('common.continue')}</Text>
         </TouchableOpacity>
       </View>
     </View>

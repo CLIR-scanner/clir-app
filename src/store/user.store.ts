@@ -39,7 +39,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
   setUser: (user: User) => {
 
 
-    const normalized: User = { ...user, multiProfiles: user.multiProfiles ?? [], language: user.language ?? 'en' };
+    const currentLanguage = get().currentUser.language;
+    const normalized: User = {
+      ...user,
+      multiProfiles: user.multiProfiles ?? [],
+      language: user.language ?? currentLanguage ?? 'en',
+    };
 
     set(state => ({
       currentUser: normalized,
@@ -51,7 +56,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
   logout: () => {
     // Supabase 세션 + 로컬 토큰 정리 (실패해도 스토어는 반드시 초기화)
     void authSignOut();
-    set({ currentUser: EMPTY_USER, activeProfile: EMPTY_PROFILE });
+    set(state => ({
+      currentUser: { ...EMPTY_USER, language: state.currentUser.language },
+      activeProfile: EMPTY_PROFILE,
+    }));
   },
 
   switchProfile: (profileId: string) => {

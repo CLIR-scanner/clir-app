@@ -2,29 +2,26 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
-import VegetarianDietConfirmCircle, {
-  VEGETARIAN_LABELS,
-  VEGAN_LABELS,
-} from '../../components/common/VegetarianDietConfirmCircle';
+import VegetarianDietConfirmCircle from '../../components/common/VegetarianDietConfirmCircle';
 
 type Nav   = NativeStackNavigationProp<AuthStackParamList, 'SurveyDietConfirm'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyDietConfirm'>;
 
-function getDisplayLabel(params: SurveyParams): string {
-  if (params.veganStrictness) return VEGAN_LABELS[params.veganStrictness];
-  if (params.vegetarianType)  return VEGETARIAN_LABELS[params.vegetarianType];
-  return '';
-}
-
 export default function SurveyDietConfirmScreen() {
   const navigation   = useNavigation<Nav>();
   const route        = useRoute<Route>();
+  const { t }        = useTranslation();
   const params       = route.params;
   const { step, total } = getSurveyProgress('SurveyDietConfirm', params.dietaryType);
-  const displayLabel = getDisplayLabel(params);
+  const displayLabel = params.veganStrictness
+    ? t(`survey.dietTitles.${params.veganStrictness}`)
+    : params.vegetarianType
+      ? t(`survey.dietTitles.${params.vegetarianType}`)
+      : '';
 
   function handleContinue() {
     navigation.navigate('SurveyVegetarianIngredients', params);
@@ -35,9 +32,9 @@ export default function SurveyDietConfirmScreen() {
       <SurveyHeader step={step} total={total} />
 
       <View style={styles.body}>
-        <Text style={styles.title}>Your diet preference is ...</Text>
+        <Text style={styles.title}>{t('survey.dietConfirmTitle')}</Text>
         <Text style={styles.subtitle}>
-          Your selected diet preference will be applied{'\n'}to your recommendations.
+          {t('survey.dietConfirmSubtitle')}
         </Text>
 
         <View style={styles.circleOuter}>
@@ -46,7 +43,7 @@ export default function SurveyDietConfirmScreen() {
       </View>
 
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );

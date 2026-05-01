@@ -6,6 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ScanStackParamList, Product, FavoriteItem, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import ScannerCamera, { ScannerCameraHandle } from '../../components/ScannerCamera';
@@ -36,10 +37,10 @@ const GOOD_COLOR   = '#25FF81';
 const POOR_COLOR   = '#FF9D00';
 const BAD_COLOR    = '#FF0000';
 
-const VERDICT_DISPLAY: Record<RiskLevel, { label: string; color: string }> = {
-  safe:    { label: 'Good!', color: GOOD_COLOR },
-  caution: { label: 'Poor!', color: POOR_COLOR },
-  danger:  { label: 'Bad!',  color: BAD_COLOR },
+const VERDICT_DISPLAY: Record<RiskLevel, { color: string }> = {
+  safe:    { color: GOOD_COLOR },
+  caution: { color: POOR_COLOR },
+  danger:  { color: BAD_COLOR },
 };
 
 // ── Mock ───────────────────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ function OCRCorner({ pos, color }: { pos: CornerPos; color: string }) {
 }
 
 export default function OCRCaptureScreen({ navigation, route }: Props) {
+  const { t } = useTranslation();
   const { barcode, photoUri: initialPhotoUri } = route.params ?? {};
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -183,7 +185,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         const resolvedProductId = beProductId ?? barcode ?? `ocr-local-${Date.now()}`;
         product = {
           id: resolvedProductId,
-          name: 'Scanned Product',
+          name: t('product.scannedProduct'),
           brand: '',
           image: targetUri,
           ingredients: ocrResult.ingredients.map(i => ({
@@ -227,12 +229,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     } catch (err) {
       if (cancelledRef.current) return;
       const isOcrFail = err instanceof ApiError && err.code === 'OCR_FAILED';
-      const title = isOcrFail ? 'Recognition Failed' : 'Analysis Failed';
+      const title = isOcrFail ? t('scanUi.recognitionFailed') : t('scanUi.analysisFailed');
       const msg   = isOcrFail
-        ? 'Please take a brighter, clearer photo of the ingredient label.'
+        ? t('scanUi.clearerPhoto')
         : err instanceof ApiError
-          ? 'We could not analyze this ingredient label. Please try again.'
-          : 'We could not analyze this ingredient label. Please try again.';
+          ? t('scanUi.analyzeFailed')
+          : t('scanUi.analyzeFailed');
       // 모바일 웹 브라우저는 fetch 콜백에서 window.alert를 억제/드랍하는 경우가
       // 있어 alert만 믿으면 "로딩 후 조용히 실패"로 보인다. 웹에선 전용 error
       // state를 사용해 화면에 명시적으로 렌더링한다.
@@ -304,12 +306,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     return (
       <View style={styles.center}>
         <Text style={styles.permIcon}>📷</Text>
-        <Text style={styles.permTitle}>Camera Access Required</Text>
+        <Text style={styles.permTitle}>{t('scanUi.cameraPermission')}</Text>
         <Text style={styles.permDesc}>
-          CLIR needs camera access to photograph ingredient labels.
+          {t('scanUi.cameraDescOcr')}
         </Text>
         <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-          <Text style={styles.permBtnText}>Grant Permission</Text>
+          <Text style={styles.permBtnText}>{t('scanUi.grantPermission')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -321,7 +323,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
       <View style={styles.root}>
         <ScanHeader
           insetTop={insets.top}
-          subtitle="Scan OCR of the product"
+          subtitle={t('scanUi.ocrSubtitle')}
           onBack={() => navigation.goBack()}
           onHistory={() => navigation.navigate('ScanHistory')}
         />
@@ -329,7 +331,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           <Text style={styles.errIcon}>⚠️</Text>
           <Text style={styles.errMsg}>{errorMsg}</Text>
           <TouchableOpacity style={styles.retakeBtn} onPress={handleReset}>
-            <Text style={styles.retakeBtnText}>Retake</Text>
+            <Text style={styles.retakeBtnText}>{t('scanUi.retake')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -342,6 +344,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     const verdict    = VERDICT_DISPLAY[ocrProduct.riskLevel];
     const frameColor = verdict.color;
     const hasAlts    = !isSafe && ocrProduct.alternatives.length > 0;
+    const verdictLabel = t(`scanUi.${ocrProduct.riskLevel === 'safe' ? 'goodBang' : ocrProduct.riskLevel === 'caution' ? 'poorBang' : 'badBang'}`);
 
     return (
       <View style={styles.root}>
@@ -370,7 +373,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
                 ]}
               >
                 <RiskBadgeIcon level={ocrProduct.riskLevel} size={BADGE_ICON_D} style={styles.verdictIcon} />
-                <Text style={[styles.verdictLabel, { color: frameColor }]}>{verdict.label}</Text>
+                <Text style={[styles.verdictLabel, { color: frameColor }]}>{verdictLabel}</Text>
               </Animated.View>
             </View>
             <View style={styles.dimSide} />
@@ -381,7 +384,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         {/* Header */}
         <ScanHeader
           insetTop={insets.top}
-          subtitle="Scan OCR of the product"
+          subtitle={t('scanUi.ocrSubtitle')}
           onBack={handleReset}
           onHistory={() => navigation.navigate('ScanHistory')}
         />
@@ -422,7 +425,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
                     ? <ActivityIndicator size="small" color={Colors.gray500} />
                     : (
                       <Text style={[styles.favBtnText, favorited && styles.favBtnTextActive]}>
-                        {favorited ? '♥ Favorited' : '♡ Add to Favorites'}
+                        {favorited ? `♥ ${t('favoriteUi.favorited')}` : `♡ ${t('favoriteUi.add')}`}
                       </Text>
                     )
                   }
@@ -430,7 +433,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
                 <TouchableOpacity
                   onPress={() => navigation.navigate('HistoryProductDetail', { product: ocrProduct })}
                 >
-                  <Text style={styles.detailText}>see more detail</Text>
+                  <Text style={styles.detailText}>{t('product.seeMoreDetail')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -439,11 +442,11 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           {/* Alternatives — Bad only */}
           {hasAlts && (
             <View style={styles.altsSection}>
-              <Text style={styles.altsLabel}>Alternative products</Text>
+              <Text style={styles.altsLabel}>{t('product.alternativeProducts')}</Text>
               <View style={styles.altsRow}>
                 {ocrProduct.alternatives.slice(0, 3).map(alt => (
                   <View key={alt.id} style={styles.altBox}>
-                    <Text style={styles.altText}>Image</Text>
+                    <Text style={styles.altText}>{t('product.image')}</Text>
                   </View>
                 ))}
               </View>
@@ -463,13 +466,13 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         )}
         <ScanHeader
           insetTop={insets.top}
-          subtitle="Scan OCR of the product"
+          subtitle={t('scanUi.ocrSubtitle')}
           onBack={handleReset}
           onHistory={() => navigation.navigate('ScanHistory')}
         />
         <View style={styles.analyzingOverlay}>
           <ActivityIndicator color={Colors.white} size="large" />
-          <Text style={styles.analyzingText}>Analyzing...</Text>
+          <Text style={styles.analyzingText}>{t('scanUi.analyzing')}</Text>
         </View>
       </View>
     );
@@ -482,7 +485,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         <View style={styles.previewHeaderBg}>
           <ScanHeader
             insetTop={insets.top}
-            subtitle="Scan OCR of the product"
+            subtitle={t('scanUi.ocrSubtitle')}
             onBack={handleReset}
             onHistory={() => navigation.navigate('ScanHistory')}
           />
@@ -494,7 +497,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         </View>
         <View style={[styles.previewActions, { paddingBottom: insets.bottom + 24 }]}>
           <TouchableOpacity style={styles.retakePill} onPress={handleReset}>
-            <Text style={styles.retakePillText}>↺  Retake</Text>
+            <Text style={styles.retakePillText}>↺  {t('scanUi.retake')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -525,7 +528,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
       {/* Header */}
       <ScanHeader
         insetTop={insets.top}
-        subtitle="Scan OCR of the product"
+        subtitle={t('scanUi.ocrSubtitle')}
         onBack={() => navigation.goBack()}
         onHistory={() => navigation.navigate('ScanHistory')}
       />

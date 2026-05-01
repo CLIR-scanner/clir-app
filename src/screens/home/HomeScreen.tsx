@@ -1,19 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 const BG        = '#F9FFF3';
 const TITLE_CLR = '#1A2E1A';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.body}>
         <Text style={styles.appName}>CLIR</Text>
-        <Text style={styles.tagline}>Scan · Analyze · Stay Safe</Text>
-        <Text style={styles.hint}>Tap the center button to scan a product.</Text>
+        <Text style={styles.tagline}>{t('home.tagline')}</Text>
+        <Text style={styles.hint}>{t('home.hint')}</Text>
       </View>
     </View>
   );

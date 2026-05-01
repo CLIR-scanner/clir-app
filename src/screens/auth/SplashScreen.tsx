@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
 import { AuthStackParamList } from '../../types';
 
@@ -28,6 +29,7 @@ function ClirLogo({ width = 140, height = 83 }: { width?: number; height?: numbe
 
 export default function SplashScreen() {
   const navigation = useNavigation<Nav>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -40,7 +42,7 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <View style={styles.logoArea}>
         <ClirLogo width={140} height={83} />
-        <Text style={styles.tagline}>Scan clir, Eat clear.</Text>
+        <Text style={styles.tagline}>{t('auth.tagline')}</Text>
       </View>
       <ActivityIndicator color="#1C3A19" />
     </View>

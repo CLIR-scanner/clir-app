@@ -11,7 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
+import { useTranslation } from 'react-i18next';
+import { ScanStackParamList, ScanHistory } from '../../types';
 import { useScanStore } from '../../store/scan.store';
 import { useUserStore } from '../../store/user.store';
 import { getScanHistory } from '../../services/scan.service';
@@ -23,13 +24,8 @@ type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 const BG          = '#F0F5EF';   // 연한 민트/크림 배경
 const TITLE_COLOR = '#1A2E1A';   // 진한 그린 계열 타이틀
 
-const BADGE: Record<RiskLevel, { label: string }> = {
-  danger:  { label: 'Bad' },
-  safe:    { label: 'Good' },
-  caution: { label: 'Poor' },
-};
-
 export default function ScanHistoryScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const insets     = useSafeAreaInsets();
   const history    = useScanStore(s => s.history);
   const setHistory = useScanStore(s => s.setHistory);
@@ -70,7 +66,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
   }
 
   function renderItem({ item, index }: { item: ScanHistory; index: number }) {
-    const badge  = BADGE[item.result] ?? BADGE.safe;
+    const badgeLabel = t(`scanUi.${item.result === 'safe' ? 'good' : item.result === 'caution' ? 'poor' : 'bad'}`);
     const isLast = index === sorted.length - 1;
 
     return (
@@ -102,7 +98,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
             {/* Risk badge */}
             <View style={styles.badge}>
               <RiskBadgeIcon level={item.result} size={16} style={styles.badgeIcon} />
-              <Text style={styles.badgeText}>{badge.label}</Text>
+              <Text style={styles.badgeText}>{badgeLabel}</Text>
             </View>
           </View>
 
@@ -128,7 +124,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
         >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>History</Text>
+        <Text style={styles.title}>{t('scanUi.history')}</Text>
         {/* 우측 여백 균형용 */}
         <View style={styles.backBtn} />
       </View>
@@ -140,9 +136,9 @@ export default function ScanHistoryScreen({ navigation }: Props) {
         </View>
       ) : isError ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>이력을 불러오지 못했습니다.</Text>
+          <Text style={styles.emptyText}>{t('scanUi.historyLoadError')}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={fetchHistory}>
-            <Text style={styles.retryText}>다시 시도</Text>
+            <Text style={styles.retryText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -157,13 +153,13 @@ export default function ScanHistoryScreen({ navigation }: Props) {
         ListHeaderComponent={
           <View style={styles.pillWrap}>
             <View style={styles.historyPill}>
-              <Text style={styles.historyPillText}>Your Scan History</Text>
+              <Text style={styles.historyPillText}>{t('scanUi.historyPill')}</Text>
             </View>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>아직 스캔한 제품이 없습니다.</Text>
+            <Text style={styles.emptyText}>{t('scanUi.historyEmpty')}</Text>
           </View>
         }
         showsVerticalScrollIndicator={false}

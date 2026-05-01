@@ -80,7 +80,7 @@ export default function MultiProfileDetailScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backArrow}>{'‹'}</Text>
         </TouchableOpacity>
-        <Text style={styles.notFound}>Profile not found.</Text>
+        <Text style={styles.notFound}>{t('multiProfileDetail.notFound')}</Text>
       </View>
     );
   }
@@ -90,7 +90,7 @@ export default function MultiProfileDetailScreen() {
   async function handlePickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Photo library access is needed to change the profile picture.');
+      Alert.alert(t('profileUi.permissionRequired'), t('profileUi.photoPermissionProfile'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -108,7 +108,7 @@ export default function MultiProfileDetailScreen() {
 
   async function handleSaveName() {
     const trimmed = editedName.trim();
-    if (!trimmed) { Alert.alert('Error', 'Please enter a name.'); return; }
+    if (!trimmed) { Alert.alert(t('common.error'), t('profileUi.enterName')); return; }
     setSaving(true);
     try {
       if (!isMainProfile) updateMultiProfile(profileId, { name: trimmed });
@@ -155,14 +155,14 @@ export default function MultiProfileDetailScreen() {
           <Text style={styles.backArrow}>{'‹'}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Profile Detail</Text>
+        <Text style={styles.headerTitle}>{t('multiProfileDetail.headerTitle')}</Text>
 
         {isMainProfile ? (
-          <Text style={styles.mainLabel}>Main</Text>
+          <Text style={styles.mainLabel}>{t('multiProfileDetail.badgeMain')}</Text>
         ) : (
           <TouchableOpacity onPress={handleDelete}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <Text style={styles.deleteLabel}>Delete</Text>
+            <Text style={styles.deleteLabel}>{t('multiProfileDetail.deleteBtn')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -197,7 +197,7 @@ export default function MultiProfileDetailScreen() {
               style={styles.nameInput}
               value={editedName}
               onChangeText={setEditedName}
-              placeholder="Profile name"
+              placeholder={t('profileUi.profileName')}
               placeholderTextColor={BORDER}
               autoCapitalize="words"
               returnKeyType="done"
@@ -229,14 +229,14 @@ export default function MultiProfileDetailScreen() {
             >
               {saving
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={styles.saveNameBtnText}>Save</Text>
+                : <Text style={styles.saveNameBtnText}>{t('common.save')}</Text>
               }
             </TouchableOpacity>
           )}
 
           {isActive && (
             <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>Currently Active</Text>
+              <Text style={styles.activeBadgeText}>{t('common.currentlyActive')}</Text>
             </View>
           )}
         </View>
@@ -244,27 +244,27 @@ export default function MultiProfileDetailScreen() {
         {/* ── Sensitivity card ─────────────────────────────────────────────── */}
         <View style={styles.card}>
           <View style={styles.cardRow}>
-            <Text style={styles.cardLabel}>Sensitivity</Text>
+            <Text style={styles.cardLabel}>{t('profileUi.sensitivity')}</Text>
             <View style={[styles.sensitivityBadge,
               isStrict ? styles.sensitivityStrict : styles.sensitivityNormal]}>
               <Text style={[styles.sensitivityText,
                 isStrict ? styles.sensitivityTextStrict : styles.sensitivityTextNormal]}>
-                {isStrict ? 'Strict Mode' : 'Normal Mode'}
+                {isStrict ? t('profileUi.strictMode') : t('profileUi.normalMode')}
               </Text>
             </View>
           </View>
           <Text style={styles.cardDesc}>
             {isStrict
-              ? 'Warns about trace amounts of allergens (may contain labelling).'
-              : 'Only warns about confirmed allergen ingredients.'}
+              ? t('multiProfileDetail.strictDesc')
+              : t('multiProfileDetail.normalDesc')}
           </Text>
         </View>
 
         {/* ── Allergy card ─────────────────────────────────────────────────── */}
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>My Allergy</Text>
+          <Text style={styles.cardLabel}>{t('profileUi.myAllergy')}</Text>
           {profile.allergyProfile.length === 0 ? (
-            <Text style={styles.emptyText}>No allergens set.</Text>
+            <Text style={styles.emptyText}>{t('profileUi.noAllergensSet')}</Text>
           ) : (
             <View style={styles.chips}>
               {profile.allergyProfile.map(item => (
@@ -279,7 +279,7 @@ export default function MultiProfileDetailScreen() {
         {/* ── Dietary card ─────────────────────────────────────────────────── */}
         {profile.dietaryRestrictions.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Diet Preference</Text>
+            <Text style={styles.cardLabel}>{t('profileUi.dietPreference')}</Text>
             <View style={styles.chips}>
               {profile.dietaryRestrictions.map(item => (
                 <View key={item} style={[styles.chip, styles.chipDiet]}>
@@ -299,7 +299,7 @@ export default function MultiProfileDetailScreen() {
           onPress={handleSwitch}
           activeOpacity={0.8}
         >
-          <Text style={styles.switchBtnText}>Set as Active Profile</Text>
+          <Text style={styles.switchBtnText}>{t('profileUi.setActiveProfile')}</Text>
         </TouchableOpacity>
       )}
     </View>

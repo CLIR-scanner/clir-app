@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
+import { getCatalogLanguage } from '../../constants/languages';
 import { useUserStore } from '../../store/user.store';
 import {
   fetchAllergenCatalog, AllergenCatalog,
@@ -36,10 +38,13 @@ const DUMMY_RESULTS: Category[] = [
 export default function SurveyAllergyDocResultScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { t } = useTranslation();
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyAllergyDocResult', params.dietaryType);
 
   const setUser = useUserStore(s => s.setUser);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
+  const catalogLanguage = getCatalogLanguage(currentLanguage);
 
   const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
   const [categories, setCategories] = useState<Category[]>(DUMMY_RESULTS);
@@ -49,8 +54,8 @@ export default function SurveyAllergyDocResultScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
-  }, []);
+    fetchAllergenCatalog(catalogLanguage).then(setCatalog).catch(() => {});
+  }, [catalogLanguage]);
 
   // 항목 추가 모달 상태
   const [modalCategory, setModalCategory] = useState<string | null>(null);
@@ -138,9 +143,9 @@ export default function SurveyAllergyDocResultScreen() {
         sensitivityLevel: 'normal',
       });
       const { user } = await AuthService.fetchMe();
-      setUser(user);
+      setUser({ ...user, language: currentLanguage });
     } catch (e) {
-      Alert.alert('오류가 발생했습니다.', (e as Error).message);
+      Alert.alert(t('common.error'), (e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -162,11 +167,11 @@ export default function SurveyAllergyDocResultScreen() {
       <SurveyHeader step={step} total={total} />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Here are the ingredients{'\n'}we found.</Text>
+        <Text style={styles.title}>{t('survey.foundTitle')}</Text>
         <Text style={styles.subtitle}>
           {isEditing
-            ? 'Edit your Allergy ingredients and Confirm it.'
-            : 'Review the list and confirm the ingredients you want to avoid.'}
+            ? t('survey.docEditSubtitle')
+            : t('survey.selectedSubtitle')}
         </Text>
 
         {categories.map(group => (
@@ -186,7 +191,7 @@ export default function SurveyAllergyDocResultScreen() {
               ))}
               {isEditing && (
                 <TouchableOpacity style={styles.addChip} onPress={() => openModal(group.category)}>
-                  <Text style={styles.addChipText}>+ Add</Text>
+                  <Text style={styles.addChipText}>{t('survey.add')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -198,7 +203,7 @@ export default function SurveyAllergyDocResultScreen() {
             style={styles.newCatButton}
             onPress={() => { setCatModalSelected(new Set()); setCatModalSearch(''); setShowCatModal(true); }}
           >
-            <Text style={styles.newCatText}>+ Add new Categories</Text>
+            <Text style={styles.newCatText}>{t('survey.addNewCategories')}</Text>
           </TouchableOpacity>
         )}
 
@@ -208,7 +213,7 @@ export default function SurveyAllergyDocResultScreen() {
       <View style={styles.buttons}>
         {!isEditing && (
           <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-            <Text style={styles.editText}>Edit your list</Text>
+            <Text style={styles.editText}>{t('survey.editList')}</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -216,7 +221,7 @@ export default function SurveyAllergyDocResultScreen() {
           onPress={handleComplete}
           disabled={loading}
         >
-          <Text style={styles.completeText}>{loading ? '처리 중...' : 'Complete'}</Text>
+          <Text style={styles.completeText}>{loading ? t('survey.processing') : t('survey.complete')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -227,14 +232,18 @@ export default function SurveyAllergyDocResultScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Select {modalCategory}</Text>
-                <Text style={styles.modalSubtitle}>Choose {modalCategory?.toLowerCase()} ingredients to avoid.</Text>
+                <Text style={styles.modalTitle}>
+                  {t('survey.selectCategoryTitle', { category: modalCategory })}
+                </Text>
+                <Text style={styles.modalSubtitle}>
+                  {t('survey.selectCategorySubtitle', { category: modalCategory ?? '' })}
+                </Text>
               </View>
               <TouchableOpacity onPress={() => setModalCategory(null)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={styles.searchInput} value={modalSearch} onChangeText={setModalSearch} placeholder="Search your ingredients" placeholderTextColor={Colors.gray300} />
+            <TextInput style={styles.searchInput} value={modalSearch} onChangeText={setModalSearch} placeholder={t('survey.searchIngredients')} placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
                 {(catalog?.categories.map(c => c.code) ?? [])
@@ -264,7 +273,7 @@ export default function SurveyAllergyDocResultScreen() {
               </View>
             </ScrollView>
             <TouchableOpacity style={styles.saveButton} onPress={handleModalSave}>
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -277,14 +286,14 @@ export default function SurveyAllergyDocResultScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Add new Categories</Text>
-                <Text style={styles.modalSubtitle}>Choose allergy categories to add.</Text>
+                <Text style={styles.modalTitle}>{t('survey.addCategoryModalTitle')}</Text>
+                <Text style={styles.modalSubtitle}>{t('survey.addCategoryModalSubtitle')}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowCatModal(false)}>
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={styles.searchInput} value={catModalSearch} onChangeText={setCatModalSearch} placeholder="Search categories" placeholderTextColor={Colors.gray300} />
+            <TextInput style={styles.searchInput} value={catModalSearch} onChangeText={setCatModalSearch} placeholder={t('survey.searchCategories')} placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
                 {(catalog?.categories.map(c => c.name) ?? [])
@@ -304,7 +313,7 @@ export default function SurveyAllergyDocResultScreen() {
               </View>
             </ScrollView>
             <TouchableOpacity style={styles.saveButton} onPress={handleCatModalSave}>
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

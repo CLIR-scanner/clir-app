@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { ListStackParamList, FavoriteItem, RiskLevel } from '../../types';
+import { ListStackParamList, FavoriteItem } from '../../types';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getFavorites, removeFavorite } from '../../services/list.service';
@@ -25,12 +25,6 @@ type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 const BG         = '#F9FFF3';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
-
-const BADGE_LABEL: Record<RiskLevel, string> = {
-  safe:    'Good',
-  caution: 'Poor',
-  danger:  'Bad',
-};
 
 export default function FavoritesScreen({ navigation }: Props) {
   const { t } = useTranslation();
@@ -81,7 +75,7 @@ export default function FavoritesScreen({ navigation }: Props) {
       }
       removeFavoriteFromStore(item.id);
     } catch {
-      Alert.alert('삭제 실패', '다시 시도해주세요.');
+      Alert.alert(t('listUi.deleteFailed'), t('listUi.tryAgain'));
     } finally {
       setDeletingId(null);
     }
@@ -100,7 +94,7 @@ export default function FavoritesScreen({ navigation }: Props) {
 
   function renderItem({ item, index }: { item: FavoriteItem; index: number }) {
     const riskLevel = item.product.riskLevel ?? 'safe';
-    const badgeLbl  = BADGE_LABEL[riskLevel] ?? BADGE_LABEL.safe;
+    const badgeLbl  = t(`scanUi.${riskLevel === 'safe' ? 'good' : riskLevel === 'caution' ? 'poor' : 'bad'}`);
     const isLast    = index === sorted.length - 1;
 
     return (
@@ -150,7 +144,7 @@ export default function FavoritesScreen({ navigation }: Props) {
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
       {/* ── Title ───────────────────────────────────────────────────────────── */}
-      <Text style={styles.title}>List</Text>
+      <Text style={styles.title}>{t('listUi.title')}</Text>
 
       {/* ── List / Loading / Error ──────────────────────────────────────────── */}
       {isLoading ? (
@@ -173,7 +167,7 @@ export default function FavoritesScreen({ navigation }: Props) {
           ListHeaderComponent={
             <View style={styles.pillWrap}>
               <View style={styles.pill}>
-                <Text style={styles.pillText}>My Favorite Products</Text>
+                <Text style={styles.pillText}>{t('listUi.favoritesPill')}</Text>
               </View>
             </View>
           }

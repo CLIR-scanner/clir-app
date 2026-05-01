@@ -6,22 +6,22 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
+import { getCatalogLanguage } from '../../constants/languages';
 import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } from '../../constants/dietary';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
-import VegetarianDietConfirmCircle, {
-  VEGETARIAN_LABELS,
-  VEGAN_LABELS,
-} from '../../components/common/VegetarianDietConfirmCircle';
+import VegetarianDietConfirmCircle from '../../components/common/VegetarianDietConfirmCircle';
 
 // 각 subcomponent 에서 동일하게 호출 — 모듈 캐시 덕에 실제 fetch 는 1회만 발생.
 function useCategoryCodes(): string[] {
   const [codes, setCodes] = useState<string[]>([]);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
+  const catalogLanguage = getCatalogLanguage(currentLanguage);
   useEffect(() => {
-    fetchAllergenCatalog('en')
+    fetchAllergenCatalog(catalogLanguage)
       .then((c: AllergenCatalog) => setCodes(c.categories.map(x => x.code)))
       .catch(() => {});
-  }, []);
+  }, [catalogLanguage]);
   return codes;
 }
 
@@ -277,15 +277,15 @@ function StepVegetarianType({ selected, onSelect, onNext }: {
   selected: VegetarianType | null; onSelect: (v: VegetarianType) => void; onNext: () => void;
 }) {
   const { t } = useTranslation();
-  const options: { value: VegetarianType; label: string }[] = [
-    { value: 'pescatarian',          label: 'Pescatarian' },
-    { value: 'vegan',                label: 'Vegan' },
-    { value: 'lacto_vegetarian',     label: 'Lacto-vegetarian' },
-    { value: 'ovo_vegetarian',       label: 'Ovo-vegetarian' },
-    { value: 'lacto_ovo_vegetarian', label: 'Lacto-ovo-vegetarian' },
-    { value: 'pesco_vegetarian',     label: 'Pesco-vegetarian' },
-    { value: 'pollo_vegetarian',     label: 'Pollo-vegetarian' },
-    { value: 'flexitarian',          label: 'Flexitarian' },
+  const options: { value: VegetarianType }[] = [
+    { value: 'pescatarian' },
+    { value: 'vegan' },
+    { value: 'lacto_vegetarian' },
+    { value: 'ovo_vegetarian' },
+    { value: 'lacto_ovo_vegetarian' },
+    { value: 'pesco_vegetarian' },
+    { value: 'pollo_vegetarian' },
+    { value: 'flexitarian' },
   ];
   return (
     <StepLayout
@@ -300,7 +300,9 @@ function StepVegetarianType({ selected, onSelect, onNext }: {
             style={[s.optionRow, selected === opt.value && s.optionRowSelected]}
             onPress={() => onSelect(opt.value)} activeOpacity={0.8}
           >
-            <Text style={[s.optionLabel, selected === opt.value && s.optionLabelSel]}>{opt.label}</Text>
+            <Text style={[s.optionLabel, selected === opt.value && s.optionLabelSel]}>
+              {t(`survey.vegetarianTypes.${opt.value}`)}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -339,12 +341,13 @@ function StepVeganStrictness({ selected, onSelect, onNext }: {
 }
 
 function StepVegeConfirm({ label, onNext }: { label: string; onNext: () => void }) {
+  const { t } = useTranslation();
   return (
     <View style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
-        <Text style={s.title}>Your diet preference is ...</Text>
+        <Text style={s.title}>{t('survey.dietConfirmTitle')}</Text>
         <Text style={s.subtitle}>
-          {'Your selected diet preference will be applied\nto your recommendations.'}
+          {t('survey.dietConfirmSubtitle')}
         </Text>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <VegetarianDietConfirmCircle label={label} />
@@ -365,7 +368,7 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
   const [showModal, setShowModal] = useState(false);
   const [modalSel, setModalSel] = useState<string[]>([]);
   const available = DIET_RESTRICTION_CATEGORIES.filter(c => !items.includes(c));
-  const titleLabel = DIET_TITLES[dietKey] ?? dietKey;
+  const titleLabel = DIET_TITLES[dietKey] ? t(`survey.dietTitles.${dietKey}`) : dietKey;
 
   function openModal() { setModalSel([]); setShowModal(true); }
   function saveModal() {
@@ -375,7 +378,7 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
 
   return (
     <StepLayout
-      title={`As ${titleLabel},\nthey avoid`}
+      title={t('survey.vegetarianAvoidTitle', { diet: titleLabel })}
       subtitle={t('multiProfileAdd.stepVegIngrSubtitle')}
       footer={
         <View style={{ gap: 10 }}>
@@ -447,11 +450,13 @@ export default function MultiProfileAddScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const addMultiProfile = useUserStore(s => s.addMultiProfile);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
+  const catalogLanguage = getCatalogLanguage(currentLanguage);
   const [catalog, setCatalog] = useState<AllergenCatalog | null>(null);
 
   useEffect(() => {
-    fetchAllergenCatalog('en').then(setCatalog).catch(() => {});
-  }, []);
+    fetchAllergenCatalog(catalogLanguage).then(setCatalog).catch(() => {});
+  }, [catalogLanguage]);
 
   const [step, setStep]               = useState<Step>('name');
   const [name, setName]               = useState('');
@@ -553,8 +558,8 @@ export default function MultiProfileAddScreen() {
         );
       case 'vege_confirm': {
         const confirmLabel = veganStrictness
-          ? VEGAN_LABELS[veganStrictness]
-          : VEGETARIAN_LABELS[vegetarianType ?? 'pescatarian'];
+          ? t(`survey.dietTitles.${veganStrictness}`)
+          : t(`survey.vegetarianTypes.${vegetarianType ?? 'pescatarian'}`);
         return (
           <StepVegeConfirm
             label={confirmLabel}

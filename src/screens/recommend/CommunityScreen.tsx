@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
@@ -33,11 +34,11 @@ const SECTION_ROW_H = 56;
 const TABS = ['Week Trends', 'Similar Trends', 'Q&A', 'Magazine'] as const;
 type Tab = typeof TABS[number];
 
-const SECTION_LABEL: Record<Tab, string> = {
-  'Week Trends':    'Trending This Week',
-  'Similar Trends': "Similar Users' Picks",
-  'Q&A':            'Q&A',
-  'Magazine':       'Clir Magazine',
+const SECTION_LABEL_KEY: Record<Tab, string> = {
+  'Week Trends':    'recommendUi.trending',
+  'Similar Trends': 'recommendUi.similarPicks',
+  'Q&A':            'recommendUi.qa',
+  'Magazine':       'recommendUi.magazine',
 };
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
@@ -108,7 +109,6 @@ const MAGAZINE_ITEMS: MagazineItem[] = [
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-const BADGE_LABEL: Record<RiskLevel, string> = { safe: 'Good', caution: 'Poor', danger: 'Bad' };
 const BADGE_COLOR: Record<RiskLevel, string> = {
   safe:    Colors.scanCorrect,
   caution: Colors.searchPoor,
@@ -116,11 +116,13 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
 };
 
 function RiskBadge({ riskLevel }: { riskLevel: RiskLevel }) {
+  const { t } = useTranslation();
   const color = BADGE_COLOR[riskLevel];
+  const label = riskLevel === 'safe' ? t('scanUi.good') : riskLevel === 'caution' ? t('scanUi.poor') : t('scanUi.bad');
   return (
     <View style={[styles.badge, { borderColor: color }]}>
       <RiskBadgeIcon level={riskLevel} size={16} />
-      <Text style={[styles.badgeText, { color }]}>{BADGE_LABEL[riskLevel]}</Text>
+      <Text style={[styles.badgeText, { color }]}>{label}</Text>
     </View>
   );
 }
@@ -188,6 +190,7 @@ function SimilarList() {
 // ── Banner ────────────────────────────────────────────────────────────────────
 
 function BannerAd() {
+  const { t } = useTranslation();
   return (
     <View style={bannerSt.wrap}>
       <Image
@@ -196,9 +199,9 @@ function BannerAd() {
         resizeMode="cover"
       />
       <View style={bannerSt.overlay} />
-      <Text style={bannerSt.tag}>FEATURED</Text>
-      <Text style={bannerSt.title}>{'Eat Smart,\nLive Allergy-Free'}</Text>
-      <Text style={bannerSt.sub}>Scan any product to check ingredients instantly</Text>
+      <Text style={bannerSt.tag}>{t('recommendUi.featured')}</Text>
+      <Text style={bannerSt.title}>{t('recommendUi.bannerTitle')}</Text>
+      <Text style={bannerSt.sub}>{t('recommendUi.featuredSubtitle')}</Text>
     </View>
   );
 }
@@ -245,9 +248,10 @@ function SectionHeader({ title, onPress }: { title: string; onPress?: () => void
 }
 
 function CategoryPill() {
+  const { t } = useTranslation();
   return (
     <TouchableOpacity style={styles.categoryPill} activeOpacity={0.7}>
-      <Text style={styles.categoryPillText}>All categories</Text>
+      <Text style={styles.categoryPillText}>{t('recommendUi.allCategories')}</Text>
     </TouchableOpacity>
   );
 }
@@ -277,6 +281,7 @@ function ReorderSheet({
   onClose: () => void;
   onApply: (next: Tab[]) => void;
 }) {
+  const { t } = useTranslation();
   const slideOffset  = useRef(new Animated.Value(-SCREEN_H)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const [draft, setDraft]             = useState<Tab[]>(order);
@@ -366,13 +371,13 @@ function ReorderSheet({
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Text style={sheetStyles.closeBtn}>✕</Text>
           </TouchableOpacity>
-          <Text style={sheetStyles.title}>Reorder Sections</Text>
+          <Text style={sheetStyles.title}>{t('recommendUi.reorderSections')}</Text>
           <TouchableOpacity onPress={() => { onApply(draft); onClose(); }} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <Text style={sheetStyles.doneBtn}>Done</Text>
+            <Text style={sheetStyles.doneBtn}>{t('common.done')}</Text>
           </TouchableOpacity>
         </View>
         <View style={sheetStyles.divider} />
-        <Text style={sheetStyles.hint}>Drag to reorder sections</Text>
+        <Text style={sheetStyles.hint}>{t('recommendUi.dragToReorder')}</Text>
         {draft.map((id, index) => {
           const isDragging   = activeId === id;
           const isHoverAbove = hoverIdx === index && activeId !== null && !isDragging && draft.indexOf(activeId) > index;
@@ -385,7 +390,7 @@ function ReorderSheet({
                 {...(prs.current[id]?.panHandlers ?? {})}
               >
                 <Text style={[sheetStyles.rowLabel, isDragging && sheetStyles.rowLabelActive]}>
-                  {SECTION_LABEL[id]}
+                  {t(SECTION_LABEL_KEY[id])}
                 </Text>
                 <DragHandleIcon active={isDragging} />
               </View>
@@ -428,6 +433,7 @@ const sheetStyles = StyleSheet.create({
 
 export default function CommunityScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [searchQuery,  setSearchQuery]  = useState('');
   const [activeTab,    setActiveTab]    = useState<Tab>('Week Trends');
   const [sectionOrder, setSectionOrder] = useState<Tab[]>([...TABS]);
@@ -525,7 +531,7 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Week Trends':
         return (
           <View style={styles.section}>
-            <SectionHeader title="Trending This Week" onPress={() => navigation.navigate('WeekendPopular')} />
+            <SectionHeader title={t('recommendUi.trending')} onPress={() => navigation.navigate('WeekendPopular')} />
             <CategoryPill />
             <View style={styles.trendList}>
               {TRENDING_PRODUCTS.map((item, idx) => (
@@ -541,7 +547,7 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Similar Trends':
         return (
           <View style={styles.section}>
-            <SectionHeader title="Similar Users' Picks" onPress={() => navigation.navigate('SimilarUsersFavorites')} />
+            <SectionHeader title={t('recommendUi.similarPicks')} onPress={() => navigation.navigate('SimilarUsersFavorites')} />
             <CategoryPill />
             <SimilarList />
           </View>
@@ -550,7 +556,7 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Q&A':
         return (
           <View style={styles.section}>
-            <SectionHeader title="Q&A" />
+            <SectionHeader title={t('recommendUi.qa')} />
             {QA_ITEMS.map((item, idx) => (
               <View key={item.id}>
                 <TouchableOpacity style={styles.qaRow} activeOpacity={0.7}>
@@ -569,7 +575,7 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Magazine':
         return (
           <View style={styles.section}>
-            <SectionHeader title="Clir Magazine" />
+            <SectionHeader title={t('recommendUi.magazine')} />
             <FlatList
               data={MAGAZINE_ITEMS}
               horizontal
@@ -584,7 +590,7 @@ export default function CommunityScreen({ navigation }: Props) {
                   <View style={styles.magContent}>
                     <Text style={styles.magTitle} numberOfLines={2}>{item.title}</Text>
                     <Text style={styles.magDesc}  numberOfLines={4}>{item.description}</Text>
-                    <Text style={styles.magSeeMore}>See more</Text>
+                    <Text style={styles.magSeeMore}>{t('recommendUi.seeMore')}</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -601,7 +607,7 @@ export default function CommunityScreen({ navigation }: Props) {
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Community</Text>
+        <Text style={styles.headerTitle}>{t('recommendUi.community')}</Text>
       </View>
 
       {/* ── Search bar ─────────────────────────────────────────────────── */}
@@ -609,7 +615,7 @@ export default function CommunityScreen({ navigation }: Props) {
         <View style={styles.searchInputWrap}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search Products"
+            placeholder={t('search.placeholder')}
             placeholderTextColor={C.muted}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -640,7 +646,7 @@ export default function CommunityScreen({ navigation }: Props) {
               onPress={() => handleTabPress(tab)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab}</Text>
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{t(SECTION_LABEL_KEY[tab])}</Text>
               {isActive && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
           );

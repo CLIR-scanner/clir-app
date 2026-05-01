@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 
 interface Props {
@@ -7,10 +8,11 @@ interface Props {
 }
 
 export default function PlaceholderScreen({ name }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{name}</Text>
-      <Text style={styles.sub}>구현 예정</Text>
+      <Text style={styles.sub}>{t('common.empty')}</Text>
     </View>
   );
 }

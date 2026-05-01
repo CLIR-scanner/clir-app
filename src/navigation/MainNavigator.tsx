@@ -124,19 +124,10 @@ function getIcon(route: TabRoute, active: boolean) {
   }
 }
 
-function getTabLabel(route: TabRoute) {
-  switch (route) {
-    case 'SearchTab':    return 'SEARCH';
-    case 'ListTab':      return 'LIST';
-    case 'RecommendTab': return 'COMMUNITY';
-    case 'ProfileTab':   return 'PROFILE';
-    default:             return '';
-  }
-}
-
 // ── Custom tab bar ─────────────────────────────────────────────────────────────
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+  const { t }      = useTranslation();
   const insets      = useSafeAreaInsets();
   const activeRoute = state.routes[state.index].name as TabRoute;
 
@@ -149,6 +140,16 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   if (nestedRoute === 'MultiProfileAdd') return null;
 
   function goTo(route: TabRoute) { navigation.navigate(route); }
+
+  function getTabLabel(route: TabRoute) {
+    switch (route) {
+      case 'SearchTab':    return t('tab.search').toUpperCase();
+      case 'ListTab':      return t('tab.list').toUpperCase();
+      case 'RecommendTab': return t('tab.recommend').toUpperCase();
+      case 'ProfileTab':   return t('tab.profile').toUpperCase();
+      default:             return '';
+    }
+  }
 
   function goToScan() {
     if (activeRoute === 'ScanTab') { navigation.navigate('ScanTab'); return; }

@@ -125,7 +125,7 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
               <View style={[styles.checkbox, cat.selected && styles.checkboxSelected]}>
                 {cat.selected && <Text style={styles.checkmark}>✓</Text>}
               </View>
-              <Text style={styles.categoryLabel}>{cat.label}</Text>
+              <Text style={styles.categoryLabel}>{t(`search.categoriesList.${cat.id}`, cat.label)}</Text>
             </TouchableOpacity>
           ))}
         </View>
