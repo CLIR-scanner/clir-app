@@ -9,8 +9,8 @@ import MainNavigator from './MainNavigator';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const currentUserId = useUserStore(s => s.currentUser.id);
-  const isLoggedIn = currentUserId !== '';
+  const currentUser = useUserStore(s => s.currentUser);
+  const isLoggedIn = currentUser.id !== '' && currentUser.hasCompletedSurvey !== false;
 
   return (
     <NavigationContainer>

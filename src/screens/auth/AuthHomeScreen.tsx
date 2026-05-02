@@ -43,6 +43,7 @@ export default function AuthHomeScreen() {
     try {
       const { user, isFirstLogin } = await AuthService.signInWithGoogle();
       if (isFirstLogin) {
+        setUser({ ...user, hasCompletedSurvey: false });
         navigation.reset({ index: 0, routes: [{ name: 'SurveyLanding', params: {} }] });
       } else {
         setUser(user);

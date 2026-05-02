@@ -33,19 +33,21 @@ export default function AuthNavigator() {
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
       <Stack.Screen name="SurveyLanding" component={SurveyLandingScreen} />
-      <Stack.Screen name="Survey" component={SurveyScreen} />
-      <Stack.Screen name="SurveyAllergy" component={SurveyAllergyScreen} />
-      <Stack.Screen name="SurveyAllergyDoc" component={SurveyAllergyDocScreen} />
-      <Stack.Screen name="SurveyAllergyDocResult" component={SurveyAllergyDocResultScreen} />
-      <Stack.Screen name="SurveyAllergyEditList" component={SurveyAllergyEditListScreen} />
-      <Stack.Screen name="SurveyAllergySelect" component={SurveyAllergySelectScreen} />
-      <Stack.Screen name="SurveyAllergyReaction" component={SurveyAllergyReactionScreen} />
-      <Stack.Screen name="SurveyAllergyIngredients" component={SurveyAllergyIngredientsScreen} />
-      <Stack.Screen name="SurveyAllergyConfirm" component={SurveyAllergyConfirmScreen} />
-      <Stack.Screen name="SurveyVegetarian" component={SurveyVegetarianScreen} />
-      <Stack.Screen name="SurveyVeganStrictness" component={SurveyVeganStrictnessScreen} />
-      <Stack.Screen name="SurveyDietConfirm" component={SurveyDietConfirmScreen} />
-      <Stack.Screen name="SurveyVegetarianIngredients" component={SurveyVegetarianIngredientsScreen} />
+      <Stack.Group screenOptions={{ animation: 'none' }}>
+        <Stack.Screen name="Survey" component={SurveyScreen} />
+        <Stack.Screen name="SurveyAllergy" component={SurveyAllergyScreen} />
+        <Stack.Screen name="SurveyAllergyDoc" component={SurveyAllergyDocScreen} />
+        <Stack.Screen name="SurveyAllergyDocResult" component={SurveyAllergyDocResultScreen} />
+        <Stack.Screen name="SurveyAllergyEditList" component={SurveyAllergyEditListScreen} />
+        <Stack.Screen name="SurveyAllergySelect" component={SurveyAllergySelectScreen} />
+        <Stack.Screen name="SurveyAllergyReaction" component={SurveyAllergyReactionScreen} />
+        <Stack.Screen name="SurveyAllergyIngredients" component={SurveyAllergyIngredientsScreen} />
+        <Stack.Screen name="SurveyAllergyConfirm" component={SurveyAllergyConfirmScreen} />
+        <Stack.Screen name="SurveyVegetarian" component={SurveyVegetarianScreen} />
+        <Stack.Screen name="SurveyVeganStrictness" component={SurveyVeganStrictnessScreen} />
+        <Stack.Screen name="SurveyDietConfirm" component={SurveyDietConfirmScreen} />
+        <Stack.Screen name="SurveyVegetarianIngredients" component={SurveyVegetarianIngredientsScreen} />
+      </Stack.Group>
     </Stack.Navigator>
     </SurveyProgressContext.Provider>
   );

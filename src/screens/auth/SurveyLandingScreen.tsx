@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -13,6 +14,7 @@ import i18n from '../../i18n';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
+import * as AuthService from '../../services/auth.service';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyLanding'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyLanding'>;
@@ -23,11 +25,11 @@ export default function SurveyLandingScreen() {
   const { t }       = useTranslation();
   const insets      = useSafeAreaInsets();
   const setUser            = useUserStore(s => s.setUser);
-  const currentUser        = useUserStore(s => s.currentUser);
   const currentLanguage    = useUserStore(s => s.currentUser.language);
   const setLanguage        = useUserStore(s => s.setLanguage);
   const multiProfileMode   = useUserStore(s => s.multiProfileMode);
   const setMultiProfileMode = useUserStore(s => s.setMultiProfileMode);
+  const [loading, setLoading] = React.useState(false);
 
   const params: SurveyParams = route.params ?? {};
   const isDevMode = String(route.name) === 'DevSurveyLanding';
@@ -36,14 +38,29 @@ export default function SurveyLandingScreen() {
     navigation.navigate('Survey', params);
   }
 
-  function handleSkip() {
+  async function handleSkip() {
+    if (loading) return;
+
     if (multiProfileMode) {
       setMultiProfileMode(false);
       navigation.getParent()?.goBack();
     } else if (isDevMode) {
       navigation.goBack();
     } else {
-      setUser(currentUser);
+      setLoading(true);
+      try {
+        await AuthService.submitSurvey({
+          allergyProfile: [],
+          dietaryRestrictions: [],
+          sensitivityLevel: 'normal',
+        });
+        const { user } = await AuthService.fetchMe();
+        setUser({ ...user, language: currentLanguage, hasCompletedSurvey: true });
+      } catch (e) {
+        Alert.alert(t('common.error'), (e as Error).message);
+      } finally {
+        setLoading(false);
+      }
     }
   }
 
@@ -86,8 +103,13 @@ export default function SurveyLandingScreen() {
 
       <View style={styles.footer}>
         {!multiProfileMode && (
-          <TouchableOpacity style={styles.skipButton} onPress={handleSkip} activeOpacity={0.7}>
-            <Text style={styles.skipText}>{t('survey.skip')}</Text>
+          <TouchableOpacity
+            style={[styles.skipButton, loading && styles.buttonDisabled]}
+            onPress={handleSkip}
+            activeOpacity={0.7}
+            disabled={loading}
+          >
+            <Text style={styles.skipText}>{loading ? t('survey.processing') : t('survey.skip')}</Text>
           </TouchableOpacity>
         )}
 
@@ -181,6 +203,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C3A19',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.4,
   },
   continueText: {
     fontSize: 16,

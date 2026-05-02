@@ -111,6 +111,7 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     language: res.language ?? 'en',
     multiProfiles: [],
     consentFlags: { imageRetention: false, corrections: false },
+    hasCompletedSurvey: res.hasCompletedSurvey,
   };
   return { user, hasCompletedSurvey: res.hasCompletedSurvey };
 }
