@@ -12,6 +12,7 @@ import ListNavigator from './ListNavigator';
 import RecommendNavigator from './RecommendNavigator';
 import ProfileNavigator from './ProfileNavigator';
 import { Colors } from '../constants/colors';
+import { FixedTabLabels } from '../constants/strings';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 type TabRoute = keyof MainTabParamList;
@@ -127,7 +128,6 @@ function getIcon(route: TabRoute, active: boolean) {
 // ── Custom tab bar ─────────────────────────────────────────────────────────────
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
-  const { t }      = useTranslation();
   const insets      = useSafeAreaInsets();
   const activeRoute = state.routes[state.index].name as TabRoute;
 
@@ -143,10 +143,10 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   function getTabLabel(route: TabRoute) {
     switch (route) {
-      case 'SearchTab':    return t('tab.search').toUpperCase();
-      case 'ListTab':      return t('tab.list').toUpperCase();
-      case 'RecommendTab': return t('tab.recommend').toUpperCase();
-      case 'ProfileTab':   return t('tab.profile').toUpperCase();
+      case 'SearchTab':    return FixedTabLabels.search;
+      case 'ListTab':      return FixedTabLabels.list;
+      case 'RecommendTab': return FixedTabLabels.community;
+      case 'ProfileTab':   return FixedTabLabels.profile;
       default:             return '';
     }
   }

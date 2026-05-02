@@ -46,3 +46,10 @@ export const Strings = {
   purchased: '구매 완료',
   notPurchased: '구매 예정',
 };
+
+export const FixedTabLabels = {
+  search: 'SEARCH',
+  list: 'LIST',
+  community: 'COMMUNITY',
+  profile: 'PROFILE',
+};
