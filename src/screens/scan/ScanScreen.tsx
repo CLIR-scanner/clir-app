@@ -105,6 +105,7 @@ export default function ScanScreen({ navigation }: Props) {
   const [scanPreviewUri, setScanPreviewUri]   = useState<string | null>(null);
   const [favLoading, setFavLoading]           = useState(false);
   const [favorited,  setFavorited]            = useState(false);
+  const [cameraError, setCameraError]         = useState<string | null>(null);
 
   const [cameraActive, setCameraActive] = useState(true);
   const [isOCRMode,    setIsOCRMode]    = useState(false);
@@ -141,6 +142,7 @@ export default function ScanScreen({ navigation }: Props) {
       setProcessing(false);
       setScanResult(null);
       setScanPreviewUri(null);
+      setCameraError(null);
       circleScale.setValue(0);
       sheetY.setValue(320);
 
@@ -625,8 +627,20 @@ export default function ScanScreen({ navigation }: Props) {
           active={!isOCRMode && !processingRef.current}
           barcodeTypes={BARCODE_TYPES}
           onBarcodeScanned={handleBarcodeScanned}
+          onError={(reason, raw) => {
+            const message = raw && typeof raw === 'object' && 'message' in raw
+              ? String((raw as { message: unknown }).message)
+              : reason;
+            setCameraError(message);
+          }}
         />
       )}
+      {cameraError && !scanResult ? (
+        <View style={styles.cameraErrorWrap} pointerEvents="none">
+          <Text style={styles.cameraErrorTitle}>{t('common.error')}</Text>
+          <Text style={styles.cameraErrorText}>{cameraError}</Text>
+        </View>
+      ) : null}
       {scanResult && scanPreviewUri ? (
         <Image
           source={{ uri: scanPreviewUri }}
@@ -1150,6 +1164,19 @@ const styles = StyleSheet.create({
 
   // Spinner
   spinnerWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  cameraErrorWrap: {
+    position: 'absolute',
+    top: GUIDE_TOP + GUIDE_H + 24,
+    left: 28,
+    right: 28,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.64)',
+  },
+  cameraErrorTitle: { color: Colors.white, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  cameraErrorText: { color: Colors.gray300, fontSize: 12, lineHeight: 17, textAlign: 'center' },
 
   // Bottom camera button
   bottomBar: {

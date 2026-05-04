@@ -18,6 +18,7 @@ import {
   type DietCatalog,
 } from '../../services/diet.service';
 import { getCatalogLanguage } from '../../constants/languages';
+import { getCatalogCategoryDisplayName, getIngredientDisplayName } from '../../lib/display-names';
 
 type Nav   = NativeStackNavigationProp<ProfileStackParamList, 'MultiProfileEdit'>;
 type Route = RouteProp<ProfileStackParamList, 'MultiProfileEdit'>;
@@ -352,7 +353,9 @@ export default function MultiProfileEditScreen() {
                 <TouchableOpacity onPress={() => toggleAllInCategory(cat.code)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   {checked > 0 ? <CheckboxFilled /> : <CheckboxEmpty />}
                 </TouchableOpacity>
-                <Text style={[styles.accordionLabel, checked > 0 && styles.accordionLabelChecked]}>{cat.name}</Text>
+                <Text style={[styles.accordionLabel, checked > 0 && styles.accordionLabelChecked]}>
+                  {getCatalogCategoryDisplayName(cat, currentLanguage)}
+                </Text>
                 <Text style={styles.accordionCount}>{checked > 0 ? `${checked}/${totalItems}` : ''}</Text>
                 <ChevronRight />
               </TouchableOpacity>
@@ -363,7 +366,9 @@ export default function MultiProfileEditScreen() {
                     return (
                       <TouchableOpacity key={item.name} style={styles.childRow} onPress={() => toggleItem(item)} activeOpacity={0.7}>
                         {isChecked ? <CheckboxFilled size={18} /> : <CheckboxEmpty size={18} />}
-                        <Text style={styles.childLabel}>{item.name}</Text>
+                        <Text style={styles.childLabel}>
+                          {getIngredientDisplayName(item, currentLanguage)}
+                        </Text>
                       </TouchableOpacity>
                     );
                   })}

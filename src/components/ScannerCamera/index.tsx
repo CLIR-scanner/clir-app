@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { StyleProp, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { CameraView, BarcodeScanningResult } from 'expo-camera';
 
 export type ScannerBarcodeType =
@@ -16,6 +16,7 @@ export interface ScannerCameraProps {
   active?: boolean;
   onBarcodeScanned?: (result: ScannerResult) => void;
   barcodeTypes?: readonly ScannerBarcodeType[];
+  onReady?: () => void;
   /** 웹 shim 전용 — 네이티브는 useCameraPermissions로 처리되므로 무시. */
   onError?: (reason: 'DENIED' | 'UNAVAILABLE' | 'UNKNOWN', raw?: unknown) => void;
 }
@@ -25,7 +26,7 @@ export interface ScannerCameraHandle {
 }
 
 const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
-  ({ style, facing = 'back', active = true, onBarcodeScanned, barcodeTypes }, ref) => {
+  ({ style, facing = 'back', active = true, onBarcodeScanned, barcodeTypes, onReady, onError }, ref) => {
     const cameraRef = useRef<CameraView>(null);
 
     useImperativeHandle(ref, () => ({
@@ -42,19 +43,30 @@ const ScannerCamera = forwardRef<ScannerCameraHandle, ScannerCameraProps>(
       : undefined;
 
     return (
-      <CameraView
-        ref={cameraRef}
-        style={style}
-        facing={facing}
-        barcodeScannerSettings={
-          barcodeTypes ? { barcodeTypes: [...barcodeTypes] } : undefined
-        }
-        onBarcodeScanned={handle}
-      />
+      <View style={style} collapsable={false}>
+        <CameraView
+          ref={cameraRef}
+          style={styles.camera}
+          facing={facing}
+          active
+          mode="picture"
+          autofocus="on"
+          barcodeScannerSettings={
+            barcodeTypes ? { barcodeTypes: [...barcodeTypes] } : undefined
+          }
+          onBarcodeScanned={handle}
+          onCameraReady={onReady}
+          onMountError={event => onError?.('UNKNOWN', event)}
+        />
+      </View>
     );
   },
 );
 
 ScannerCamera.displayName = 'ScannerCamera';
+
+const styles = StyleSheet.create({
+  camera: StyleSheet.absoluteFillObject,
+});
 
 export default ScannerCamera;

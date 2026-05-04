@@ -11,6 +11,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../lib/supabase';
 import { apiFetch, setAuthToken, clearAuthToken, ApiError } from '../lib/api';
 import { User, SurveyData } from '../types';
+import { DEFAULT_LANGUAGE } from '../constants/languages';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -108,7 +109,7 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     allergyProfile: res.allergyProfile,
     dietaryRestrictions: res.dietaryRestrictions,
     sensitivityLevel: res.sensitivityLevel,
-    language: res.language ?? 'en',
+    language: res.language ?? DEFAULT_LANGUAGE,
     multiProfiles: [],
     consentFlags: { imageRetention: false, corrections: false },
     hasCompletedSurvey: res.hasCompletedSurvey,

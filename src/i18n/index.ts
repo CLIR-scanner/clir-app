@@ -6,6 +6,7 @@ import ja from './ja';
 import zh from './zh';
 import es from './es';
 import fr from './fr';
+import { DEFAULT_LANGUAGE } from '../constants/languages';
 
 i18n
   .use(initReactI18next)
@@ -18,7 +19,7 @@ i18n
       es: { translation: es },
       fr: { translation: fr },
     },
-    lng: 'en',
+    lng: DEFAULT_LANGUAGE,
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,

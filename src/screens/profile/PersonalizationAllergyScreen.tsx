@@ -21,6 +21,7 @@ import {
 } from '../../services/diet.service';
 import { useUserStore } from '../../store/user.store';
 import { getCatalogLanguage } from '../../constants/languages';
+import { getCatalogCategoryDisplayName, getIngredientDisplayName } from '../../lib/display-names';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG         = '#F9FFF3';
@@ -303,7 +304,7 @@ export default function PersonalizationAllergyScreen() {
                   }
                 </TouchableOpacity>
                 <Text style={[styles.accordionLabel, checked > 0 && styles.accordionLabelChecked]}>
-                  {cat.name}
+                  {getCatalogCategoryDisplayName(cat, currentLanguage)}
                 </Text>
                 <Text style={styles.accordionCount}>
                   {checked > 0 ? `${checked}/${totalItems}` : ''}
@@ -323,7 +324,9 @@ export default function PersonalizationAllergyScreen() {
                         activeOpacity={0.7}
                       >
                         {isChecked ? <CheckboxFilled size={18} /> : <CheckboxEmpty size={18} />}
-                        <Text style={styles.childLabel}>{item.name}</Text>
+                        <Text style={styles.childLabel}>
+                          {getIngredientDisplayName(item, currentLanguage)}
+                        </Text>
                       </TouchableOpacity>
                     );
                   })}

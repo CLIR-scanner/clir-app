@@ -11,10 +11,10 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
-import { getAllergenDisplay } from '../../services/allergen.service';
 import { Colors } from '../../constants/colors';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import { DIET_AVOIDED_CATEGORIES } from '../../constants/dietary';
+import { getAllergenDisplayName } from '../../lib/display-names';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
@@ -153,7 +153,7 @@ export default function ProfileScreen() {
               <View style={styles.chips}>
                 {activeProfile.allergyProfile.map(item => (
                   <View key={item} style={styles.chip}>
-                    <Text style={styles.chipText}>{getAllergenDisplay(item).name}</Text>
+                    <Text style={styles.chipText}>{getAllergenDisplayName(item, currentLanguage)}</Text>
                   </View>
                 ))}
               </View>
