@@ -24,6 +24,7 @@ import {
   fetchAllergenCatalog, AllergenCatalog,
 } from '../../services/allergen.service';
 import * as AuthService from '../../services/auth.service';
+import { getCatalogCategoryDisplayName, getIngredientDisplayName } from '../../lib/display-names';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyDocResult'>;
@@ -155,12 +156,21 @@ export default function SurveyAllergyDocResultScreen() {
   const activeCategory = modalCategory && catalog
     ? catalog.categories.find(c => c.code === modalCategory || c.name === modalCategory)
     : null;
-  const candidates = activeCategory
-    ? activeCategory.items.map(i => i.name)
-    : [];
+  const candidates = activeCategory ? activeCategory.items : [];
   const filteredCandidates = modalSearch.trim()
-    ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
+    ? candidates.filter(c => {
+        const query = modalSearch.toLowerCase();
+        return c.name.toLowerCase().includes(query) ||
+          getIngredientDisplayName(c, currentLanguage).toLowerCase().includes(query);
+      })
     : candidates;
+
+  function getCategoryLabel(category: string): string {
+    const catalogCategory = catalog?.categories.find(c => c.code === category || c.name === category);
+    return catalogCategory
+      ? getCatalogCategoryDisplayName(catalogCategory, currentLanguage)
+      : getCatalogCategoryDisplayName(category, currentLanguage);
+  }
 
   return (
     <View style={styles.container}>
@@ -176,7 +186,7 @@ export default function SurveyAllergyDocResultScreen() {
 
         {categories.map(group => (
           <View key={group.category} style={styles.group}>
-            <Text style={styles.groupLabel}>{group.category}</Text>
+            <Text style={styles.groupLabel}>{getCategoryLabel(group.category)}</Text>
             <View style={styles.chips}>
               {group.items.map(item => (
                 <TouchableOpacity
@@ -185,7 +195,7 @@ export default function SurveyAllergyDocResultScreen() {
                   onPress={() => toggleItem(item)}
                 >
                   <Text style={[styles.chipText, selected.has(item) && styles.chipTextSelected]}>
-                    {item}
+                    {getIngredientDisplayName(item, currentLanguage)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -233,10 +243,10 @@ export default function SurveyAllergyDocResultScreen() {
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalTitle}>
-                  {t('survey.selectCategoryTitle', { category: modalCategory })}
+                  {t('survey.selectCategoryTitle', { category: modalCategory ? getCategoryLabel(modalCategory) : '' })}
                 </Text>
                 <Text style={styles.modalSubtitle}>
-                  {t('survey.selectCategorySubtitle', { category: modalCategory ?? '' })}
+                  {t('survey.selectCategorySubtitle', { category: modalCategory ? getCategoryLabel(modalCategory) : '' })}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setModalCategory(null)}>
@@ -246,27 +256,20 @@ export default function SurveyAllergyDocResultScreen() {
             <TextInput style={styles.searchInput} value={modalSearch} onChangeText={setModalSearch} placeholder={t('survey.searchIngredients')} placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
-                {(catalog?.categories.map(c => c.code) ?? [])
-                  .filter(name =>
-                    !categories.some(c => c.category.toLowerCase() === name.toLowerCase() ) &&
-                    (catModalSearch.trim()
-                      ? name.toLowerCase().includes(catModalSearch.toLowerCase())
-                      : true),
-                  )
-                  .map(name => (
+                {filteredCandidates.map(item => (
                     <TouchableOpacity
-                      key={name}
-                      style={[styles.chip, catModalSelected.has(name) && styles.chipSelected]}
+                      key={item.name}
+                      style={[styles.chip, modalSelected.has(item.name) && styles.chipSelected]}
                       onPress={() => {
-                        setCatModalSelected(prev => {
+                        setModalSelected(prev => {
                           const next = new Set(prev);
-                          next.has(name) ? next.delete(name) : next.add(name);
+                          next.has(item.name) ? next.delete(item.name) : next.add(item.name);
                           return next;
                         });
                       }}
                     >
-                      <Text style={[styles.chipText, catModalSelected.has(name) && styles.chipTextSelected]}>
-                        {name}
+                      <Text style={[styles.chipText, modalSelected.has(item.name) && styles.chipTextSelected]}>
+                        {getIngredientDisplayName(item, currentLanguage)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -296,10 +299,13 @@ export default function SurveyAllergyDocResultScreen() {
             <TextInput style={styles.searchInput} value={catModalSearch} onChangeText={setCatModalSearch} placeholder={t('survey.searchCategories')} placeholderTextColor={Colors.gray300} />
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.modalChips}>
-                {(catalog?.categories.map(c => c.name) ?? [])
+                {(catalog?.categories.map(c => c.code) ?? [])
                   .filter((name: string) =>
                     !categories.some(c => c.category.toLowerCase() === name.toLowerCase()) &&
-                    (catModalSearch.trim() ? name.toLowerCase().includes(catModalSearch.toLowerCase()) : true),
+                    (catModalSearch.trim()
+                      ? name.toLowerCase().includes(catModalSearch.toLowerCase()) ||
+                        getCatalogCategoryDisplayName(name, currentLanguage).toLowerCase().includes(catModalSearch.toLowerCase())
+                      : true),
                   )
                   .map((name: string) => (
                     <TouchableOpacity
@@ -307,7 +313,9 @@ export default function SurveyAllergyDocResultScreen() {
                       style={[styles.chip, catModalSelected.has(name) && styles.chipSelected]}
                       onPress={() => setCatModalSelected(prev => { const next = new Set(prev); next.has(name) ? next.delete(name) : next.add(name); return next; })}
                     >
-                      <Text style={[styles.chipText, catModalSelected.has(name) && styles.chipTextSelected]}>{name}</Text>
+                      <Text style={[styles.chipText, catModalSelected.has(name) && styles.chipTextSelected]}>
+                        {getCategoryLabel(name)}
+                      </Text>
                     </TouchableOpacity>
                   ))}
               </View>

@@ -11,6 +11,7 @@ import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } fro
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
 import VegetarianDietConfirmCircle from '../../components/common/VegetarianDietConfirmCircle';
+import { getCatalogCategoryDisplayName } from '../../lib/display-names';
 
 // 각 subcomponent 에서 동일하게 호출 — 모듈 캐시 덕에 실제 fetch 는 1회만 발생.
 function useCategoryCodes(): string[] {
@@ -202,6 +203,7 @@ function StepAllergyIngredients({ selected, onChange, onNext, isFinal }: {
   const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [modalSel, setModalSel] = useState<string[]>([]);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
   const categoryCodes = useCategoryCodes();
   const available = categoryCodes.filter(c => !selected.has(c));
 
@@ -230,7 +232,9 @@ function StepAllergyIngredients({ selected, onChange, onNext, isFinal }: {
             key={cat} style={[s.option, s.optionSelected]}
             onPress={() => toggleItem(cat)} activeOpacity={0.8}
           >
-            <Text style={[s.optionLabel, s.optionLabelSel]}>{cat}</Text>
+            <Text style={[s.optionLabel, s.optionLabelSel]}>
+              {getCatalogCategoryDisplayName(cat, currentLanguage)}
+            </Text>
             <Text style={[s.optionDesc, s.optionDescSel]}>{t('multiProfileAdd.tapToRemove')}</Text>
           </TouchableOpacity>
         ))}
@@ -255,7 +259,9 @@ function StepAllergyIngredients({ selected, onChange, onNext, isFinal }: {
                           key={cat} style={s.modalItem}
                           onPress={() => setModalSel(p => checked ? p.filter(c => c !== cat) : [...p, cat])}
                         >
-                          <Text style={s.modalItemText}>{cat}</Text>
+                          <Text style={s.modalItemText}>
+                            {getCatalogCategoryDisplayName(cat, currentLanguage)}
+                          </Text>
                           <View style={[s.checkbox, checked && s.checkboxChecked]} />
                         </TouchableOpacity>
                       );
@@ -367,6 +373,7 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalSel, setModalSel] = useState<string[]>([]);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
   const available = DIET_RESTRICTION_CATEGORIES.filter(c => !items.includes(c));
   const titleLabel = DIET_TITLES[dietKey] ? t(`survey.dietTitles.${dietKey}`) : dietKey;
 
@@ -401,7 +408,9 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
             onPress={() => isEditing && onChange(items.filter(i => i !== item))}
             activeOpacity={isEditing ? 0.7 : 1}
           >
-            <Text style={s.optionLabelSel}>{item}</Text>
+            <Text style={s.optionLabelSel}>
+              {getCatalogCategoryDisplayName(item, currentLanguage)}
+            </Text>
             {isEditing && <Text style={{ color: '#FFFFFF', fontSize: 16 }}>✕</Text>}
           </TouchableOpacity>
         ))}
@@ -428,7 +437,9 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
                           key={cat} style={s.modalItem}
                           onPress={() => setModalSel(p => checked ? p.filter(c => c !== cat) : [...p, cat])}
                         >
-                          <Text style={s.modalItemText}>{cat}</Text>
+                          <Text style={s.modalItemText}>
+                            {getCatalogCategoryDisplayName(cat, currentLanguage)}
+                          </Text>
                           <View style={[s.checkbox, checked && s.checkboxChecked]} />
                         </TouchableOpacity>
                       );

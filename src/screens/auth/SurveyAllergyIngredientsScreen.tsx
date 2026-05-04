@@ -14,6 +14,7 @@ import { Colors } from '../../constants/colors';
 import { getCatalogLanguage } from '../../constants/languages';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
+import { getCatalogCategoryDisplayName, getIngredientDisplayName } from '../../lib/display-names';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
@@ -77,9 +78,13 @@ export default function SurveyAllergyIngredientsScreen() {
   const activeCategory = modalCategory && catalog
     ? catalog.categories.find(c => c.code === modalCategory)
     : null;
-  const candidates = activeCategory ? activeCategory.items.map(i => i.name) : [];
+  const candidates = activeCategory ? activeCategory.items : [];
   const filtered = modalSearch.trim()
-    ? candidates.filter(c => c.toLowerCase().includes(modalSearch.toLowerCase()))
+    ? candidates.filter(c => {
+        const query = modalSearch.toLowerCase();
+        return c.name.toLowerCase().includes(query) ||
+          getIngredientDisplayName(c, currentLanguage).toLowerCase().includes(query);
+      })
     : candidates;
 
   return (
@@ -102,11 +107,13 @@ export default function SurveyAllergyIngredientsScreen() {
           const items = selection[cat.code] ?? [];
           return (
             <View key={cat.code} style={styles.group}>
-              <Text style={styles.groupLabel}>{cat.name}</Text>
+              <Text style={styles.groupLabel}>{getCatalogCategoryDisplayName(cat, currentLanguage)}</Text>
               <View style={styles.chips}>
                 {items.map(item => (
                   <View key={item} style={[styles.chip, styles.chipSelected]}>
-                    <Text style={[styles.chipText, styles.chipTextSelected]}>{item}</Text>
+                    <Text style={[styles.chipText, styles.chipTextSelected]}>
+                      {getIngredientDisplayName(item, currentLanguage)}
+                    </Text>
                   </View>
                 ))}
                 <TouchableOpacity style={styles.addChip} onPress={() => openModal(cat.code)}>
@@ -145,10 +152,18 @@ export default function SurveyAllergyIngredientsScreen() {
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalTitle}>
-                  {t('survey.selectCategoryTitle', { category: activeCategory?.name ?? modalCategory })}
+                  {t('survey.selectCategoryTitle', {
+                    category: activeCategory
+                      ? getCatalogCategoryDisplayName(activeCategory, currentLanguage)
+                      : modalCategory,
+                  })}
                 </Text>
                 <Text style={styles.modalSubtitle}>
-                  {t('survey.selectCategorySubtitle', { category: activeCategory?.name ?? modalCategory ?? '' })}
+                  {t('survey.selectCategorySubtitle', {
+                    category: activeCategory
+                      ? getCatalogCategoryDisplayName(activeCategory, currentLanguage)
+                      : modalCategory ?? '',
+                  })}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setModalCategory(null)}>
@@ -172,12 +187,12 @@ export default function SurveyAllergyIngredientsScreen() {
               <View style={styles.modalChips}>
                 {filtered.map(item => (
                   <TouchableOpacity
-                    key={item}
-                    style={[styles.chip, modalSelected.has(item) && styles.chipSelected]}
-                    onPress={() => toggleModalItem(item)}
+                    key={item.name}
+                    style={[styles.chip, modalSelected.has(item.name) && styles.chipSelected]}
+                    onPress={() => toggleModalItem(item.name)}
                   >
-                    <Text style={[styles.chipText, modalSelected.has(item) && styles.chipTextSelected]}>
-                      {item}
+                    <Text style={[styles.chipText, modalSelected.has(item.name) && styles.chipTextSelected]}>
+                      {getIngredientDisplayName(item, currentLanguage)}
                     </Text>
                   </TouchableOpacity>
                 ))}

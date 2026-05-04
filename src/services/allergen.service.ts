@@ -69,14 +69,14 @@ const catalogPromise: Partial<Record<'en' | 'ko', Promise<AllergenCatalog>>> = {
 
 /**
  * 카탈로그를 fetch. 모듈 캐시 히트 시 즉시 반환. 동시 호출 merge.
- * `lang='en'` 기준으로 받지만, nameKo 표시는 BOOTSTRAP_DISPLAY 의 한글을 유지한다
- * (BE 응답이 단일 lang 필드만 내려주므로).
+ * BE 알러지 카탈로그는 영어 canonical 이름을 SSOT로 내려주고, FE 표시 레이어에서
+ * 앱 언어에 맞게 번역한다.
  */
 export async function fetchAllergenCatalog(lang: 'en' | 'ko' = 'en'): Promise<AllergenCatalog> {
   if (catalogCache[lang]) return catalogCache[lang];
   if (catalogPromise[lang]) return catalogPromise[lang];
 
-  const promise = apiFetch<AllergenCatalog>(`/allergens/catalog?lang=${lang}`)
+  const promise = apiFetch<AllergenCatalog>('/allergens/catalog?lang=en')
     .then(res => {
       catalogCache[lang] = res;
       // allergens 응답으로 liveDisplay 갱신 (name 은 lang, nameKo 는 부트스트랩 유지).

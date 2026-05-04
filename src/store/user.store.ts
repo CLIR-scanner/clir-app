@@ -3,6 +3,7 @@ import { UserStore, User, Profile } from '../types';
 import { signOut as authSignOut, submitSurvey } from '../services/auth.service';
 import { useScanStore } from './scan.store';
 import { useListStore } from './list.store';
+import { DEFAULT_LANGUAGE } from '../constants/languages';
 
 const EMPTY_PROFILE: Profile = {
   id: '',
@@ -15,7 +16,7 @@ const EMPTY_PROFILE: Profile = {
 const EMPTY_USER: User = {
   ...EMPTY_PROFILE,
   email: '',
-  language: 'en',
+  language: DEFAULT_LANGUAGE,
   multiProfiles: [],
   consentFlags: { imageRetention: false, corrections: false },
 };
@@ -44,7 +45,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
     const normalized: User = {
       ...user,
       multiProfiles: user.multiProfiles ?? [],
-      language: user.language ?? currentLanguage ?? 'en',
+      language: user.language ?? currentLanguage ?? DEFAULT_LANGUAGE,
     };
 
     set(state => ({

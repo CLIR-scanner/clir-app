@@ -12,6 +12,7 @@ import { getCatalogLanguage } from '../../constants/languages';
 import { useUserStore } from '../../store/user.store';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { ApiError } from '../../services/auth.service';
+import { getCatalogCategoryDisplayName, getIngredientDisplayName } from '../../lib/display-names';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'MyProfileEdit'>;
 
@@ -251,7 +252,9 @@ export default function MyProfileEditScreen() {
                     )}
                   </TouchableOpacity>
                   <View style={styles.categoryLabelWrap}>
-                    <Text style={styles.categoryLabel}>{cat.name}</Text>
+                    <Text style={styles.categoryLabel}>
+                      {getCatalogCategoryDisplayName(cat, currentLanguage)}
+                    </Text>
                     {checkedCount > 0 && (
                       <Text style={styles.categoryCount}>{checkedCount}/{totalItems}</Text>
                     )}
@@ -271,7 +274,9 @@ export default function MyProfileEditScreen() {
                           activeOpacity={0.7}
                         >
                           <View style={[styles.checkbox, checked && styles.checkboxChecked]} />
-                          <Text style={styles.itemText}>{item.name}</Text>
+                          <Text style={styles.itemText}>
+                            {getIngredientDisplayName(item, currentLanguage)}
+                          </Text>
                         </TouchableOpacity>
                       );
                     })}
