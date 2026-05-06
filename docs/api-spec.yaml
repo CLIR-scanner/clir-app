@@ -1153,6 +1153,39 @@ paths:
                 error: FORBIDDEN
                 message: 관리자 권한이 필요합니다.
 
+  /admin/beta-metrics:
+    get:
+      tags: [Admin]
+      summary: 클로즈드 베타 코호트별 측정치 + 일자별 시계열
+      description: |
+        `clir-api/docs/observability.md §베타 메트릭` 의 6개 집계 + 14일 시계열을 한 번에 반환.
+        서버 60s 인메모리 캐시 (구간 동일 시 재사용). 부분 실패 시 metric.error 슬롯에 메시지.
+        ADMIN_TOKEN 필요. 응답에 PII 미포함. CLIR (RN 앱) 은 호출하지 않음 — contract 동기화용.
+      security:
+        - AdminToken: []
+      responses:
+        '200':
+          description: 베타 메트릭 응답 (per-metric error 슬롯 포함)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BetaMetrics'
+        '403':
+          description: 관리자 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: FORBIDDEN
+                message: 관리자 권한이 필요합니다.
+        '503':
+          description: ADMIN_TOKEN 미설정 또는 DB 사용 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 # ─────────────────────────────────────
 # Phase 2 — 멀티 프로필
 # ─────────────────────────────────────
@@ -1469,6 +1502,13 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Supabase Auth access token
+    AdminToken:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: |
+        ADMIN_TOKEN 환경변수에 설정된 고정 토큰. /admin/* 경로 보호용.
+        Supabase JWT 와 별개의 자격증명.
 
   schemas:
 
@@ -2065,6 +2105,125 @@ components:
           example: false
         ladderStage:
           type: integer
+
+    # ── Closed beta dashboard (GET /admin/beta-metrics) ─────────────────────
+    # CLIR (RN 앱) 은 호출하지 않지만 contract 동기화 규칙(CLAUDE.md) 유지.
+
+    BetaCohort:
+      type: string
+      enum: [us-allergy, us-ka, us-veg]
+
+    BetaMetrics:
+      type: object
+      required:
+        - generatedAt
+        - cacheTtlSeconds
+        - thresholds
+        - activation
+        - retention
+        - multiProfile
+        - koreanShare
+        - feedback
+        - costGuard
+        - scansTimeseries
+        - caveats
+      properties:
+        generatedAt:     { type: string, format: date-time }
+        cacheTtlSeconds: { type: integer, example: 60 }
+        thresholds:      { $ref: '#/components/schemas/BetaThresholds' }
+        activation:      { $ref: '#/components/schemas/BetaMetricByCohort' }
+        retention:       { $ref: '#/components/schemas/BetaMetricByCohort' }
+        multiProfile:    { $ref: '#/components/schemas/BetaMultiProfile' }
+        koreanShare:     { $ref: '#/components/schemas/BetaKoreanShare' }
+        feedback:        { $ref: '#/components/schemas/BetaMetricByCohort' }
+        costGuard:       { $ref: '#/components/schemas/BetaMetricByCohort' }
+        scansTimeseries: { $ref: '#/components/schemas/BetaScansTimeseries' }
+        caveats:
+          type: array
+          items: { type: string }
+
+    BetaThresholds:
+      type: object
+      properties:
+        activationPct:   { type: object, additionalProperties: { type: number } }
+        d3RetentionPct:  { type: object, additionalProperties: { type: number } }
+        thumbsUpPct:     { type: number, example: 60 }
+        correctionPct:   { type: object, additionalProperties: { type: number } }
+        costPerScanUsd:  { type: object, additionalProperties: { type: number } }
+        stage4Pct:       { type: object, additionalProperties: { type: number } }
+        multiProfilePct: { type: number, example: 30 }
+        koreanSharePct:  { type: number, example: 30 }
+
+    BetaCohortRow:
+      type: object
+      properties:
+        cohort: { $ref: '#/components/schemas/BetaCohort' }
+        waitlistSignups:    { type: integer, nullable: true }
+        signedUp:           { type: integer, nullable: true }
+        scannedAtLeastOnce: { type: integer, nullable: true }
+        activationPct:      { type: number,  nullable: true }
+        cohortSize:         { type: integer, nullable: true }
+        d3Retained:         { type: integer, nullable: true }
+        d3Pct:              { type: number,  nullable: true }
+        thumbsUp:           { type: integer, nullable: true }
+        thumbsDown:         { type: integer, nullable: true }
+        feedbackTotal:      { type: integer, nullable: true }
+        positivePct:        { type: number,  nullable: true }
+        correctionsCount:   { type: integer, nullable: true }
+        correctionPct:      { type: number,  nullable: true }
+        scans:              { type: integer, nullable: true }
+        costUsd:            { type: number,  nullable: true }
+        avgCostUsd:         { type: number,  nullable: true }
+        stage4Count:        { type: integer, nullable: true }
+        stage4Pct:          { type: number,  nullable: true }
+        pass:               { type: boolean, nullable: true }
+
+    BetaMetricByCohort:
+      type: object
+      required: [error, rows]
+      properties:
+        error: { type: string, nullable: true }
+        rows:
+          type: array
+          items: { $ref: '#/components/schemas/BetaCohortRow' }
+
+    BetaMultiProfile:
+      type: object
+      required: [error]
+      properties:
+        error:                  { type: string,  nullable: true }
+        cohortSize:             { type: integer, nullable: true }
+        usersWithMemberProfile: { type: integer, nullable: true }
+        multiProfilePct:        { type: number,  nullable: true }
+        pass:                   { type: boolean, nullable: true }
+
+    BetaKoreanShare:
+      type: object
+      required: [error]
+      properties:
+        error:       { type: string,  nullable: true }
+        totalScans:  { type: integer, nullable: true }
+        koreanScans: { type: integer, nullable: true }
+        koreanPct:   { type: number,  nullable: true }
+        pass:        { type: boolean, nullable: true }
+
+    BetaScansTimeseries:
+      type: object
+      required: [error, points, windowDays]
+      properties:
+        error:      { type: string, nullable: true }
+        windowDays: { type: integer, example: 14 }
+        points:
+          type: array
+          items:
+            type: object
+            properties:
+              day:        { type: string, format: date }
+              cohort:     { $ref: '#/components/schemas/BetaCohort' }
+              scans:      { type: integer }
+              costUsd:    { type: number }
+              thumbsUp:   { type: integer }
+              thumbsDown: { type: integer }
 
   responses:
 
