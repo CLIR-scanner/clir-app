@@ -239,6 +239,16 @@ export interface QAAnswer {
   createdAt: string;
 }
 
+export interface MagazineItem {
+  id: string;
+  title: string;
+  body: string;
+  image: string;
+  category?: string;
+  publishedAt: string;
+  isBookmarked?: boolean;
+}
+
 // ─── Alternatives ────────────────────────────────────────────────────────────
 
 export type AlternativeReason = 'same_category' | 'brand_match' | 'user_frequent' | 'user_favorite' | 'fallback';
@@ -495,6 +505,8 @@ export type RecommendStackParamList = {
   SimilarUsersFavorites: undefined;
   QAScreen: undefined;
   QADetail: { questionId: string };
+  MagazineScreen: undefined;
+  MagazineDetail: { articleId: string };
   RecommendProductDetail: { product: Product };
 };
 

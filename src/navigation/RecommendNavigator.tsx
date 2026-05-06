@@ -8,6 +8,8 @@ import SimilarUsersFavoritesScreen from '../screens/recommend/SimilarUsersFavori
 import SearchProductDetailScreen from '../screens/search/SearchProductDetailScreen';
 import QAScreen from '../screens/recommend/QAScreen';
 import QADetailScreen from '../screens/recommend/QADetailScreen';
+import MagazineScreen from '../screens/recommend/MagazineScreen';
+import MagazineDetailScreen from '../screens/recommend/MagazineDetailScreen';
 
 const Stack = createNativeStackNavigator<RecommendStackParamList>();
 const RecommendProductDetailScreen = SearchProductDetailScreen as unknown as React.ComponentType<
@@ -22,6 +24,8 @@ export default function RecommendNavigator() {
       <Stack.Screen name="SimilarUsersFavorites" component={SimilarUsersFavoritesScreen} />
       <Stack.Screen name="QAScreen" component={QAScreen} />
       <Stack.Screen name="QADetail" component={QADetailScreen} />
+      <Stack.Screen name="MagazineScreen" component={MagazineScreen} />
+      <Stack.Screen name="MagazineDetail" component={MagazineDetailScreen} />
       <Stack.Screen name="RecommendProductDetail" component={RecommendProductDetailScreen} />
     </Stack.Navigator>
   );

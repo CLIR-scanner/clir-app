@@ -20,10 +20,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { Product, RecommendStackParamList, RiskLevel } from '../../types';
+import { MagazineItem, Product, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import { getWeekendPopular } from '../../services/recommend.service';
+import { getMagazineItems, getQAQuestions, getWeekendPopular } from '../../services/recommend.service';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
@@ -70,8 +70,6 @@ type DummyProduct = {
 };
 
 type ProductPreview = DummyProduct;
-type QAItem       = { id: string; title: string; user: string; date: string };
-type MagazineItem = { id: string; title: string; description: string; image: string };
 
 const SIMILAR_PRODUCTS: (DummyProduct & { featuredReview: string })[] = [
   { id: 's1', name: 'Nutella',             brand: 'Ferrero',   riskLevel: 'danger',  rating: 4.90, reviewCount: 2391,
@@ -85,23 +83,6 @@ const SIMILAR_PRODUCTS: (DummyProduct & { featuredReview: string })[] = [
     featuredReview: '"Tastes amazing but definitely not safe for peanut allergies. The label is clear about it. Would love a peanut-free version — please make one, Mars!"' },
 ];
 
-const QA_ITEMS: QAItem[] = [
-  { id: 'q1', title: 'Is oat milk safe for dairy allergy?',      user: 'sarah_m',     date: '2026.04.19' },
-  { id: 'q2', title: 'Best gluten-free snacks recommendation?',  user: 'john_k',      date: '2026.04.19' },
-  { id: 'q3', title: 'Hidden peanut ingredients to watch out',   user: 'allergy_dad', date: '2026.04.19' },
-];
-
-const MAGAZINE_ITEMS: MagazineItem[] = [
-  { id: 'm1', title: 'Top 10 Allergen-Free Snacks of 2026',
-    description: "Magazine's contents will be placed here. Discover the best snacks free from top 8 allergens.",
-    image: 'https://loremflickr.com/400/240/healthy,snack,food?lock=31' },
-  { id: 'm2', title: 'Reading Food Labels Like a Pro',
-    description: "Magazine's contents will be placed here. A complete guide to ingredient lists and allergen warnings.",
-    image: 'https://loremflickr.com/400/240/food,label,package?lock=32' },
-  { id: 'm3', title: 'Vegan Substitutes That Actually Work',
-    description: "Magazine's contents will be placed here. Plant-based swaps that make recipes just as delicious.",
-    image: 'https://loremflickr.com/400/240/vegan,plant,food?lock=33' },
-];
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -495,8 +476,10 @@ export default function CommunityScreen({ navigation }: Props) {
   const [activeTab,    setActiveTab]    = useState<Tab>('Week Trends');
   const [sectionOrder, setSectionOrder] = useState<Tab[]>([...TABS]);
   const [showReorder,  setShowReorder]  = useState(false);
-  const [trendingProducts, setTrendingProducts] = useState<ProductPreview[]>([]);
-  const [trendingCategory, setTrendingCategory] = useState('all');
+  const [trendingProducts,  setTrendingProducts]  = useState<ProductPreview[]>([]);
+  const [trendingCategory,  setTrendingCategory]  = useState('all');
+  const [qaPreview,         setQaPreview]         = useState<QAQuestion[]>([]);
+  const [magazinePreview,   setMagazinePreview]   = useState<MagazineItem[]>([]);
 
   const mainScrollRef    = useRef<ScrollView>(null);
   const sectionY         = useRef<Partial<Record<Tab, number>>>({});
@@ -535,13 +518,19 @@ export default function CommunityScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    getWeekendPopular()
-      .then(products => {
+    Promise.all([getWeekendPopular(), getQAQuestions(), getMagazineItems()])
+      .then(([products, questions, magazines]) => {
         if (cancelled) return;
         setTrendingProducts(products.map(toPreviewProduct));
+        setQaPreview(questions.filter(question => !question.isNotice).slice(0, 3));
+        setMagazinePreview(magazines.slice(0, 3));
       })
       .catch(() => {
-        if (!cancelled) setTrendingProducts([]);
+        if (!cancelled) {
+          setTrendingProducts([]);
+          setQaPreview([]);
+          setMagazinePreview([]);
+        }
       });
     return () => { cancelled = true; };
   }, []);
@@ -633,16 +622,21 @@ export default function CommunityScreen({ navigation }: Props) {
         return (
           <View style={styles.section}>
             <SectionHeader title={t('recommendUi.qa')} onPress={() => navigation.navigate('QAScreen')} />
-            {QA_ITEMS.map((item, idx) => (
+            {qaPreview.map((item, idx) => (
               <View key={item.id}>
-                <TouchableOpacity style={styles.qaRow} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.qaRow}
+                  onPress={() => navigation.navigate('QADetail', { questionId: item.id })}
+                  activeOpacity={0.7}
+                >
                   <Text style={styles.qaTitle}>{item.title}</Text>
+                  <Text style={styles.qaBody} numberOfLines={2}>{item.body}</Text>
                   <View style={styles.qaMeta}>
-                    <Text style={styles.qaUser}>{item.user}</Text>
-                    <Text style={styles.qaDate}>{item.date}</Text>
+                    <Text style={styles.qaUser}>{item.author}</Text>
+                    <Text style={styles.qaDate}>{item.answerCount} answers</Text>
                   </View>
                 </TouchableOpacity>
-                {idx < QA_ITEMS.length - 1 && <View style={styles.rowDivider} />}
+                {idx < qaPreview.length - 1 && <View style={styles.rowDivider} />}
               </View>
             ))}
           </View>
@@ -651,21 +645,25 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Magazine':
         return (
           <View style={styles.section}>
-            <SectionHeader title={t('recommendUi.magazine')} />
+            <SectionHeader title={t('recommendUi.magazine')} onPress={() => navigation.navigate('MagazineScreen')} />
             <FlatList
-              data={MAGAZINE_ITEMS}
+              data={magazinePreview}
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.magList}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.magCard} activeOpacity={0.85}>
+                <TouchableOpacity
+                  style={styles.magCard}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('MagazineDetail', { articleId: item.id })}
+                >
                   <View style={styles.magImgBox}>
                     <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                   </View>
                   <View style={styles.magContent}>
                     <Text style={styles.magTitle} numberOfLines={2}>{item.title}</Text>
-                    <Text style={styles.magDesc}  numberOfLines={4}>{item.description}</Text>
+                    <Text style={styles.magDesc}  numberOfLines={4}>{item.body}</Text>
                     <Text style={styles.magSeeMore}>{t('recommendUi.seeMore')}</Text>
                   </View>
                 </TouchableOpacity>
@@ -978,6 +976,7 @@ const styles = StyleSheet.create({
   // Q&A
   qaRow:   { paddingVertical: 12 },
   qaTitle: { fontSize: 14, fontWeight: '700', color: C.dark, letterSpacing: -0.266, marginBottom: 4 },
+  qaBody:  { fontSize: 12, fontWeight: '400', color: C.mid, lineHeight: 17, marginBottom: 6 },
   qaMeta:  { flexDirection: 'row', justifyContent: 'space-between' },
   qaUser:  { fontSize: 10, color: C.dark, letterSpacing: -0.19 },
   qaDate:  { fontSize: 10, color: C.dark, letterSpacing: -0.19 },

@@ -1,5 +1,5 @@
 // TODO: Real API 연동 시 이 파일의 구현부만 교체
-import { Product, QAAnswer, QAQuestion, RiskLevel } from '../types';
+import { MagazineItem, Product, QAAnswer, QAQuestion, RiskLevel } from '../types';
 
 type RankedProduct = Product & {
   favoriteCount: number;
@@ -262,4 +262,72 @@ export async function addQAAnswer(params: {
   };
   QA_ANSWERS = [...QA_ANSWERS, answer];
   return answer;
+}
+
+const MAGAZINE_ITEMS: MagazineItem[] = [
+  {
+    id: 'mag-001',
+    title: 'Top 10 Allergen-Free Snacks of 2026',
+    body: "Discover the best snacks free from top 8 allergens. We reviewed over 200 products so you don't have to — here are the safest and tastiest options available right now.",
+    image: 'https://loremflickr.com/800/500/healthy,snack,food?lock=101',
+    category: 'snack',
+    publishedAt: '2026-05-06T02:00:00Z',
+  },
+  {
+    id: 'mag-002',
+    title: 'Reading Food Labels Like a Pro',
+    body: 'A complete guide to ingredient lists and allergen warnings. From "may contain" disclaimers to hidden dairy names — learn exactly what to look for before you buy.',
+    image: 'https://loremflickr.com/800/500/food,label,package?lock=102',
+    category: 'guide',
+    publishedAt: '2026-05-05T08:30:00Z',
+  },
+  {
+    id: 'mag-003',
+    title: 'Vegan Substitutes That Actually Work',
+    body: 'Plant-based swaps that make recipes just as delicious. Eggs, dairy, gelatin — we tested the most popular alternatives so your allergy-friendly meals never feel like a compromise.',
+    image: 'https://loremflickr.com/800/500/vegan,plant,food?lock=103',
+    category: 'recipe',
+    publishedAt: '2026-05-04T14:00:00Z',
+  },
+  {
+    id: 'mag-004',
+    title: 'Hidden Peanut Ingredients You Might Miss',
+    body: 'Peanut oil, groundnut paste, mixed nut butter — these terms all mean peanut. This guide helps strict allergy profiles catch every hidden name before it becomes a risk.',
+    image: 'https://loremflickr.com/800/500/peanut,allergy,ingredient?lock=104',
+    category: 'guide',
+    publishedAt: '2026-05-03T10:00:00Z',
+  },
+  {
+    id: 'mag-005',
+    title: 'Grocery Shopping With Kids Who Have Allergies',
+    body: 'How to turn every shopping trip into a safe and empowering experience for allergy-conscious families. Tips from parents who have been navigating this for years.',
+    image: 'https://loremflickr.com/800/500/grocery,family,shopping?lock=105',
+    category: 'lifestyle',
+    publishedAt: '2026-05-02T09:00:00Z',
+  },
+];
+
+/**
+ * /recommend/magazine — 매거진 아티클 목록을 반환한다.
+ */
+export async function getMagazineItems(category?: string): Promise<MagazineItem[]> {
+  if (!category || category === 'all') return MAGAZINE_ITEMS;
+  return MAGAZINE_ITEMS.filter(item => item.category === category);
+}
+
+/**
+ * /recommend/magazine/:id — 매거진 아티클 단건 조회
+ */
+export async function getMagazineItem(id: string): Promise<MagazineItem | null> {
+  return MAGAZINE_ITEMS.find(m => m.id === id) ?? null;
+}
+
+/**
+ * /recommend/magazine/:id/bookmark — 북마크 토글
+ */
+export async function toggleMagazineBookmark(id: string): Promise<boolean> {
+  const item = MAGAZINE_ITEMS.find(m => m.id === id);
+  if (!item) return false;
+  item.isBookmarked = !item.isBookmarked;
+  return item.isBookmarked;
 }
