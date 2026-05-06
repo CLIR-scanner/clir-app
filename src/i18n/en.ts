@@ -318,6 +318,17 @@ const en = {
     similarPicks:     "Similar Users' Picks",
     qa:               'Q&A',
     magazine:         'Clir Magazine',
+    magazineTitle:    'Magazine',
+    magazineBookmark: 'Bookmark',
+    magazineHoursAgo: '{{count}} hours ago',
+    magazineDaysAgo:  '{{count}} days ago',
+    guidelineTitle:   'Community Guideline',
+    guidelineIntro:   'Q&A is a space to review product ingredients together and help everyone make safer choices.',
+    guidelineRuleProduct: 'Include the product name and brand when asking a question.',
+    guidelineRuleLabel:   'Share a clear ingredient label photo or OCR result when possible.',
+    guidelineRuleContext: 'Allergy and dietary safety can vary depending on each person’s profile.',
+    guidelineRuleEmergency: 'For emergencies or severe allergies, always confirm with a medical professional.',
+    guidelineFooter:  'The Clir Official Team may add notices or replies when we find incorrect information or risky advice.',
   },
 
   // ── Survey ───────────────────────────────────────────────────────────────

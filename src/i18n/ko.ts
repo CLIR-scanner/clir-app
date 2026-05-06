@@ -323,6 +323,17 @@ const ko = {
     similarPicks:     '비슷한 사용자 선택',
     qa:               'Q&A',
     magazine:         'Clir 매거진',
+    magazineTitle:    '매거진',
+    magazineBookmark: '북마크',
+    magazineHoursAgo: '{{count}}시간 전',
+    magazineDaysAgo:  '{{count}}일 전',
+    guidelineTitle:   '커뮤니티 가이드라인',
+    guidelineIntro:   'Q&A는 제품 성분을 함께 확인하고 더 안전한 선택을 돕기 위한 공간입니다.',
+    guidelineRuleProduct: '질문할 때 제품명과 브랜드명을 함께 적어주세요.',
+    guidelineRuleLabel:   '가능하면 성분표 사진이나 OCR 결과를 함께 공유해주세요.',
+    guidelineRuleContext: '알러지·식이 제한 판단은 개인 프로필에 따라 달라질 수 있어요.',
+    guidelineRuleEmergency: '응급 상황이나 중증 알러지는 반드시 전문가에게 확인해주세요.',
+    guidelineFooter:  'Clir Official Team은 잘못된 정보나 위험한 조언을 발견하면 공지와 답글로 안내합니다.',
   },
 
   // ── Survey ───────────────────────────────────────────────────────────────

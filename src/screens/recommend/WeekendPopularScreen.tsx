@@ -1,6 +1,596 @@
-import React from 'react';
-import PlaceholderScreen from '../../components/common/PlaceholderScreen';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Keyboard,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
+import { Colors } from '../../constants/colors';
+import FilterBottomSheet, {
+  FilterState,
+  INITIAL_FILTER_CATEGORIES,
+  INITIAL_FILTERS,
+} from '../../components/common/FilterBottomSheet';
+import FilterTuneIcon from '../../components/common/FilterTuneIcon';
+import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import { clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { getWeekendPopular } from '../../services/recommend.service';
+import { useUserStore } from '../../store/user.store';
+import { Product, RecommendStackParamList, RiskLevel } from '../../types';
 
-export default function WeekendPopularScreen() {
-  return <PlaceholderScreen name="WeekendPopularScreen" />;
+type Props = NativeStackScreenProps<RecommendStackParamList, 'WeekendPopular'>;
+
+const C = {
+  bg: Colors.scanLightGreen,
+  dark: Colors.searchDarkGreen,
+  mid: Colors.searchMutedGreen,
+  muted: Colors.scanMutedGreen,
+  line: Colors.searchDivider,
+};
+
+const BADGE_COLOR: Record<RiskLevel, string> = {
+  safe: Colors.scanCorrect,
+  caution: Colors.searchPoor,
+  danger: Colors.searchWrong,
+};
+
+const PAGE_SIZE = 10;
+const CATEGORY_IDS = ['all', ...INITIAL_FILTER_CATEGORIES.map(cat => cat.id)];
+
+function getNumberMeta(product: Product, key: 'favoriteCount' | 'rating'): number {
+  const value = (product as Product & Record<typeof key, unknown>)[key];
+  return typeof value === 'number' ? value : 0;
 }
+
+function RiskBadge({ level }: { level: RiskLevel }) {
+  const { t } = useTranslation();
+  const color = BADGE_COLOR[level];
+  const label = level === 'safe' ? t('scanUi.good') : level === 'caution' ? t('scanUi.poor') : t('scanUi.bad');
+
+  return (
+    <View style={[styles.badge, { borderColor: color }]}>
+      <RiskBadgeIcon level={level} size={13} />
+      <Text style={[styles.badgeText, { color }]}>{label}</Text>
+    </View>
+  );
+}
+
+function CategoryChip({
+  id,
+  selected,
+  onPress,
+}: {
+  id: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const label = id === 'all'
+    ? t('recommendUi.allCategories')
+    : t(`search.categoriesList.${id}`, id);
+
+  return (
+    <TouchableOpacity
+      style={[styles.categoryChip, selected && styles.categoryChipActive]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <Text style={[styles.categoryText, selected && styles.categoryTextActive]} numberOfLines={1}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function toggleFilterCategory(filters: FilterState, id: string): FilterState {
+  if (id === 'all') {
+    return {
+      ...filters,
+      categories: filters.categories.map(cat => ({ ...cat, selected: false })),
+    };
+  }
+
+  return {
+    ...filters,
+    categories: filters.categories.map(cat =>
+      cat.id === id ? { ...cat, selected: !cat.selected } : cat,
+    ),
+  };
+}
+
+function TrendingRow({
+  product,
+  index,
+  onPress,
+}: {
+  product: Product;
+  index: number;
+  onPress: () => void;
+}) {
+  const rating = getNumberMeta(product, 'rating');
+  const favoriteCount = getNumberMeta(product, 'favoriteCount');
+
+  return (
+    <TouchableOpacity style={styles.rankRow} onPress={onPress} activeOpacity={0.75}>
+      <Text style={styles.rankText}>{String(index + 1).padStart(2, '0')}</Text>
+
+      <View style={styles.productBlock}>
+        <View style={styles.thumb}>
+          {product.image ? (
+            <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+          ) : (
+            <View style={styles.thumbPlaceholder} />
+          )}
+        </View>
+
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+          <Text style={styles.brandName} numberOfLines={1}>{product.brand}</Text>
+          <View style={styles.metaRow}>
+            <RiskBadge level={product.riskLevel} />
+            <Text style={styles.scoreText} numberOfLines={1}>
+              {'\u2B50'} {rating.toFixed(2)} ({favoriteCount.toLocaleString()})
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+export default function WeekendPopularScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const [query, setQuery] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [showFilter, setShowFilter] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
+
+  const selectedCategoryIds = activeFilters.categories
+    .filter(cat => cat.selected)
+    .map(cat => cat.id);
+  const activeCount = selectedCategoryIds.length + (activeFilters.safeOnly ? 1 : 0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    getWeekendPopular()
+      .then(next => {
+        if (cancelled) return;
+        setProducts(next);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (err instanceof UnauthorizedError) {
+          clearAuthToken();
+          useUserStore.getState().logout();
+          return;
+        }
+        setError(t('common.error'));
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [t]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeFilters, query]);
+
+  const filteredProducts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const activeCategories = activeFilters.categories
+      .filter(cat => cat.selected)
+      .map(cat => cat.id);
+    return products
+      .filter(product => activeCategories.length === 0 || (product.category ? activeCategories.includes(product.category) : false))
+      .filter(product => !activeFilters.safeOnly || product.isSafe)
+      .filter(product => {
+        if (!normalizedQuery) return true;
+        return product.name.toLowerCase().includes(normalizedQuery)
+          || product.brand.toLowerCase().includes(normalizedQuery);
+      })
+      .sort((a, b) => getNumberMeta(b, 'favoriteCount') - getNumberMeta(a, 'favoriteCount'));
+  }, [activeFilters, products, query]);
+
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const canLoadMore = visibleCount < filteredProducts.length;
+
+  function loadMore() {
+    if (!canLoadMore || isLoadingMore || isLoading) return;
+    setIsLoadingMore(true);
+    setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filteredProducts.length));
+    requestAnimationFrame(() => setIsLoadingMore(false));
+  }
+
+  function handleClearSearch() {
+    setQuery('');
+    Keyboard.dismiss();
+  }
+
+  function handleProductPress(product: Product) {
+    navigation.navigate('RecommendProductDetail', { product });
+  }
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backIcon}>‹</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Week Trend</Text>
+      </View>
+
+      <View style={styles.searchRow}>
+        <View style={styles.searchBox}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('search.placeholder')}
+            placeholderTextColor={C.muted}
+            value={query}
+            onChangeText={setQuery}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            returnKeyType="search"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {(query.length > 0 || isFocused) && (
+            <TouchableOpacity
+              onPress={handleClearSearch}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.clearButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.clearButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          style={[styles.filterButton, activeCount > 0 && styles.filterButtonActive]}
+          onPress={() => setShowFilter(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t('search.filters')}
+          activeOpacity={0.7}
+        >
+          <FilterTuneIcon active={activeCount > 0} />
+          {activeCount > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.titleWrap}>
+        <Text style={styles.sectionTitle}>{t('recommendUi.trending')}</Text>
+      </View>
+
+      <View style={styles.fixedCategoryWrap}>
+        <FlatList
+          data={CATEGORY_IDS}
+          keyExtractor={item => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryList}
+          renderItem={({ item }) => (
+            <CategoryChip
+              id={item}
+              selected={item === 'all' ? selectedCategoryIds.length === 0 : selectedCategoryIds.includes(item)}
+              onPress={() => setActiveFilters(prev => toggleFilterCategory(prev, item))}
+            />
+          )}
+        />
+      </View>
+
+      <FlatList
+        data={visibleProducts}
+        keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: insets.bottom + 126 },
+          filteredProducts.length === 0 && styles.emptyContent,
+        ]}
+        ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.2}
+        renderItem={({ item, index }) => (
+          <TrendingRow
+            product={item}
+            index={index}
+            onPress={() => handleProductPress(item)}
+          />
+        )}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <ActivityIndicator size="small" color={C.dark} style={styles.footerSpinner} />
+          ) : null
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyBox}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color={C.dark} />
+            ) : (
+              <Text style={styles.emptyText}>{error ?? t('search.empty')}</Text>
+            )}
+          </View>
+        }
+      />
+
+      <FilterBottomSheet
+        visible={showFilter}
+        onClose={() => setShowFilter(false)}
+        filters={activeFilters}
+        onApply={setActiveFilters}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  header: {
+    height: 95,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 15,
+    bottom: 26,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    color: C.dark,
+    fontSize: 28,
+    lineHeight: 30,
+    fontWeight: '400',
+  },
+  headerTitle: {
+    marginTop: 8,
+    color: C.dark,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.38,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    marginTop: 12,
+  },
+  searchBox: {
+    flex: 1,
+    height: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.dark,
+    borderRadius: 10,
+    paddingHorizontal: 17,
+    gap: 6,
+  },
+  searchInput: {
+    flex: 1,
+    color: C.dark,
+    fontSize: 16,
+    fontWeight: '600',
+    padding: 0,
+  },
+  clearButton: {
+    padding: 2,
+  },
+  clearButtonText: {
+    fontSize: 12,
+    color: C.mid,
+  },
+  filterButton: {
+    width: 42,
+    height: 42,
+    borderWidth: 1,
+    borderColor: C.dark,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: C.mid,
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.searchWrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  filterBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
+  titleWrap: {
+    paddingHorizontal: 28,
+    marginTop: 28,
+  },
+  sectionTitle: {
+    color: C.dark,
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  listContent: {
+    paddingTop: 8,
+  },
+  emptyContent: {
+    flexGrow: 1,
+  },
+  categoryList: {
+    paddingHorizontal: 28,
+    gap: 5,
+  },
+  fixedCategoryWrap: {
+    backgroundColor: C.bg,
+    paddingTop: 8,
+    paddingBottom: 28,
+  },
+  categoryChip: {
+    minWidth: 96,
+    height: 25,
+    borderWidth: 1,
+    borderColor: C.mid,
+    borderRadius: 50,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryChipActive: {
+    backgroundColor: C.mid,
+  },
+  categoryText: {
+    color: C.dark,
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: -0.228,
+  },
+  categoryTextActive: {
+    color: Colors.white,
+    fontWeight: '700',
+  },
+  rankRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 15,
+    paddingRight: 28,
+    minHeight: 82,
+  },
+  rankText: {
+    width: 44,
+    color: C.muted,
+    fontSize: 20,
+    fontWeight: '800',
+    fontStyle: 'italic',
+    lineHeight: 30,
+    letterSpacing: -0.38,
+  },
+  productBlock: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  thumb: {
+    width: 68,
+    height: 68,
+    borderWidth: 1,
+    borderColor: C.muted,
+    borderRadius: 9,
+    backgroundColor: Colors.white,
+    overflow: 'hidden',
+  },
+  thumbPlaceholder: {
+    flex: 1,
+    backgroundColor: Colors.searchDivider,
+  },
+  productInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  productName: {
+    color: C.mid,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 21,
+    letterSpacing: -0.266,
+  },
+  brandName: {
+    color: C.mid,
+    fontSize: 10,
+    fontWeight: '400',
+    lineHeight: 15,
+    letterSpacing: -0.19,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 9,
+  },
+  badge: {
+    height: 19,
+    minWidth: 56,
+    borderWidth: 1,
+    borderRadius: 24,
+    paddingHorizontal: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: -0.19,
+  },
+  scoreText: {
+    flex: 1,
+    color: C.mid,
+    fontSize: 11,
+    fontWeight: '300',
+    lineHeight: 13,
+  },
+  rowDivider: {
+    height: 1,
+    backgroundColor: C.line,
+    marginLeft: 71,
+    marginRight: 54,
+    marginVertical: 7,
+  },
+  emptyBox: {
+    minHeight: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  emptyText: {
+    color: C.mid,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  footerSpinner: {
+    paddingVertical: 18,
+  },
+});

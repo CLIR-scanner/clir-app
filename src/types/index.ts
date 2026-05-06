@@ -220,6 +220,35 @@ export interface ShoppingItem {
   product: Product;
 }
 
+export interface QAQuestion {
+  id: string;
+  label: string;
+  title: string;
+  body: string;
+  author: string;
+  viewCount: number;
+  answerCount: number;
+  isNotice?: boolean;
+}
+
+export interface QAAnswer {
+  id: string;
+  questionId: string;
+  author: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface MagazineItem {
+  id: string;
+  title: string;
+  body: string;
+  image: string;
+  category?: string;
+  publishedAt: string;
+  isBookmarked?: boolean;
+}
+
 // ─── Alternatives ────────────────────────────────────────────────────────────
 
 export type AlternativeReason = 'same_category' | 'brand_match' | 'user_frequent' | 'user_favorite' | 'fallback';
@@ -474,6 +503,11 @@ export type RecommendStackParamList = {
   Recommend: undefined;
   WeekendPopular: undefined;
   SimilarUsersFavorites: undefined;
+  QAScreen: undefined;
+  QADetail: { questionId: string };
+  MagazineScreen: undefined;
+  MagazineDetail: { articleId: string };
+  RecommendProductDetail: { product: Product };
 };
 
 export type ProfileStackParamList = {
