@@ -474,6 +474,7 @@ export type RecommendStackParamList = {
   Recommend: undefined;
   WeekendPopular: undefined;
   SimilarUsersFavorites: undefined;
+  RecommendProductDetail: { product: Product };
 };
 
 export type ProfileStackParamList = {

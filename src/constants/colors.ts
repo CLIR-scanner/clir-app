@@ -36,6 +36,7 @@ export const Colors = {
   searchBackground: '#F9FFF3',
   searchCard: '#E1E9DC',
   searchBorder: '#A9B6A8',
+  searchDivider: '#D9D9D9',
   searchDarkGreen: '#1C3A19',
   searchMutedGreen: '#556C53',
   searchPoor: '#FF9D00',
