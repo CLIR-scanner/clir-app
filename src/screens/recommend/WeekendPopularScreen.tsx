@@ -42,7 +42,7 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
   danger: Colors.searchWrong,
 };
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 const CATEGORY_IDS = ['all', ...INITIAL_FILTER_CATEGORIES.map(cat => cat.id)];
 
 function getNumberMeta(product: Product, key: 'favoriteCount' | 'rating'): number {
@@ -153,6 +153,7 @@ export default function WeekendPopularScreen({ navigation }: Props) {
   const [isFocused, setIsFocused] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [showFilter, setShowFilter] = useState(false);
@@ -211,6 +212,13 @@ export default function WeekendPopularScreen({ navigation }: Props) {
 
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const canLoadMore = visibleCount < filteredProducts.length;
+
+  function loadMore() {
+    if (!canLoadMore || isLoadingMore || isLoading) return;
+    setIsLoadingMore(true);
+    setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filteredProducts.length));
+    requestAnimationFrame(() => setIsLoadingMore(false));
+  }
 
   function handleClearSearch() {
     setQuery('');
@@ -281,35 +289,35 @@ export default function WeekendPopularScreen({ navigation }: Props) {
         <Text style={styles.sectionTitle}>{t('recommendUi.trending')}</Text>
       </View>
 
+      <View style={styles.fixedCategoryWrap}>
+        <FlatList
+          data={CATEGORY_IDS}
+          keyExtractor={item => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryList}
+          renderItem={({ item }) => (
+            <CategoryChip
+              id={item}
+              selected={item === 'all' ? selectedCategoryIds.length === 0 : selectedCategoryIds.includes(item)}
+              onPress={() => setActiveFilters(prev => toggleFilterCategory(prev, item))}
+            />
+          )}
+        />
+      </View>
+
       <FlatList
         data={visibleProducts}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[0]}
         contentContainerStyle={[
           styles.listContent,
           { paddingBottom: insets.bottom + 126 },
           filteredProducts.length === 0 && styles.emptyContent,
         ]}
-        ListHeaderComponent={
-          <View style={styles.stickyCategoryWrap}>
-            <FlatList
-              data={CATEGORY_IDS}
-              keyExtractor={item => item}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryList}
-              renderItem={({ item }) => (
-              <CategoryChip
-                id={item}
-                selected={item === 'all' ? selectedCategoryIds.length === 0 : selectedCategoryIds.includes(item)}
-                onPress={() => setActiveFilters(prev => toggleFilterCategory(prev, item))}
-              />
-            )}
-          />
-          </View>
-        }
         ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.2}
         renderItem={({ item, index }) => (
           <TrendingRow
             product={item}
@@ -318,16 +326,8 @@ export default function WeekendPopularScreen({ navigation }: Props) {
           />
         )}
         ListFooterComponent={
-          canLoadMore ? (
-            <TouchableOpacity
-              style={styles.loadMoreButton}
-              onPress={() => setVisibleCount(prev => prev + PAGE_SIZE)}
-              accessibilityRole="button"
-              accessibilityLabel={t('product.seeMoreDetail')}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.loadMoreText}>+</Text>
-            </TouchableOpacity>
+          isLoadingMore ? (
+            <ActivityIndicator size="small" color={C.dark} style={styles.footerSpinner} />
           ) : null
         }
         ListEmptyComponent={
@@ -460,8 +460,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     gap: 5,
   },
-  stickyCategoryWrap: {
+  fixedCategoryWrap: {
     backgroundColor: C.bg,
+    paddingTop: 8,
     paddingBottom: 28,
   },
   categoryChip: {
@@ -589,23 +590,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  loadMoreButton: {
-    alignSelf: 'center',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: C.mid,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 18,
-    marginBottom: 4,
-  },
-  loadMoreText: {
-    color: C.mid,
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
-    marginTop: -2,
+  footerSpinner: {
+    paddingVertical: 18,
   },
 });

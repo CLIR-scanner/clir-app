@@ -20,9 +20,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { RecommendStackParamList, RiskLevel } from '../../types';
+import { Product, RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import { getWeekendPopular } from '../../services/recommend.service';
+import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
@@ -40,6 +42,7 @@ const SECTION_LABEL_KEY: Record<Tab, string> = {
   'Q&A':            'recommendUi.qa',
   'Magazine':       'recommendUi.magazine',
 };
+const CATEGORY_IDS = ['all', ...INITIAL_FILTER_CATEGORIES.map(cat => cat.id)];
 
 // ── Design tokens (from Figma) ────────────────────────────────────────────────
 
@@ -63,19 +66,12 @@ type DummyProduct = {
   rating: number;
   reviewCount: number;
   image: string;
+  category?: string;
 };
 
+type ProductPreview = DummyProduct;
 type QAItem       = { id: string; title: string; user: string; date: string };
 type MagazineItem = { id: string; title: string; description: string; image: string };
-
-const TRENDING_PRODUCTS: DummyProduct[] = [
-  { id: 't1', name: 'Oreo Original',     brand: 'Mondelez',  riskLevel: 'danger',  rating: 4.93, reviewCount: 2391,
-    image: 'https://loremflickr.com/200/200/oreo,cookie?lock=11' },
-  { id: 't2', name: 'Pringles Original', brand: "Kellogg's", riskLevel: 'caution', rating: 4.87, reviewCount: 1842,
-    image: 'https://loremflickr.com/200/200/pringles,chips?lock=12' },
-  { id: 't3', name: "Lay's Classic",     brand: 'PepsiCo',   riskLevel: 'safe',    rating: 4.93, reviewCount: 3105,
-    image: 'https://loremflickr.com/200/200/lays,potato,chips?lock=13' },
-];
 
 const SIMILAR_PRODUCTS: (DummyProduct & { featuredReview: string })[] = [
   { id: 's1', name: 'Nutella',             brand: 'Ferrero',   riskLevel: 'danger',  rating: 4.90, reviewCount: 2391,
@@ -114,6 +110,24 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
   caution: Colors.searchPoor,
   danger:  Colors.searchWrong,
 };
+
+function getNumberMeta(product: Product, key: 'favoriteCount' | 'rating'): number {
+  const value = (product as Product & Record<typeof key, unknown>)[key];
+  return typeof value === 'number' ? value : 0;
+}
+
+function toPreviewProduct(product: Product): ProductPreview {
+  return {
+    id: product.id,
+    name: product.name,
+    brand: product.brand,
+    riskLevel: product.riskLevel,
+    rating: getNumberMeta(product, 'rating'),
+    reviewCount: getNumberMeta(product, 'favoriteCount'),
+    image: product.image ?? '',
+    category: product.category,
+  };
+}
 
 function RiskBadge({ riskLevel }: { riskLevel: RiskLevel }) {
   const { t } = useTranslation();
@@ -247,12 +261,55 @@ function SectionHeader({ title, onPress }: { title: string; onPress?: () => void
   );
 }
 
-function CategoryPill() {
+function CategoryPill({
+  id,
+  selected = false,
+  onPress,
+}: {
+  id: string;
+  selected?: boolean;
+  onPress?: () => void;
+}) {
   const { t } = useTranslation();
+  const label = id === 'all'
+    ? t('recommendUi.allCategories')
+    : t(`search.categoriesList.${id}`, id);
+
   return (
-    <TouchableOpacity style={styles.categoryPill} activeOpacity={0.7}>
-      <Text style={styles.categoryPillText}>{t('recommendUi.allCategories')}</Text>
+    <TouchableOpacity
+      style={[styles.categoryPill, selected && styles.categoryPillActive]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={[styles.categoryPillText, selected && styles.categoryPillTextActive]} numberOfLines={1}>
+        {label}
+      </Text>
     </TouchableOpacity>
+  );
+}
+
+function CategoryPreviewList({
+  selectedCategory,
+  onSelect,
+}: {
+  selectedCategory: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <FlatList
+      data={CATEGORY_IDS}
+      keyExtractor={item => item}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.categoryPreviewList}
+      renderItem={({ item }) => (
+        <CategoryPill
+          id={item}
+          selected={selectedCategory === item}
+          onPress={() => onSelect(item)}
+        />
+      )}
+    />
   );
 }
 
@@ -438,6 +495,8 @@ export default function CommunityScreen({ navigation }: Props) {
   const [activeTab,    setActiveTab]    = useState<Tab>('Week Trends');
   const [sectionOrder, setSectionOrder] = useState<Tab[]>([...TABS]);
   const [showReorder,  setShowReorder]  = useState(false);
+  const [trendingProducts, setTrendingProducts] = useState<ProductPreview[]>([]);
+  const [trendingCategory, setTrendingCategory] = useState('all');
 
   const mainScrollRef    = useRef<ScrollView>(null);
   const sectionY         = useRef<Partial<Record<Tab, number>>>({});
@@ -473,6 +532,23 @@ export default function CommunityScreen({ navigation }: Props) {
     const timer = setTimeout(remeasureSections, 600);
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    let cancelled = false;
+    getWeekendPopular()
+      .then(products => {
+        if (cancelled) return;
+        setTrendingProducts(products.map(toPreviewProduct));
+      })
+      .catch(() => {
+        if (!cancelled) setTrendingProducts([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const trendingPreview = trendingProducts
+    .filter(product => trendingCategory === 'all' || product.category === trendingCategory)
+    .slice(0, 3);
 
   function handleTabPress(tab: Tab) {
     isProgrammatic.current = true;
@@ -532,12 +608,12 @@ export default function CommunityScreen({ navigation }: Props) {
         return (
           <View style={styles.section}>
             <SectionHeader title={t('recommendUi.trending')} onPress={() => navigation.navigate('WeekendPopular')} />
-            <CategoryPill />
+            <CategoryPreviewList selectedCategory={trendingCategory} onSelect={setTrendingCategory} />
             <View style={styles.trendList}>
-              {TRENDING_PRODUCTS.map((item, idx) => (
+              {trendingPreview.map((item, idx) => (
                 <View key={item.id}>
                   <ProductRow item={item} />
-                  {idx < TRENDING_PRODUCTS.length - 1 && <View style={styles.rowDivider} />}
+                  {idx < trendingPreview.length - 1 && <View style={styles.rowDivider} />}
                 </View>
               ))}
             </View>
@@ -548,7 +624,7 @@ export default function CommunityScreen({ navigation }: Props) {
         return (
           <View style={styles.section}>
             <SectionHeader title={t('recommendUi.similarPicks')} onPress={() => navigation.navigate('SimilarUsersFavorites')} />
-            <CategoryPill />
+            <CategoryPreviewList selectedCategory="all" onSelect={() => {}} />
             <SimilarList />
           </View>
         );
@@ -556,7 +632,7 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Q&A':
         return (
           <View style={styles.section}>
-            <SectionHeader title={t('recommendUi.qa')} />
+            <SectionHeader title={t('recommendUi.qa')} onPress={() => navigation.navigate('QAScreen')} />
             {QA_ITEMS.map((item, idx) => (
               <View key={item.id}>
                 <TouchableOpacity style={styles.qaRow} activeOpacity={0.7}>
@@ -636,7 +712,12 @@ export default function CommunityScreen({ navigation }: Props) {
       </View>
 
       {/* ── Tab bar ────────────────────────────────────────────────────── */}
-      <View style={styles.tabRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabScroll}
+        contentContainerStyle={styles.tabRow}
+      >
         {sectionOrder.map(tab => {
           const isActive = activeTab === tab;
           return (
@@ -646,12 +727,14 @@ export default function CommunityScreen({ navigation }: Props) {
               onPress={() => handleTabPress(tab)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{t(SECTION_LABEL_KEY[tab])}</Text>
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]} numberOfLines={1}>
+                {t(SECTION_LABEL_KEY[tab])}
+              </Text>
               {isActive && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
       <View style={styles.tabBarLine} />
 
       {/* ── Main scroll ────────────────────────────────────────────────── */}
@@ -679,7 +762,7 @@ export default function CommunityScreen({ navigation }: Props) {
             onLayout={onSectionLayout(tab)}
           >
             {renderSection(tab)}
-            {i < sectionOrder.length - 1 && <View style={styles.sectionDivider} />}
+            {i < sectionOrder.length - 1 && <View style={styles.sectionGap} />}
           </View>
         ))}
       </ScrollView>
@@ -762,21 +845,25 @@ const styles = StyleSheet.create({
   },
 
   // Tabs
+  tabScroll: {
+    maxHeight: 28,
+  },
   tabRow: {
     flexDirection: 'row',
     paddingHorizontal: 25,
-    paddingBottom: 6,
-    justifyContent: 'space-between',
+    paddingBottom: 3,
+    gap: 14,
   },
   tabItem: {
     alignItems: 'center',
     paddingBottom: 4,
+    flexShrink: 0,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: C.muted,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   tabTextActive: {
     color: C.dark,
@@ -794,16 +881,16 @@ const styles = StyleSheet.create({
   tabBarLine: {
     height: 1,
     backgroundColor: C.line,
-    marginBottom: 4,
+    marginBottom: 0,
   },
 
   // Scroll / Sections
   scroll:        { flex: 1 },
-  section:       { paddingHorizontal: 27, paddingTop: 36, paddingBottom: 32 },
-  sectionDivider:{ height: 14, backgroundColor: '#E6EBE5' },
+  section:       { paddingHorizontal: 27, paddingTop: 30, paddingBottom: 32 },
+  sectionGap:    { height: 12, backgroundColor: C.bg },
 
   // Banner
-  bannerWrap: { paddingHorizontal: 23, paddingTop: 16, paddingBottom: 8 },
+  bannerWrap: { paddingHorizontal: 23, paddingTop: 14, paddingBottom: 8 },
   banner:     { height: 190, borderRadius: 9, backgroundColor: C.thumbBg },
 
   // Section header
@@ -818,12 +905,20 @@ const styles = StyleSheet.create({
 
   // Category pill
   categoryPill: {
-    alignSelf: 'flex-start',
     borderWidth: 1,
     borderColor: C.mid,
     borderRadius: 50,
+    minWidth: 96,
+    height: 25,
     paddingHorizontal: 19,
-    paddingVertical: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryPillActive: {
+    backgroundColor: C.mid,
+  },
+  categoryPreviewList: {
+    gap: 5,
     marginBottom: 18,
   },
   categoryPillText: {
@@ -831,6 +926,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: C.dark,
     letterSpacing: -0.228,
+  },
+  categoryPillTextActive: {
+    color: Colors.white,
+    fontWeight: '700',
   },
 
   // Product row (shared for Trending + Similar inner)
