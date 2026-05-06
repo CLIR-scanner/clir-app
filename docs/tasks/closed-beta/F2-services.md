@@ -34,12 +34,15 @@
    allergyProfile: string[];
    dietaryRestrictions: string[];
    sensitivityLevel: 'strict' | 'normal';
+   language?: string;
    hasCompletedSurvey: boolean;
 +  betaCohort?: BetaCohort[] | null;
  };
 ```
 
 ### A-3. `fetchMe` 의 user 객체에 `betaCohort` 매핑 추가
+
+> **컨텍스트 주의** — 실제 `auth.service.ts:91-118` 의 `MeResponse`/`fetchMe` 는 이 task doc 작성 시점보다 진화해서 `language?: string;` 필드 + `language: res.language ?? DEFAULT_LANGUAGE` 매핑 + `hasCompletedSurvey: res.hasCompletedSurvey` 줄을 포함한다. 아래 diff 는 이 현재 상태 기준으로 잡아 둔 것 — 실제 파일에 그대로 적용 가능.
 
 ```diff
  export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boolean }> {
@@ -51,9 +54,10 @@
      allergyProfile: res.allergyProfile,
      dietaryRestrictions: res.dietaryRestrictions,
      sensitivityLevel: res.sensitivityLevel,
-     language: 'en',
+     language: res.language ?? DEFAULT_LANGUAGE,
      multiProfiles: [],
      consentFlags: { imageRetention: false, corrections: false },
+     hasCompletedSurvey: res.hasCompletedSurvey,
 +    betaCohort: res.betaCohort ?? null,   // BE 가 BetaCohort[] 또는 null 반환
    };
    return { user, hasCompletedSurvey: res.hasCompletedSurvey };
