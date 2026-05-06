@@ -32,7 +32,7 @@ F6 verification    (F1~F5 모두)
 | F1 | [F1-types.md](./F1-types.md) | `BetaCohort` / `WaitlistEntry.cohort: BetaCohort[]` / `User.betaCohort: BetaCohort[]` / `ScanResult.scanLogId` 타입 추가 | 15분 |
 | F2 | [F2-services.md](./F2-services.md) | `auth.service.redeemInvite()` + `scan.service.submitScanFeedback()` + `fetchMe` betaCohort 매핑 | 30분 |
 | F3 | [F3-survey-landing-gate.md](./F3-survey-landing-gate.md) | `SurveyLandingScreen` 에 invite 입력 박스 + disclaimer + scope notice 추가 | 1시간 |
-| F4 | [F4-scan-feedback-bar.md](./F4-scan-feedback-bar.md) | `ScanFeedbackBar` 신규 컴포넌트 + `ScanResultScreen` 통합 | 45분 |
+| F4 | [F4-scan-feedback-bar.md](./F4-scan-feedback-bar.md) | `ScanFeedbackBar` 신규 컴포넌트 + `ScanScreen` / `OCRCaptureScreen` result sheet 통합 (ScanResultScreen 은 dead route 라 미사용) | 1시간 |
 | F5 | [F5-api-spec.md](./F5-api-spec.md) | `CLIR/docs/api-spec.yaml` 에 베타 라우트 3개 + `UserProfile.betaCohort` 추가 | 30분 |
 | F6 | [F6-verification.md](./F6-verification.md) | `npx tsc --noEmit` 통과, 수동 시나리오 6종 검증 | 30분 |
 
@@ -79,5 +79,6 @@ F6 verification    (F1~F5 모두)
 
 ## 변경 이력
 
+- v3.2 (2026-05-06): F1~F6 정합성 패치. (1) F3 의 "통째 교체" 를 *기존 215 줄 화면 위에 surgical patch* 로 재작성 — 기존 i18n / 언어 선택 블록 / `submitSurvey` skip 동기화 / strict Nav·Route 타입 보존. (2) F4 통합 위치를 `ScanResultScreen` (dead route — `navigate('ScanResult', ...)` 호출 0건) 에서 `ScanScreen` + `OCRCaptureScreen` 의 result sheet 로 재타겟. scanLogId 는 sheet state 로 보관. (3) F4 컴포넌트 catch 가 `UnauthorizedError` 만 재던지도록 수정 (CLAUDE.md "401 처리 패턴" 준수). (4) F2 의 `MeResponse`/`fetchMe` diff context 가 실 코드의 `language?: string` / `language: res.language ?? DEFAULT_LANGUAGE` 와 정렬되도록 갱신.
 - v3.1 (2026-05-06): BE cohort 복수 선택 (`text` → `text[]`, 마이그레이션 0005) 반영. 모든 task 문서에서 `BetaCohort` → `BetaCohort[]`. 관측 SQL 7종 → 6종 (HealthReport PDF 메트릭 제거).
 - v3 (2026-05-02): 신규 작성 — 단일 doc 에서 task 별 분리 폴더로 재구성. i18n 6 로케일 deferred.
