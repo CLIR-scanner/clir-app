@@ -20,7 +20,6 @@ import { addFavorite, getFavorites } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
-import ScanFeedbackBar from '../../components/common/ScanFeedbackBar';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanResult'>;
 
@@ -37,7 +36,7 @@ const DIM        = 'rgba(0,0,0,0.38)';
 
 export default function ScanResultScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
-  const { productId, fromHistory, ocrProduct, scanLogId } = route.params;
+  const { productId, fromHistory, ocrProduct } = route.params;
   const insets = useSafeAreaInsets();
 
   const [product,  setProduct]  = useState<Product | null>(null);
@@ -290,13 +289,6 @@ export default function ScanResultScreen({ navigation, route }: Props) {
         </Animated.View>
       )}
 
-      {/* 베타 v1 — 1탭 피드백 (scanLogId 있을 때만) */}
-      {ready && (
-        <View style={styles.feedbackAnchor} pointerEvents="box-none">
-          <ScanFeedbackBar scanLogId={scanLogId} />
-        </View>
-      )}
-
       {/* ── Bottom sheet ──────────────────────────────────────────────────── */}
       {ready && (
         <Animated.View
@@ -458,13 +450,6 @@ const styles = StyleSheet.create({
     left: 0, right: 0,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  feedbackAnchor: {
-    position: 'absolute',
-    // verdict 원 아래쪽 (원 끝: GUIDE_TOP + GUIDE_H/2 + CIRCLE_R + 22 outer ring)
-    top: GUIDE_TOP + GUIDE_H / 2 + CIRCLE_R + 24,
-    left: 0, right: 0,
-    alignItems: 'center',
   },
   verdictOuterRing: {
     position: 'absolute',

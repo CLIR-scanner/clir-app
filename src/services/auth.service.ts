@@ -10,7 +10,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../lib/supabase';
 import { apiFetch, setAuthToken, clearAuthToken, ApiError } from '../lib/api';
-import { User, SurveyData, BetaCohort } from '../types';
+import { User, SurveyData } from '../types';
 import { DEFAULT_LANGUAGE } from '../constants/languages';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -97,7 +97,6 @@ type MeResponse = {
   sensitivityLevel: 'strict' | 'normal';
   language?: string;
   hasCompletedSurvey: boolean;
-  betaCohort?: BetaCohort[] | null;
 };
 
 /** GET /auth/me — 현재 토큰으로 프로필 조회 + 최초 로그인 여부 반환 */
@@ -114,26 +113,8 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     multiProfiles: [],
     consentFlags: { imageRetention: false, corrections: false },
     hasCompletedSurvey: res.hasCompletedSurvey,
-    betaCohort: res.betaCohort ?? null,
   };
   return { user, hasCompletedSurvey: res.hasCompletedSurvey };
-}
-
-/** POST /auth/redeem-invite — 베타 invite_code 사용 → cohort 배열 반환.
- *  멱등: 이미 redeem 한 사용자는 alreadyRedeemed:true 와 함께 동일 cohort 배열 반환.
- *  BE 0005 마이그레이션 이후 cohort 는 항상 배열 (1개 이상). */
-export async function redeemInvite(
-  inviteCode: string,
-): Promise<{ cohort: BetaCohort[]; alreadyRedeemed?: boolean }> {
-  const res = await apiFetch<{
-    ok: true;
-    cohort: BetaCohort[];
-    alreadyRedeemed?: boolean;
-  }>('/auth/redeem-invite', {
-    method: 'POST',
-    body: JSON.stringify({ inviteCode }),
-  });
-  return { cohort: res.cohort, alreadyRedeemed: res.alreadyRedeemed };
 }
 
 // ─── Survey ────────────────────────────────────────────────────────────────
