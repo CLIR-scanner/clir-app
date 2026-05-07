@@ -55,8 +55,6 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   const addFavoriteToStore      = useListStore(s => s.addFavorite);
   const setFavoritesInStore     = useListStore(s => s.setFavorites);
   const profileVersion          = useUserStore(s => s.profileVersion);
-  const enabledProfileIds       = useUserStore(s => s.enabledProfileIds);
-  const multiProfiles           = useUserStore(s => s.currentUser.multiProfiles);
 
   // 최초 mount: 전체 로드(스캔·분석·이력 저장).
   // 프로필 변경 시(profileVersion 증가): 분석 + 대체제품만 재계산. 이력 중복 저장 안 함.
@@ -81,18 +79,11 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       }
 
       const ingredientIds = prod.ingredients.map(i => i.id);
-      // 활성화된 멀티 프로필의 알러지 합집합 (백엔드 연결 전 stub)
-      const additionalAllergenIds = [
-        ...new Set(
-          multiProfiles
-            .filter(p => enabledProfileIds.includes(p.id))
-            .flatMap(p => p.allergyProfile),
-        ),
-      ];
+      // 활성 프로필은 apiFetch 가 X-Active-Profile-Id 헤더로 자동 전송.
+      // BE resolveActiveProfile 이 그 프로필 알러지·식이로 판정.
       const result = await analyzeProduct({
         productId: prod.id,
         ingredientIds,
-        ...(additionalAllergenIds.length > 0 && { additionalAllergenIds }),
       });
 
       // 대체 제품 조회(danger/caution 전용) + 스캔 이력 저장을 병렬 실행해 대기 최소화.
