@@ -10,8 +10,21 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../lib/supabase';
 import { apiFetch, setAuthToken, clearAuthToken, ApiError } from '../lib/api';
-import { User, SurveyData, BetaCohort } from '../types';
+import { User, SurveyData, BetaCohort, MemberProfile, Profile } from '../types';
 import { DEFAULT_LANGUAGE } from '../constants/languages';
+import { listMembers } from './user.service';
+
+/** BE MemberProfile (id+ownerId+timestamps 포함) → FE Profile (멀티 프로필용 최소 shape). */
+function memberToProfile(m: MemberProfile): Profile {
+  return {
+    id: m.id,
+    name: m.name,
+    profileImage: m.profileImage,
+    allergyProfile: m.allergyProfile,
+    dietaryRestrictions: m.dietaryRestrictions,
+    sensitivityLevel: m.sensitivityLevel,
+  };
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -100,23 +113,27 @@ type MeResponse = {
   betaCohort?: BetaCohort[] | null;
 };
 
-/** GET /auth/me — 현재 토큰으로 프로필 조회 + 최초 로그인 여부 반환 */
+/** GET /auth/me + GET /profiles/members — 본인 프로필 + 멤버 프로필 병렬 로드.
+ *  멤버 프로필 호출 실패 시 빈 배열로 fallback (메인 프로필 흐름 보장). */
 export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boolean }> {
-  const res = await apiFetch<MeResponse>('/auth/me');
+  const [meRes, membersRes] = await Promise.all([
+    apiFetch<MeResponse>('/auth/me'),
+    listMembers().catch(() => [] as MemberProfile[]),
+  ]);
   const user: User = {
-    id: res.id,
-    email: res.email,
-    name: res.name,
-    allergyProfile: res.allergyProfile,
-    dietaryRestrictions: res.dietaryRestrictions,
-    sensitivityLevel: res.sensitivityLevel,
-    language: res.language ?? DEFAULT_LANGUAGE,
-    multiProfiles: [],
+    id: meRes.id,
+    email: meRes.email,
+    name: meRes.name,
+    allergyProfile: meRes.allergyProfile,
+    dietaryRestrictions: meRes.dietaryRestrictions,
+    sensitivityLevel: meRes.sensitivityLevel,
+    language: meRes.language ?? DEFAULT_LANGUAGE,
+    multiProfiles: membersRes.map(memberToProfile),
     consentFlags: { imageRetention: false, corrections: false },
-    hasCompletedSurvey: res.hasCompletedSurvey,
-    betaCohort: res.betaCohort ?? null,
+    hasCompletedSurvey: meRes.hasCompletedSurvey,
+    betaCohort: meRes.betaCohort ?? null,
   };
-  return { user, hasCompletedSurvey: res.hasCompletedSurvey };
+  return { user, hasCompletedSurvey: meRes.hasCompletedSurvey };
 }
 
 /** POST /auth/redeem-invite — 베타 invite_code 사용 → cohort 배열 반환.

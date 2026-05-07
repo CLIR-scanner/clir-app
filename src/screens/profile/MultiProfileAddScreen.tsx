@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity, Alert,
   ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -495,7 +495,7 @@ export default function MultiProfileAddScreen() {
     else navigation.goBack();
   }
 
-  function handleSave() {
+  async function handleSave() {
     const dietaryRestrictions: string[] = [];
     if (vegetarianType) dietaryRestrictions.push(vegetarianType);
     if (veganStrictness) dietaryRestrictions.push(veganStrictness);
@@ -518,13 +518,17 @@ export default function MultiProfileAddScreen() {
 
     // ⚠️ avoidedItems (식이 회피 카테고리 라벨) 는 의도적으로 allergyProfile 에
     // 합치지 않는다. 자세한 이유: SurveyVegetarianIngredientsScreen 동일 주석.
-    addMultiProfile({
-      name: name.trim(),
-      allergyProfile: [...allergenNames],
-      dietaryRestrictions,
-      sensitivityLevel: severity === 'severe' || veganStrictness === 'strict' ? 'strict' : 'normal',
-    });
-    navigation.goBack();
+    try {
+      await addMultiProfile({
+        name: name.trim(),
+        allergyProfile: [...allergenNames],
+        dietaryRestrictions,
+        sensitivityLevel: severity === 'severe' || veganStrictness === 'strict' ? 'strict' : 'normal',
+      });
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert(t('common.error'), (e as Error).message);
+    }
   }
 
   function renderStep() {

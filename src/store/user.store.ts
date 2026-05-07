@@ -1,9 +1,26 @@
 import { create } from 'zustand';
-import { UserStore, User, Profile } from '../types';
+import { UserStore, User, Profile, MemberProfile } from '../types';
 import { signOut as authSignOut, submitSurvey } from '../services/auth.service';
+import {
+  listMembers,
+  createMember,
+  updateMember,
+  deleteMember,
+} from '../services/user.service';
 import { useScanStore } from './scan.store';
 import { useListStore } from './list.store';
 import { DEFAULT_LANGUAGE } from '../constants/languages';
+
+function memberToProfile(m: MemberProfile): Profile {
+  return {
+    id: m.id,
+    name: m.name,
+    profileImage: m.profileImage,
+    allergyProfile: m.allergyProfile,
+    dietaryRestrictions: m.dietaryRestrictions,
+    sensitivityLevel: m.sensitivityLevel,
+  };
+}
 
 const EMPTY_PROFILE: Profile = {
   id: '',
@@ -132,17 +149,47 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }));
   },
 
-  addMultiProfile: (profile: Omit<Profile, 'id'>) => {
-    const newProfile: Profile = { ...profile, id: Date.now().toString() };
+  // 낙관적 업데이트 패턴: 임시 ID 로 즉시 추가 → BE 응답으로 실제 ID 교체.
+  // 실패 시 임시 항목 제거 + 호출자에게 throw — 콜러가 alert 표시.
+  addMultiProfile: async (profile: Omit<Profile, 'id'>) => {
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic: Profile = { ...profile, id: tempId };
     set(state => ({
       currentUser: {
         ...state.currentUser,
-        multiProfiles: [...state.currentUser.multiProfiles, newProfile],
+        multiProfiles: [...state.currentUser.multiProfiles, optimistic],
       },
     }));
+    try {
+      const created = await createMember({
+        name: profile.name,
+        profileImage: profile.profileImage,
+        allergyProfile: profile.allergyProfile,
+        dietaryRestrictions: profile.dietaryRestrictions,
+        sensitivityLevel: profile.sensitivityLevel,
+      });
+      set(state => ({
+        currentUser: {
+          ...state.currentUser,
+          multiProfiles: state.currentUser.multiProfiles.map(p =>
+            p.id === tempId ? memberToProfile(created) : p,
+          ),
+        },
+      }));
+    } catch (err) {
+      set(state => ({
+        currentUser: {
+          ...state.currentUser,
+          multiProfiles: state.currentUser.multiProfiles.filter(p => p.id !== tempId),
+        },
+      }));
+      throw err;
+    }
   },
 
-  updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => {
+  updateMultiProfile: async (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => {
+    const prev = get().currentUser.multiProfiles.find(p => p.id === profileId);
+    if (!prev) throw new Error('Profile not found');
     set(state => ({
       currentUser: {
         ...state.currentUser,
@@ -151,15 +198,61 @@ export const useUserStore = create<UserStore>((set, get) => ({
         ),
       },
     }));
+    try {
+      const updated = await updateMember(profileId, {
+        name: updates.name,
+        profileImage: updates.profileImage,
+        allergyProfile: updates.allergyProfile,
+        dietaryRestrictions: updates.dietaryRestrictions,
+        sensitivityLevel: updates.sensitivityLevel,
+      });
+      set(state => ({
+        currentUser: {
+          ...state.currentUser,
+          multiProfiles: state.currentUser.multiProfiles.map(p =>
+            p.id === profileId ? memberToProfile(updated) : p,
+          ),
+        },
+      }));
+    } catch (err) {
+      set(state => ({
+        currentUser: {
+          ...state.currentUser,
+          multiProfiles: state.currentUser.multiProfiles.map(p =>
+            p.id === profileId ? prev : p,
+          ),
+        },
+      }));
+      throw err;
+    }
   },
 
-  deleteMultiProfile: (profileId: string) => {
+  deleteMultiProfile: async (profileId: string) => {
+    const prev = get().currentUser.multiProfiles;
     set(state => ({
       currentUser: {
         ...state.currentUser,
         multiProfiles: state.currentUser.multiProfiles.filter(p => p.id !== profileId),
       },
       enabledProfileIds: state.enabledProfileIds.filter(id => id !== profileId),
+    }));
+    try {
+      await deleteMember(profileId);
+    } catch (err) {
+      set(state => ({
+        currentUser: { ...state.currentUser, multiProfiles: prev },
+      }));
+      throw err;
+    }
+  },
+
+  reloadMembers: async () => {
+    const members = await listMembers();
+    set(state => ({
+      currentUser: {
+        ...state.currentUser,
+        multiProfiles: members.map(memberToProfile),
+      },
     }));
   },
 

@@ -119,14 +119,18 @@ export default function SurveyAllergyConfirmScreen() {
 
     // 멀티 프로필 추가 모드: addMultiProfile 호출 후 ProfileStack으로 복귀
     if (multiProfileMode) {
-      addMultiProfile({
-        name: multiProfileName || 'New Profile',
-        allergyProfile,
-        dietaryRestrictions: [],
-        sensitivityLevel: 'normal',
-      });
-      setMultiProfileMode(false);
-      navigation.getParent()?.goBack();
+      try {
+        await addMultiProfile({
+          name: multiProfileName || 'New Profile',
+          allergyProfile,
+          dietaryRestrictions: [],
+          sensitivityLevel: 'normal',
+        });
+        setMultiProfileMode(false);
+        navigation.getParent()?.goBack();
+      } catch (e) {
+        Alert.alert(t('common.error'), (e as Error).message);
+      }
       return;
     }
 
