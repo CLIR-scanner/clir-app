@@ -18,6 +18,7 @@ import { getIngredient, getProductById, isLocalOcrProductId } from '../../servic
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
+import { getIngredientDescription } from '../../lib/display-names';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'FavoriteProductDetail'>;
@@ -64,6 +65,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   const profileVersion = useUserStore(s => s.profileVersion);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
 
   // 프로필 변경 시 → 강제 재조회. mount 시엔 ingredients 가 비어있을 때만 fetch.
   // BE /products/by-id/:id 가 활성 프로필 기준 verdict 를 새로 계산해 반환.
@@ -375,7 +377,10 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.modalDesc}>{detailIngredient.description}</Text>
+                {(() => {
+                  const desc = getIngredientDescription(detailIngredient, currentLanguage);
+                  return desc ? <Text style={styles.modalDesc}>{desc}</Text> : null;
+                })()}
 
                 {detailIngredient.sources.length > 0 && (
                   <View style={styles.modalSources}>

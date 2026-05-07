@@ -17,6 +17,8 @@ import { SearchStackParamList, Product, RiskLevel, Ingredient } from '../../type
 import { getIngredient, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import { useListStore } from '../../store/list.store';
+import { useUserStore } from '../../store/user.store';
+import { getIngredientDescription } from '../../lib/display-names';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<SearchStackParamList, 'SearchProductDetail'>;
@@ -36,6 +38,7 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
   const { t } = useTranslation();
   const { product: initialProduct } = route.params;
   const insets = useSafeAreaInsets();
+  const currentLanguage = useUserStore(s => s.currentUser.language);
 
   const [product, setProduct] = useState<Product>(initialProduct);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -315,7 +318,10 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.modalDesc}>{detailIngredient.description}</Text>
+                {(() => {
+                  const desc = getIngredientDescription(detailIngredient, currentLanguage);
+                  return desc ? <Text style={styles.modalDesc}>{desc}</Text> : null;
+                })()}
 
                 {detailIngredient.sources.length > 0 && (
                   <View style={styles.modalSources}>

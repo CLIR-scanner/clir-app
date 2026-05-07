@@ -645,3 +645,29 @@ export function getCatalogCategoryDisplayName(
   const fallback = typeof category === 'string' ? category : category.name;
   return translateKey(keyFromName(codeOrName) ?? keyFromName(fallback), language) ?? fallback;
 }
+
+/**
+ * 성분 설명(description) 의 다국어 처리 헬퍼.
+ * BE 가 description 을 단일 string (legacy) 또는 Record<BCP47, string> (다국어 마이그레이션 후) 으로
+ * 반환하는 *전환기* 두 케이스를 모두 처리.
+ *
+ * 우선순위:
+ *   1. dict 형태 → 요청 언어 → 'en' 폴백 → 사용 가능한 첫 키
+ *   2. string 형태 → 그대로 반환 (한국어 legacy 가 그대로 보일 수 있음 — BE 마이그 전 한정)
+ *   3. 빈 문자열 → 호출자가 description 영역 숨김 처리
+ */
+export function getIngredientDescription(
+  ingredient: { description: string | Record<string, string> } | undefined | null,
+  language: string,
+): string {
+  if (!ingredient) return '';
+  const desc = ingredient.description;
+  if (typeof desc === 'string') return desc;
+  if (!desc || typeof desc !== 'object') return '';
+  const lang = getDisplayLanguage(language);
+  if (desc[lang]) return desc[lang];
+  if (desc[language]) return desc[language];
+  if (desc['en']) return desc['en'];
+  const firstKey = Object.keys(desc)[0];
+  return firstKey ? desc[firstKey] : '';
+}
