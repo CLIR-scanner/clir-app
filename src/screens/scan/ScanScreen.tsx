@@ -40,6 +40,7 @@ import ScannerCamera, {
   ScannerResult,
 } from '../../components/ScannerCamera';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import ScanFeedbackBar from '../../components/common/ScanFeedbackBar';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'Scan'>;
 
@@ -101,7 +102,7 @@ export default function ScanScreen({ navigation }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [barcodeDetected, setBarcodeDetected] = useState(false);
   const [processing, setProcessing]           = useState(false);
-  const [scanResult, setScanResult]           = useState<{ product: Product; analysis: AnalysisResult } | null>(null);
+  const [scanResult, setScanResult]           = useState<{ product: Product; analysis: AnalysisResult; scanLogId?: string } | null>(null);
   const [scanPreviewUri, setScanPreviewUri]   = useState<string | null>(null);
   const [favLoading, setFavLoading]           = useState(false);
   const [favorited,  setFavorited]            = useState(false);
@@ -188,9 +189,9 @@ export default function ScanScreen({ navigation }: Props) {
 
   // ── Overlay animation helpers ─────────────────────────────────────────────
 
-  function showOverlay(product: Product, analysis: AnalysisResult) {
+  function showOverlay(product: Product, analysis: AnalysisResult, scanLogId?: string) {
     const currentFavs = useListStore.getState().favorites;
-    setScanResult({ product, analysis });
+    setScanResult({ product, analysis, scanLogId });
     setFavorited(currentFavs.some(f => isFavoriteForProduct(f, product.id)));
     void syncFavoriteStatus(product.id);
     circleScale.setValue(0);
@@ -391,7 +392,7 @@ export default function ScanScreen({ navigation }: Props) {
       }
 
       setProcessing(false);
-      showOverlay(product, analysis);
+      showOverlay(product, analysis, ocrResult.scanLogId);
     } catch (err) {
       processingRef.current = false;
       setProcessing(false);
@@ -718,6 +719,13 @@ export default function ScanScreen({ navigation }: Props) {
             <View style={styles.shutterBackground} />
             <ScanButtonIcon />
           </TouchableOpacity>
+        </View>
+      )}
+
+      {/* 베타 v1 — 1탭 피드백 (OCR 결과에 scanLogId 있을 때만 자체 렌더) */}
+      {scanResult?.scanLogId && (
+        <View style={styles.feedbackAnchor} pointerEvents="box-none">
+          <ScanFeedbackBar scanLogId={scanResult.scanLogId} />
         </View>
       )}
 
@@ -1264,6 +1272,15 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sheetCloseText: { color: Colors.white, fontSize: 12, lineHeight: 14 },
+  feedbackAnchor: {
+    position: 'absolute',
+    // riskCard top edge (height 230 + bottom 22 = 252); 위 8px gap.
+    // goodCard 일 때는 결과 카드보다 조금 더 높이 떠 있게 됨 — 의도된 동작.
+    bottom: 260,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
   goodCard: {
     position: 'absolute',
     left: 14,
