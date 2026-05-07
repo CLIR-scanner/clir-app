@@ -7,6 +7,7 @@ import {
   updateMember,
   deleteMember,
 } from '../services/user.service';
+import { setActiveProfileId } from '../lib/api';
 import { useScanStore } from './scan.store';
 import { useListStore } from './list.store';
 import { DEFAULT_LANGUAGE } from '../constants/languages';
@@ -44,7 +45,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
   isInitialized: false,
   // 0 = 미초기화. setUser 가 처음 호출되면 1 부터 시작 → 첫 mount 시점의 dep 변화로 fetch 트리거.
   profileVersion: 0,
-  enabledProfileIds: [],
   multiProfileMode: false,
   multiProfileName: '',
 
@@ -65,6 +65,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
       language: user.language ?? currentLanguage ?? DEFAULT_LANGUAGE,
     };
 
+    // 로그인/재로그인 직후엔 메인 프로필 활성 — 헤더 클리어.
+    setActiveProfileId(null);
     set(state => ({
       currentUser: normalized,
       activeProfile: normalized,
@@ -75,21 +77,37 @@ export const useUserStore = create<UserStore>((set, get) => ({
   logout: () => {
     // Supabase 세션 + 로컬 토큰 정리 (실패해도 스토어는 반드시 초기화)
     void authSignOut();
+    setActiveProfileId(null);
     set(state => ({
       currentUser: { ...EMPTY_USER, language: state.currentUser.language },
       activeProfile: EMPTY_PROFILE,
     }));
   },
 
-  toggleProfileEnabled: (profileId: string) => {
-    set(state => {
-      const ids = state.enabledProfileIds;
-      return {
-        enabledProfileIds: ids.includes(profileId)
-          ? ids.filter(id => id !== profileId)
-          : [...ids, profileId],
-      };
-    });
+  setActiveProfile: (profileId: string | null) => {
+    const { currentUser } = get();
+    // 메인 프로필: profileId 가 null 이거나 currentUser.id 와 같음 → 헤더 미발송.
+    const isMain = !profileId || profileId === currentUser.id;
+    if (isMain) {
+      setActiveProfileId(null);
+      set(state => ({
+        activeProfile: state.currentUser,
+        profileVersion: state.profileVersion + 1,
+      }));
+      // 활성 프로필 변경 시 stale 캐시 무효화 — 다음 화면 진입 때 재조회.
+      useScanStore.getState().clearHistory();
+      useListStore.getState().setFavorites([]);
+      return;
+    }
+    const member = currentUser.multiProfiles.find(p => p.id === profileId);
+    if (!member) return; // 알 수 없는 ID — 무시
+    setActiveProfileId(member.id);
+    set(state => ({
+      activeProfile: member,
+      profileVersion: state.profileVersion + 1,
+    }));
+    useScanStore.getState().clearHistory();
+    useListStore.getState().setFavorites([]);
   },
 
   updateActiveProfile: (updates: Partial<Profile>) => {
@@ -228,13 +246,21 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   deleteMultiProfile: async (profileId: string) => {
-    const prev = get().currentUser.multiProfiles;
+    const { currentUser, activeProfile } = get();
+    const prev = currentUser.multiProfiles;
+    // 삭제하려는 프로필이 현재 활성이면 메인으로 폴백.
+    if (activeProfile.id === profileId) {
+      setActiveProfileId(null);
+      set(state => ({
+        activeProfile: state.currentUser,
+        profileVersion: state.profileVersion + 1,
+      }));
+    }
     set(state => ({
       currentUser: {
         ...state.currentUser,
         multiProfiles: state.currentUser.multiProfiles.filter(p => p.id !== profileId),
       },
-      enabledProfileIds: state.enabledProfileIds.filter(id => id !== profileId),
     }));
     try {
       await deleteMember(profileId);

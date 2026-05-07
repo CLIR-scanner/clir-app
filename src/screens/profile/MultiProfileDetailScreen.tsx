@@ -28,13 +28,13 @@ export default function MultiProfileDetailScreen() {
   const insets        = useSafeAreaInsets();
   const { profileId } = route.params;
 
-  const currentUser          = useUserStore(s => s.currentUser);
-  const enabledProfileIds    = useUserStore(s => s.enabledProfileIds);
-  const toggleProfileEnabled = useUserStore(s => s.toggleProfileEnabled);
-  const deleteMultiProfile   = useUserStore(s => s.deleteMultiProfile);
+  const currentUser        = useUserStore(s => s.currentUser);
+  const activeProfileId    = useUserStore(s => s.activeProfile.id);
+  const setActiveProfile   = useUserStore(s => s.setActiveProfile);
+  const deleteMultiProfile = useUserStore(s => s.deleteMultiProfile);
 
   const isMainProfile = profileId === currentUser.id;
-  const isEnabled     = isMainProfile || enabledProfileIds.includes(profileId);
+  const isActive      = activeProfileId === profileId;
 
   const profile = isMainProfile
     ? currentUser
@@ -108,7 +108,7 @@ export default function MultiProfileDetailScreen() {
             }
           </View>
           <Text style={styles.profileName}>{profile.name}</Text>
-          {!isMainProfile && isEnabled && (
+          {!isMainProfile && isActive && (
             <View style={styles.enabledBadge}>
               <Text style={styles.enabledBadgeText}>{t('multiProfileDetail.scanEnabled')}</Text>
             </View>
@@ -166,15 +166,15 @@ export default function MultiProfileDetailScreen() {
           )}
         </TouchableOpacity>
 
-        {/* ── Enable / Disable (서브 프로필 전용) ─────────────────────────── */}
-        {!isMainProfile && (
+        {/* ── 활성 프로필 전환 (서브 프로필 전용) ──────────────────────────── */}
+        {!isMainProfile && !isActive && (
           <TouchableOpacity
-            style={[styles.toggleBtn, isEnabled && styles.toggleBtnDisable]}
-            onPress={() => toggleProfileEnabled(profileId)}
+            style={styles.toggleBtn}
+            onPress={() => setActiveProfile(profileId)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.toggleBtnText, isEnabled && styles.toggleBtnTextDisable]}>
-              {isEnabled ? t('multiProfileDetail.disableProfile') : t('multiProfileDetail.enableProfile')}
+            <Text style={styles.toggleBtnText}>
+              {t('multiProfileDetail.enableProfile')}
             </Text>
           </TouchableOpacity>
         )}

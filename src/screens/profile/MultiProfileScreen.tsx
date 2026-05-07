@@ -13,13 +13,13 @@ import { useUserStore } from '../../store/user.store';
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'MultiProfile'>;
 
 function ProfileCard({
-  profile, isMain, isEnabled, onPress, onToggle, t,
+  profile, isMain, isActive, onPress, onSelect, t,
 }: {
   profile: Profile;
   isMain: boolean;
-  isEnabled: boolean;
+  isActive: boolean;
   onPress: () => void;
-  onToggle?: () => void;
+  onSelect: () => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const allergenCount = profile.allergyProfile.length;
@@ -29,13 +29,23 @@ function ProfileCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, isEnabled && !isMain && styles.cardEnabled]}
+      style={[styles.card, isActive && styles.cardEnabled]}
       onPress={onPress}
       activeOpacity={0.8}
     >
+      <TouchableOpacity
+        onPress={onSelect}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={styles.radioWrap}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.radioOuter, isActive && styles.radioOuterActive]}>
+          {isActive && <View style={styles.radioInner} />}
+        </View>
+      </TouchableOpacity>
       <View style={styles.cardLeft}>
-        <View style={[styles.avatar, (isMain || isEnabled) && styles.avatarActive]}>
-          <Text style={[styles.avatarText, (isMain || isEnabled) && styles.avatarTextActive]}>
+        <View style={[styles.avatar, isActive && styles.avatarActive]}>
+          <Text style={[styles.avatarText, isActive && styles.avatarTextActive]}>
             {profile.name ? profile.name[0].toUpperCase() : '?'}
           </Text>
         </View>
@@ -47,7 +57,7 @@ function ProfileCard({
                 <Text style={styles.mainBadgeText}>{t('multiProfile.badgeMain')}</Text>
               </View>
             )}
-            {!isMain && isEnabled && (
+            {isActive && (
               <View style={styles.enabledBadge}>
                 <Text style={styles.enabledBadgeText}>{t('multiProfile.badgeEnabled')}</Text>
               </View>
@@ -63,18 +73,6 @@ function ProfileCard({
         </View>
       </View>
 
-      {!isMain && onToggle && (
-        <TouchableOpacity
-          style={[styles.toggleBtn, isEnabled && styles.toggleBtnActive]}
-          onPress={onToggle}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.toggleBtnText, isEnabled && styles.toggleBtnTextActive]}>
-            {isEnabled ? 'ON' : 'OFF'}
-          </Text>
-        </TouchableOpacity>
-      )}
     </TouchableOpacity>
   );
 }
@@ -83,8 +81,8 @@ export default function MultiProfileScreen() {
   const navigation          = useNavigation<Nav>();
   const { t }               = useTranslation();
   const currentUser          = useUserStore(s => s.currentUser);
-  const enabledProfileIds    = useUserStore(s => s.enabledProfileIds);
-  const toggleProfileEnabled = useUserStore(s => s.toggleProfileEnabled);
+  const activeProfileId      = useUserStore(s => s.activeProfile.id);
+  const setActiveProfile     = useUserStore(s => s.setActiveProfile);
   const setMultiProfileMode  = useUserStore(s => s.setMultiProfileMode);
 
   const [showNameModal, setShowNameModal] = useState(false);
@@ -104,12 +102,13 @@ export default function MultiProfileScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.list}>
-          {/* 메인 프로필 — 항상 스캔에 적용, 토글 없음 */}
+          {/* 메인 프로필 — 라디오 단일 활성 모델의 기본값 */}
           <ProfileCard
             profile={currentUser}
             isMain
-            isEnabled
+            isActive={activeProfileId === currentUser.id}
             onPress={() => navigation.navigate('MultiProfileDetail', { profileId: currentUser.id })}
+            onSelect={() => setActiveProfile(null)}
             t={t}
           />
           {currentUser.multiProfiles.map(profile => (
@@ -117,9 +116,9 @@ export default function MultiProfileScreen() {
               key={profile.id}
               profile={profile}
               isMain={false}
-              isEnabled={enabledProfileIds.includes(profile.id)}
+              isActive={activeProfileId === profile.id}
               onPress={() => navigation.navigate('MultiProfileDetail', { profileId: profile.id })}
-              onToggle={() => toggleProfileEnabled(profile.id)}
+              onSelect={() => setActiveProfile(profile.id)}
               t={t}
             />
           ))}
@@ -202,6 +201,17 @@ const styles = StyleSheet.create({
   },
   cardEnabled: { borderColor: DARK_GREEN, backgroundColor: CARD_FILL },
   cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  radioWrap: { paddingRight: 12 },
+  radioOuter: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 2, borderColor: BORDER,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  radioOuterActive: { borderColor: DARK_GREEN },
+  radioInner: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: DARK_GREEN,
+  },
 
   avatar: {
     width: 48, height: 48, borderRadius: 24,
