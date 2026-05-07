@@ -386,6 +386,13 @@ export interface UserStore {
   profileVersion: number;
   /** 스캔 시 메인 프로필에 추가로 적용할 멀티 프로필 ID 목록 */
   enabledProfileIds: string[];
+  /**
+   * 사용자가 *이 디바이스에서* 언어를 명시 선택했는지 여부.
+   * - false (디폴트): setUser 시 BE 의 user.language 를 채택 + AsyncStorage 에 캐시 (다중 디바이스 first-run 호환)
+   * - true: setUser 시 BE 값 무시, currentUser.language 보존 (사용자 의도 우선)
+   * AsyncStorage 하이드레이션 또는 setLanguage 호출 시 true 로 전환.
+   */
+  hasExplicitLanguage: boolean;
   initialize: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => void;
