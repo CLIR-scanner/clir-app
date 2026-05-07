@@ -189,6 +189,8 @@ export interface User extends Profile {
   multiProfiles: Profile[];
   consentFlags: ConsentFlags;
   hasCompletedSurvey?: boolean;
+  /** 베타 코호트 배열. null/빈 배열 = 미통과, 1개 이상 = 통과한 코호트 목록 */
+  betaCohort?: BetaCohort[] | null;
 }
 
 export interface ScanHistory {
@@ -305,6 +307,32 @@ export interface Correction {
   userId: string;
   corrections: CorrectionEntry[];
   createdAt: string;
+}
+
+// ─── Closed Beta ──────────────────────────────────────────────────────────────
+
+/** 지원 로케일 6종. waitlist.locale 과 i18n 키 양쪽이 사용. */
+export type SupportedLocale = 'en' | 'ko' | 'ja' | 'zh' | 'es' | 'fr';
+
+/** 베타 코호트. BE waitlist.cohort + profiles.beta_cohort 와 일치. */
+export type BetaCohort = 'us-allergy' | 'us-ka' | 'us-veg';
+
+/** waitlist 테이블의 도메인 표현. (관리자 조회 / FE 선택적 사용) */
+export interface WaitlistEntry {
+  id: string;
+  email: string;
+  source?: string;
+  cohort: BetaCohort[];     // 1개 이상 복수 선택 가능 (BE 0005 마이그레이션)
+  locale: SupportedLocale;
+  inviteCode?: string;
+  invitedAt?: string;
+  createdAt: string;
+}
+
+/** POST /scan-logs/:scanLogId/feedback 요청 body. */
+export interface ScanFeedbackInput {
+  helpful: boolean;
+  comment?: string;
 }
 
 // ─── Request Payloads ─────────────────────────────────────────────────────────
@@ -440,7 +468,7 @@ export type ScanStackParamList = {
    * fromHistory: true 시 스캔 이력에 중복 추가하지 않음
    * ocrProduct: OCR 결과 인라인 Product (productId 조회 생략)
    */
-  ScanResult: { productId: string; fromHistory?: boolean; ocrProduct?: Product };
+  ScanResult: { productId: string; fromHistory?: boolean; ocrProduct?: Product; scanLogId?: string };
   ScanHistory: undefined;
   /**
    * product: 표시할 제품 데이터
