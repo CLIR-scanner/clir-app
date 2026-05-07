@@ -1490,108 +1490,6 @@ paths:
         '404':
           description: 존재하지 않거나 소유자 불일치
 
-  # ─────────────────────────────────────
-  # 클로즈드 베타 (v3)
-  # ─────────────────────────────────────
-
-  /waitlist:
-    post:
-      tags: [Beta]
-      summary: 베타 waitlist 등록 (공개)
-      description: |
-        클로즈드 베타 진입 funnel 의 시작점. 인증 불필요.
-        IP 당 분당 5건 rate limit. 동일 email 재요청은 멱등.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, cohort]
-              properties:
-                email: { type: string, format: email, maxLength: 254 }
-                cohort:
-                  type: array
-                  items: { type: string, enum: [us-allergy, us-ka, us-veg] }
-                  minItems: 1
-                  example: [us-allergy, us-veg]
-                  description: 1개 이상 복수 선택. 단일 string 도 허용 (구버전 클라 호환, 1개짜리 배열로 정규화).
-                source: { type: string, maxLength: 64 }
-                locale:
-                  type: string
-                  enum: [en, ko, ja, zh, es, fr]
-                  default: en
-      responses:
-        '201': { description: 신규 등록 }
-        '200': { description: 이미 등록된 email }
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '429': { description: Rate limit 초과 }
-
-  /auth/redeem-invite:
-    post:
-      tags: [Beta]
-      summary: 베타 invite_code 사용
-      description: |
-        social login 후 첫 진입 시 호출. waitlist.invite_code 매칭 →
-        profiles.beta_cohort 채움. 멱등.
-      security: [{ BearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [inviteCode]
-              properties:
-                inviteCode: { type: string, minLength: 6, maxLength: 64 }
-      responses:
-        '200':
-          description: redeem 성공 또는 이미 redeem
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [ok, cohort]
-                properties:
-                  ok: { type: boolean }
-                  cohort:
-                    type: array
-                    items: { type: string, enum: [us-allergy, us-ka, us-veg] }
-                    minItems: 1
-                  alreadyRedeemed: { type: boolean }
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { description: 유효하지 않은 invite code }
-
-  /scan-logs/{scanLogId}/feedback:
-    post:
-      tags: [Beta]
-      summary: 1탭 피드백 (helpful 기록)
-      description: |
-        ScanResult 화면에서 사용자가 👍/👎 선택 시 호출. 본인 row 만 수정 가능.
-        멱등. 응답에 comment echo 안 함.
-      security: [{ BearerAuth: [] }]
-      parameters:
-        - name: scanLogId
-          in: path
-          required: true
-          schema: { type: string, format: uuid }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [helpful]
-              properties:
-                helpful: { type: boolean }
-                comment: { type: string, maxLength: 500 }
-      responses:
-        '200': { description: 피드백 저장 }
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '404': { description: 본인 scan_log 가 없거나 미존재 }
-
 # ─────────────────────────────────────
 # 공통 스키마 및 응답
 # ─────────────────────────────────────
@@ -1670,15 +1568,6 @@ components:
         hasCompletedSurvey:
           type: boolean
           example: true
-        betaCohort:
-          type: array
-          nullable: true
-          items:
-            type: string
-            enum: [us-allergy, us-ka, us-veg]
-          minItems: 1
-          description: 베타 코호트 배열. null = 미통과 또는 일반 사용자. 0005 마이그레이션으로 단일 → 배열.
-          example: [us-allergy, us-veg]
 
     Product:
       type: object
