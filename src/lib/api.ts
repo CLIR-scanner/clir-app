@@ -27,6 +27,20 @@ export function getAuthToken(): string | null {
   return _token;
 }
 
+// ─── 활성 프로필 헤더 ─────────────────────────────────────────────────────────
+
+let _activeProfileId: string | null = null;
+
+/** 활성 멤버 프로필 ID 설정. null = 메인 프로필 (헤더 미주입). */
+export function setActiveProfileId(id: string | null): void {
+  _activeProfileId = id;
+}
+
+/** 현재 활성 멤버 프로필 ID (null = 메인) */
+export function getActiveProfileId(): string | null {
+  return _activeProfileId;
+}
+
 // ─── 에러 타입 ────────────────────────────────────────────────────────────────
 
 export class ApiError extends Error {
@@ -73,6 +87,12 @@ export async function apiFetch<T>(path: string, options: JsonFetchOptions = {}):
     headers['Authorization'] = `Bearer ${_token}`;
   }
 
+  // 활성 멤버 프로필 ID 가 설정돼 있으면 BE 가 그 프로필 알러지·식이 기준으로 판정.
+  // null 이면 메인 프로필 (헤더 생략) — BE resolveActiveProfile 의 기본 동작.
+  if (_activeProfileId) {
+    headers['X-Active-Profile-Id'] = _activeProfileId;
+  }
+
   const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   return handleResponse<T>(response);
@@ -90,6 +110,10 @@ export async function apiFormFetch<T>(path: string, body: FormData): Promise<T> 
 
   if (_token) {
     headers['Authorization'] = `Bearer ${_token}`;
+  }
+
+  if (_activeProfileId) {
+    headers['X-Active-Profile-Id'] = _activeProfileId;
   }
 
   const response = await fetch(`${BASE_URL}${path}`, {
