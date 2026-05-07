@@ -41,7 +41,14 @@ export interface IngredientSummary {
 }
 
 export interface Ingredient extends IngredientSummary {
-  description: string;
+  /**
+   * 성분 설명. 전환기 union:
+   * - 단일 string: BE 가 단일 언어 (한국어 legacy) 만 반환하던 시점의 shape
+   * - Record<BCP47, string>: BE 다국어 카탈로그 마이그레이션 후 shape (en/ko/ja/zh/es/fr)
+   * FE 는 getIngredientDescription(...) 헬퍼로 두 경우 모두 처리.
+   * OCR 추출 성분은 빈 dict 또는 빈 문자열 → 화면에서 description 영역 숨김.
+   */
+  description: string | Record<BCP47, string>;
   riskLevel: RiskLevel;
   /** 근거자료 링크 목록 */
   sources: { title: string; url: string }[];
