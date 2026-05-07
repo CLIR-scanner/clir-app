@@ -257,7 +257,7 @@ export default function MultiProfileEditScreen() {
         updateActiveProfile({ allergyProfile: newAllergy, dietaryRestrictions: newDiet, sensitivityLevel: sensitivity });
         if (trimmedName !== currentUser.name) updateUserName(trimmedName);
       } else {
-        updateMultiProfile(profileId, { name: trimmedName, profileImage: photoUri, allergyProfile: newAllergy, dietaryRestrictions: newDiet, sensitivityLevel: sensitivity });
+        await updateMultiProfile(profileId, { name: trimmedName, profileImage: photoUri, allergyProfile: newAllergy, dietaryRestrictions: newDiet, sensitivityLevel: sensitivity });
       }
       navigation.goBack();
     } catch {

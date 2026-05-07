@@ -109,14 +109,18 @@ export default function SurveyVegetarianIngredientsScreen() {
 
     // 멀티 프로필 추가 모드
     if (multiProfileMode) {
-      addMultiProfile({
-        name: multiProfileName || 'New Profile',
-        allergyProfile,
-        dietaryRestrictions,
-        sensitivityLevel,
-      });
-      setMultiProfileMode(false);
-      navigation.getParent()?.goBack();
+      try {
+        await addMultiProfile({
+          name: multiProfileName || 'New Profile',
+          allergyProfile,
+          dietaryRestrictions,
+          sensitivityLevel,
+        });
+        setMultiProfileMode(false);
+        navigation.getParent()?.goBack();
+      } catch (e) {
+        Alert.alert(t('common.error'), (e as Error).message);
+      }
       return;
     }
 

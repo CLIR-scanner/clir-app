@@ -401,9 +401,12 @@ export interface UserStore {
   ) => Promise<void>;
   updateUserName: (name: string) => void;
   setLanguage: (language: string) => void;
-  addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
-  updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;
-  deleteMultiProfile: (profileId: string) => void;
+  /** BE /profiles/members 호출 + 낙관적 업데이트. 실패 시 롤백 + throw — 콜러가 alert 처리. */
+  addMultiProfile: (profile: Omit<Profile, 'id'>) => Promise<void>;
+  updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => Promise<void>;
+  deleteMultiProfile: (profileId: string) => Promise<void>;
+  /** GET /profiles/members 재조회 → currentUser.multiProfiles 갱신. 로그인 후 또는 외부 동기화 시. */
+  reloadMembers: () => Promise<void>;
   /** 멀티 프로필 추가 설문 진행 중 여부 (FE 전용) */
   multiProfileMode: boolean;
   multiProfileName: string;

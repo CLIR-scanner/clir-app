@@ -62,7 +62,14 @@ export default function MultiProfileDetailScreen() {
       t('multiProfile.deleteMsg', { name: profile!.name }),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.delete'), style: 'destructive', onPress: () => { deleteMultiProfile(profileId); navigation.goBack(); } },
+        { text: t('common.delete'), style: 'destructive', onPress: async () => {
+          try {
+            await deleteMultiProfile(profileId);
+            navigation.goBack();
+          } catch (e) {
+            Alert.alert(t('common.error'), (e as Error).message);
+          }
+        } },
       ],
     );
   }
