@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
 import { signOut as authSignOut, submitSurvey } from '../services/auth.service';
+import { updateLanguage as apiUpdateLanguage } from '../services/user.service';
+import { languageStorage } from '../lib/storage';
+import i18n from '../i18n';
 import { useScanStore } from './scan.store';
 import { useListStore } from './list.store';
 import { DEFAULT_LANGUAGE } from '../constants/languages';
@@ -28,24 +31,42 @@ export const useUserStore = create<UserStore>((set, get) => ({
   // 0 = 미초기화. setUser 가 처음 호출되면 1 부터 시작 → 첫 mount 시점의 dep 변화로 fetch 트리거.
   profileVersion: 0,
   enabledProfileIds: [],
+  hasExplicitLanguage: false,
   multiProfileMode: false,
   multiProfileName: '',
 
   initialize: async () => {
-
+    // AsyncStorage 에 저장된 언어를 *isInitialized=true 이전에* 하이드레이트 →
+    // 첫 렌더부터 올바른 언어로 표시 (스플래시 중에 i18n 동기화 완료).
+    const stored = await languageStorage.read();
+    if (stored) {
+      // i18n 도 즉시 동기 — App.tsx 의 useEffect 가 fire 하기 전 시점.
+      try { await i18n.changeLanguage(stored); } catch { /* swallow */ }
+      set(state => ({
+        currentUser: { ...state.currentUser, language: stored },
+        hasExplicitLanguage: true,
+      }));
+    }
     // TODO: 저장된 토큰으로 세션 복원
-
     set({ isInitialized: true });
   },
 
   setUser: (user: User) => {
+    const { hasExplicitLanguage, currentUser } = get();
+    // 사용자가 이 디바이스에서 언어를 명시 선택했으면 그대로 유지.
+    // 그렇지 않으면 BE 의 user.language 채택 + AsyncStorage 에 캐시 (다음 cold start 시 즉시 적용).
+    const effectiveLanguage = hasExplicitLanguage
+      ? (currentUser.language || DEFAULT_LANGUAGE)
+      : (user.language || DEFAULT_LANGUAGE);
+    if (!hasExplicitLanguage && user.language) {
+      // BE 가 채워준 언어를 디바이스에 캐시 — fire-and-forget.
+      void languageStorage.write(user.language);
+    }
 
-
-    const currentLanguage = get().currentUser.language;
     const normalized: User = {
       ...user,
       multiProfiles: user.multiProfiles ?? [],
-      language: user.language ?? currentLanguage ?? DEFAULT_LANGUAGE,
+      language: effectiveLanguage,
     };
 
     set(state => ({
@@ -127,9 +148,18 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   setLanguage: (language: string) => {
+    // 동기: 즉시 store + i18n 갱신. UI 가 멈추지 않게.
     set(state => ({
       currentUser: { ...state.currentUser, language },
+      hasExplicitLanguage: true,
     }));
+    // i18n 도 즉시 (App.tsx useEffect 의 race 회피 — 호출자가 더 이상 i18n.changeLanguage 직접 호출 안 해도 됨).
+    void i18n.changeLanguage(language);
+    // 비동기 영속화 — AsyncStorage 가 durable 계층, BE 는 best-effort 미러.
+    void languageStorage.write(language);
+    void apiUpdateLanguage(language).catch(() => {
+      // BE 미구현(404) 또는 네트워크 실패 — 로컬은 이미 저장됨. 다음 setLanguage 호출 또는 재로그인 시 재시도.
+    });
   },
 
   addMultiProfile: (profile: Omit<Profile, 'id'>) => {

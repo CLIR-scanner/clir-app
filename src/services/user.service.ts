@@ -14,6 +14,15 @@ export async function updateName(name: string): Promise<void> {
   });
 }
 
+/** PATCH /user/me — 언어 코드 동기화. BE 가 이 엔드포인트를 아직 미구현이면
+ *  404 throw — 콜러는 silent-swallow 권장 (AsyncStorage 가 durable 계층). */
+export async function updateLanguage(language: string): Promise<void> {
+  await apiFetch<void>('/user/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ language }),
+  });
+}
+
 // ─── 멤버 프로필 (가족 등) ───────────────────────────────────────────────────
 
 /** GET /profiles/members — 본인이 소유한 멤버 프로필 전체 목록. */
