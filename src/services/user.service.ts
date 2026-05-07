@@ -1,18 +1,12 @@
-// TODO: Real API 연동 시 이 파일의 구현부만 교체
-import { User, Profile } from '../types';
+// 사용자 본인 프로필 + 멤버 프로필(멀티) BE API 호출 레이어.
+// BE 라우트: src/routes/profiles-members.ts
+
 import { apiFetch } from '../lib/api';
+import { MemberProfile, MemberProfileInput, MemberProfileUpdate } from '../types';
 
-/**
- * 현재 로그인된 사용자의 전체 프로필을 반환한다.
- */
-export async function getProfile(): Promise<User> {
-  throw new Error('Not implemented');
-}
+// ─── 본인 프로필 메타 ────────────────────────────────────────────────────────
 
-/**
- * 사용자 이름을 변경한다.
- * PATCH /user/me  { name }
- */
+/** PATCH /user/me — 사용자 이름 변경. */
 export async function updateName(name: string): Promise<void> {
   await apiFetch<void>('/user/me', {
     method: 'PATCH',
@@ -20,47 +14,41 @@ export async function updateName(name: string): Promise<void> {
   });
 }
 
-/**
- * 비밀번호를 변경한다.
- * PATCH /user/password  { currentPassword, newPassword }
- */
-export async function updatePassword(
-  currentPassword: string,
-  newPassword: string,
-): Promise<void> {
-  await apiFetch<void>('/user/password', {
-    method: 'PATCH',
-    body: JSON.stringify({ currentPassword, newPassword }),
+// ─── 멤버 프로필 (가족 등) ───────────────────────────────────────────────────
+
+/** GET /profiles/members — 본인이 소유한 멤버 프로필 전체 목록. */
+export async function listMembers(): Promise<MemberProfile[]> {
+  const res = await apiFetch<{ members: MemberProfile[] }>('/profiles/members');
+  return res.members;
+}
+
+/** GET /profiles/members/:id — 단건 조회 (소유자 검증). */
+export async function getMember(id: string): Promise<MemberProfile> {
+  return apiFetch<MemberProfile>(`/profiles/members/${encodeURIComponent(id)}`);
+}
+
+/** POST /profiles/members — 신규 멤버 프로필 생성. */
+export async function createMember(input: MemberProfileInput): Promise<MemberProfile> {
+  return apiFetch<MemberProfile>('/profiles/members', {
+    method: 'POST',
+    body: JSON.stringify(input),
   });
 }
 
-/**
- * activeProfile 필드를 업데이트한다.
- */
-export async function updateProfile(updates: Partial<Profile>): Promise<Profile> {
-  throw new Error('Not implemented');
+/** PATCH /profiles/members/:id — 부분 갱신. */
+export async function updateMember(
+  id: string,
+  updates: MemberProfileUpdate,
+): Promise<MemberProfile> {
+  return apiFetch<MemberProfile>(`/profiles/members/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
 }
 
-/**
- * 멀티 프로필에 새 프로필을 추가한다.
- */
-export async function addMultiProfile(profile: Omit<Profile, 'id'>): Promise<Profile> {
-  throw new Error('Not implemented');
-}
-
-/**
- * 멀티 프로필의 특정 프로필을 수정한다.
- */
-export async function updateMultiProfile(
-  profileId: string,
-  updates: Partial<Omit<Profile, 'id'>>,
-): Promise<Profile> {
-  throw new Error('Not implemented');
-}
-
-/**
- * 멀티 프로필에서 특정 프로필을 삭제한다.
- */
-export async function deleteMultiProfile(profileId: string): Promise<void> {
-  throw new Error('Not implemented');
+/** DELETE /profiles/members/:id — 삭제 (소유자 검증). */
+export async function deleteMember(id: string): Promise<void> {
+  await apiFetch<void>(`/profiles/members/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
 }
