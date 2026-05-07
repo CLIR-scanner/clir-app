@@ -1751,8 +1751,19 @@ components:
           type: string
           example: 땅콩
         description:
-          type: string
-          example: 땅콩은 대표적인 알러지 유발 식품으로 심한 경우 아나필락시스를 일으킬 수 있습니다.
+          oneOf:
+            - type: string
+              description: 단일 언어 legacy shape (한국어). 마이그 잔존 행 또는 미정의 ingredient 에 한정.
+            - type: object
+              additionalProperties:
+                type: string
+              description: |
+                BCP47 언어 코드 → 설명 텍스트 dict. 다국어 카탈로그 마이그 후 표준 shape.
+                키: en, ko, ja, zh, es, fr. FE getIngredientDescription(ingredient, language) 헬퍼가 활성 언어로 선택.
+          example:
+            en: Peanuts cause some of the most severe allergic reactions, with even trace amounts potentially triggering fatal anaphylaxis.
+            ko: 땅콩은 가장 심각한 알러지 반응을 유발하는 식품 중 하나로, 소량으로도 치명적인 아나필락시스를 일으킬 수 있습니다.
+            ja: ピーナッツは最も重篤なアレルギー反応を引き起こす食品の一つです。
         riskLevel:
           type: string
           enum: [safe, caution, danger]
