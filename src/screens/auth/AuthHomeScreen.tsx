@@ -7,6 +7,7 @@ import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
 import { AuthStackParamList } from '../../types';
 import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
+import { TERMS_VERSION } from '../../constants/legal-version';
 
 function ClirLogo({ width = 105, height = 62, color = '#1C3A19' }: { width?: number; height?: number; color?: string }) {
   return (
@@ -47,6 +48,12 @@ export default function AuthHomeScreen() {
         navigation.reset({ index: 0, routes: [{ name: 'SurveyLanding', params: {} }] });
       } else {
         setUser(user);
+      }
+      // 약관 동의 audit trail — BE 의 terms_version 이 현재 TERMS_VERSION 과 다르면
+      // 가입 직후 또는 약관 변경 후 첫 로그인 직후 자동 갱신. fire-and-forget —
+      // 실패해도 사용자 흐름 막지 않음 (durable 계층은 BE DB, 다음 로그인 재시도).
+      if (user.termsVersion !== TERMS_VERSION) {
+        AuthService.acceptTerms(TERMS_VERSION).catch(() => { /* swallow */ });
       }
     } catch (e) {
       const msg = (e as Error).message;
