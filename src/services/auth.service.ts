@@ -98,6 +98,8 @@ type MeResponse = {
   language?: string;
   hasCompletedSurvey: boolean;
   betaCohort?: BetaCohort[] | null;
+  termsAcceptedAt?: string | null;
+  termsVersion?: string | null;
 };
 
 /** GET /auth/me — 현재 토큰으로 프로필 조회 + 최초 로그인 여부 반환 */
@@ -115,8 +117,28 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     consentFlags: { imageRetention: false, corrections: false },
     hasCompletedSurvey: res.hasCompletedSurvey,
     betaCohort: res.betaCohort ?? null,
+    termsAcceptedAt: res.termsAcceptedAt ?? null,
+    termsVersion: res.termsVersion ?? null,
   };
   return { user, hasCompletedSurvey: res.hasCompletedSurvey };
+}
+
+/** POST /auth/accept-terms — 약관 동의 audit trail 기록.
+ *  멱등 — 같은 사용자가 다시 호출하면 timestamp 만 갱신. 호출자는 fire-and-forget OK
+ *  (실패해도 사용자 흐름 막지 않음). 다음 fetchMe 응답에 갱신된 termsAcceptedAt/Version. */
+export async function acceptTerms(version: string): Promise<{
+  termsAcceptedAt: string;
+  termsVersion: string;
+}> {
+  const res = await apiFetch<{
+    ok: true;
+    termsAcceptedAt: string;
+    termsVersion: string;
+  }>('/auth/accept-terms', {
+    method: 'POST',
+    body: JSON.stringify({ version }),
+  });
+  return { termsAcceptedAt: res.termsAcceptedAt, termsVersion: res.termsVersion };
 }
 
 /** POST /auth/redeem-invite — 베타 invite_code 사용 → cohort 배열 반환.
