@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -91,13 +91,19 @@ export default function AuthHomeScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.appleButton, styles.buttonDisabled]}
-            onPress={handleApple}
-            disabled
-          >
-            <Text style={styles.appleButtonText}>{t('auth.continueWithApple')}</Text>
-          </TouchableOpacity>
+          {/* 베타 v1: iOS 빌드에서 Apple Sign-In 버튼 비표시.
+              Apple Sign-In stub (auth.service.signInWithApple) 가 throws 라
+              App Store Guideline 4.8 (Google offered → Apple 의무) reject 위험.
+              정식 출시 전 정식 구현 필수 (F8 §3.1 옵션 A). Android 는 그대로 노출. */}
+          {Platform.OS !== 'ios' && (
+            <TouchableOpacity
+              style={[styles.appleButton, styles.buttonDisabled]}
+              onPress={handleApple}
+              disabled
+            >
+              <Text style={styles.appleButtonText}>{t('auth.continueWithApple')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={styles.terms}>
