@@ -1,4 +1,4 @@
-// TODO: Real API 연동 시 USE_MOCK 을 false 로 변경
+// 즐겨찾기 / 쇼핑 BE 호출 레이어. 실 API 만 사용 (mock dead-code 제거됨).
 import { FavoriteItem, Ingredient, RiskLevel, ShoppingItem } from '../types';
 import { apiFetch } from '../lib/api';
 import { makeRiskIngredient, makeMayContainIngredient } from './allergen.service';
@@ -124,110 +124,6 @@ function postResponseToFavoriteItem(raw: FavoritePostResponse): FavoriteItem {
   };
 }
 
-// ─── 즐겨찾기 ─────────────────────────────────────────────────────────────────
-
-const USE_MOCK = false; // 실제 API 연결 시 false 로 변경
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const MOCK_FAVORITES: FavoriteItem[] = [
-  {
-    id: 'fav-001',
-    productId: 'prod-002',
-    userId: 'dev-user',
-    memo: '',
-    addedAt: new Date('2026-04-10T10:00:00Z'),
-    product: {
-      id: 'prod-002',
-      name: 'Pure Sparkling Water',
-      brand: 'Evian',
-      image: undefined,
-      ingredients: [],
-      isSafe: true,
-      riskLevel: 'safe',
-      riskIngredients: [],
-      mayContainIngredients: [],
-      alternatives: [],
-    },
-  },
-  {
-    id: 'fav-002',
-    productId: 'prod-003',
-    userId: 'dev-user',
-    memo: '',
-    addedAt: new Date('2026-04-09T14:30:00Z'),
-    product: {
-      id: 'prod-003',
-      name: "Reese's Peanut Butter Cups",
-      brand: "Hershey's",
-      image: undefined,
-      ingredients: [],
-      isSafe: false,
-      riskLevel: 'caution',
-      riskIngredients: [],
-      mayContainIngredients: [],
-      alternatives: [],
-    },
-  },
-  {
-    id: 'fav-003',
-    productId: 'prod-004',
-    userId: 'dev-user',
-    memo: '',
-    addedAt: new Date('2026-04-08T09:15:00Z'),
-    product: {
-      id: 'prod-004',
-      name: 'Nature Valley Granola Bar',
-      brand: 'General Mills',
-      image: undefined,
-      ingredients: [],
-      isSafe: true,
-      riskLevel: 'safe',
-      riskIngredients: [],
-      mayContainIngredients: [],
-      alternatives: [],
-    },
-  },
-  {
-    id: 'fav-004',
-    productId: 'prod-005',
-    userId: 'dev-user',
-    memo: '',
-    addedAt: new Date('2026-04-07T11:20:00Z'),
-    product: {
-      id: 'prod-005',
-      name: "Lay's Classic Chips",
-      brand: 'Frito-Lay',
-      image: undefined,
-      ingredients: [],
-      isSafe: true,
-      riskLevel: 'safe',
-      riskIngredients: [],
-      mayContainIngredients: [],
-      alternatives: [],
-    },
-  },
-  {
-    id: 'fav-005',
-    productId: 'prod-001',
-    userId: 'dev-user',
-    memo: '',
-    addedAt: new Date('2026-04-06T16:45:00Z'),
-    product: {
-      id: 'prod-001',
-      name: 'Coca-Cola Original',
-      brand: 'The Coca-Cola Company',
-      image: undefined,
-      ingredients: [],
-      isSafe: false,
-      riskLevel: 'danger',
-      riskIngredients: [],
-      mayContainIngredients: [],
-      alternatives: [],
-    },
-  },
-];
-
 // ─── API Functions ────────────────────────────────────────────────────────────
 
 /**
@@ -235,9 +131,6 @@ const MOCK_FAVORITES: FavoriteItem[] = [
  * 현재 사용자의 즐겨찾기 목록을 최신순으로 반환한다.
  */
 export async function getFavorites(): Promise<FavoriteItem[]> {
-  if (USE_MOCK) {
-    return [...MOCK_FAVORITES];
-  }
   const res = await apiFetch<{ favorites: FavoriteApiItem[] }>('/favorites');
   return res.favorites.map(toFavoriteItem).filter((f): f is FavoriteItem => f !== null);
 }
@@ -254,21 +147,6 @@ export async function getFavorites(): Promise<FavoriteItem[]> {
  * ```
  */
 export async function addFavorite(productId: string): Promise<FavoriteItem> {
-  if (USE_MOCK) {
-    const existing = MOCK_FAVORITES.find(f => f.productId === productId);
-    if (existing) return existing;
-    // 목록에 없는 제품도 즐겨찾기 추가 허용 (검색 결과 등)
-    const newItem: FavoriteItem = {
-      id: `fav-${Date.now()}`,
-      productId,
-      userId: 'dev-user',
-      memo: '',
-      addedAt: new Date(),
-      product: { id: productId, name: '', brand: '', ingredients: [], isSafe: true, riskLevel: 'safe', riskIngredients: [], mayContainIngredients: [], alternatives: [] },
-    };
-    MOCK_FAVORITES.push(newItem);
-    return newItem;
-  }
   const raw = await apiFetch<FavoritePostWire>('/favorites', {
     method: 'POST',
     body: JSON.stringify({ productId }),
@@ -281,7 +159,6 @@ export async function addFavorite(productId: string): Promise<FavoriteItem> {
  * 즐겨찾기에서 항목을 삭제한다.
  */
 export async function removeFavorite(favoriteId: string): Promise<void> {
-  if (USE_MOCK) return;
   await apiFetch<void>(`/favorites/${encodeURIComponent(favoriteId)}`, {
     method: 'DELETE',
   });
@@ -290,7 +167,6 @@ export async function removeFavorite(favoriteId: string): Promise<void> {
 // ─── 장보기 목록 (미구현 — API 스펙 외) ──────────────────────────────────────
 
 export async function getShoppingItems(): Promise<ShoppingItem[]> {
-  if (USE_MOCK) return [];
   return [];
 }
 
@@ -302,7 +178,6 @@ export async function addShoppingItem(_productId: string): Promise<ShoppingItem>
  * 장보기 목록에서 항목을 삭제한다.
  */
 export async function removeShoppingItem(_itemId: string): Promise<void> {
-  if (USE_MOCK) return;
   // no-op
 }
 
@@ -310,6 +185,5 @@ export async function removeShoppingItem(_itemId: string): Promise<void> {
  * 장보기 항목의 구매 완료 상태를 토글한다.
  */
 export async function toggleShoppingItemPurchased(_itemId: string): Promise<void> {
-  if (USE_MOCK) return;
   // no-op
 }
