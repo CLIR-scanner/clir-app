@@ -6,6 +6,7 @@
 
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import * as Sentry from '@sentry/react-native';
 import { supabase } from '../lib/supabase';
 import { apiFetch, setAuthToken, clearAuthToken, ApiError } from '../lib/api';
 import { User, SurveyData, BetaCohort } from '../types';
@@ -68,6 +69,9 @@ async function signInWithProvider(provider: 'google' | 'apple'): Promise<AuthRes
   setAuthToken(token);
 
   const me = await fetchMe();
+  // Sentry 이벤트에 사용자 식별자 부착 — 크래시·에러를 특정 베타 사용자와 매칭.
+  // email 은 PII 라 포함하지 않음. id 만으로 대시보드 필터링 충분.
+  Sentry.setUser({ id: me.user.id });
   return { token, user: me.user, isFirstLogin: !me.hasCompletedSurvey };
 }
 
@@ -178,6 +182,8 @@ export async function signOut(): Promise<void> {
     // Supabase 네트워크 실패해도 로컬 토큰은 정리
   }
   clearAuthToken();
+  // Sentry 식별자 해제 — 다음 로그인 사용자와 이벤트 분리.
+  Sentry.setUser(null);
 }
 
 export { ApiError };
