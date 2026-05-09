@@ -1,5 +1,3 @@
-// TODO: Real API 연동 시 이 파일의 구현부만 교체
-//
 // 소셜 로그인 전용 서비스.
 // - 브라우저 플로우 (expo-auth-session + Supabase OAuth) 로 구현.
 // - 추후 Expo Dev Build 로 전환해 네이티브 SDK (expo-apple-authentication,
@@ -56,10 +54,6 @@ async function signInWithProvider(provider: 'google' | 'apple'): Promise<AuthRes
   if (!accessToken || !refreshToken) {
     throw new Error('OAuth 응답에서 토큰을 찾을 수 없습니다.');
   }
-  console.log('[oauth] tokens extracted, setting session');
-  // DEV-ONLY: 로컬 curl 테스트용 access_token 출력. 배포 전 제거.
-  console.log('[DEV] ACCESS_TOKEN =', accessToken);
-
   const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
     access_token: accessToken,
     refresh_token: refreshToken,

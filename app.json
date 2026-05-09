@@ -17,20 +17,28 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "CLIR이 바코드 및 OCR 스캔을 위해 카메라에 접근합니다.",
+          "cameraPermission": "CLIR uses the camera to scan barcodes and recognize ingredient labels.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
       ],
-      "expo-web-browser",
-      "@sentry/react-native"
+"expo-web-browser",
+  [
+    "expo-image-picker",
+    {
+      "photosPermission": "CLIR needs photo library access to set your profile picture."
+    }
+  ],
+  "@sentry/react-native"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.clir.app"
+      "bundleIdentifier": "com.clir.app",
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.clir.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
