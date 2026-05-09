@@ -22,14 +22,21 @@
           "recordAudioAndroid": false
         }
       ],
-"expo-web-browser",
-  [
-    "expo-image-picker",
-    {
-      "photosPermission": "CLIR needs photo library access to set your profile picture."
-    }
-  ],
-  "@sentry/react-native"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CLIR needs photo library access to set your profile picture."
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "kmu-g-pbl",
+          "project": "clir-rn"
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
@@ -43,12 +50,21 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "single"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7aec29eb-bc45-4b63-b8c1-97fe50b3c253"
+      }
     }
   }
 }
