@@ -1,5 +1,3 @@
-// TODO: Real API 연동 시 이 파일의 구현부만 교체
-//
 // 소셜 로그인 전용 서비스.
 // - 브라우저 플로우 (expo-auth-session + Supabase OAuth) 로 구현.
 // - 추후 Expo Dev Build 로 전환해 네이티브 SDK (expo-apple-authentication,

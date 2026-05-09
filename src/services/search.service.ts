@@ -1,4 +1,4 @@
-// TODO: Real API 연동 시 이 파일의 구현부만 교체
+// 검색 BE 호출 레이어 (실 API).
 import { Product, SearchResultItem, SearchSuggestion } from '../types';
 import { apiFetch } from '../lib/api';
 
