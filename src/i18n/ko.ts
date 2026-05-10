@@ -243,6 +243,8 @@ const ko = {
     barcode:            '바코드',
     ocr:                'OCR',
     ocrSubtitle:        '제품 성분표 OCR 스캔',
+    barcodeGuideInstruction:'바코드를 중앙에 맞추고\n고정해 주세요',
+    ocrGuideInstruction:'내용이 선명하게 보이도록 맞추고\n프레임 안에 모두 넣어 주세요',
     connectionError:    '연결 오류',
     connectionMessage:  '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.',
     productNotFound:    '제품을 찾을 수 없습니다',

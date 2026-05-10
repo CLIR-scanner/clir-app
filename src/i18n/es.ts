@@ -109,7 +109,7 @@ const es = {
     cameraPermission: 'Se requiere acceso a la cámara', grantPermission: 'Dar permiso',
     cameraDescBarcode: 'CLIR necesita acceso a la cámara para escanear códigos e ingredientes.',
     cameraDescOcr: 'CLIR necesita acceso a la cámara para fotografiar etiquetas de ingredientes.', retake: 'Repetir',
-    analyzing: 'Analizando...', tryAgain: 'Intentar de nuevo', barcode: 'CÓDIGO', ocr: 'OCR',
+    analyzing: 'Analizando...', tryAgain: 'Intentar de nuevo', barcode: 'CÓDIGO', ocr: 'OCR', barcodeGuideInstruction: 'Centra el código de barras\ny mantén estable', ocrGuideInstruction: 'Mantén el contenido claro, enfocado\ny visible dentro del marco.',
     ocrSubtitle: 'Escanear OCR del producto', connectionError: 'Error de conexión',
     connectionMessage: 'No se puede conectar al servidor. Inténtalo más tarde.',
     productNotFound: 'Producto no encontrado', scanLabelInstead: 'Escanea la etiqueta de ingredientes con OCR.',

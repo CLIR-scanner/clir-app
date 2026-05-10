@@ -17,7 +17,7 @@ import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, SvgUri } from 'react-native-svg';
 import { ScanStackParamList, MainTabParamList, Product, AnalysisResult, RiskLevel, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
 import {
@@ -78,6 +78,13 @@ const GOOD_COLOR = Colors.scanCorrect;
 const BAD_COLOR  = '#FF0000';
 const RESULT_BADGE_D = 190;
 const RESULT_BADGE_ICON_D = 78;
+const BARCODE_GUIDE_PREVIEW_MS = 2000;
+const OCR_GUIDE_PREVIEW_MS = 2000;
+const BARCODE_GUIDE_ASSET = require('../../../assets/Barcode Guide Illustration.svg') as number;
+const OCR_GUIDE_ASSET = require('../../../assets/OCR Guide Illustration.svg') as number;
+const GUIDE_ILLUSTRATION_W = Math.min(220, SCREEN_W - 96);
+const GUIDE_ILLUSTRATION_H = GUIDE_ILLUSTRATION_W * (264 / 220);
+const GUIDE_PHONE_CENTER_OFFSET_X = (134.2 - 110) * (GUIDE_ILLUSTRATION_W / 220);
 
 const TOGGLE_W   = 241;
 const TOGGLE_H   = 36.0213508605957;
@@ -110,10 +117,14 @@ export default function ScanScreen({ navigation }: Props) {
 
   const [cameraActive, setCameraActive] = useState(true);
   const [isOCRMode,    setIsOCRMode]    = useState(false);
+  const [showBarcodeGuidePreview, setShowBarcodeGuidePreview] = useState(false);
+  const [showOcrGuidePreview, setShowOcrGuidePreview] = useState(false);
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
   const cameraRef        = useRef<ScannerCameraHandle>(null);
+  const barcodeGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ocrGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Animations
   const circleScale = useRef(new Animated.Value(0)).current;
@@ -130,6 +141,44 @@ export default function ScanScreen({ navigation }: Props) {
 
   const lastProductImage = history[0]?.product.image;
 
+  const startBarcodeGuidePreview = useCallback(() => {
+    if (barcodeGuideTimerRef.current) {
+      clearTimeout(barcodeGuideTimerRef.current);
+    }
+    setShowBarcodeGuidePreview(true);
+    barcodeGuideTimerRef.current = setTimeout(() => {
+      setShowBarcodeGuidePreview(false);
+      barcodeGuideTimerRef.current = null;
+    }, BARCODE_GUIDE_PREVIEW_MS);
+  }, []);
+
+  const stopBarcodeGuidePreview = useCallback(() => {
+    if (barcodeGuideTimerRef.current) {
+      clearTimeout(barcodeGuideTimerRef.current);
+      barcodeGuideTimerRef.current = null;
+    }
+    setShowBarcodeGuidePreview(false);
+  }, []);
+
+  const startOcrGuidePreview = useCallback(() => {
+    if (ocrGuideTimerRef.current) {
+      clearTimeout(ocrGuideTimerRef.current);
+    }
+    setShowOcrGuidePreview(true);
+    ocrGuideTimerRef.current = setTimeout(() => {
+      setShowOcrGuidePreview(false);
+      ocrGuideTimerRef.current = null;
+    }, OCR_GUIDE_PREVIEW_MS);
+  }, []);
+
+  const stopOcrGuidePreview = useCallback(() => {
+    if (ocrGuideTimerRef.current) {
+      clearTimeout(ocrGuideTimerRef.current);
+      ocrGuideTimerRef.current = null;
+    }
+    setShowOcrGuidePreview(false);
+  }, []);
+
   // ── Focus / blur: camera lifecycle + history 썸네일 로드 ──────────────────────
   useFocusEffect(
     useCallback(() => {
@@ -144,6 +193,7 @@ export default function ScanScreen({ navigation }: Props) {
       setScanResult(null);
       setScanPreviewUri(null);
       setCameraError(null);
+      startBarcodeGuidePreview();
       circleScale.setValue(0);
       sheetY.setValue(320);
 
@@ -158,9 +208,11 @@ export default function ScanScreen({ navigation }: Props) {
       return () => {
         // Screen blurred → deactivate camera + stop scanning
         setCameraActive(false);
+        stopBarcodeGuidePreview();
+        stopOcrGuidePreview();
         processingRef.current = false;
       };
-    }, [circleScale, sheetY, setHistory, toggleSlide]),
+    }, [circleScale, sheetY, setHistory, startBarcodeGuidePreview, stopBarcodeGuidePreview, stopOcrGuidePreview, toggleSlide]),
   );
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
@@ -177,6 +229,13 @@ export default function ScanScreen({ navigation }: Props) {
     circleScale.setValue(0);
     sheetY.setValue(320);
     setCameraActive(true);
+    if (ocr) {
+      stopBarcodeGuidePreview();
+      startOcrGuidePreview();
+    } else {
+      stopOcrGuidePreview();
+      startBarcodeGuidePreview();
+    }
 
     setIsOCRMode(ocr);
     Animated.timing(toggleSlide, {
@@ -277,6 +336,8 @@ export default function ScanScreen({ navigation }: Props) {
   async function processBarcode(barcode: string) {
     if (processingRef.current) return;
     processingRef.current = true;
+    stopBarcodeGuidePreview();
+    stopOcrGuidePreview();
     setBarcodeDetected(true);
     setProcessing(true);
     void captureScanPreview();
@@ -336,6 +397,8 @@ export default function ScanScreen({ navigation }: Props) {
   async function processOCRPhoto(imageUri: string) {
     if (processingRef.current) return;
     processingRef.current = true;
+    stopBarcodeGuidePreview();
+    stopOcrGuidePreview();
     setBarcodeDetected(false);
     setProcessing(true);
     setScanPreviewUri(imageUri);
@@ -420,6 +483,11 @@ export default function ScanScreen({ navigation }: Props) {
       setBarcodeDetected(false);
       setProcessing(false);
       setScanPreviewUri(null);
+      if (isOCRMode) {
+        startOcrGuidePreview();
+      } else {
+        startBarcodeGuidePreview();
+      }
       return;
     }
     // 스캔 탭은 Tab.Navigator의 한 탭 — 직전 탭으로 돌아가려면 부모(탭) 네비게이터로 이동.
@@ -439,6 +507,7 @@ export default function ScanScreen({ navigation }: Props) {
 
   const handleBarcodeScanned = useCallback(
     (result: ScannerResult) => {
+      if (showBarcodeGuidePreview) return;
       // URL 형태 QR 코드는 제품 바코드가 아님 (Expo 개발 QR 등)
       if (/^https?:\/\/|^exp:\/\//.test(result.data)) return;
       latestBarcodeRef.current = result.data;
@@ -446,12 +515,13 @@ export default function ScanScreen({ navigation }: Props) {
       processBarcode(result.data);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [showBarcodeGuidePreview],
   );
 
   // ── Manual camera button ──────────────────────────────────────────────────
 
   async function handleManualCapture() {
+    if (showBarcodeGuidePreview) return;
     if (processingRef.current) return;
 
     if (isOCRMode) {
@@ -616,6 +686,7 @@ export default function ScanScreen({ navigation }: Props) {
   const cornerColor  = scanResult
     ? verdictColor
     : barcodeDetected ? BAD_COLOR : Colors.white;
+  const isGuidePreviewVisible = showBarcodeGuidePreview || showOcrGuidePreview;
 
   return (
     <View style={styles.root}>
@@ -625,7 +696,7 @@ export default function ScanScreen({ navigation }: Props) {
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
           facing="back"
-          active={!isOCRMode && !processingRef.current}
+          active={!isOCRMode && !processingRef.current && !showBarcodeGuidePreview}
           barcodeTypes={BARCODE_TYPES}
           onBarcodeScanned={handleBarcodeScanned}
           onError={(reason, raw) => {
@@ -653,7 +724,7 @@ export default function ScanScreen({ navigation }: Props) {
       {scanResult ? <View style={styles.resultBackdropTint} pointerEvents="none" /> : null}
 
       {/* Dim overlay with guide window */}
-      {isOCRMode ? (
+      {isGuidePreviewVisible && !scanResult && !processing ? null : isOCRMode ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <View style={[styles.dimTop, { height: ocrDimTop }]} />
           <View style={[styles.dimMiddle, { height: ocrGuideH }]}>
@@ -685,6 +756,13 @@ export default function ScanScreen({ navigation }: Props) {
           ) : null}
         </BarcodeScanOverlay>
       )}
+
+      {showBarcodeGuidePreview && !isOCRMode && !scanResult && !processing ? (
+        <BarcodeGuidePreview />
+      ) : null}
+      {showOcrGuidePreview && isOCRMode && !scanResult && !processing ? (
+        <OcrGuidePreview />
+      ) : null}
 
       {/* Header */}
       <ScanHeader
@@ -861,6 +939,47 @@ function BarcodeScanOverlay({
         <ScanCorner pos="bottomLeft"  color={cornerColor} />
         <ScanCorner pos="bottomRight" color={cornerColor} />
         {children}
+      </View>
+    </View>
+  );
+}
+
+function BarcodeGuidePreview() {
+  const { t } = useTranslation();
+
+  return (
+    <GuideIllustrationPreview
+      label={t('scanUi.barcodeGuideInstruction')}
+      asset={BARCODE_GUIDE_ASSET}
+    />
+  );
+}
+
+function OcrGuidePreview() {
+  const { t } = useTranslation();
+
+  return (
+    <GuideIllustrationPreview
+      label={t('scanUi.ocrGuideInstruction')}
+      asset={OCR_GUIDE_ASSET}
+    />
+  );
+}
+
+function GuideIllustrationPreview({ label, asset }: { label: string; asset: number }) {
+  const uri = Image.resolveAssetSource(asset).uri;
+
+  return (
+    <View style={styles.guidePreviewScreenLayer} pointerEvents="none">
+      <Text style={styles.guidePreviewText}>
+        {label}
+      </Text>
+      <View style={styles.guidePreviewIllustrationFrame}>
+        <SvgUri
+          uri={uri}
+          width={GUIDE_ILLUSTRATION_W}
+          height={GUIDE_ILLUSTRATION_H}
+        />
       </View>
     </View>
   );
@@ -1165,6 +1284,26 @@ const styles = StyleSheet.create({
     left: GUIDE_LEFT,
     width: GUIDE_W,
     height: GUIDE_H,
+  },
+  guidePreviewScreenLayer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guidePreviewText: {
+    color: Colors.scanLightGreen,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  guidePreviewIllustrationFrame: {
+    width: GUIDE_ILLUSTRATION_W,
+    height: GUIDE_ILLUSTRATION_H,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateX: -GUIDE_PHONE_CENTER_OFFSET_X }],
   },
 
   // Corner strokes
