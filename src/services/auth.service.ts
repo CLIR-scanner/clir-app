@@ -55,17 +55,23 @@ async function signInWithProvider(provider: 'google' | 'apple'): Promise<AuthRes
   if (!accessToken || !refreshToken) {
     throw new Error('OAuth 응답에서 토큰을 찾을 수 없습니다.');
   }
-  const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
-  if (sessionError || !sessionData?.session) {
-    console.log('[oauth] setSession error:', sessionError);
-    throw new Error(sessionError?.message ?? '세션 설정에 실패했습니다.');
+  // setSession 은 내부적으로 Supabase /auth/v1/user 를 호출하는데, 일부 환경
+  // (Apple Silicon Pixel 에뮬레이터 등) 에서 RN OkHttp fetch 가 Cloudflare-fronted
+  // Supabase 엔드포인트로 도달 못해 'Network request failed' 로 떨어짐. CLIR 는
+  // Supabase JS SDK 의 in-memory 세션을 사용 안 하고 BE (Railway) /auth/me 가
+  // 토큰을 검증하므로, setSession 의 실패는 swallow 후 fragment 의 access_token
+  // 그대로 사용해도 로그인 흐름이 완성됨.
+  try {
+    await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+  } catch (e) {
+    console.log('[oauth] setSession failed (ignored, falling back to fragment token):', e);
   }
-  console.log('[oauth] session acquired, fetching /auth/me');
+  console.log('[oauth] using fragment token, fetching /auth/me');
 
-  const token = sessionData.session.access_token;
+  const token = accessToken;
   setAuthToken(token);
 
   const me = await fetchMe();

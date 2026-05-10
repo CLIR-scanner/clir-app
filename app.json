@@ -41,7 +41,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.clir.app",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.clir.app",
