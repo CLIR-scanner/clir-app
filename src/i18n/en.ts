@@ -428,6 +428,17 @@ const en = {
       poultry:      'Poultry',
       redMeat:      'Red Meat',
     },
+    // ── SurveyLanding beta invite + notices (F8 §5 / closed-beta) ────────────
+    inviteTitle:        'Beta Invite Code',
+    inviteDesc:         'This is a closed beta. Please enter the invite code we sent to your email.',
+    invitePlaceholder:  'Enter invite code',
+    inviteVerify:       'Verify code',
+    inviteSuccess:      "Code verified! You're in.",
+    inviteErrorTooShort:'Code must be at least 6 characters.',
+    inviteErrorInvalid: 'Invalid invite code. Check your email and try again.',
+    inviteErrorGeneric: 'Could not verify code. Please try again.',
+    noticeNutrition:    'Currently we focus on allergen and dietary preference matching only — we do not measure nutrition values (sodium, sugar, calories) yet. Nutrition tracking coming in a future update.',
+    noticeMedical:      'This app is for informational purposes only and is not medical advice. Always consult your doctor for medical decisions. Allergen labeling is based on FDA Big 9 + Sesame; verify the label yourself before consuming.',
   },
 
   // ── Search ────────────────────────────────────────────────────────────────

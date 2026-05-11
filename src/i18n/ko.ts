@@ -433,6 +433,17 @@ const ko = {
       poultry:      '가금류',
       redMeat:      '붉은 고기',
     },
+    // ── SurveyLanding 베타 invite + 안내 (F8 §5 / closed-beta) ───────────────
+    inviteTitle:        '베타 초대 코드',
+    inviteDesc:         '클로즈드 베타 진행 중입니다. 이메일로 받은 초대 코드를 입력해주세요.',
+    invitePlaceholder:  '초대 코드 입력',
+    inviteVerify:       '코드 확인',
+    inviteSuccess:      '인증 완료! 시작할 수 있어요.',
+    inviteErrorTooShort:'코드는 최소 6자 이상이어야 합니다.',
+    inviteErrorInvalid: '잘못된 초대 코드입니다. 이메일을 확인하고 다시 시도해주세요.',
+    inviteErrorGeneric: '코드 확인에 실패했습니다. 잠시 후 다시 시도해주세요.',
+    noticeNutrition:    '현재는 알러지·식이 선호 매칭에만 집중합니다. 영양 수치(나트륨, 당, 칼로리)는 아직 제공하지 않으며, 향후 업데이트에 포함될 예정입니다.',
+    noticeMedical:      '본 앱은 참고용이며 의학적 조언이 아닙니다. 의학적 결정은 반드시 의사와 상의하세요. 알러지 라벨링은 FDA Big 9 + 참깨 기준이며, 섭취 전 라벨을 직접 확인해야 합니다.',
   },
 
   // ── Search ────────────────────────────────────────────────────────────────

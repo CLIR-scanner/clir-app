@@ -183,6 +183,17 @@ const fr = {
     dietCategories: {
       fruitsGrains: 'Fruits / Céréales', vegetables: 'Légumes', dairy: 'Produits laitiers', eggs: 'Oeufs', seafood: 'Fruits de mer', poultry: 'Volaille', redMeat: 'Viande rouge',
     },
+    // ── SurveyLanding beta invite + notices ──────────────────────────────────
+    inviteTitle:        "Code d'invitation bêta",
+    inviteDesc:         "Ceci est une bêta fermée. Veuillez entrer le code d'invitation envoyé par e-mail.",
+    invitePlaceholder:  "Entrez le code d'invitation",
+    inviteVerify:       'Vérifier le code',
+    inviteSuccess:      'Code vérifié ! Vous y êtes.',
+    inviteErrorTooShort:'Le code doit comporter au moins 6 caractères.',
+    inviteErrorInvalid: "Code d'invitation invalide. Vérifiez votre e-mail et réessayez.",
+    inviteErrorGeneric: 'Impossible de vérifier le code. Veuillez réessayer.',
+    noticeNutrition:    "Actuellement nous nous concentrons uniquement sur la correspondance des allergènes et des préférences alimentaires — nous ne mesurons pas encore les valeurs nutritionnelles (sodium, sucre, calories). Le suivi nutritionnel arrivera dans une future mise à jour.",
+    noticeMedical:      "Cette application est à titre informatif uniquement et ne constitue pas un avis médical. Consultez toujours votre médecin pour les décisions médicales. L'étiquetage des allergènes est basé sur FDA Big 9 + Sésame ; vérifiez vous-même l'étiquette avant de consommer.",
   },
   search: {
     placeholder:   'Rechercher un produit ou une marque',
