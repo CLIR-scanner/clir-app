@@ -14,6 +14,7 @@
 - /splash
 - /auth                     ← 회원가입/로그인 선택
 - /auth/signup              ← 회원가입
+- /auth/signup/terms        ← 회원가입 약관 동의
 - /auth/signup/survey       ← 설문조사 (알러지, 식이제한, 건강목표)
 - /auth/login
 

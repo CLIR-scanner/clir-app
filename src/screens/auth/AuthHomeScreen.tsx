@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
 import { AuthStackParamList } from '../../types';
-import * as AuthService from '../../services/auth.service';
-import { useUserStore } from '../../store/user.store';
-import { TERMS_VERSION } from '../../constants/legal-version';
 
 function ClirLogo({ width = 105, height = 62, color = '#1C3A19' }: { width?: number; height?: number; color?: string }) {
   return (
@@ -35,33 +32,9 @@ const S = { bg: '#F9FFF3', primary: '#1C3A19', textLight: '#F9FFF3', muted: '#49
 export default function AuthHomeScreen() {
   const navigation = useNavigation<Nav>();
   const { t } = useTranslation();
-  const setUser = useUserStore(s => s.setUser);
-  const [loading, setLoading] = useState(false);
 
-  async function handleGoogle() {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const { user, isFirstLogin } = await AuthService.signInWithGoogle();
-      if (isFirstLogin) {
-        setUser({ ...user, hasCompletedSurvey: false });
-        navigation.reset({ index: 0, routes: [{ name: 'SurveyLanding', params: {} }] });
-      } else {
-        setUser(user);
-      }
-      // 약관 동의 audit trail — BE 의 terms_version 이 현재 TERMS_VERSION 과 다르면
-      // 가입 직후 또는 약관 변경 후 첫 로그인 직후 자동 갱신. fire-and-forget —
-      // 실패해도 사용자 흐름 막지 않음 (durable 계층은 BE DB, 다음 로그인 재시도).
-      if (user.termsVersion !== TERMS_VERSION) {
-        AuthService.acceptTerms(TERMS_VERSION).catch(() => { /* swallow */ });
-      }
-    } catch (e) {
-      const msg = (e as Error).message;
-      console.log('[oauth] caught:', msg);
-      Alert.alert(t('auth.loginFailed'), msg);
-    } finally {
-      setLoading(false);
-    }
+  function handleGoogle() {
+    navigation.navigate('TermsAgreement', undefined);
   }
 
   function handleApple() {
@@ -80,15 +53,10 @@ export default function AuthHomeScreen() {
       <View style={styles.bottom}>
         <View style={styles.buttons}>
           <TouchableOpacity
-            style={[styles.googleButton, loading && styles.buttonDisabled]}
+            style={styles.googleButton}
             onPress={handleGoogle}
-            disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color={S.primary} />
-            ) : (
-              <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle')}</Text>
-            )}
+            <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle')}</Text>
           </TouchableOpacity>
 
           {/* 베타 v1: iOS 빌드에서 Apple Sign-In 버튼 비표시.

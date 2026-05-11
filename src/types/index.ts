@@ -466,9 +466,39 @@ export type SurveyParams = {
   allergyProfileJson?: string;
 };
 
+export type TermsSectionKey =
+  | 'terms'
+  | 'privacy'
+  | 'personalInfo'
+  | 'healthDisclaimer'
+  | 'ageConfirm'
+  | 'marketing'
+  | 'dataAnalytics';
+
+export interface TermsAgreementListItem {
+  id: TermsSectionKey;
+  title: string;
+  required: boolean;
+  description?: string;
+  secondLine?: string;
+  hasDetail?: boolean;
+}
+
+export interface LegalSectionContent {
+  id: TermsSectionKey;
+  title: string;
+  required: boolean;
+  lastUpdated: string;
+  body: string;
+}
+
 export type AuthStackParamList = {
   Splash: undefined;
   AuthHome: undefined;
+  /** Signup: Google OAuth 진입 전 약관 동의 */
+  TermsAgreement: { agreedSection?: TermsSectionKey } | undefined;
+  /** Signup: 약관 항목별 원문 상세 */
+  TermsDetail: { section: TermsSectionKey; agreed?: boolean };
   /** Survey 0: 설문 시작 랜딩 (Skip 가능) */
   SurveyLanding: SurveyParams;
   /** Survey 1: 식이 유형 선택 */
