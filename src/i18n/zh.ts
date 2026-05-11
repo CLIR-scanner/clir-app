@@ -179,6 +179,17 @@ const zh = {
     dietCategories: {
       fruitsGrains: '水果 / 谷物', vegetables: '蔬菜', dairy: '乳制品', eggs: '鸡蛋', seafood: '海鲜', poultry: '禽肉', redMeat: '红肉',
     },
+    // ── SurveyLanding beta invite + notices ──────────────────────────────────
+    inviteTitle:        '测试版邀请码',
+    inviteDesc:         '当前为封闭测试版。请输入我们发送到您邮箱的邀请码。',
+    invitePlaceholder:  '输入邀请码',
+    inviteVerify:       '验证邀请码',
+    inviteSuccess:      '验证成功!您已加入。',
+    inviteErrorTooShort:'邀请码至少需要 6 个字符。',
+    inviteErrorInvalid: '邀请码无效。请检查邮件后重试。',
+    inviteErrorGeneric: '无法验证邀请码。请稍后再试。',
+    noticeNutrition:    '当前我们仅专注于过敏原和饮食偏好匹配 — 尚未测量营养值(钠、糖、卡路里)。营养追踪功能将在未来更新中推出。',
+    noticeMedical:      '本应用仅供参考,不构成医学建议。任何医学决定请咨询医生。过敏原标签基于 FDA Big 9 + 芝麻标准,食用前请自行核对包装。',
   },
   search: {
     placeholder:   '搜索产品名称或品牌',

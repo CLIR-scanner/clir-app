@@ -183,6 +183,17 @@ const es = {
     dietCategories: {
       fruitsGrains: 'Frutas / Granos', vegetables: 'Verduras', dairy: 'Lácteos', eggs: 'Huevos', seafood: 'Mariscos', poultry: 'Aves', redMeat: 'Carne roja',
     },
+    // ── SurveyLanding beta invite + notices ──────────────────────────────────
+    inviteTitle:        'Código de invitación beta',
+    inviteDesc:         'Esta es una beta cerrada. Introduce el código de invitación que enviamos a tu correo.',
+    invitePlaceholder:  'Introduce el código',
+    inviteVerify:       'Verificar código',
+    inviteSuccess:      '¡Código verificado! Estás dentro.',
+    inviteErrorTooShort:'El código debe tener al menos 6 caracteres.',
+    inviteErrorInvalid: 'Código inválido. Revisa tu correo y vuelve a intentarlo.',
+    inviteErrorGeneric: 'No se pudo verificar el código. Inténtalo de nuevo.',
+    noticeNutrition:    'Actualmente nos centramos solo en alérgenos y preferencias dietéticas — todavía no medimos valores nutricionales (sodio, azúcar, calorías). El seguimiento nutricional llegará en una futura actualización.',
+    noticeMedical:      'Esta aplicación es solo informativa y no constituye consejo médico. Consulta siempre a tu médico para decisiones de salud. El etiquetado de alérgenos se basa en FDA Big 9 + sésamo; verifica la etiqueta antes de consumir.',
   },
   search: {
     placeholder:   'Buscar producto o marca',

@@ -180,6 +180,17 @@ const ja = {
     dietCategories: {
       fruitsGrains: '果物 / 穀物', vegetables: '野菜', dairy: '乳製品', eggs: '卵', seafood: 'シーフード', poultry: '鶏肉類', redMeat: '赤身肉',
     },
+    // ── SurveyLanding beta invite + notices ──────────────────────────────────
+    inviteTitle:        'ベータ招待コード',
+    inviteDesc:         'クローズドベータ中です。メールに送信された招待コードを入力してください。',
+    invitePlaceholder:  '招待コードを入力',
+    inviteVerify:       'コードを確認',
+    inviteSuccess:      '認証完了!ご利用いただけます。',
+    inviteErrorTooShort:'コードは6文字以上で入力してください。',
+    inviteErrorInvalid: '無効な招待コードです。メールをご確認のうえ再度お試しください。',
+    inviteErrorGeneric: 'コード確認に失敗しました。しばらくしてからもう一度お試しください。',
+    noticeNutrition:    '現在はアレルゲンと食事制限のマッチングのみを提供しています。栄養成分(ナトリウム、糖、カロリー)はまだ計測しておらず、今後のアップデートで対応予定です。',
+    noticeMedical:      '本アプリは参考情報の提供のみを目的としており、医学的助言ではありません。医学的判断は必ず医師にご相談ください。アレルゲン表示は FDA Big 9 + ゴマ を基準としており、摂取前にラベルをご自身で確認してください。',
   },
   search: {
     placeholder:   '製品名またはブランドを検索',
