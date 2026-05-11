@@ -20,11 +20,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { MagazineItem, Product, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
+import { MagazineItem, Product, Profile, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import { getMagazineItems, getQAQuestions, getWeekendPopular } from '../../services/recommend.service';
+import { getMagazineItems, getQAQuestions, getSimilarUsersFavorites, getWeekendPopular } from '../../services/recommend.service';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
+import { useUserStore } from '../../store/user.store';
+import { getAllergenDisplayName } from '../../lib/display-names';
+import { DIET_LABELS } from '../../constants/dietary';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
@@ -70,18 +73,10 @@ type DummyProduct = {
 };
 
 type ProductPreview = DummyProduct;
-
-const SIMILAR_PRODUCTS: (DummyProduct & { featuredReview: string })[] = [
-  { id: 's1', name: 'Nutella',             brand: 'Ferrero',   riskLevel: 'danger',  rating: 4.90, reviewCount: 2391,
-    image: 'https://loremflickr.com/200/200/nutella,chocolate,spread?lock=21',
-    featuredReview: '"This spread is absolutely delicious, but contains dairy and hazelnuts. Always check the label carefully before purchasing if you have allergy concerns."' },
-  { id: 's2', name: 'PopCorners Sea Salt', brand: 'PepsiCo',   riskLevel: 'safe',    rating: 4.90, reviewCount: 2391,
-    image: 'https://loremflickr.com/200/200/popcorn,snack?lock=22',
-    featuredReview: '"Great allergen-free snack! Light and crispy with just the right amount of salt. I buy these every week — safe for my whole family including the kids."' },
-  { id: 's3', name: 'Snickers Bar',        brand: 'Mars',      riskLevel: 'danger',  rating: 4.90, reviewCount: 2395,
-    image: 'https://loremflickr.com/200/200/snickers,chocolate,bar?lock=23',
-    featuredReview: '"Tastes amazing but definitely not safe for peanut allergies. The label is clear about it. Would love a peanut-free version — please make one, Mars!"' },
-];
+type SimilarPreview = ProductPreview & {
+  similarityTag: string;
+  featuredReview: string;
+};
 
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -107,6 +102,44 @@ function toPreviewProduct(product: Product): ProductPreview {
     reviewCount: getNumberMeta(product, 'favoriteCount'),
     image: product.image ?? '',
     category: product.category,
+  };
+}
+
+function makeSimilarityReasons(profile: Profile, language: string): string[] {
+  const reasons: string[] = [];
+  const isKorean = language.startsWith('ko');
+
+  profile.dietaryRestrictions.forEach(dietId => {
+    const dietLabel = DIET_LABELS[dietId] ?? dietId.replace(/_/g, ' ');
+    reasons.push(isKorean ? `나와 같은 ${dietLabel} 선호` : `Same ${dietLabel} preference`);
+  });
+
+  profile.allergyProfile.forEach(allergenId => {
+    const allergenLabel = getAllergenDisplayName(allergenId, language);
+    reasons.push(isKorean ? `나와 같은 ${allergenLabel} 알러지` : `Same ${allergenLabel} allergy`);
+  });
+
+  if (profile.sensitivityLevel === 'strict') {
+    reasons.push(isKorean ? '나와 같은 strict 민감도' : 'Same strict sensitivity');
+  }
+
+  return reasons.length > 0
+    ? reasons
+    : [isKorean ? '나와 비슷한 식품 안전 프로필' : 'Similar food safety profile'];
+}
+
+function toSimilarPreview(product: Product, index: number, profile: Profile, language: string): SimilarPreview {
+  const reasons = makeSimilarityReasons(profile, language);
+  const reason = reasons[index % reasons.length];
+  const isKorean = language.startsWith('ko');
+  const intro = isKorean
+    ? `${reason}을 가진 사용자가 남긴 리뷰예요.`
+    : `Review from a user with ${reason.toLowerCase()}.`;
+
+  return {
+    ...toPreviewProduct(product),
+    similarityTag: reason,
+    featuredReview: `"${intro} The ingredient list felt clear, and this matched the same profile settings I check before buying."`,
   };
 }
 
@@ -150,29 +183,33 @@ function ProductRow({
 }
 
 // 각 카드 리뷰가 순서대로 1개씩 표시
-function SimilarList() {
+function SimilarList({ items }: { items: SimilarPreview[] }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const opacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    if (items.length === 0) return undefined;
     const t = setInterval(() => {
       Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-        setActiveIdx(prev => (prev + 1) % SIMILAR_PRODUCTS.length);
+        setActiveIdx(prev => (prev + 1) % items.length);
         Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
       });
     }, 3500);
     return () => clearInterval(t);
-  }, []);
+  }, [items.length, opacity]);
+
+  if (items.length === 0) return null;
 
   return (
     <View style={styles.cardList}>
-      {SIMILAR_PRODUCTS.map((item, i) => (
+      {items.map((item, i) => (
         <View key={item.id} style={styles.simCard}>
           <View style={styles.simCardTop}>
             <ProductRow item={item} showChevron />
           </View>
           {i === activeIdx && (
             <Animated.View style={[styles.reviewBox, { opacity }]}>
+              <Text style={styles.reviewTag}>{item.similarityTag}</Text>
               <Text style={styles.reviewText}>{item.featuredReview}</Text>
             </Animated.View>
           )}
@@ -472,11 +509,14 @@ const sheetStyles = StyleSheet.create({
 export default function CommunityScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const activeProfile = useUserStore(state => state.activeProfile);
+  const language = useUserStore(state => state.currentUser.language);
   const [searchQuery,  setSearchQuery]  = useState('');
   const [activeTab,    setActiveTab]    = useState<Tab>('Week Trends');
   const [sectionOrder, setSectionOrder] = useState<Tab[]>([...TABS]);
   const [showReorder,  setShowReorder]  = useState(false);
   const [trendingProducts,  setTrendingProducts]  = useState<ProductPreview[]>([]);
+  const [similarProducts,   setSimilarProducts]   = useState<Product[]>([]);
   const [trendingCategory,  setTrendingCategory]  = useState('all');
   const [qaPreview,         setQaPreview]         = useState<QAQuestion[]>([]);
   const [magazinePreview,   setMagazinePreview]   = useState<MagazineItem[]>([]);
@@ -518,16 +558,18 @@ export default function CommunityScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getWeekendPopular(), getQAQuestions(), getMagazineItems()])
-      .then(([products, questions, magazines]) => {
+    Promise.all([getWeekendPopular(), getSimilarUsersFavorites(), getQAQuestions(), getMagazineItems()])
+      .then(([products, similar, questions, magazines]) => {
         if (cancelled) return;
         setTrendingProducts(products.map(toPreviewProduct));
+        setSimilarProducts(similar);
         setQaPreview(questions.filter(question => !question.isNotice).slice(0, 3));
         setMagazinePreview(magazines.slice(0, 3));
       })
       .catch(() => {
         if (!cancelled) {
           setTrendingProducts([]);
+          setSimilarProducts([]);
           setQaPreview([]);
           setMagazinePreview([]);
         }
@@ -538,6 +580,9 @@ export default function CommunityScreen({ navigation }: Props) {
   const trendingPreview = trendingProducts
     .filter(product => trendingCategory === 'all' || product.category === trendingCategory)
     .slice(0, 3);
+  const similarPreview = similarProducts
+    .slice(0, 3)
+    .map((product, index) => toSimilarPreview(product, index, activeProfile, language));
 
   function handleTabPress(tab: Tab) {
     isProgrammatic.current = true;
@@ -614,7 +659,7 @@ export default function CommunityScreen({ navigation }: Props) {
           <View style={styles.section}>
             <SectionHeader title={t('recommendUi.similarPicks')} onPress={() => navigation.navigate('SimilarUsersFavorites')} />
             <CategoryPreviewList selectedCategory="all" onSelect={() => {}} />
-            <SimilarList />
+            <SimilarList items={similarPreview} />
           </View>
         );
 
@@ -964,6 +1009,19 @@ const styles = StyleSheet.create({
     backgroundColor: C.cardBg,
     paddingHorizontal: 18,
     paddingVertical: 16,
+  },
+  reviewTag: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: C.muted,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: 8,
+    color: C.mid,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   reviewText: {
     fontSize: 14,
