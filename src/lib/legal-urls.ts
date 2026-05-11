@@ -4,7 +4,9 @@
 
 import { Linking } from 'react-native';
 
-const LANDING_BASE = 'https://clir-beta.vercel.app';
+// Vercel auto-generated subdomain for waitlist-landing project. canonical 태그가
+// 가리키는 'clir-beta.vercel.app' 은 미할당 alias (HTTP 404). 실제 라이브 URL 사용.
+const LANDING_BASE = 'https://waitlist-landing-nu.vercel.app';
 
 export const LEGAL_URLS = {
   privacy: `${LANDING_BASE}/privacy`,
