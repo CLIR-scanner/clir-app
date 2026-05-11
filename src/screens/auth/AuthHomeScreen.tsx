@@ -8,6 +8,7 @@ import { AuthStackParamList } from '../../types';
 import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
 import { TERMS_VERSION } from '../../constants/legal-version';
+import { openLegal } from '../../lib/legal-urls';
 
 function ClirLogo({ width = 105, height = 62, color = '#1C3A19' }: { width?: number; height?: number; color?: string }) {
   return (
@@ -108,9 +109,13 @@ export default function AuthHomeScreen() {
 
         <Text style={styles.terms}>
           {t('auth.termsPrefix')}
-          <Text style={styles.termsLink}>{t('auth.termsService')}</Text>
+          <Text style={styles.termsLink} onPress={() => openLegal('terms')}>
+            {t('auth.termsService')}
+          </Text>
           {t('auth.termsAnd')}
-          <Text style={styles.termsLink}>{t('auth.termsPrivacy')}</Text>
+          <Text style={styles.termsLink} onPress={() => openLegal('privacy')}>
+            {t('auth.termsPrivacy')}
+          </Text>
         </Text>
       </View>
     </View>
