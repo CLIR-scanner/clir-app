@@ -79,6 +79,18 @@ export interface Product {
   category?: string;
 }
 
+export interface SimilarUserReview {
+  id: string;
+  product: Product;
+  author: string;
+  location: string;
+  rating: number;
+  tag: string;
+  body: string;
+  likeCount: number;
+  commentCount: number;
+}
+
 /** POST /ocr 응답 (SSE 스트림 종료 후 합산 결과 또는 캐시 히트 즉시 응답) */
 export interface OCRResult {
   /** 이미지에서 추출한 원문 텍스트 */

@@ -135,7 +135,7 @@ const zh = {
     community: '社区', featured: '精选', featuredSubtitle: '扫描任意产品即可即时查看成分',
     bannerTitle: '聪明饮食，\n远离过敏困扰',
     allCategories: '所有类别', reorderSections: '重新排序栏目', dragToReorder: '拖动以重新排序栏目',
-    seeMore: '查看更多', trending: '本周热门', similarPicks: '相似用户的选择', qa: '问答', magazine: 'Clir 杂志',
+    seeMore: '查看更多', trending: '本周热门', similarPicks: '相似用户的选择', reviewsTitle: '评论', similarReviews: '相似用户评论', shareStory: '分享你的故事！', writeReview: '写评论', qa: '问答', magazine: 'Clir 杂志',
   },
   survey: {
     landingTitle: '请回答几个\n简短问题，\n帮助我们完成\n个性化设置。',

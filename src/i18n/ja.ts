@@ -135,7 +135,7 @@ const ja = {
     community: 'コミュニティ', featured: '注目', featuredSubtitle: '製品をスキャンして成分をすぐ確認',
     bannerTitle: '賢く食べて\nアレルギーの不安を減らす',
     allCategories: 'すべてのカテゴリ', reorderSections: 'セクションを並べ替え', dragToReorder: 'ドラッグしてセクションを並べ替え',
-    seeMore: 'もっと見る', trending: '今週のトレンド', similarPicks: '似たユーザーのおすすめ', qa: 'Q&A', magazine: 'Clirマガジン',
+    seeMore: 'もっと見る', trending: '今週のトレンド', similarPicks: '似たユーザーのおすすめ', reviewsTitle: 'レビュー', similarReviews: '似たユーザーのレビュー', shareStory: '体験を共有しましょう！', writeReview: 'レビューを書く', qa: 'Q&A', magazine: 'Clirマガジン',
   },
   survey: {
     landingTitle: 'いくつかの質問に\n答えるだけで\n設定を\nお手伝いします。',

@@ -229,7 +229,6 @@ export default function MagazineScreen({ navigation }: Props) {
             </TouchableOpacity>
           )}
         </View>
-        <View style={styles.searchFilterSlot} />
       </View>
 
       <FlatList
@@ -297,8 +296,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 21,
+    paddingHorizontal: 24,
     marginBottom: 14,
   },
   searchBox: {
@@ -314,7 +312,6 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, color: C.dark, fontSize: 16, fontWeight: '600', padding: 0 },
   clearBtn: { fontSize: 12, color: C.mid },
-  searchFilterSlot: { width: 42, height: 42, borderWidth: 1, borderColor: C.dark, borderRadius: 10 },
 
   listContent: { paddingHorizontal: 24 },
 
