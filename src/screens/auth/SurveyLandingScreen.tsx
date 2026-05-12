@@ -218,11 +218,7 @@ export default function SurveyLandingScreen() {
               subtitle={t('survey.inviteDesc')}
               open={inviteOpen}
               onToggle={() => setInviteOpen(o => !o)}
-              badge={
-                <View style={styles.requiredBadge}>
-                  <Text style={styles.requiredBadgeText}>•</Text>
-                </View>
-              }
+              badge={<View style={styles.requiredBadge} />}
             >
               <TextInput
                 style={styles.inviteInput}
@@ -376,7 +372,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: C.error,
   },
-  requiredBadgeText: { fontSize: 0 }, // 시각적 dot 만, 텍스트 미표시
 
   // ── Invite UI ──────────────────────────────────────────────────────────────
   inviteInput: {
