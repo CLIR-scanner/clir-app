@@ -12,6 +12,8 @@
 
 ### 온보딩
 - /splash
+- /auth/terms               ← 사전 약관 동의 (디바이스 단위 1회성, TERMS_VERSION mismatch 시 재노출)
+- /auth/terms/detail        ← 약관 항목별 원문 상세
 - /auth                     ← 회원가입/로그인 선택
 - /auth/signup              ← 회원가입
 - /auth/signup/survey       ← 설문조사 (알러지, 식이제한, 건강목표)

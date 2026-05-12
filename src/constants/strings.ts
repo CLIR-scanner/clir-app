@@ -24,6 +24,25 @@ export const Strings = {
   email: '이메일',
   password: '비밀번호',
   name: '이름',
+  termsAgreement: {
+    title: "Please agree to CLIR's\nterms of service.",
+    agreeAll: 'I agree to all.',
+    agreeAllDescription:
+      'Agreeing to all includes consent to both required and optional items. You may still use the service even if you decline optional items.',
+    termsService: 'Terms of Service',
+    privacyPolicy: 'Privacy Policy',
+    personalInformation: 'Personal Information',
+    personalInformationCollection: 'Collection & Use',
+    healthDisclaimer: 'Health Disclaimer',
+    healthDisclaimerDescription:
+      "The app's analysis is for reference only. Always check product labels before consumption.",
+    ageConfirm: 'I am 13 years of age or older',
+    marketing: 'Marketing Communications',
+    dataAnalytics: 'Data Analytics Consent',
+    required: '[Required]',
+    optional: '[Optional]',
+    agreeButton: 'Agree',
+  },
 
   // 스캔
   scanBarcode: '바코드 스캔',

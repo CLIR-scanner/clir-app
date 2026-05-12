@@ -5,6 +5,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
 import { AuthStackParamList } from '../../types';
+import { termsStorage } from '../../lib/storage';
+import { TERMS_VERSION } from '../../constants/legal-version';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
@@ -32,10 +34,18 @@ export default function SplashScreen() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('AuthHome');
-    }, 1500);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    // 1.5s 동안 splash 노출 + storage 조회 — 둘 다 끝나면 다음 화면으로 replace.
+    // 디바이스에 현재 TERMS_VERSION 동의 기록이 있으면 약관 skip 후 AuthHome 직행.
+    const start = Date.now();
+    termsStorage.read().then(accepted => {
+      const remaining = Math.max(0, 1500 - (Date.now() - start));
+      setTimeout(() => {
+        if (cancelled) return;
+        navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
+      }, remaining);
+    });
+    return () => { cancelled = true; };
   }, [navigation]);
 
   return (

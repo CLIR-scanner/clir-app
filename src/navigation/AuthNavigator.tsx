@@ -6,6 +6,8 @@ import { AuthStackParamList } from '../types';
 import { START_AT_SURVEY } from '../constants/dev';
 import SplashScreen from '../screens/auth/SplashScreen';
 import AuthHomeScreen from '../screens/auth/AuthHomeScreen';
+import TermsAgreementScreen from '../screens/auth/TermsAgreementScreen';
+import TermsDetailScreen from '../screens/auth/TermsDetailScreen';
 import SurveyLandingScreen from '../screens/auth/SurveyLandingScreen';
 import SurveyScreen from '../screens/auth/SurveyScreen';
 import SurveyAllergyScreen from '../screens/auth/SurveyAllergyScreen';
@@ -31,6 +33,8 @@ export default function AuthNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F9FFF3' } }}>
 
       <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="TermsAgreement" component={TermsAgreementScreen} />
+      <Stack.Screen name="TermsDetail" component={TermsDetailScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
       <Stack.Screen name="SurveyLanding" component={SurveyLandingScreen} />
       <Stack.Group screenOptions={{ animation: 'none' }}>
