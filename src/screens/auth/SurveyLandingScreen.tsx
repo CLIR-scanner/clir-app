@@ -165,6 +165,7 @@ export default function SurveyLandingScreen() {
 
   async function handleSkip() {
     if (loading) return;
+    if (needsInvite) return;
 
     if (multiProfileMode) {
       setMultiProfileMode(false);
@@ -291,7 +292,7 @@ export default function SurveyLandingScreen() {
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
-          {!multiProfileMode && (
+          {!multiProfileMode && !needsInvite && (
             <TouchableOpacity
               style={[styles.skipButton, loading && styles.opacity40]}
               onPress={handleSkip}
