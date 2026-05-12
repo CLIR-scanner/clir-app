@@ -107,7 +107,7 @@ const zh = {
     historyEmpty: '还没有扫描过的产品。', cameraPermission: '需要相机权限', grantPermission: '授予权限',
     cameraDescBarcode: 'CLIR 需要相机权限来扫描条形码和成分标签。',
     cameraDescOcr: 'CLIR 需要相机权限来拍摄成分标签。',
-    retake: '重新拍摄', analyzing: '分析中...', tryAgain: '重试', barcode: '条形码', ocr: 'OCR',
+    retake: '重新拍摄', analyzing: '分析中...', tryAgain: '重试', barcode: '条形码', ocr: 'OCR', barcodeGuideInstruction: '将条形码置于中央\n并保持稳定', ocrGuideInstruction: '请保持内容清晰对焦，\n并完整置于框内',
     ocrSubtitle: '扫描产品成分表 OCR', connectionError: '连接错误',
     connectionMessage: '无法连接到服务器。请稍后重试。',
     productNotFound: '未找到产品', scanLabelInstead: '请改用 OCR 扫描成分标签。',

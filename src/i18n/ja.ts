@@ -107,7 +107,7 @@ const ja = {
     historyEmpty: 'まだスキャンした製品はありません。', cameraPermission: 'カメラへのアクセスが必要です',
     grantPermission: '権限を許可', cameraDescBarcode: 'バーコードと成分表示をスキャンするにはカメラアクセスが必要です。',
     cameraDescOcr: '成分表示を撮影するにはカメラアクセスが必要です。', retake: '撮り直す', analyzing: '分析中...', tryAgain: 'もう一度試す',
-    barcode: 'バーコード', ocr: 'OCR', ocrSubtitle: '製品の成分表をOCRスキャン',
+    barcode: 'バーコード', ocr: 'OCR', ocrSubtitle: '製品の成分表をOCRスキャン', barcodeGuideInstruction: 'バーコードを中央に合わせて\n動かさずに保持してください', ocrGuideInstruction: '内容が鮮明に見えるようにし、\nフレーム内にすべて収めてください',
     connectionError: '接続エラー', connectionMessage: 'サーバーに接続できません。後でもう一度お試しください。',
     productNotFound: '製品が見つかりません', scanLabelInstead: '代わりにOCRで成分表示をスキャンしてください。',
     scanLabel: 'ラベルをスキャン', recognitionFailed: '認識に失敗しました', analysisFailed: '分析に失敗しました',

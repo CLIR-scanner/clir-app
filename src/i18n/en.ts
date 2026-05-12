@@ -238,6 +238,8 @@ const en = {
     barcode:            'BARCODE',
     ocr:                'OCR',
     ocrSubtitle:        'Scan OCR of the product',
+    barcodeGuideInstruction:'Center the barcode\nand hold steady',
+    ocrGuideInstruction:'Keep the content clear, in focus, and\nfully visible inside the frame.',
     connectionError:    'Connection Error',
     connectionMessage:  'Unable to connect to the server. Please try again later.',
     productNotFound:    'Product Not Found',
