@@ -56,9 +56,9 @@ import { apiFetch, apiFormFetch } from '../lib/api';
 import { setAuthToken, clearAuthToken, getAuthToken } from '../lib/api';
 ```
 
-- **저장**: `login()` 성공 시 `auth.service.ts` 내부에서 `setAuthToken(token)` 자동 호출.
-- **삭제**: 로그아웃 시 `clearAuthToken()` 호출 + `useUserStore.logout()` 호출.
-- **토큰 수명**: 앱 메모리 — 앱 재시작 시 초기화됨. 재시작 후 재로그인 필요 (MVP 범위).
+- **저장**: `login()` 성공 시 `auth.service.ts` 내부에서 `setAuthToken(token)` 자동 호출 + refresh_token 을 `sessionStore` (expo-secure-store / web 은 AsyncStorage) 에 영구 저장.
+- **삭제**: 로그아웃 시 `clearAuthToken()` 호출 + `useUserStore.logout()` 호출 — `signOut()` 내부에서 `sessionStore.clear()` 자동 호출.
+- **토큰 수명**: in-memory access_token + persistent refresh_token. 앱 재시작 시 `user.store.initialize()` → `restoreSession()` 이 refresh_token 으로 자동 재인증. refresh 실패 (revoked/expired/network) 시 sessionStore 정리 후 AuthHome 노출.
 - `getAuthToken()` 반환값이 `null` 이면 미인증 상태.
 
 ### 401 처리 패턴 (화면 레벨)

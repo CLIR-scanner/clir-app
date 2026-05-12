@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
-import { signOut as authSignOut, submitSurvey } from '../services/auth.service';
+import { signOut as authSignOut, submitSurvey, restoreSession } from '../services/auth.service';
 import { updateLanguage as apiUpdateLanguage } from '../services/user.service';
 import { languageStorage } from '../lib/storage';
 import i18n from '../i18n';
@@ -47,7 +47,13 @@ export const useUserStore = create<UserStore>((set, get) => ({
         hasExplicitLanguage: true,
       }));
     }
-    // TODO: 저장된 토큰으로 세션 복원
+    // 저장된 refresh_token 으로 세션 자동 복원 — 성공 시 setUser 가 RootNavigator 를
+    // MainNavigator 로 swap (사용자는 Splash·AuthHome 안 거치고 메인 직행).
+    // 실패 시 sessionStore 가 자동 정리되므로 후속 cold start 에서 재시도 안 함.
+    const restored = await restoreSession();
+    if (restored) {
+      get().setUser(restored);
+    }
     set({ isInitialized: true });
   },
 

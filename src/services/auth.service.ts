@@ -9,6 +9,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Sentry from '@sentry/react-native';
 import { supabase } from '../lib/supabase';
 import { apiFetch, setAuthToken, clearAuthToken, ApiError } from '../lib/api';
+import { sessionStore } from '../lib/secure-store';
 import { User, SurveyData, BetaCohort } from '../types';
 import { DEFAULT_LANGUAGE } from '../constants/languages';
 
@@ -74,11 +75,46 @@ async function signInWithProvider(provider: 'google' | 'apple'): Promise<AuthRes
   const token = accessToken;
   setAuthToken(token);
 
+  // refresh_token 을 OS keychain/keystore 에 저장 — 다음 cold start 에 자동 세션 복원.
+  // access_token 도 함께 저장하지만 refresh 가 source of truth (access 는 보통 1h 후 만료).
+  await sessionStore.write({ access: accessToken, refresh: refreshToken });
+
   const me = await fetchMe();
   // Sentry 이벤트에 사용자 식별자 부착 — 크래시·에러를 특정 베타 사용자와 매칭.
   // email 은 PII 라 포함하지 않음. id 만으로 대시보드 필터링 충분.
   Sentry.setUser({ id: me.user.id });
   return { token, user: me.user, isFirstLogin: !me.hasCompletedSurvey };
+}
+
+/** Cold start 시 저장된 refresh_token 으로 세션 자동 복원.
+ *  성공 시 in-memory _token 설정 + 신규 토큰 페어 sessionStore 갱신 + /auth/me 페치 후 User 반환.
+ *  실패 (refresh expired/revoked, 네트워크, fetchMe 4xx) 시 sessionStore 정리 후 null. */
+export async function restoreSession(): Promise<User | null> {
+  const stored = await sessionStore.read();
+  if (!stored) return null;
+  try {
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: stored.refresh,
+    });
+    if (error || !data?.session) {
+      console.log('[oauth] restoreSession: refresh rejected', error);
+      await sessionStore.clear();
+      return null;
+    }
+    const newAccess = data.session.access_token;
+    const newRefresh = data.session.refresh_token;
+    setAuthToken(newAccess);
+    await sessionStore.write({ access: newAccess, refresh: newRefresh });
+
+    const me = await fetchMe();
+    Sentry.setUser({ id: me.user.id });
+    return me.user;
+  } catch (e) {
+    console.log('[oauth] restoreSession failed:', e);
+    await sessionStore.clear();
+    clearAuthToken();
+    return null;
+  }
 }
 
 export function signInWithGoogle(): Promise<AuthResult> {
@@ -188,6 +224,8 @@ export async function signOut(): Promise<void> {
     // Supabase 네트워크 실패해도 로컬 토큰은 정리
   }
   clearAuthToken();
+  // 저장된 refresh_token 도 제거 — 다음 cold start 에 자동 로그인 되지 않게.
+  await sessionStore.clear();
   // Sentry 식별자 해제 — 다음 로그인 사용자와 이벤트 분리.
   Sentry.setUser(null);
 }

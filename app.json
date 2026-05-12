@@ -36,7 +36,8 @@
           "organization": "kmu-g-pbl",
           "project": "clir-rn"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "ios": {
       "supportsTablet": true,
