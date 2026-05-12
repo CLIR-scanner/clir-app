@@ -18,12 +18,16 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 type TabRoute = keyof MainTabParamList;
 const TAB_GREEN = Colors.profileMutedGreen;
 
-const LEFT_TABS:  { route: TabRoute }[] = [
+type TabDescriptor = { route: TabRoute; disabled?: boolean };
+
+const LEFT_TABS: TabDescriptor[] = [
   { route: 'SearchTab' },
   { route: 'ListTab' },
 ];
-const RIGHT_TABS: { route: TabRoute }[] = [
-  { route: 'RecommendTab' },
+const RIGHT_TABS: TabDescriptor[] = [
+  // Community 탭은 베타 v1 에서 비활성 — 콘텐츠/리뷰 데이터 아직 mock 단계.
+  // 바텀 네비 위치는 유지(향후 활성 시 사용자 학습 비용 0)하되 탭 자체는 비활성.
+  { route: 'RecommendTab', disabled: true },
   { route: 'ProfileTab' },
 ];
 
@@ -159,14 +163,17 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     });
   }
 
-  function renderTab(tab: { route: TabRoute }) {
+  function renderTab(tab: TabDescriptor) {
     const isActive = activeRoute === tab.route;
+    const disabled = !!tab.disabled;
     return (
       <TouchableOpacity
         key={tab.route}
-        style={tabStyles.item}
+        style={[tabStyles.item, disabled && tabStyles.itemDisabled]}
         onPress={() => goTo(tab.route)}
-        activeOpacity={0.7}
+        activeOpacity={disabled ? 1 : 0.7}
+        disabled={disabled}
+        accessibilityState={{ disabled }}
       >
         <View style={tabStyles.iconWrap}>{getIcon(tab.route, isActive)}</View>
         <Text style={[tabStyles.label, isActive && tabStyles.labelActive]}>
@@ -241,6 +248,9 @@ const tabStyles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     minHeight: 47,
+  },
+  itemDisabled: {
+    opacity: 0.35,
   },
   iconWrap: {
     height: 28,
