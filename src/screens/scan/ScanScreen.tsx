@@ -41,6 +41,7 @@ import ScannerCamera, {
 } from '../../components/ScannerCamera';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import ScanFeedbackBar from '../../components/common/ScanFeedbackBar';
+import { scanGuideStorage } from '../../lib/storage';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'Scan'>;
 
@@ -123,6 +124,8 @@ export default function ScanScreen({ navigation }: Props) {
   const cameraRef        = useRef<ScannerCameraHandle>(null);
   const barcodeGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ocrGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 디바이스 단위 1회성. null = 미하이드레이트. 첫 focus 시 AsyncStorage 에서 채움.
+  const guideSeenRef = useRef<{ barcode: boolean; ocr: boolean } | null>(null);
 
   // Animations
   const circleScale = useRef(new Animated.Value(0)).current;
@@ -144,6 +147,8 @@ export default function ScanScreen({ navigation }: Props) {
       clearTimeout(barcodeGuideTimerRef.current);
     }
     setShowBarcodeGuidePreview(true);
+    if (guideSeenRef.current) guideSeenRef.current.barcode = true;
+    void scanGuideStorage.markSeen('barcode');
     barcodeGuideTimerRef.current = setTimeout(() => {
       setShowBarcodeGuidePreview(false);
       barcodeGuideTimerRef.current = null;
@@ -163,6 +168,8 @@ export default function ScanScreen({ navigation }: Props) {
       clearTimeout(ocrGuideTimerRef.current);
     }
     setShowOcrGuidePreview(true);
+    if (guideSeenRef.current) guideSeenRef.current.ocr = true;
+    void scanGuideStorage.markSeen('ocr');
     ocrGuideTimerRef.current = setTimeout(() => {
       setShowOcrGuidePreview(false);
       ocrGuideTimerRef.current = null;
@@ -191,7 +198,16 @@ export default function ScanScreen({ navigation }: Props) {
       setScanResult(null);
       setScanPreviewUri(null);
       setCameraError(null);
-      startBarcodeGuidePreview();
+      // 디바이스에서 가이드를 한 번도 본 적 없으면 1회 노출. 이후 영구 dismiss.
+      // 첫 focus 면 storage 에서 하이드레이트, 이후 focus 는 ref 캐시 즉시 참조.
+      (async () => {
+        if (!guideSeenRef.current) {
+          guideSeenRef.current = await scanGuideStorage.read();
+        }
+        if (!guideSeenRef.current.barcode) {
+          startBarcodeGuidePreview();
+        }
+      })();
       circleScale.setValue(0);
       sheetY.setValue(320);
 
@@ -229,10 +245,14 @@ export default function ScanScreen({ navigation }: Props) {
     setCameraActive(true);
     if (ocr) {
       stopBarcodeGuidePreview();
-      startOcrGuidePreview();
+      if (guideSeenRef.current && !guideSeenRef.current.ocr) {
+        startOcrGuidePreview();
+      }
     } else {
       stopOcrGuidePreview();
-      startBarcodeGuidePreview();
+      if (guideSeenRef.current && !guideSeenRef.current.barcode) {
+        startBarcodeGuidePreview();
+      }
     }
 
     setIsOCRMode(ocr);
@@ -769,11 +789,21 @@ export default function ScanScreen({ navigation }: Props) {
         onHistory={() => navigation.navigate('ScanHistory')}
         historyImageUri={lastProductImage}
         toggleNode={!scanResult ? (
-          <ModeToggle
-            isOCRMode={isOCRMode}
-            onToggle={handleToggleMode}
-            slideAnim={toggleSlide}
-          />
+          <View style={styles.toggleRowInner}>
+            <ModeToggle
+              isOCRMode={isOCRMode}
+              onToggle={handleToggleMode}
+              slideAnim={toggleSlide}
+            />
+            <TouchableOpacity
+              style={styles.guideHelpBtn}
+              onPress={() => (isOCRMode ? startOcrGuidePreview() : startBarcodeGuidePreview())}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.guideHelpText}>?</Text>
+            </TouchableOpacity>
+          </View>
         ) : undefined}
       />
 
@@ -1374,6 +1404,27 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  toggleRowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  guideHelpBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.32)',
+  },
+  guideHelpText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   guidePreviewText: {
     color: Colors.scanLightGreen,
