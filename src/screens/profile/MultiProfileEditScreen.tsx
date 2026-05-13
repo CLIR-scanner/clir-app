@@ -433,8 +433,8 @@ export default function MultiProfileEditScreen() {
       >
         {/* ── Avatar + Name ─────────────────────────────────────────────────── */}
         <View style={styles.heroSection}>
-          <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.85}>
-            <View style={styles.avatarWrap}>
+          <TouchableOpacity onPress={handlePickPhoto} activeOpacity={1} disabled>
+            <View style={[styles.avatarWrap, { opacity: 0.5 }]}>
               {photoUri
                 ? <Image source={{ uri: photoUri }} style={styles.avatarImg} />
                 : <View style={styles.avatarCircle}><Text style={styles.avatarText}>{initial}</Text></View>

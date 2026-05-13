@@ -104,8 +104,8 @@ export default function PersonalNameScreen() {
 
       {/* ── Avatar ─────────────────────────────────────────────────────── */}
       <View style={styles.avatarSection}>
-        <TouchableOpacity onPress={handlePickImage} activeOpacity={0.85}>
-          <View style={styles.avatarWrap}>
+        <TouchableOpacity onPress={handlePickImage} activeOpacity={1} disabled>
+          <View style={[styles.avatarWrap, { opacity: 0.5 }]}>
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={styles.avatarImg} />
             ) : (
