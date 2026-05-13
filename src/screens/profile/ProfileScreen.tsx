@@ -283,9 +283,9 @@ export default function ProfileScreen() {
         <View style={styles.cardDivider} />
 
         <TouchableOpacity
-          style={styles.menuRow}
-          onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.7}
+          style={[styles.menuRow, { opacity: 0.4 }]}
+          disabled
+          activeOpacity={1}
         >
           <Text style={styles.menuLabel}>{t('profile.menuSettings')}</Text>
         </TouchableOpacity>
