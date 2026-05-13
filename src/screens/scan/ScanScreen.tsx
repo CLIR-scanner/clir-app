@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { ScanStackParamList, MainTabParamList, Product, AnalysisResult, RiskLevel, FavoriteItem } from '../../types';
@@ -106,6 +106,8 @@ export default function ScanScreen({ navigation }: Props) {
   const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 340;
   const ocrDimTop  = insets.top + 130;
   const [permission, requestPermission] = useCameraPermissions();
+  const isFocused = useIsFocused();
+  const [guideHydrated, setGuideHydrated] = useState(false);
   const [barcodeDetected, setBarcodeDetected] = useState(false);
   const [processing, setProcessing]           = useState(false);
   const [scanResult, setScanResult]           = useState<{ product: Product; analysis: AnalysisResult; scanLogId?: string } | null>(null);
@@ -184,6 +186,30 @@ export default function ScanScreen({ navigation }: Props) {
     setShowOcrGuidePreview(false);
   }, []);
 
+  // ── 가이드 seen 플래그 하이드레이트 (mount 1회) ────────────────────────────
+  // 모드 토글이 권한 grant 보다 먼저 일어날 수 있어 일단 마운트 시점에 읽어둔다.
+  useEffect(() => {
+    let cancelled = false;
+    scanGuideStorage.read().then(seen => {
+      if (cancelled) return;
+      guideSeenRef.current = seen;
+      setGuideHydrated(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── 바코드 가이드 트리거 ─────────────────────────────────────────────────────
+  // focus + 카메라 권한 grant + hydrate 셋 다 만족된 시점에 1회 발화.
+  // 권한 게이트가 가이드를 가로채는 race 방지 — 권한 prompt 가 보이는 동안에는
+  // 가이드를 띄우지 않고 markSeen 도 안 한다.
+  useEffect(() => {
+    if (!isFocused) return;
+    if (Platform.OS !== 'web' && !permission?.granted) return;
+    if (!guideHydrated || !guideSeenRef.current) return;
+    if (guideSeenRef.current.barcode) return;
+    startBarcodeGuidePreview();
+  }, [isFocused, permission?.granted, guideHydrated, startBarcodeGuidePreview]);
+
   // ── Focus / blur: camera lifecycle + history 썸네일 로드 ──────────────────────
   useFocusEffect(
     useCallback(() => {
@@ -198,16 +224,6 @@ export default function ScanScreen({ navigation }: Props) {
       setScanResult(null);
       setScanPreviewUri(null);
       setCameraError(null);
-      // 디바이스에서 가이드를 한 번도 본 적 없으면 1회 노출. 이후 영구 dismiss.
-      // 첫 focus 면 storage 에서 하이드레이트, 이후 focus 는 ref 캐시 즉시 참조.
-      (async () => {
-        if (!guideSeenRef.current) {
-          guideSeenRef.current = await scanGuideStorage.read();
-        }
-        if (!guideSeenRef.current.barcode) {
-          startBarcodeGuidePreview();
-        }
-      })();
       circleScale.setValue(0);
       sheetY.setValue(320);
 
