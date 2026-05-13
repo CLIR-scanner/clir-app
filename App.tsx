@@ -8,7 +8,7 @@ import * as Sentry from '@sentry/react-native';
 import i18n from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useUserStore } from './src/store/user.store';
-import { Colors } from './src/constants/colors';
+import ClirLogo from './src/components/common/ClirLogo';
 
 // 크래시 / unhandled error 리포팅. DSN 미설정 시 SDK 가 no-op (안전).
 // release / dist 는 native build 정보(CFBundleVersion / versionName) 에서 자동 감지 —
@@ -39,8 +39,11 @@ function App() {
 
   if (!isInitialized) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}>
-        <ActivityIndicator size="large" color={Colors.white} />
+      <View style={{ flex: 1, backgroundColor: '#F9FFF3', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 80 }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ClirLogo width={140} height={83} />
+        </View>
+        <ActivityIndicator color="#1C3A19" />
       </View>
     );
   }
