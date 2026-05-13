@@ -43,3 +43,7 @@ yarn-error.*
 # Claude workspace
 .claude/
 .vercel
+
+# EAS local build artifacts
+build-*.apk
+build-*.aab
