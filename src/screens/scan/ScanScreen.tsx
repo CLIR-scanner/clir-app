@@ -17,7 +17,7 @@ import { useCameraPermissions } from 'expo-camera';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path, SvgUri } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { ScanStackParamList, MainTabParamList, Product, AnalysisResult, RiskLevel, FavoriteItem } from '../../types';
 import { Colors } from '../../constants/colors';
 import {
@@ -80,8 +80,6 @@ const RESULT_BADGE_D = 190;
 const RESULT_BADGE_ICON_D = 78;
 const BARCODE_GUIDE_PREVIEW_MS = 2000;
 const OCR_GUIDE_PREVIEW_MS = 2000;
-const BARCODE_GUIDE_ASSET = require('../../../assets/Barcode Guide Illustration.svg') as number;
-const OCR_GUIDE_ASSET = require('../../../assets/OCR Guide Illustration.svg') as number;
 const GUIDE_ILLUSTRATION_W = Math.min(220, SCREEN_W - 96);
 const GUIDE_ILLUSTRATION_H = GUIDE_ILLUSTRATION_W * (264 / 220);
 const GUIDE_PHONE_CENTER_OFFSET_X = (134.2 - 110) * (GUIDE_ILLUSTRATION_W / 220);
@@ -950,7 +948,7 @@ function BarcodeGuidePreview() {
   return (
     <GuideIllustrationPreview
       label={t('scanUi.barcodeGuideInstruction')}
-      asset={BARCODE_GUIDE_ASSET}
+      variant="barcode"
     />
   );
 }
@@ -961,27 +959,114 @@ function OcrGuidePreview() {
   return (
     <GuideIllustrationPreview
       label={t('scanUi.ocrGuideInstruction')}
-      asset={OCR_GUIDE_ASSET}
+      variant="ocr"
     />
   );
 }
 
-function GuideIllustrationPreview({ label, asset }: { label: string; asset: number }) {
-  const uri = Image.resolveAssetSource(asset).uri;
-
+function GuideIllustrationPreview({ label, variant }: { label: string; variant: 'barcode' | 'ocr' }) {
   return (
     <View style={styles.guidePreviewScreenLayer} pointerEvents="none">
       <Text style={styles.guidePreviewText}>
         {label}
       </Text>
       <View style={styles.guidePreviewIllustrationFrame}>
-        <SvgUri
-          uri={uri}
-          width={GUIDE_ILLUSTRATION_W}
-          height={GUIDE_ILLUSTRATION_H}
-        />
+        {variant === 'barcode' ? <BarcodeGuideIllustration /> : <OcrGuideIllustration />}
       </View>
     </View>
+  );
+}
+
+function GuidePhoneFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <Svg width={GUIDE_ILLUSTRATION_W} height={GUIDE_ILLUSTRATION_H} viewBox="0 0 220 264" fill="none">
+      <Path
+        d="M89.693 1.27H178.71C187.666 1.27 194.926 8.53 194.926 17.485V211.417C194.926 220.373 187.666 227.633 178.71 227.633H89.693C80.737 227.633 73.477 220.372 73.477 211.417V17.485C73.477 8.53 80.737 1.27 89.693 1.27Z"
+        stroke={Colors.scanLightGreen}
+        strokeWidth={2.54}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M177.122 4.768H91.284C83.383 4.768 76.978 11.174 76.978 19.075V209.827C76.978 217.728 83.383 224.133 91.284 224.133H177.122C185.024 224.133 191.429 217.728 191.429 209.827V19.075C191.429 11.174 185.024 4.768 177.122 4.768Z"
+        stroke={Colors.scanLightGreen}
+        strokeWidth={1.59}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path d="M70.618 46.099V58.816" stroke={Colors.scanLightGreen} strokeWidth={1.59} strokeLinecap="round" />
+      <Path d="M70.618 68.353V84.249" stroke={Colors.scanLightGreen} strokeWidth={1.59} strokeLinecap="round" />
+      <Path d="M70.618 90.608V106.504" stroke={Colors.scanLightGreen} strokeWidth={1.59} strokeLinecap="round" />
+      <Path d="M197.787 61.995V90.607" stroke={Colors.scanLightGreen} strokeWidth={1.59} strokeLinecap="round" />
+      <Circle cx={134.202} cy={193.614} r={10.323} fill={Colors.scanLightGreen} />
+      <Path
+        d="M125.271 193.604C125.271 198.526 129.272 202.528 134.195 202.528V197.031C132.375 197.031 130.897 195.553 130.897 193.734C130.897 191.914 132.375 190.436 134.195 190.436V184.68C129.272 184.68 125.271 188.682 125.271 193.604Z"
+        fill={Colors.scanSelectedGreen}
+      />
+      <Path
+        d="M134.946 191.555V195.907C136.147 195.907 137.124 194.931 137.124 193.729C137.124 192.528 136.147 191.551 134.946 191.551V191.555Z"
+        fill={Colors.scanSelectedGreen}
+      />
+      <Path
+        d="M0.393 263.625C0.393 263.625 10.682 244.951 9.919 222.093C9.156 199.235 4.586 182.087 20.585 153.501C36.584 124.915 26.681 125.301 40.022 112.732C53.363 100.163 42.689 78.652 57.547 76.452C72.406 74.253 81.168 102.443 67.45 127.977C53.732 153.51 59.828 166.259 62.88 169.976C65.933 173.693 73.169 187.034 71.643 209.515C70.116 231.996 100.982 229.706 112.034 229.706H172.079C178.974 229.706 185.833 228.602 192.307 226.232C201.742 222.775 212.794 216.069 215.326 203.302C218.531 187.142 196.715 184.565 196.203 201.623C196.203 201.623 195.206 217.891 209.446 212.9C209.446 212.9 211.986 211.786 212.678 210.61"
+        stroke={Colors.scanLightGreen}
+        strokeWidth={0.9}
+        strokeMiterlimit={10}
+      />
+      <Path d="M137.397 263.625C137.397 263.625 162.742 245.903 169.942 229.716" stroke={Colors.scanLightGreen} strokeWidth={0.9} strokeMiterlimit={10} />
+      {children}
+    </Svg>
+  );
+}
+
+function BarcodeGuideIllustration() {
+  const barcodeLines = [110.157, 113.095, 116.277, 121.172, 124.355, 127.291, 132.677, 135.858, 139.041, 144.426, 147.852, 150.789, 155.44];
+
+  return (
+    <GuidePhoneFrame>
+      <Path d="M101.591 88.347V82.227H107.71" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M159.113 82.227H165.232V88.347" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M101.591 129.957V136.077H107.71" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M159.113 136.077H165.232V129.957" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      {barcodeLines.map(x => (
+        <Path key={x} d={`M${x} 95.689V122.615`} stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      ))}
+      <Path
+        d="M88.078 72.702C88.024 72.702 87.995 72.638 88.03 72.597L95.33 64.152C95.342 64.138 95.36 64.13 95.378 64.13H173.249C173.267 64.13 173.284 64.138 173.296 64.152L180.866 72.596C180.903 72.637 180.874 72.702 180.819 72.702H88.078Z"
+        stroke={Colors.scanLightGreen}
+        strokeWidth={0.63}
+      />
+      <Rect x={87.94} y={73.02} width={93.02} height={73.02} stroke={Colors.scanLightGreen} strokeWidth={0.63} />
+    </GuidePhoneFrame>
+  );
+}
+
+function OcrGuideIllustration() {
+  const textLines = [76, 82, 88, 94, 100, 106, 112, 118, 124, 130, 136, 142];
+
+  return (
+    <GuidePhoneFrame>
+      <Path
+        d="M88.167 54.89C88.113 54.89 88.084 54.826 88.119 54.785L95.419 46.34C95.431 46.326 95.449 46.318 95.467 46.318H173.337C173.355 46.318 173.373 46.326 173.385 46.339L180.955 54.784C180.991 54.825 180.962 54.89 180.907 54.89H88.167Z"
+        stroke={Colors.scanLightGreen}
+        strokeWidth={0.63}
+      />
+      <Rect x={87.8} y={55.506} width={93.365} height={112.365} stroke={Colors.scanLightGreen} strokeWidth={0.63} />
+      <Path d="M102.394 72.12V66.001H108.513" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M159.915 66.001H166.034V72.12" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M102.394 151.12V157.239H108.513" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M159.915 157.239H166.034V151.12" stroke={Colors.scanLightGreen} strokeWidth={1.22} strokeLinecap="round" strokeLinejoin="round" />
+      {textLines.map((y, index) => (
+        <Path
+          key={y}
+          d={`M106 ${y}H${index % 3 === 0 ? 162 : index % 3 === 1 ? 151 : 171}`}
+          stroke={Colors.scanLightGreen}
+          strokeWidth={1.08}
+          strokeLinecap="round"
+          opacity={index < 2 ? 0.86 : 0.62}
+        />
+      ))}
+    </GuidePhoneFrame>
   );
 }
 
