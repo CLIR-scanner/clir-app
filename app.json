@@ -2,7 +2,7 @@
   "expo": {
     "name": "CLIR",
     "slug": "clir",
-    "version": "1.0.0-beta.1",
+    "version": "1.0.0",
     "scheme": "clir",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
