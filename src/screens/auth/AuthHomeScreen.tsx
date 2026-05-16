@@ -275,6 +275,13 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
 
+  // ── Logo text ──────────────────────────────────────────────────────────────
+  logoText: {
+    fontSize: 48,
+    color: S.primary,
+    fontFamily: 'Pretendard-ExtraBold',
+  },
+
   // ── Terms ──────────────────────────────────────────────────────────────────
   terms: {
     fontSize: 11,

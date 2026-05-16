@@ -100,20 +100,22 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+    paddingTop: 24,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 30,
+    fontFamily: 'Pretendard-ExtraBold',
     color: '#000000',
     lineHeight: 32,
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
+    fontFamily: 'Pretendard-Regular',
     color: S.primary,
-    lineHeight: 12 * 1.35,
+    lineHeight: 13 * 1.35,
   },
-  optionsBlock: { flex: 1, justifyContent: 'center', paddingBottom: 53 },
+  optionsBlock: { flex: 1, justifyContent: 'flex-start', paddingTop: 32 },
   options: {
     gap: 12,
   },
@@ -132,12 +134,12 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
+    fontFamily: 'Pretendard-Regular',
     color: S.primary,
-    fontWeight: '400',
   },
   optionTextSelected: {
+    fontFamily: 'Pretendard-SemiBold',
     color: '#FFFFFF',
-    fontWeight: '600',
   },
   continueButton: {
     height: 53,
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
   },
   continueText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: S.textLight,
   },
 });

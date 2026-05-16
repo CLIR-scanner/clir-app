@@ -29,13 +29,19 @@ const S = {
   textLight: Colors.scanLightGreen,
 };
 
+const FONT = {
+  regular:    'Pretendard-Regular',
+  light:      'Pretendard-Light',
+  bold:       'Pretendard-Bold',
+  extraBold:  'Pretendard-ExtraBold',
+};
+
 const AGREEMENTS: TermsAgreementListItem[] = [
   { id: 'terms', title: Strings.termsAgreement.termsService, required: true },
   { id: 'privacy', title: Strings.termsAgreement.privacyPolicy, required: true },
   {
     id: 'personalInfo',
     title: Strings.termsAgreement.personalInformation,
-    secondLine: Strings.termsAgreement.personalInformationCollection,
     required: true,
   },
   {
@@ -143,6 +149,7 @@ export default function TermsAgreementScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
         >
           <Text style={styles.title}>{Strings.termsAgreement.title}</Text>
 
@@ -170,13 +177,10 @@ export default function TermsAgreementScreen() {
                     >
                       <CheckIcon checked={checked} />
                       <View style={styles.itemTextArea}>
-                        <View style={styles.itemTitleLine}>
-                          <Text style={styles.itemTitle}>{item.title}</Text>
-                          <Text style={styles.itemBadge}>
-                            {item.required ? Strings.termsAgreement.required : Strings.termsAgreement.optional}
-                          </Text>
-                        </View>
-                        {item.secondLine && <Text style={styles.itemTitle}>{item.secondLine}</Text>}
+                        <Text style={styles.itemTitle}>{item.title}</Text>
+                        <Text style={styles.itemBadge}>
+                          {item.required ? Strings.termsAgreement.required : Strings.termsAgreement.optional}
+                        </Text>
                         {item.description && <Text style={styles.itemDescription}>{item.description}</Text>}
                       </View>
                     </Pressable>
@@ -235,8 +239,8 @@ const styles = StyleSheet.create({
   title: {
     color: S.black,
     fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 37,
+    lineHeight: 35,
+    fontFamily: FONT.extraBold,
   },
   allRow: {
     flexDirection: 'row',
@@ -247,8 +251,8 @@ const styles = StyleSheet.create({
   allText: {
     color: S.black,
     fontSize: 16,
-    fontWeight: '800',
     lineHeight: 22,
+    fontFamily: FONT.extraBold,
   },
   allDescription: {
     width: 267,
@@ -256,8 +260,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: S.black,
     fontSize: 11,
-    fontWeight: '300',
     lineHeight: 13,
+    fontFamily: FONT.light,
   },
   fullDivider: {
     height: StyleSheet.hairlineWidth,
@@ -305,23 +309,23 @@ const styles = StyleSheet.create({
   itemTitle: {
     color: S.darkGreen,
     fontSize: 16,
-    fontWeight: '400',
     lineHeight: 22,
+    fontFamily: FONT.regular,
   },
   itemBadge: {
     color: S.darkGreen,
     fontSize: 11,
-    fontWeight: '300',
     lineHeight: 13,
+    fontFamily: FONT.light,
   },
   itemDescription: {
     width: '100%',
     maxWidth: 267,
     color: S.black,
     fontSize: 11,
-    fontWeight: '300',
     lineHeight: 13,
     marginTop: 5,
+    fontFamily: FONT.light,
   },
   chevronButton: {
     width: 23,
@@ -354,7 +358,7 @@ const styles = StyleSheet.create({
   agreeButtonText: {
     color: S.textLight,
     fontSize: 16,
-    fontWeight: '700',
     lineHeight: 22,
+    fontFamily: FONT.bold,
   },
 });

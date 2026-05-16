@@ -3,9 +3,9 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types';
+import ClirLogo from '../../components/common/ClirLogo';
 import { termsStorage } from '../../lib/storage';
 import { TERMS_VERSION } from '../../constants/legal-version';
-import ClirLogo from '../../components/common/ClirLogo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
@@ -21,7 +21,9 @@ export default function SplashScreen() {
       const remaining = Math.max(0, 1500 - (Date.now() - start));
       setTimeout(() => {
         if (cancelled) return;
-        navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
+        // ─── DEV ONLY: 약관 화면 강제 노출 ───
+        navigation.replace('TermsAgreement');
+        // navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
       }, remaining);
     });
     return () => { cancelled = true; };
@@ -52,6 +54,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingBottom: 40,
+  },
+  logoText: {
+    fontSize: 48,
+    color: '#1C3A19',
+    fontFamily: 'Pretendard-ExtraBold',
   },
   indicator: {
     position: 'absolute',

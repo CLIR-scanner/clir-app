@@ -8,7 +8,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/7aec29eb-bc45-4b63-b8c1-97fe50b3c253",
       "fallbackToCacheTimeout": 0
@@ -43,7 +45,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-font"
     ],
     "ios": {
       "supportsTablet": true,
