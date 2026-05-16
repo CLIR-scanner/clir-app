@@ -39,11 +39,14 @@ export default function AuthHomeScreen() {
   const setUser = useUserStore(s => s.setUser);
   const [loading, setLoading] = useState(false);
 
-  async function handleGoogle() {
+  async function runSocialSignIn(provider: 'google' | 'apple') {
     if (loading) return;
     setLoading(true);
     try {
-      const { user, isFirstLogin } = await AuthService.signInWithGoogle();
+      const { user, isFirstLogin } =
+        provider === 'google'
+          ? await AuthService.signInWithGoogle()
+          : await AuthService.signInWithApple();
       if (isFirstLogin) {
         setUser({ ...user, hasCompletedSurvey: false });
         navigation.reset({ index: 0, routes: [{ name: 'SurveyLanding', params: {} }] });
@@ -57,17 +60,19 @@ export default function AuthHomeScreen() {
         AuthService.acceptTerms(TERMS_VERSION).catch(() => { /* swallow */ });
       }
     } catch (e) {
-      const msg = (e as Error).message;
-      console.log('[oauth] caught:', msg);
-      Alert.alert(t('auth.loginFailed'), msg);
+      const msg = (e as Error).message ?? '';
+      console.log(`[oauth:${provider}] caught:`, msg);
+      // Apple 시트 사용자 취소 (ERR_REQUEST_CANCELED) 는 알럿 노출 안 함.
+      const isCancel = typeof (e as { code?: string }).code === 'string'
+        && (e as { code?: string }).code === 'ERR_REQUEST_CANCELED';
+      if (!isCancel) Alert.alert(t('auth.loginFailed'), msg);
     } finally {
       setLoading(false);
     }
   }
 
-  function handleApple() {
-    Alert.alert(t('auth.appleComingSoon'));
-  }
+  function handleGoogle() { void runSocialSignIn('google'); }
+  function handleApple() { void runSocialSignIn('apple'); }
 
   return (
     <View style={styles.container}>
@@ -92,15 +97,13 @@ export default function AuthHomeScreen() {
             )}
           </TouchableOpacity>
 
-          {/* 베타 v1: iOS 빌드에서 Apple Sign-In 버튼 비표시.
-              Apple Sign-In stub (auth.service.signInWithApple) 가 throws 라
-              App Store Guideline 4.8 (Google offered → Apple 의무) reject 위험.
-              정식 출시 전 정식 구현 필수 (F8 §3.1 옵션 A). Android 는 그대로 노출. */}
-          {Platform.OS !== 'ios' && (
+          {/* Apple Sign-In: iOS 에서만 노출 (App Store Guideline 4.8 충족).
+              Android 는 Google 만 제공 — Apple Sign-In 은 native iOS SDK 한정. */}
+          {Platform.OS === 'ios' && (
             <TouchableOpacity
-              style={[styles.appleButton, styles.buttonDisabled]}
+              style={[styles.appleButton, loading && styles.buttonDisabled]}
               onPress={handleApple}
-              disabled
+              disabled={loading}
             >
               <Text style={styles.appleButtonText}>{t('auth.continueWithApple')}</Text>
             </TouchableOpacity>

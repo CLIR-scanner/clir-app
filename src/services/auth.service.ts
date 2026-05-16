@@ -4,8 +4,10 @@
 //   @react-native-google-signin/google-signin) 로 교체할 때도
 //   아래 함수 시그니처는 유지하고 본문만 바꾸면 된다.
 
+import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Sentry from '@sentry/react-native';
 import { supabase } from '../lib/supabase';
 import { apiFetch, setAuthToken, clearAuthToken, ApiError } from '../lib/api';
@@ -121,9 +123,53 @@ export function signInWithGoogle(): Promise<AuthResult> {
   return signInWithProvider('google');
 }
 
-export function signInWithApple(): Promise<AuthResult> {
-  // TODO: Supabase Apple provider 활성화 후 활성화
-  throw new Error('Apple 로그인은 아직 준비되지 않았습니다.');
+// Native Apple Sign-In. iOS 전용 — Android/web 에서는 호출 안 됨 (UI 단에서 차단).
+// Apple credential.identityToken → Supabase signInWithIdToken('apple') 로 세션 교환.
+// Supabase Auth Dashboard 에서 Apple provider 활성화 + Services ID/Team ID/Key 설정 필요.
+export async function signInWithApple(): Promise<AuthResult> {
+  if (Platform.OS !== 'ios') {
+    throw new Error('Apple 로그인은 iOS 에서만 지원됩니다.');
+  }
+
+  const available = await AppleAuthentication.isAvailableAsync();
+  if (!available) {
+    throw new Error('이 기기에서 Apple 로그인을 사용할 수 없습니다.');
+  }
+
+  let credential: AppleAuthentication.AppleAuthenticationCredential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    });
+  } catch (e: unknown) {
+    // 사용자가 시트를 닫은 경우 ERR_REQUEST_CANCELED — 호출자에서 silent 처리하도록 그대로 throw
+    throw e instanceof Error ? e : new Error('Apple 로그인에 실패했습니다.');
+  }
+
+  const idToken = credential.identityToken;
+  if (!idToken) {
+    throw new Error('Apple identityToken 을 받지 못했습니다.');
+  }
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'apple',
+    token: idToken,
+  });
+  if (error || !data?.session) {
+    throw new Error(error?.message ?? 'Supabase 세션 교환 실패');
+  }
+
+  const accessToken = data.session.access_token;
+  const refreshToken = data.session.refresh_token;
+  setAuthToken(accessToken);
+  await sessionStore.write({ access: accessToken, refresh: refreshToken });
+
+  const me = await fetchMe();
+  Sentry.setUser({ id: me.user.id });
+  return { token: accessToken, user: me.user, isFirstLogin: !me.hasCompletedSurvey };
 }
 
 // ─── Profile ───────────────────────────────────────────────────────────────
