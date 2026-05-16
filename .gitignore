@@ -47,3 +47,6 @@ yarn-error.*
 # EAS local build artifacts
 build-*.apk
 build-*.aab
+CLIR.apk
+CLIR.apk.zip
+*.ipa
