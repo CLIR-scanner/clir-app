@@ -67,8 +67,8 @@ export const Strings = {
 };
 
 export const FixedTabLabels = {
-  search: 'SEARCH',
-  list: 'LIST',
-  community: 'COMMUNITY',
-  profile: 'PROFILE',
+  search: 'Search',
+  list: 'List',
+  community: 'Community',
+  profile: 'Profile',
 };

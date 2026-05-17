@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
-import { apiFetch } from '../../lib/api';
 import { Colors } from '../../constants/colors';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import { DIET_AVOIDED_CATEGORIES } from '../../constants/dietary';
@@ -86,23 +85,7 @@ export default function ProfileScreen() {
     setShowLangPicker(false);
   }
 
-  // ─── DEV ONLY: 임시 탈퇴 버튼 ───
-  function handleTempDelete() {
-    Alert.alert('계정 삭제', '정말 삭제하시겠어요?', [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: async () => {
-        try {
-          await apiFetch<void>('/users/me', { method: 'DELETE' });
-          logout();
-        } catch (e) {
-          Alert.alert('Error', (e as Error).message);
-        }
-      }},
-    ]);
-  }
-  // ─── DEV ONLY END ───
-
-  function handleLogout() {
+function handleLogout() {
     Alert.alert(t('auth.signOut'), t('auth.signOutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('auth.signOut'), style: 'destructive', onPress: logout },
@@ -313,10 +296,6 @@ export default function ProfileScreen() {
         <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
 
-      {/* ─── DEV ONLY: 임시 탈퇴 버튼 ─── */}
-      <TouchableOpacity style={styles.tempDeleteBtn} onPress={handleTempDelete} activeOpacity={0.7}>
-        <Text style={styles.tempDeleteText}>[DEV] 계정 삭제</Text>
-      </TouchableOpacity>
     </ScrollView>
 
     {/* ── Language picker bottom sheet ──────────────────────────────────── */}
@@ -626,17 +605,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: STRICT_CLR,
-  },
-  tempDeleteBtn: {
-    borderRadius: 100,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: '#B0421F',
-    marginTop: 8,
-  },
-  tempDeleteText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.white,
   },
 });

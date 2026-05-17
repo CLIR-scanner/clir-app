@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -139,10 +139,7 @@ export default function SearchScreen({ navigation }: Props) {
   const [suggestions,   setSuggestions]  = useState<string[]>([]);
   const [items,         setItems]        = useState<Product[]>([]);
   const [hasMore,       setHasMore]      = useState(false);
-  const [isAlphabeticalSort, setIsAlphabeticalSort] = useState(false);
-  const [showSortMenu, setShowSortMenu] = useState(false);
-
-  const favorites             = useListStore(s => s.favorites);
+const favorites             = useListStore(s => s.favorites);
   const addFavoriteToStore    = useListStore(s => s.addFavorite);
   const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
 
@@ -150,16 +147,7 @@ export default function SearchScreen({ navigation }: Props) {
     activeFilters.categories.filter(c => c.selected).length +
     (activeFilters.safeOnly ? 1 : 0);
 
-  // categories / safeOnly 필터는 BE 서버 사이드 처리.
-  // 클라이언트는 알파벳 정렬만 담당.
-  const visibleProducts = useMemo(() => {
-    if (!isAlphabeticalSort) return items;
-    return [...items].sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
-    );
-  }, [items, isAlphabeticalSort]);
-
-  // 프로필 변경 시(알러지·식이·민감도 수정) 검색 결과를 자동 재조회.
+// 프로필 변경 시(알러지·식이·민감도 수정) 검색 결과를 자동 재조회.
   // SearchResultScreen 만 처리한 PR #28 의 보완 — Search 탭 메인 화면에서도
   // 사용자가 프로필 수정 후 돌아왔을 때 stale 한 'Bad/Good' 라벨을 보지 않게.
   const profileVersion = useUserStore(s => s.profileVersion);
@@ -274,12 +262,7 @@ export default function SearchScreen({ navigation }: Props) {
     // query → '' 에 의해 useEffect가 전체 목록 복원을 처리
   }
 
-  function handleSortSelect(nextAlphabetical: boolean) {
-    setIsAlphabeticalSort(nextAlphabetical);
-    setShowSortMenu(false);
-  }
-
-  async function handleFavoriteToggle(product: Product) {
+async function handleFavoriteToggle(product: Product) {
     const existing = favorites.find(f => f.productId === product.id);
     try {
       if (existing) {
@@ -326,6 +309,7 @@ export default function SearchScreen({ navigation }: Props) {
       </View>
 
       {/* ── Search bar row ──────────────────────────────────────── */}
+      <View style={styles.searchContainer}>
       <View style={styles.searchRow}>
         <View style={styles.searchBar}>
           <TextInput
@@ -356,10 +340,7 @@ export default function SearchScreen({ navigation }: Props) {
 
         <TouchableOpacity
           style={[styles.filterBtn, activeCount > 0 && styles.filterBtnActive]}
-          onPress={() => {
-            setShowSortMenu(false);
-            setShowFilter(true);
-          }}
+          onPress={() => setShowFilter(true)}
           activeOpacity={0.7}
         >
           <FilterTuneIcon active={activeCount > 0} />
@@ -369,52 +350,6 @@ export default function SearchScreen({ navigation }: Props) {
             </View>
           )}
         </TouchableOpacity>
-      </View>
-
-      {/* ── Sort + filter pills ─────────────────────────────────── */}
-      <View style={styles.toolbar}>
-        <View style={styles.sortControl}>
-          <TouchableOpacity
-            style={[styles.sortPill, isAlphabeticalSort && styles.sortPillActive]}
-            onPress={() => setShowSortMenu(prev => !prev)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.sortPillLabel, isAlphabeticalSort && styles.sortPillLabelActive]}>
-              {t('search.sortBy')}
-            </Text>
-            <View style={styles.sortArrowWrap}>
-              <Text style={[styles.sortArrow, isAlphabeticalSort && styles.sortPillLabelActive]}>
-                {showSortMenu ? '▴' : '▾'}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {showSortMenu && (
-            <View style={styles.sortMenu}>
-              <TouchableOpacity
-                style={styles.sortOption}
-                onPress={() => handleSortSelect(false)}
-                activeOpacity={0.75}
-              >
-                <Text style={[styles.sortOptionText, !isAlphabeticalSort && styles.sortOptionTextActive]}>
-                  {t('search.sortDefault')}
-                </Text>
-                {!isAlphabeticalSort && <View style={styles.sortOptionDot} />}
-              </TouchableOpacity>
-              <View style={styles.sortOptionDivider} />
-              <TouchableOpacity
-                style={styles.sortOption}
-                onPress={() => handleSortSelect(true)}
-                activeOpacity={0.75}
-              >
-                <Text style={[styles.sortOptionText, isAlphabeticalSort && styles.sortOptionTextActive]}>
-                  {t('search.sortAlphabetical')}
-                </Text>
-                {isAlphabeticalSort && <View style={styles.sortOptionDot} />}
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
       </View>
 
       {/* ── Auto-suggest dropdown ───────────────────────────────── */}
@@ -438,6 +373,7 @@ export default function SearchScreen({ navigation }: Props) {
           />
         </View>
       )}
+      </View>
 
       {/* ── 검색 결과 / 전체 그리드 ──────────────────────────────── */}
       {isLoading ? (
@@ -450,7 +386,7 @@ export default function SearchScreen({ navigation }: Props) {
         /* 검색어 있음 → SearchResultScreen 스타일 리스트 */
         <FlatList
           key="list"
-          data={visibleProducts}
+          data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 32 }]}
           showsVerticalScrollIndicator={false}
@@ -470,7 +406,7 @@ export default function SearchScreen({ navigation }: Props) {
         /* 검색어 없음 → 2열 그리드 */
         <FlatList
           key="grid"
-          data={visibleProducts}
+          data={items}
           keyExtractor={item => item.id}
           numColumns={2}
           extraData={favorites}
@@ -496,8 +432,8 @@ export default function SearchScreen({ navigation }: Props) {
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
-const SEARCH_BAR_H  = 42;
-const FILTER_BTN_SZ = 42;
+const SEARCH_BAR_H  = 52;
+const FILTER_BTN_SZ = 52;
 const BORDER_RADIUS = 10;
 
 const styles = StyleSheet.create({
@@ -519,12 +455,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  searchContainer: {
+    zIndex: 99,
+    marginBottom: 24,
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 22,
     gap: 5,
-    marginBottom: 8,
   },
   searchBar: {
     flex: 1,
@@ -571,84 +510,13 @@ const styles = StyleSheet.create({
   },
   filterBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
 
-  toolbar: {
-    paddingHorizontal: 22,
-    marginBottom: 45,
-    alignItems: 'flex-start',
-    zIndex: 40,
-  },
-  sortControl: {
-    position: 'relative',
-    zIndex: 40,
-  },
-  sortPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.searchMutedGreen,
-    borderRadius: 50,
-    paddingVertical: 3,
-    paddingLeft: 19,
-    paddingRight: 12,
-    minWidth: 118,
-    justifyContent: 'center',
-    gap: 10,
-  },
-  sortPillActive: { backgroundColor: Colors.searchMutedGreen },
-  sortPillLabel: { fontSize: 14, fontWeight: '400', color: Colors.searchMutedGreen, letterSpacing: -0.27 },
-  sortPillLabelActive: { color: Colors.white },
-  sortArrowWrap: { width: 14, height: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  sortArrow: { fontSize: 15, color: Colors.searchMutedGreen, lineHeight: 16 },
-  sortMenu: {
-    position: 'absolute',
-    top: 34,
-    left: 0,
-    width: 178,
-    borderWidth: 1,
-    borderColor: Colors.searchBorder,
-    borderRadius: 10,
-    backgroundColor: Colors.searchBackground,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 5,
-    overflow: 'hidden',
-  },
-  sortOption: {
-    minHeight: 42,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sortOptionText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.searchMutedGreen,
-  },
-  sortOptionTextActive: {
-    fontWeight: '700',
-    color: Colors.searchDarkGreen,
-  },
-  sortOptionDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: Colors.searchMutedGreen,
-  },
-  sortOptionDivider: {
-    height: 1,
-    backgroundColor: Colors.searchBorder,
-    marginHorizontal: 12,
-  },
 
   // Auto-suggest
   suggestBox: {
     position: 'absolute',
-    top: 186,
+    top: SEARCH_BAR_H + 4,
     left: 22,
-    right: 22,
+    right: 79,
     backgroundColor: Colors.searchBackground,
     borderRadius: BORDER_RADIUS,
     borderWidth: 1,
@@ -767,7 +635,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.searchBorder,
     backgroundColor: Colors.searchCard,
     overflow: 'hidden',
-    marginBottom: 13,
+    marginBottom: 7,
   },
   cardImgPlaceholder: {
     flex: 1,

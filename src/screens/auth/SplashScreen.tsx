@@ -21,9 +21,7 @@ export default function SplashScreen() {
       const remaining = Math.max(0, 1500 - (Date.now() - start));
       setTimeout(() => {
         if (cancelled) return;
-        // ─── DEV ONLY: 약관 화면 강제 노출 ───
-        navigation.replace('TermsAgreement');
-        // navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
+        navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
       }, remaining);
     });
     return () => { cancelled = true; };
