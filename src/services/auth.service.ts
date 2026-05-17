@@ -178,6 +178,8 @@ type MeResponse = {
   id: string;
   email: string;
   name: string;
+  /** 커뮤니티 전용 표시명. 0010 Supabase 적용 전엔 undefined 가능 — optional 안전. */
+  displayName?: string | null;
   allergyProfile: string[];
   dietaryRestrictions: string[];
   sensitivityLevel: 'strict' | 'normal';
@@ -195,6 +197,7 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     id: res.id,
     email: res.email,
     name: res.name,
+    displayName: res.displayName ?? null,
     allergyProfile: res.allergyProfile,
     dietaryRestrictions: res.dietaryRestrictions,
     sensitivityLevel: res.sensitivityLevel,

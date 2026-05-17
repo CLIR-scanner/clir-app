@@ -14,8 +14,18 @@ export async function updateName(name: string): Promise<void> {
   });
 }
 
-/** PATCH /user/me — 언어 코드 동기화. BE 가 이 엔드포인트를 아직 미구현이면
- *  404 throw — 콜러는 silent-swallow 권장 (AsyncStorage 가 durable 계층). */
+/** PATCH /user/me — 커뮤니티 표시명(displayName) 변경.
+ *  빈문자열("") 전달 시 BE 가 display_name=NULL 로 저장 → 커뮤니티에서 '익명' 표시(BE PR-BE2 보장).
+ *  설계 계약: requestBody `{ displayName: string }` (1..30 또는 빈문자열=익명 복귀). */
+export async function updateDisplayName(displayName: string): Promise<void> {
+  await apiFetch<void>('/user/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ displayName }),
+  });
+}
+
+/** PATCH /user/me — 언어 코드 동기화. PATCH /user/me 는 구현되어 있으며
+ *  language 필드를 포함한 부분 갱신을 지원한다. */
 export async function updateLanguage(language: string): Promise<void> {
   await apiFetch<void>('/user/me', {
     method: 'PATCH',

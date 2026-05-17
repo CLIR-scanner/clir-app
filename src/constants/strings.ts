@@ -64,6 +64,23 @@ export const Strings = {
   shoppingList: '장보기 목록',
   purchased: '구매 완료',
   notPurchased: '구매 예정',
+
+  // 커뮤니티 표시명 (PersonalNicknameScreen)
+  personalNickname: {
+    screenTitle: '커뮤니티 표시명',
+    sectionLabel: '커뮤니티 표시명',
+    fieldLabel: '표시명',
+    placeholder: '표시명을 입력하세요 (최대 30자)',
+    notSet: '미설정',
+    saveButton: '저장',
+    savingButton: '저장 중...',
+    emptyHint: '비워두면 커뮤니티에서 \'익명\'으로 표시됩니다.',
+    successMessage: '커뮤니티 표시명이 저장되었습니다.',
+    errorTitle: '저장 실패',
+    charCountFormat: (current: number, max: number) => `${current}/${max}`,
+    menuLabel: '커뮤니티 표시명',
+    menuDescription: '커뮤니티에서 사용할 닉네임을 설정합니다.',
+  },
 };
 
 export const FixedTabLabels = {

@@ -153,6 +153,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
     }));
   },
 
+  updateUserDisplayName: (displayName: string | null) => {
+    set(state => ({
+      currentUser: { ...state.currentUser, displayName },
+    }));
+  },
+
   setLanguage: (language: string) => {
     // 동기: 즉시 store + i18n 갱신. UI 가 멈추지 않게.
     set(state => ({
