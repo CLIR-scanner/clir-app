@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     color: DARK_GREEN,
     textAlign: 'center',
     letterSpacing: -0.38,
-    marginBottom: 14,
+    marginBottom: 31,
   },
 
   // ── User card
@@ -468,8 +468,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: DARK_GREEN,
     marginLeft: 2,
-    marginTop: 4,
-    marginBottom: 2,
+    marginTop: 18,
+    marginBottom: -4,
   },
 
   // ── Allergy card
@@ -495,9 +495,9 @@ const styles = StyleSheet.create({
   },
   sensitivityBadge: {
     borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 3,
-    paddingHorizontal: 16,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
   },
   sensitivityBadgeStrict: {
     backgroundColor: STRICT_BG,
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   sensitivityBadgeText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   sensitivityBadgeTextStrict: {
     color: STRICT_CLR,
@@ -522,23 +522,22 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_FILL,
     borderWidth: 1,
     borderColor: MID_GREEN,
-    borderRadius: 20,
-    paddingVertical: 3,
-    paddingHorizontal: 20,
-    height: 28,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   preferenceBadgeText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '400',
     color: DARK_GREEN,
   },
   allergyBlock: {
     paddingHorizontal: 17,
     paddingTop: 12,
     paddingBottom: 16,
-    gap: 10,
+    gap: 12,
   },
   chips: {
     flexDirection: 'row',
@@ -547,16 +546,14 @@ const styles = StyleSheet.create({
   },
   chip: {
     backgroundColor: CARD_FILL,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 20,
-    paddingVertical: 3,
-    paddingHorizontal: 16,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '400',
     color: CHIP_TEXT,
-    lineHeight: 20,
   },
   emptyChip: {
     fontSize: 13,

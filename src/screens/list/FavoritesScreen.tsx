@@ -13,11 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { ListStackParamList, FavoriteItem } from '../../types';
+import { ListStackParamList, FavoriteItem, RiskLevel } from '../../types';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getFavorites, removeFavorite } from '../../services/list.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import { Colors } from '../../constants/colors';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 
@@ -25,6 +26,12 @@ type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 const BG         = '#F9FFF3';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
+
+const BADGE_COLOR: Record<RiskLevel, string> = {
+  safe: Colors.scanCorrect,
+  caution: Colors.searchPoor,
+  danger: Colors.searchWrong,
+};
 
 export default function FavoritesScreen({ navigation }: Props) {
   const { t } = useTranslation();
@@ -94,6 +101,7 @@ export default function FavoritesScreen({ navigation }: Props) {
 
   function renderItem({ item, index }: { item: FavoriteItem; index: number }) {
     const riskLevel = item.product.riskLevel ?? 'safe';
+    const badgeColor = BADGE_COLOR[riskLevel];
     const badgeLbl  = t(`scanUi.${riskLevel === 'safe' ? 'good' : riskLevel === 'caution' ? 'poor' : 'bad'}`);
     const isLast    = index === sorted.length - 1;
 
@@ -125,9 +133,9 @@ export default function FavoritesScreen({ navigation }: Props) {
             </Text>
 
             {/* Risk badge — image 인증마크 + 텍스트 */}
-            <View style={styles.badge}>
+            <View style={[styles.badge, { borderColor: badgeColor }]}>
               <RiskBadgeIcon level={riskLevel} size={16} style={styles.badgeIcon} />
-              <Text style={styles.badgeText}>{badgeLbl}</Text>
+              <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeLbl}</Text>
             </View>
           </View>
 
@@ -195,23 +203,25 @@ const styles = StyleSheet.create({
     color: DARK_GREEN,
     lineHeight: 32,
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: 35,
   },
 
   // List
   listContent: { paddingHorizontal: 26, paddingTop: 4 },
 
   // "My Favorite Products" pill
-  pillWrap: { marginBottom: 20 },
+  pillWrap: { marginBottom: 12 },
   pill: {
     alignSelf: 'flex-start',
+    height: 32,
     borderWidth: 1,
     borderColor: DARK_GREEN,
     borderRadius: 50,
-    paddingVertical: 3,
     paddingHorizontal: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  pillText: { fontSize: 13, fontWeight: '500', color: DARK_GREEN, lineHeight: 18 },
+  pillText: { fontSize: 14, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.3 },
 
   // Row
   row: {
@@ -242,7 +252,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: MID_GREEN,
     borderRadius: 28,
     paddingVertical: 5,
     paddingLeft: 11,
@@ -250,7 +259,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   badgeIcon: { width: 16, height: 16 },
-  badgeText: { fontSize: 12, fontWeight: '400', color: MID_GREEN },
+  badgeText: { fontSize: 12, fontWeight: '400', letterSpacing: 0 },
 
   // Chevron
   chevron: { fontSize: 22, color: DARK_GREEN, fontWeight: '300' },

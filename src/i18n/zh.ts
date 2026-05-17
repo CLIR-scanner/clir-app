@@ -47,7 +47,7 @@ const zh = {
   },
   multiProfileDetail: {
     headerTitle: '档案详情', badgeMain: '主要', deleteBtn: '删除',
-    currentlyActive: '当前激活', sectionSensitivity: '敏感度', modeLabel: '模式',
+    currentlyActive: '当前激活', scanEnabled: 'Active', scanDisabled: 'Inactive', sectionSensitivity: '敏感度', modeLabel: '模式',
     strictDesc: '对可能含有微量过敏原的成分也会发出警告。',
     normalDesc: '仅对产品中直接含有的成分发出警告。',
     sectionAllergy: '过敏档案', sectionDietary: '饮食限制',

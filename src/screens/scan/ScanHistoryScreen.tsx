@@ -12,17 +12,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { ScanStackParamList, ScanHistory } from '../../types';
+import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
 import { useScanStore } from '../../store/scan.store';
 import { useUserStore } from '../../store/user.store';
 import { getScanHistory } from '../../services/scan.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import { Colors } from '../../constants/colors';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const BG          = '#F0F5EF';   // 연한 민트/크림 배경
 const TITLE_COLOR = '#1A2E1A';   // 진한 그린 계열 타이틀
+const MID_GREEN   = '#556C53';
+
+const BADGE_COLOR: Record<RiskLevel, string> = {
+  safe: Colors.scanCorrect,
+  caution: Colors.searchPoor,
+  danger: Colors.searchWrong,
+};
 
 export default function ScanHistoryScreen({ navigation }: Props) {
   const { t } = useTranslation();
@@ -66,6 +74,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
   }
 
   function renderItem({ item, index }: { item: ScanHistory; index: number }) {
+    const badgeColor = BADGE_COLOR[item.result];
     const badgeLabel = t(`scanUi.${item.result === 'safe' ? 'good' : item.result === 'caution' ? 'poor' : 'bad'}`);
     const isLast = index === sorted.length - 1;
 
@@ -96,9 +105,9 @@ export default function ScanHistoryScreen({ navigation }: Props) {
               {item.product.brand || '—'}
             </Text>
             {/* Risk badge */}
-            <View style={styles.badge}>
+            <View style={[styles.badge, { borderColor: badgeColor }]}>
               <RiskBadgeIcon level={item.result} size={16} style={styles.badgeIcon} />
-              <Text style={styles.badgeText}>{badgeLabel}</Text>
+              <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeLabel}</Text>
             </View>
           </View>
 
@@ -194,24 +203,27 @@ const styles = StyleSheet.create({
 
   // List
   listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: 26,
+    paddingTop: 4,
   },
 
   // "Your Scan History" pill
-  pillWrap: { marginBottom: 16 },
+  pillWrap: { marginBottom: 12 },
   historyPill: {
     alignSelf: 'flex-start',
-    borderWidth: 1.5,
+    height: 32,
+    borderWidth: 1,
     borderColor: TITLE_COLOR,
-    borderRadius: 20,
-    paddingVertical: 7,
-    paddingHorizontal: 16,
+    borderRadius: 50,
+    paddingHorizontal: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   historyPillText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: TITLE_COLOR,
+    letterSpacing: -0.3,
   },
 
   // Row
@@ -219,22 +231,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    gap: 12,
+    gap: 16,
   },
 
   // Product thumbnail
   thumb: {
-    width: 72, height: 72,
-    borderRadius: 12,
+    width: 80,
+    height: 80,
+    borderRadius: 11,
     backgroundColor: '#D9D9D9',
     overflow: 'hidden',
     flexShrink: 0,
   },
 
   // Info block
-  info:        { flex: 1 },
-  productName: { fontSize: 15, fontWeight: '700', color: '#1A1A1A', marginBottom: 3 },
-  brandName:   { fontSize: 13, color: '#666666', marginBottom: 8 },
+  info:        { flex: 1, gap: 12 },
+  productName: { fontSize: 16, fontWeight: '700', color: MID_GREEN, lineHeight: 22 },
+  brandName:   { fontSize: 12, fontWeight: '400', color: MID_GREEN, lineHeight: 16, marginTop: -8 },
 
   // Risk badge
   badge: {
@@ -242,14 +255,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: '#1C3A19',
-    borderRadius: 20,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    borderRadius: 28,
+    paddingVertical: 5,
+    paddingLeft: 11,
+    paddingRight: 18,
     gap: 6,
   },
   badgeIcon: { width: 16, height: 16 },
-  badgeText: { fontSize: 12, fontWeight: '600', color: '#1C3A19' },
+  badgeText: { fontSize: 12, fontWeight: '600' },
 
   // Chevron
   chevron: { fontSize: 22, color: '#1A1A1A', fontWeight: '300' },

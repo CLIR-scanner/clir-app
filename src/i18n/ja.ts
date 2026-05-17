@@ -47,7 +47,7 @@ const ja = {
   },
   multiProfileDetail: {
     headerTitle: 'プロフィール詳細', badgeMain: 'メイン', deleteBtn: '削除',
-    currentlyActive: '現在有効', sectionSensitivity: '感度', modeLabel: 'モード',
+    currentlyActive: '現在有効', scanEnabled: 'Active', scanDisabled: 'Inactive', sectionSensitivity: '感度', modeLabel: 'モード',
     strictDesc: 'アレルゲンを微量含む可能性のある成分についても警告します。',
     normalDesc: '製品に直接含まれる成分についてのみ警告します。',
     sectionAllergy: 'アレルギープロフィール', sectionDietary: '食事制限',
