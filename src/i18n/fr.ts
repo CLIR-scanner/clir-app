@@ -138,7 +138,7 @@ const fr = {
     community: 'Communauté', featured: 'À LA UNE', featuredSubtitle: 'Scannez un produit pour vérifier les ingrédients instantanément',
     bannerTitle: 'Mangez malin,\n vivez sans allergies',
     allCategories: 'Toutes les catégories', reorderSections: 'Réorganiser les sections', dragToReorder: 'Faites glisser pour réorganiser les sections',
-    seeMore: 'Voir plus', trending: 'Tendances de la semaine', similarPicks: 'Choix d\'utilisateurs similaires', qa: 'Q&R', magazine: 'Magazine Clir',
+    seeMore: 'Voir plus', trending: 'Tendances de la semaine', similarPicks: 'Choix d\'utilisateurs similaires', reviewsTitle: 'Avis', similarReviews: 'Avis des utilisateurs similaires', shareStory: 'Partagez votre expérience', writeReview: 'Écrire un avis', qa: 'Q&R', magazine: 'Magazine Clir',
   },
   survey: {
     landingTitle: 'Répondez à quelques\nquestions rapides\npour nous aider à\nvous configurer.',

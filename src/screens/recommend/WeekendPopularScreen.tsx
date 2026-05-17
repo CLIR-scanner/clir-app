@@ -14,12 +14,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
-import FilterBottomSheet, {
+import {
   FilterState,
   INITIAL_FILTER_CATEGORIES,
   INITIAL_FILTERS,
 } from '../../components/common/FilterBottomSheet';
-import FilterTuneIcon from '../../components/common/FilterTuneIcon';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import { clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getWeekendPopular } from '../../services/recommend.service';
@@ -156,13 +155,11 @@ export default function WeekendPopularScreen({ navigation }: Props) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [showFilter, setShowFilter] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
 
   const selectedCategoryIds = activeFilters.categories
     .filter(cat => cat.selected)
     .map(cat => cat.id);
-  const activeCount = selectedCategoryIds.length + (activeFilters.safeOnly ? 1 : 0);
 
   useEffect(() => {
     let cancelled = false;
@@ -269,20 +266,6 @@ export default function WeekendPopularScreen({ navigation }: Props) {
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity
-          style={[styles.filterButton, activeCount > 0 && styles.filterButtonActive]}
-          onPress={() => setShowFilter(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('search.filters')}
-          activeOpacity={0.7}
-        >
-          <FilterTuneIcon active={activeCount > 0} />
-          {activeCount > 0 && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{activeCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
       </View>
 
       <View style={styles.titleWrap}>
@@ -340,13 +323,6 @@ export default function WeekendPopularScreen({ navigation }: Props) {
           </View>
         }
       />
-
-      <FilterBottomSheet
-        visible={showFilter}
-        onClose={() => setShowFilter(false)}
-        filters={activeFilters}
-        onApply={setActiveFilters}
-      />
     </View>
   );
 }
@@ -386,8 +362,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
+    paddingHorizontal: 22,
     marginTop: 12,
   },
   searchBox: {
@@ -415,31 +390,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: C.mid,
   },
-  filterButton: {
-    width: 42,
-    height: 42,
-    borderWidth: 1,
-    borderColor: C.dark,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: C.mid,
-  },
-  filterBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    minWidth: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: Colors.searchWrong,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  filterBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
   titleWrap: {
     paddingHorizontal: 28,
     marginTop: 28,

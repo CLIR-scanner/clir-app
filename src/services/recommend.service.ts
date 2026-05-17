@@ -211,7 +211,14 @@ export async function getWeekendPopular(): Promise<Product[]> {
  * /recommend/similar-users — 유사 프로필 사용자들의 이번 주 즐겨찾기를 반환한다.
  */
 export async function getSimilarUsersFavorites(): Promise<Product[]> {
-  throw new Error('Not implemented');
+  return [
+    makeProduct({ id: 'similar-yogurt', name: 'Coconut Yogurt', brand: 'So Delicious', image: PRODUCT_IMAGES.yogurt, category: 'dairy', riskLevel: 'danger', favoriteCount: 2391, rating: 4.60 }),
+    makeProduct({ id: 'similar-lemonade', name: 'Organic Lemonade', brand: 'Santa Cruz', image: PRODUCT_IMAGES.lemonade, category: 'beverages', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
+    makeProduct({ id: 'similar-water', name: 'Mineral Water', brand: 'Evian', image: PRODUCT_IMAGES.sparkling, category: 'beverages', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
+    makeProduct({ id: 'similar-cereal', name: 'Blueberry Cereal', brand: 'Nature Path', image: PRODUCT_IMAGES.cereal, category: 'cereals', riskLevel: 'caution', favoriteCount: 2391, rating: 4.60 }),
+    makeProduct({ id: 'similar-chips', name: 'Sea Salt Chips', brand: 'Kettle Brand', image: PRODUCT_IMAGES.chips, category: 'snacks', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
+    makeProduct({ id: 'similar-crackers', name: 'Seed Crackers', brand: 'Simple Mills', image: PRODUCT_IMAGES.crackers, category: 'cookies', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
+  ];
 }
 
 /**
