@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
   },
   skipButton: {
-    height: 53,
+    height: 58,
     borderRadius: 35,
     borderWidth: 1,
     borderColor: C.textMuted,
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     color: C.textMuted,
   },
   continueButton: {
-    height: 53,
+    height: 58,
     borderRadius: 35,
     backgroundColor: C.primary,
     alignItems: 'center',

@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     left: 17,
     right: 17,
     bottom: 36,
-    height: 53,
+    height: 58,
     borderRadius: 35,
     backgroundColor: S.darkGreen,
     alignItems: 'center',

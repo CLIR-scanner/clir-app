@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   optionLabelSelected: { color: '#FFFFFF' },
   optionDesc: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 18, opacity: 0.7 },
   optionDescSelected: { color: '#FFFFFF', opacity: 0.8 },
-  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueDisabled: { opacity: 0.4 },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
 });

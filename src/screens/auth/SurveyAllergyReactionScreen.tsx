@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.primary },
   optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: '#FFFFFF' },
-  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueDisabled: { opacity: 0.4 },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
 });

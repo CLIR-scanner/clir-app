@@ -99,6 +99,6 @@ const styles = StyleSheet.create({
   uploadedName: { fontSize: 14, fontFamily: 'Pretendard-SemiBold', color: S.primary, textAlign: 'center', paddingHorizontal: 16 },
   footer: { gap: 16 },
   disclaimer: { fontSize: 11, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 16, opacity: 0.6 },
-  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
 });

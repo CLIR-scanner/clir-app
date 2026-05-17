@@ -57,6 +57,6 @@ const styles = StyleSheet.create({
   title:          { fontSize: 30, fontFamily: 'Pretendard-ExtraBold', color: '#000000', lineHeight: 32, marginBottom: 12 },
   subtitle:       { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35, marginBottom: 12 },
   circleOuter:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueText:   { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
 });

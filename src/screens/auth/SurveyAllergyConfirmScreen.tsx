@@ -185,36 +185,43 @@ export default function SurveyAllergyConfirmScreen() {
         <Text style={styles.title}>{t('survey.selectedTitle')}</Text>
         <Text style={styles.subtitle}>{t('survey.selectedSubtitle')}</Text>
 
-        {displayCategories.map(cat => {
+        {displayCategories.map((cat, index) => {
           const items = categories[cat] ?? [];
+          const isLast = index === displayCategories.length - 1;
           return (
-            <View key={cat} style={styles.group}>
-              <Text style={styles.groupLabel}>{getCategoryLabel(cat)}</Text>
-              <View style={styles.chips}>
-                {items.map(item => (
-                  <View key={item} style={[styles.chip, styles.chipSelected]}>
-                    <Text style={[styles.chipText, styles.chipTextSelected]}>
-                      {getIngredientDisplayName(item, currentLanguage)}
-                    </Text>
-                  </View>
-                ))}
-                {isEditing && (
-                  <TouchableOpacity style={styles.addChip} onPress={() => openModal(cat)}>
-                    <Text style={styles.addChipText}>{t('survey.add')}</Text>
-                  </TouchableOpacity>
-                )}
+            <React.Fragment key={cat}>
+              <View style={styles.group}>
+                <Text style={styles.groupLabel}>{getCategoryLabel(cat)}</Text>
+                <View style={styles.chips}>
+                  {items.map(item => (
+                    <View key={item} style={[styles.chip, styles.chipSelected]}>
+                      <Text style={[styles.chipText, styles.chipTextSelected]}>
+                        {getIngredientDisplayName(item, currentLanguage)}
+                      </Text>
+                    </View>
+                  ))}
+                  {isEditing && (
+                    <TouchableOpacity style={styles.addChip} onPress={() => openModal(cat)}>
+                      <Text style={styles.addChipText}>{t('survey.add')}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-            </View>
+              {!isLast && <View style={styles.separator} />}
+            </React.Fragment>
           );
         })}
 
         {isEditing && (
-          <TouchableOpacity
-            style={styles.newCatButton}
-            onPress={() => { setCatSelected(new Set()); setCatSearch(''); setShowCatModal(true); }}
-          >
-            <Text style={styles.newCatText}>{t('survey.addNewCategories')}</Text>
-          </TouchableOpacity>
+          <>
+            <View style={styles.separator} />
+            <TouchableOpacity
+              style={styles.newCatButton}
+              onPress={() => { setCatSelected(new Set()); setCatSearch(''); setShowCatModal(true); }}
+            >
+              <Text style={styles.newCatText}>{t('survey.addNewCategories')}</Text>
+            </TouchableOpacity>
+          </>
         )}
 
         <View style={{ height: 24 }} />
@@ -322,32 +329,33 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, fontFamily: 'Pretendard-ExtraBold', color: '#000000', lineHeight: 32, marginBottom: 10 },
   subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35, marginBottom: 28 },
   group: { marginBottom: 20 },
-  groupLabel: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: S.primary, marginBottom: 8 },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#A9B6A8', marginBottom: 20 },
+  groupLabel: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: S.primary, marginBottom: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  chip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
+  chip: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
-  chipText: { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: S.primary },
+  chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
   chipTextSelected: { color: '#FFFFFF' },
-  addChip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
-  addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
+  addChip: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
+  addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: '#A9B6A8' },
   newCatButton: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 12, paddingHorizontal: 20, alignSelf: 'flex-start', backgroundColor: S.bg, marginTop: 4 },
   newCatText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
   buttons: { gap: 12, paddingTop: 16 },
-  editButton: { height: 53, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: S.primary },
-  editText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: S.primary },
-  completeButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  editButton: { height: 58, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#A9B6A8' },
+  editText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: '#A9B6A8' },
+  completeButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   completeDisabled: { opacity: 0.5 },
   completeText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalSheet: { backgroundColor: S.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, maxHeight: '75%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontFamily: 'Pretendard-Bold', color: '#000000' },
+  modalSheet: { backgroundColor: S.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 32, paddingTop: 36, paddingBottom: 40, maxHeight: '75%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  modalTitle: { fontSize: 19, fontFamily: 'Pretendard-ExtraBold', color: '#000000' },
   modalSubtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, marginTop: 4 },
   modalClose: { fontSize: 18, color: S.primary, paddingLeft: 8 },
-  searchInput: { borderWidth: 1, borderColor: S.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: S.primary, marginBottom: 16, backgroundColor: S.bg },
+  searchInput: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: S.primary, marginBottom: 32, backgroundColor: S.bg },
   modalScroll: { maxHeight: 220 },
   modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 8 },
-  saveButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  saveButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   saveText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
 });
