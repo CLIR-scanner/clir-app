@@ -38,11 +38,9 @@ function CameraIcon() {
 
 function FieldRow({ label, value, noDivider }: { label: string; value: string; noDivider?: boolean }) {
   return (
-    <View>
+    <View style={styles.fieldRow}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.fieldValueRow}>
-        <Text style={styles.fieldValueText}>{value || '—'}</Text>
-      </View>
+      <Text style={styles.fieldValueText}>{value || '—'}</Text>
       {!noDivider && <View style={styles.fieldDivider} />}
     </View>
   );
@@ -122,15 +120,15 @@ export default function PersonalNameScreen() {
         <Text style={styles.displayName}>{currentUser.name || '—'}</Text>
       </View>
 
-      {/* ── Personal Information ────────────────────────────────────────── */}
-      <View style={styles.sectionPill}>
-        <Text style={styles.sectionPillText}>{t('profileUi.personalInformation')}</Text>
+      <View style={styles.sectionDivider} />
+
+      <View style={[styles.fieldsBlock, styles.nameFieldsBlock]}>
+        <FieldRow label={t('personalName.firstName')} value={firstName} />
+        <FieldRow label={t('personalName.lastName')}  value={lastName} noDivider />
       </View>
 
       <View style={styles.fieldsBlock}>
-        <FieldRow label={t('personalName.firstName')} value={firstName} />
-        <FieldRow label={t('personalName.lastName')}  value={lastName} />
-        <FieldRow label={t('personalName.emailAddress')} value={currentUser.email || '—'} noDivider />
+        <FieldRow label="Email" value={currentUser.email || '—'} noDivider />
       </View>
     </ScrollView>
   );
@@ -138,17 +136,17 @@ export default function PersonalNameScreen() {
 
 const styles = StyleSheet.create({
   root:    { flex: 1, backgroundColor: BG },
-  content: { paddingHorizontal: 26, gap: 18 },
+  content: { paddingHorizontal: 26 },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 22,
   },
   headerSide:  { flex: 1 },
   backBtn:     { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontWeight: '300' },
   headerTitle: { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
 
-  avatarSection: { alignItems: 'center', gap: 12 },
+  avatarSection: { alignItems: 'center', gap: 12, marginBottom: 18 },
   avatarWrap:    { position: 'relative' },
   avatarCircle: {
     width: 94, height: 94, borderRadius: 47,
@@ -167,24 +165,34 @@ const styles = StyleSheet.create({
     textAlign: 'center', lineHeight: 32,
   },
 
-  sectionPill: {
-    alignSelf: 'flex-start', borderWidth: 1, borderColor: DARK_GREEN,
-    borderRadius: 10, paddingVertical: 5, paddingHorizontal: 17,
-  },
-  sectionPillText: { fontSize: 12, fontWeight: '800', color: DARK_GREEN },
+  sectionDivider: { height: 1, backgroundColor: BORDER, marginBottom: 12 },
 
-  fieldsBlock: { gap: 0 },
-  fieldLabel: {
-    fontSize: 10, fontWeight: '500', color: MID_GREEN,
-    lineHeight: 20, marginTop: 8,
+  fieldsBlock: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 15,
+    overflow: 'hidden',
   },
-  fieldValueRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', paddingBottom: 4,
+  nameFieldsBlock: { marginBottom: 12 },
+  fieldRow: {
+    minHeight: 51,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  fieldLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: DARK_GREEN,
   },
   fieldValueText: {
-    flex: 1, fontSize: 13, fontWeight: '500',
-    color: '#000000', paddingVertical: 4,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: BORDER,
+    textAlign: 'right',
   },
-  fieldDivider: { height: 1, backgroundColor: BORDER, marginBottom: 4 },
+  fieldDivider: { position: 'absolute', left: 9, right: 9, bottom: 0, height: 1, backgroundColor: BORDER },
 });

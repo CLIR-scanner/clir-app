@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
-import { apiFetch } from '../../lib/api';
 import { Colors } from '../../constants/colors';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import { DIET_AVOIDED_CATEGORIES } from '../../constants/dietary';
@@ -86,23 +85,7 @@ export default function ProfileScreen() {
     setShowLangPicker(false);
   }
 
-  // ─── DEV ONLY: 임시 탈퇴 버튼 ───
-  function handleTempDelete() {
-    Alert.alert('계정 삭제', '정말 삭제하시겠어요?', [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: async () => {
-        try {
-          await apiFetch<void>('/users/me', { method: 'DELETE' });
-          logout();
-        } catch (e) {
-          Alert.alert('Error', (e as Error).message);
-        }
-      }},
-    ]);
-  }
-  // ─── DEV ONLY END ───
-
-  function handleLogout() {
+function handleLogout() {
     Alert.alert(t('auth.signOut'), t('auth.signOutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('auth.signOut'), style: 'destructive', onPress: logout },
@@ -313,10 +296,6 @@ export default function ProfileScreen() {
         <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
 
-      {/* ─── DEV ONLY: 임시 탈퇴 버튼 ─── */}
-      <TouchableOpacity style={styles.tempDeleteBtn} onPress={handleTempDelete} activeOpacity={0.7}>
-        <Text style={styles.tempDeleteText}>[DEV] 계정 삭제</Text>
-      </TouchableOpacity>
     </ScrollView>
 
     {/* ── Language picker bottom sheet ──────────────────────────────────── */}
@@ -433,7 +412,7 @@ const styles = StyleSheet.create({
     color: DARK_GREEN,
     textAlign: 'center',
     letterSpacing: -0.38,
-    marginBottom: 14,
+    marginBottom: 31,
   },
 
   // ── User card
@@ -489,8 +468,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: DARK_GREEN,
     marginLeft: 2,
-    marginTop: 4,
-    marginBottom: 2,
+    marginTop: 18,
+    marginBottom: -4,
   },
 
   // ── Allergy card
@@ -516,9 +495,9 @@ const styles = StyleSheet.create({
   },
   sensitivityBadge: {
     borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 3,
-    paddingHorizontal: 16,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
   },
   sensitivityBadgeStrict: {
     backgroundColor: STRICT_BG,
@@ -530,7 +509,7 @@ const styles = StyleSheet.create({
   },
   sensitivityBadgeText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   sensitivityBadgeTextStrict: {
     color: STRICT_CLR,
@@ -543,23 +522,22 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_FILL,
     borderWidth: 1,
     borderColor: MID_GREEN,
-    borderRadius: 20,
-    paddingVertical: 3,
-    paddingHorizontal: 20,
-    height: 28,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   preferenceBadgeText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '400',
     color: DARK_GREEN,
   },
   allergyBlock: {
     paddingHorizontal: 17,
     paddingTop: 12,
     paddingBottom: 16,
-    gap: 10,
+    gap: 12,
   },
   chips: {
     flexDirection: 'row',
@@ -568,16 +546,14 @@ const styles = StyleSheet.create({
   },
   chip: {
     backgroundColor: CARD_FILL,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 20,
-    paddingVertical: 3,
-    paddingHorizontal: 16,
+    borderRadius: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '400',
     color: CHIP_TEXT,
-    lineHeight: 20,
   },
   emptyChip: {
     fontSize: 13,
@@ -626,17 +602,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: STRICT_CLR,
-  },
-  tempDeleteBtn: {
-    borderRadius: 100,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: '#B0421F',
-    marginTop: 8,
-  },
-  tempDeleteText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.white,
   },
 });

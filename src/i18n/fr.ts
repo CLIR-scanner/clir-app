@@ -48,7 +48,7 @@ const fr = {
   },
   multiProfileDetail: {
     headerTitle: 'Détail du profil', badgeMain: 'Principal', deleteBtn: 'Supprimer',
-    currentlyActive: 'Actuellement actif', sectionSensitivity: 'Sensibilité', modeLabel: 'Mode',
+    currentlyActive: 'Actuellement actif', scanEnabled: 'Active', scanDisabled: 'Inactive', sectionSensitivity: 'Sensibilité', modeLabel: 'Mode',
     strictDesc: 'Avertit sur les ingrédients pouvant contenir des traces d\'allergènes.',
     normalDesc: 'Avertit uniquement sur les ingrédients directement inclus dans le produit.',
     sectionAllergy: 'Profil d\'allergie', sectionDietary: 'Restrictions alimentaires',

@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
@@ -123,7 +124,17 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
               activeOpacity={0.75}
             >
               <View style={[styles.checkbox, cat.selected && styles.checkboxSelected]}>
-                {cat.selected && <Text style={styles.checkmark}>✓</Text>}
+                {cat.selected && (
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M20 6L9 17L4 12"
+                      stroke={Colors.white}
+                      strokeWidth={3}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                )}
               </View>
               <Text style={styles.categoryLabel}>{t(`search.categoriesList.${cat.id}`, cat.label)}</Text>
             </TouchableOpacity>
@@ -153,7 +164,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 532,
+    height: 630,
     backgroundColor: Colors.searchBackground,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -165,41 +176,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '800',
     color: Colors.searchDarkGreen,
     letterSpacing: -0.3,
+    marginTop: 8,
   },
   closeButton: {
     position: 'absolute',
     right: 20,
-    top: 18,
-    width: 27,
-    height: 27,
-    borderRadius: 14,
-    backgroundColor: Colors.searchMutedGreen,
+    top: 13,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
-    fontSize: 24,
-    lineHeight: 26,
-    color: Colors.white,
-    fontWeight: '500',
-    marginTop: -2,
+    fontSize: 30,
+    color: Colors.searchDarkGreen,
+    fontWeight: '400',
   },
   topDivider: {
     height: 1,
-    marginHorizontal: 12,
-    backgroundColor: Colors.black,
+    marginLeft: 30,
+    marginRight: 31,
+    marginTop: 8,
+    backgroundColor: Colors.searchBorder,
   },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 32,
     paddingRight: 24,
-    paddingTop: 31,
-    paddingBottom: 34,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
   sectionTitle: {
     fontSize: 16,
@@ -211,25 +221,21 @@ const styles = StyleSheet.create({
     paddingLeft: 34,
   },
   categoryRow: {
-    height: 28,
+    height: 32,
     flexDirection: 'row',
     alignItems: 'center',
   },
   checkbox: {
     width: 20,
     height: 20,
-    backgroundColor: '#D9D9D9',
+    borderWidth: 0.5,
+    borderColor: Colors.searchDarkGreen,
+    borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxSelected: {
-    backgroundColor: Colors.searchMutedGreen,
-  },
-  checkmark: {
-    fontSize: 13,
-    color: Colors.white,
-    fontWeight: '800',
-    lineHeight: 16,
+    backgroundColor: Colors.searchDarkGreen,
   },
   categoryLabel: {
     marginLeft: 15,

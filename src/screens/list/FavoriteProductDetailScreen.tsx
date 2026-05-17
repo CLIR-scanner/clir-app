@@ -175,6 +175,8 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
     }
   }
 
+  const [badgeLeft, setBadgeLeft] = useState(-100);
+
   // ── Ingredient detail modal ────────────────────────────────────────────────
   const [modalOpen,        setModalOpen]        = useState(false);
   const [detailIngredient, setDetailIngredient] = useState<Ingredient | null>(null);
@@ -249,7 +251,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 
       {/* ── Scrollable content ──────────────────────────────────────────────── */}
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 4, flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
       >
 
@@ -346,6 +348,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
           </View>
         )}
 
+        <View style={{ flex: 1 }} />
         {/* Disclaimer */}
         {allIngredients.length > 0 && (
           <Text style={styles.disclaimer}>
@@ -402,7 +405,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 }
 
 // ── PILL_H: half height of the floating pill ────────────────────────────────
-const PILL_H = 16;
+const PILL_H = 18;
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -423,7 +426,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, lineHeight: 32 },
 
   // ── Scroll
-  scroll: { paddingHorizontal: 24, paddingTop: 8 },
+  scroll: { paddingHorizontal: 24, paddingTop: 40 },
 
   // ── Product image
   imgWrap: { alignItems: 'center', marginBottom: 20 },
@@ -443,6 +446,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     marginBottom: 6,
+    flexWrap: 'wrap',
   },
   verdictCircle: {
     width: 30, height: 30,
@@ -450,16 +454,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   verdictImg:  { width: 17, height: 17 },
-  productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38 },
-  brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
+  productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%' },
+  brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 44, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset
-  ingredientSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
+  ingredientSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H, marginHorizontal: 12 },
   ingredientBox: {
     borderWidth: 1,
-    borderColor: DARK_GREEN,
+    borderColor: '#A9B6A8',
     borderRadius: 22,
     paddingTop: PILL_H + 16,
     paddingBottom: 24,
@@ -468,25 +473,26 @@ const styles = StyleSheet.create({
   },
   ingredientLabelWrap: { position: 'absolute', top: -PILL_H, left: 0, right: 0, alignItems: 'center' },
   ingredientLabel: {
+    height: 36,
     backgroundColor: BG,
     borderWidth: 1,
     borderColor: DARK_GREEN,
     borderRadius: 50,
-    paddingVertical: 3,
     paddingHorizontal: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   ingredientLabelText: { fontSize: 16, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.3 },
   ingredientItem:      { fontSize: 13, fontWeight: '500', color: MID_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
 
   // ── Disclaimer
   disclaimer: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
     color: '#333',
     textAlign: 'left',
     lineHeight: 14,
-    marginBottom: 20,
-    paddingHorizontal: 4,
+    marginBottom: 4,
   },
 
   // ── Risk box (fieldset)

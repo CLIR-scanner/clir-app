@@ -6,6 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileStackParamList, Profile } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
@@ -34,8 +35,8 @@ function ProfileCard({
       activeOpacity={0.8}
     >
       <View style={styles.cardLeft}>
-        <View style={[styles.avatar, (isMain || isEnabled) && styles.avatarActive]}>
-          <Text style={[styles.avatarText, (isMain || isEnabled) && styles.avatarTextActive]}>
+        <View style={[styles.avatar, isMain && styles.avatarMain, !isMain && isEnabled && styles.avatarEnabled]}>
+          <Text style={[styles.avatarText, isMain && styles.avatarTextMain, !isMain && isEnabled && styles.avatarTextEnabled]}>
             {profile.name ? profile.name[0].toUpperCase() : '?'}
           </Text>
         </View>
@@ -45,11 +46,6 @@ function ProfileCard({
             {isMain && (
               <View style={styles.mainBadge}>
                 <Text style={styles.mainBadgeText}>{t('multiProfile.badgeMain')}</Text>
-              </View>
-            )}
-            {!isMain && isEnabled && (
-              <View style={styles.enabledBadge}>
-                <Text style={styles.enabledBadgeText}>{t('multiProfile.badgeEnabled')}</Text>
               </View>
             )}
           </View>
@@ -70,9 +66,7 @@ function ProfileCard({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.75}
         >
-          <Text style={[styles.toggleBtnText, isEnabled && styles.toggleBtnTextActive]}>
-            {isEnabled ? 'ON' : 'OFF'}
-          </Text>
+          <View style={[styles.toggleKnob, isEnabled && styles.toggleKnobActive]} />
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -82,6 +76,7 @@ function ProfileCard({
 export default function MultiProfileScreen() {
   const navigation          = useNavigation<Nav>();
   const { t }               = useTranslation();
+  const insets              = useSafeAreaInsets();
   const currentUser          = useUserStore(s => s.currentUser);
   const enabledProfileIds    = useUserStore(s => s.enabledProfileIds);
   const toggleProfileEnabled = useUserStore(s => s.toggleProfileEnabled);
@@ -91,7 +86,7 @@ export default function MultiProfileScreen() {
   const [profileName,   setProfileName]   = useState('');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>{'←'}</Text>
@@ -99,8 +94,6 @@ export default function MultiProfileScreen() {
         <Text style={styles.headerTitle}>{t('multiProfile.title')}</Text>
         <View style={styles.headerRight} />
       </View>
-
-      <Text style={styles.subtitle}>{t('multiProfile.subtitle')}</Text>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.list}>
@@ -123,20 +116,16 @@ export default function MultiProfileScreen() {
               t={t}
             />
           ))}
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => { setProfileName(''); setShowNameModal(true); }}
+          >
+            <Text style={styles.addButtonText}>{t('multiProfile.addProfile')}</Text>
+          </TouchableOpacity>
         </View>
 
-        {currentUser.multiProfiles.length === 0 && (
-          <Text style={styles.emptyText}>{t('multiProfile.emptyHint')}</Text>
-        )}
         <View style={{ height: 16 }} />
       </ScrollView>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => { setProfileName(''); setShowNameModal(true); }}
-      >
-        <Text style={styles.addButtonText}>{t('multiProfile.addProfile')}</Text>
-      </TouchableOpacity>
 
       {/* ── Profile name modal ─────────────────────────────────────────── */}
       <Modal visible={showNameModal} transparent animationType="fade" onRequestClose={() => setShowNameModal(false)}>
@@ -183,38 +172,55 @@ const CARD_FILL  = '#E9F0E4';
 const styles = StyleSheet.create({
   container: {
     flex: 1, backgroundColor: BG,
-    paddingTop: 60, paddingHorizontal: 24, paddingBottom: 40,
+    paddingBottom: 40,
   },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  backText: { fontSize: 22, color: DARK_GREEN, width: 32 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 26,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  backText: { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontWeight: '300', width: 32 },
   headerTitle: {
-    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: DARK_GREEN,
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: DARK_GREEN,
+    letterSpacing: -0.3,
   },
   headerRight: { width: 32 },
-  subtitle: { fontSize: 13, color: MID_GREEN, lineHeight: 20, marginBottom: 24 },
+  subtitle: { fontSize: 13, color: MID_GREEN, lineHeight: 20, marginBottom: 24, paddingHorizontal: 24 },
   scroll: { flex: 1 },
-  list: { gap: 10 },
+  list: { gap: 10, paddingHorizontal: 26 },
 
   card: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: BG, borderRadius: 16,
-    borderWidth: 1.5, borderColor: BORDER, padding: 16,
+    backgroundColor: CARD_FILL, borderRadius: 15,
+    borderWidth: 1, borderColor: BORDER,
+    height: 94,
+    paddingHorizontal: 17,
   },
   cardEnabled: { borderColor: DARK_GREEN, backgroundColor: CARD_FILL },
-  cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1 },
 
   avatar: {
-    width: 48, height: 48, borderRadius: 24,
+    width: 66, height: 66, borderRadius: 33,
+    borderWidth: 1,
+    borderColor: BORDER,
     backgroundColor: CARD_FILL, alignItems: 'center', justifyContent: 'center',
   },
-  avatarActive: { backgroundColor: DARK_GREEN },
-  avatarText: { fontSize: 20, fontWeight: '700', color: MID_GREEN },
-  avatarTextActive: { color: '#FFFFFF' },
+  avatarMain: { backgroundColor: DARK_GREEN, borderColor: DARK_GREEN },
+  avatarEnabled: { backgroundColor: CARD_FILL, borderColor: DARK_GREEN },
+  avatarText: { fontSize: 28, lineHeight: 32, fontWeight: '800', color: MID_GREEN },
+  avatarTextMain: { color: '#FFFFFF' },
+  avatarTextEnabled: { color: DARK_GREEN },
 
   cardInfo: { flex: 1, gap: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  cardName: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
-  cardSub:  { fontSize: 12, color: MID_GREEN },
+  cardName: { fontSize: 16, fontWeight: '800', color: DARK_GREEN },
+  cardSub:  { fontSize: 13, fontWeight: '500', color: MID_GREEN },
 
   mainBadge: {
     backgroundColor: CARD_FILL, borderRadius: 100,
@@ -223,21 +229,29 @@ const styles = StyleSheet.create({
   },
   mainBadgeText: { fontSize: 11, fontWeight: '600', color: MID_GREEN },
 
-  enabledBadge: {
-    backgroundColor: DARK_GREEN, borderRadius: 100,
-    paddingVertical: 2, paddingHorizontal: 8,
-  },
-  enabledBadgeText: { fontSize: 11, fontWeight: '600', color: '#FFFFFF' },
-
-  // ON/OFF 토글 버튼
+  // Toggle switch
   toggleBtn: {
-    borderWidth: 1.5, borderColor: BORDER, borderRadius: 20,
-    paddingVertical: 4, paddingHorizontal: 10,
+    width: 46,
+    height: 28,
+    borderRadius: 14,
+    padding: 3,
+    backgroundColor: BORDER,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  toggleBtnActive: {
+    backgroundColor: DARK_GREEN,
+    alignItems: 'flex-end',
+  },
+  toggleKnob: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: BG,
   },
-  toggleBtnActive: { borderColor: DARK_GREEN, backgroundColor: DARK_GREEN },
-  toggleBtnText: { fontSize: 11, fontWeight: '700', color: BORDER },
-  toggleBtnTextActive: { color: '#FFFFFF' },
+  toggleKnobActive: {
+    backgroundColor: '#FFFFFF',
+  },
 
   emptyText: {
     textAlign: 'center', fontSize: 14, color: BORDER,
@@ -246,7 +260,7 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: BG, borderRadius: 100,
     paddingVertical: 18, alignItems: 'center',
-    marginTop: 16, borderWidth: 1.5, borderColor: DARK_GREEN,
+    borderWidth: 1.5, borderColor: BORDER,
   },
   addButtonText: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
 
