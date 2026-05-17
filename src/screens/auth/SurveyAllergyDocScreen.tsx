@@ -79,9 +79,9 @@ const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLigh
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
-  body: { flex: 1 },
-  title: { fontSize: 28, fontWeight: '800', color: '#000000', lineHeight: 32, marginBottom: 12 },
-  subtitle: { fontSize: 12, color: S.primary, lineHeight: 12 * 1.35, marginBottom: 32 },
+  body: { flex: 1, paddingTop: 24 },
+  title: { fontSize: 30, fontFamily: 'Pretendard-ExtraBold', color: '#000000', lineHeight: 32, marginBottom: 12 },
+  subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35, marginBottom: 32 },
   uploadArea: {
     borderWidth: 1,
     borderColor: S.primary,
@@ -94,11 +94,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   uploadIcon: { fontSize: 28, color: S.primary },
-  uploadLabel: { fontSize: 15, fontWeight: '600', color: S.primary },
-  uploadHint: { fontSize: 12, color: S.primary, opacity: 0.6 },
-  uploadedName: { fontSize: 14, fontWeight: '600', color: S.primary, textAlign: 'center', paddingHorizontal: 16 },
+  uploadLabel: { fontSize: 15, fontFamily: 'Pretendard-SemiBold', color: S.primary },
+  uploadHint: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: S.primary, opacity: 0.6 },
+  uploadedName: { fontSize: 14, fontFamily: 'Pretendard-SemiBold', color: S.primary, textAlign: 'center', paddingHorizontal: 16 },
   footer: { gap: 16 },
-  disclaimer: { fontSize: 11, color: S.primary, lineHeight: 16, opacity: 0.6 },
-  continueButton: { height: 53, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
-  continueText: { fontSize: 16, fontWeight: '700', color: S.textLight },
+  disclaimer: { fontSize: 11, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 16, opacity: 0.6 },
+  continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
 });

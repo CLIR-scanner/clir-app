@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 30,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: '#000000',
     lineHeight: 30 * 1.35,
     marginBottom: 24,
@@ -350,11 +350,12 @@ const styles = StyleSheet.create({
   expandableTitleRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   expandableTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: C.primary,
   },
   expandableSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 16,
     color: C.textBody,
   },
@@ -394,16 +395,16 @@ const styles = StyleSheet.create({
   },
   redeemText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: C.primaryText,
   },
-  errorText:   { color: C.error,   fontSize: 13, marginTop: 4 },
-  successText: { color: C.primary, fontSize: 13, fontWeight: '700', marginTop: 4 },
+  errorText:   { color: C.error,   fontSize: 13, fontFamily: 'Pretendard-Regular', marginTop: 4 },
+  successText: { color: C.primary, fontSize: 13, fontFamily: 'Pretendard-Bold', marginTop: 4 },
 
   // ── Language ───────────────────────────────────────────────────────────────
   languageCurrentBadge: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontFamily: 'Pretendard-SemiBold',
     color: C.textMuted,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -432,7 +433,7 @@ const styles = StyleSheet.create({
   languageOptionSelected: { backgroundColor: C.textMuted },
   languageText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: C.textMuted,
   },
   languageTextSelected: { color: '#FFFFFF' },
@@ -445,6 +446,7 @@ const styles = StyleSheet.create({
   },
   noticeBody: {
     fontSize: 11,
+    fontFamily: 'Pretendard-Regular',
     color: C.textHint,
     lineHeight: 15,
   },
@@ -457,7 +459,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
   },
   skipButton: {
-    height: 53,
+    height: 58,
     borderRadius: 35,
     borderWidth: 1,
     borderColor: C.textMuted,
@@ -466,11 +468,11 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: C.textMuted,
   },
   continueButton: {
-    height: 53,
+    height: 58,
     borderRadius: 35,
     backgroundColor: C.primary,
     alignItems: 'center',
@@ -478,7 +480,7 @@ const styles = StyleSheet.create({
   },
   continueText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: C.primaryText,
   },
 

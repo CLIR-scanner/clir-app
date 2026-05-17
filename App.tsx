@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import './src/i18n';           // i18n 초기화 (최상단 임포트)
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
@@ -26,6 +27,14 @@ function App() {
   const initialize    = useUserStore(s => s.initialize);
   const language      = useUserStore(s => s.currentUser.language);
 
+  const [fontsLoaded] = useFonts({
+    'Pretendard-Regular':    require('./assets/fonts/Pretendard-Regular.ttf'),
+    'Pretendard-Light':      require('./assets/fonts/Pretendard-Light.ttf'),
+    'Pretendard-SemiBold':   require('./assets/fonts/Pretendard-SemiBold.ttf'),
+    'Pretendard-Bold':       require('./assets/fonts/Pretendard-Bold.ttf'),
+    'Pretendard-ExtraBold':  require('./assets/fonts/Pretendard-ExtraBold.ttf'),
+  });
+
   useEffect(() => {
     initialize();
   }, [initialize]);
@@ -37,7 +46,7 @@ function App() {
     }
   }, [language]);
 
-  if (!isInitialized) {
+  if (!isInitialized || !fontsLoaded) {
     return (
       <View style={{ flex: 1, backgroundColor: '#F9FFF3', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 80 }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

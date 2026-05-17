@@ -1,18 +1,16 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useTranslation } from 'react-i18next';
 import { AuthStackParamList } from '../../types';
+import ClirLogo from '../../components/common/ClirLogo';
 import { termsStorage } from '../../lib/storage';
 import { TERMS_VERSION } from '../../constants/legal-version';
-import ClirLogo from '../../components/common/ClirLogo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
 export default function SplashScreen() {
   const navigation = useNavigation<Nav>();
-  const { t } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -23,7 +21,9 @@ export default function SplashScreen() {
       const remaining = Math.max(0, 1500 - (Date.now() - start));
       setTimeout(() => {
         if (cancelled) return;
-        navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
+        // ─── DEV ONLY: 약관 화면 강제 노출 ───
+        navigation.replace('TermsAgreement');
+        // navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
       }, remaining);
     });
     return () => { cancelled = true; };
@@ -32,10 +32,9 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.logoArea}>
-        <ClirLogo width={140} height={83} />
-        <Text style={styles.tagline}>{t('auth.tagline')}</Text>
+        <ClirLogo width={80} height={47} />
       </View>
-      <ActivityIndicator color="#1C3A19" />
+      <ActivityIndicator color="#1C3A19" style={styles.indicator} />
     </View>
   );
 }
@@ -44,20 +43,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FFF3',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 80,
+    paddingBottom: 40,
   },
   logoArea: {
-    flex: 1,
-    justifyContent: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
-    gap: 14,
+    justifyContent: 'center',
+    paddingBottom: 40,
   },
-  tagline: {
-    fontSize: 13,
+  logoText: {
+    fontSize: 48,
     color: '#1C3A19',
-    opacity: 0.6,
-    letterSpacing: 0.3,
+    fontFamily: 'Pretendard-ExtraBold',
+  },
+  indicator: {
+    position: 'absolute',
+    bottom: 60,
+    alignSelf: 'center',
   },
 });
