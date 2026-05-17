@@ -5,6 +5,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import MyProfileEditScreen from '../screens/profile/MyProfileEditScreen';
 import PersonalScreen from '../screens/profile/PersonalScreen';
 import PersonalNameScreen from '../screens/profile/PersonalNameScreen';
+import PersonalNicknameScreen from '../screens/profile/PersonalNicknameScreen';
 import PersonalEmailScreen from '../screens/profile/PersonalEmailScreen';
 import PersonalPushScreen from '../screens/profile/PersonalPushScreen';
 import PersonalMembershipScreen from '../screens/profile/PersonalMembershipScreen';
@@ -36,6 +37,7 @@ export default function ProfileNavigator() {
       <Stack.Screen name="MyProfileEdit" component={MyProfileEditScreen} />
       <Stack.Screen name="Personal" component={PersonalScreen} />
       <Stack.Screen name="PersonalName" component={PersonalNameScreen} />
+      <Stack.Screen name="PersonalNickname" component={PersonalNicknameScreen} />
       <Stack.Screen name="PersonalEmail" component={PersonalEmailScreen} />
       <Stack.Screen name="PersonalPush" component={PersonalPushScreen} />
       <Stack.Screen name="PersonalMembership" component={PersonalMembershipScreen} />
