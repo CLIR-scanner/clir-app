@@ -193,6 +193,8 @@ export interface Profile {
 export interface User extends Profile {
   email: string;
   language: string;
+  /** 커뮤니티 전용 표시명. NULL/미설정 = 커뮤니티에서 '익명' 표시(BE 보장). optional — 0010 Supabase 적용 전 undefined 가능. */
+  displayName?: string | null;
   multiProfiles: Profile[];
   consentFlags: ConsentFlags;
   hasCompletedSurvey?: boolean;
@@ -250,6 +252,80 @@ export interface QAAnswer {
   author: string;
   body: string;
   createdAt: string;
+}
+
+// ─── Community Domain Types (F3) ─────────────────────────────────────────────
+// api-spec.yaml Community 스키마 1:1 매핑.
+// nullable/optional 규칙(리뷰 #1-Minor):
+//   스펙 nullable:true → T|null
+//   required 미포함   → key?: T
+//   둘 다             → key?: T|null
+
+/** GET /products/:id/reviews items[] */
+export interface Review {
+  id: string;
+  userId: string;
+  productId: string;
+  rating: number;
+  content: string;
+  isMine: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userNickname?: string;
+}
+
+/** GET /products/:id/likes 응답 + POST/DELETE 응답 공용.
+ *  likeCount = products.like_count(트리거 비정규화 값) 조회 — 즉석 count 금지. */
+export interface LikeState {
+  productId: string;
+  isLiked: boolean;
+  likeCount: number;
+}
+
+/** GET /qna items[] — answerCount = qna_posts.answer_count(트리거) 조회. */
+export interface QnaPostSummary {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  answerCount: number;
+  isResolved: boolean;
+  createdAt: string;
+  userNickname?: string;
+  updatedAt?: string;
+  relatedProductId?: string | null;
+}
+
+/** GET /qna/:id 의 answers[] 항목 */
+export interface QnaAnswer {
+  id: string;
+  qnaId: string;
+  userId: string;
+  content: string;
+  isAccepted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userNickname?: string;
+}
+
+/** GET /qna/:id 응답 — QnaPostSummary allOf + relatedProduct + answers */
+export type QnaPostDetail = QnaPostSummary & {
+  relatedProduct?: { productId: string; name: string; image: string | null } | null;
+  /** 해당 게시글의 전체 답변 목록 (required, 비절단) */
+  answers: QnaAnswer[];
+};
+
+/** GET /community/feed items[] */
+export interface CommunityFeedItem {
+  productId: string;
+  name: string;
+  isSafe: boolean;
+  riskLevel: RiskLevel;
+  likeCount: number;
+  /** weekly_trending 조회 수, similar_picks 는 null */
+  scanCount?: number | null;
+  brand?: string | null;
+  image?: string | null;
 }
 
 export interface MagazineItem {
@@ -418,6 +494,8 @@ export interface UserStore {
     updates: Partial<Pick<Profile, 'allergyProfile' | 'dietaryRestrictions' | 'sensitivityLevel'>>,
   ) => Promise<void>;
   updateUserName: (name: string) => void;
+  /** store 의 currentUser.displayName 을 낙관적으로 갱신한다. */
+  updateUserDisplayName: (displayName: string | null) => void;
   setLanguage: (language: string) => void;
   addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
   updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;
@@ -593,6 +671,7 @@ export type ProfileStackParamList = {
   MyProfileEdit: undefined;
   Personal: undefined;
   PersonalName: undefined;
+  PersonalNickname: undefined;
   PersonalEmail: undefined;
   PersonalPush: undefined;
   PersonalMembership: undefined;

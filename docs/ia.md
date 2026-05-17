@@ -147,6 +147,7 @@
 - /profile                        ← 프로필 메인
 - /profile/personal               ← 개인정보 설정
 - /profile/personal/name          ← 이름 변경
+- /profile/personal/nickname      ← 커뮤니티 표시명 설정/변경
 - /profile/personal/email         ← 이메일 변경
 - /profile/personal/push          ← 푸시 알림 설정
 - /profile/personal/membership    ← 멤버십 관리

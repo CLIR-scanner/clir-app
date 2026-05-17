@@ -198,6 +198,68 @@ paths:
                 message: 계정 삭제에 실패했습니다.
 
   # ─────────────────────────────────────
+  # 사용자 본인 프로필 갱신
+  # ─────────────────────────────────────
+
+  /user/me:
+    patch:
+      tags: [Auth]
+      summary: 사용자 본인 프로필 부분 갱신
+      description: |
+        현재 로그인된 사용자의 프로필을 부분 갱신합니다.
+        화이트리스트 필드(displayName, name, language) 중 최소 1개를 제공해야 합니다.
+        그 외 키는 무시됩니다.
+
+        - displayName: F7 sanitize 후 1~30 코드포인트이면 커뮤니티 표시명(profiles.display_name)으로 저장.
+          빈 문자열 또는 공백만 전달 시 display_name = null → 커뮤니티 '익명' 복귀.
+        - name: profiles.name 갱신 (실명 식별용, 커뮤니티 미노출).
+        - language: 지원 언어 코드(en, ko, ja, zh, es, fr) 중 하나.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName:
+                  type: string
+                  nullable: true
+                  description: |
+                    커뮤니티 표시명(profiles.display_name). 최소 1개 필드 필수.
+                    빈 문자열 전달 시 display_name = null → 커뮤니티 '익명' 복귀.
+                    F7 sanitize 후 최대 30 코드포인트.
+                  example: 닉네임123
+                name:
+                  type: string
+                  description: 사용자 실명(profiles.name). 1자 이상 100자 이하. 커뮤니티 미노출.
+                  example: 홍길동
+                language:
+                  type: string
+                  enum: [en, ko, ja, zh, es, fr]
+                  description: 앱 표시 언어 코드.
+                  example: ko
+      responses:
+        '200':
+          description: 갱신 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+                    example: 프로필이 갱신되었습니다.
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  # ─────────────────────────────────────
   # 사용자 (GDPR)
   # ─────────────────────────────────────
 
@@ -1810,7 +1872,7 @@ paths:
   #   - 인증: 전 엔드포인트 verifyToken 필수 (Notion 의 "비로그인 조회 가능"은
   #     전역 BearerAuth 보안 모델·기존 모든 데이터 엔드포인트와의 정합성을 위해
   #     인증 필수로 통일). isMine/isLiked 는 request.userId 로 산출.
-  #   - userNickname 은 profiles.name 조인. 미설정/탈퇴 시 '익명'.
+  #   - userNickname 은 profiles.display_name(커뮤니티 전용 표시명) 조인. 미설정/NULL 시 '익명'.
   #   - 페이지네이션은 limit/offset + {..., total, hasMore} (search/scan-history와
   #     동일 규약. Notion 의 page/totalPages 는 폐기). total 은 Supabase
   #     count:'exact', hasMore = offset + 반환수 < total.
@@ -1824,7 +1886,7 @@ paths:
       summary: 상품 리뷰 목록 조회
       description: |
         특정 상품의 리뷰를 정렬·페이지네이션해 반환합니다.
-        product_reviews 를 product_id 로 조회하고 profiles.name 을 조인해
+        product_reviews 를 product_id 로 조회하고 profiles.display_name(커뮤니티 전용 표시명) 을 조인해
         userNickname 을 채웁니다. isMine 은 row.user_id === request.userId.
       security: [{ BearerAuth: [] }]
       parameters:
@@ -2559,6 +2621,10 @@ components:
         name:
           type: string
           example: 홍길동
+        displayName:
+          type: string
+          nullable: true
+          description: '커뮤니티 전용 표시명(profiles.display_name). 미설정/NULL 시 null → 커뮤니티에서 ''익명'' 표시.'
         allergyProfile:
           type: array
           items:
@@ -3133,7 +3199,7 @@ components:
         userId: { type: string, format: uuid }
         userNickname:
           type: string
-          description: 작성자 표시명. BE 가 profiles.name 조인. 미설정/탈퇴 시 '익명'.
+          description: 작성자 표시명. BE 가 profiles.display_name(커뮤니티 전용 표시명) 조인. 미설정/NULL 시 '익명'.
           example: Jasmin
         rating: { type: integer, minimum: 1, maximum: 5, example: 4 }
         content:
@@ -3164,7 +3230,10 @@ components:
       properties:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid }
-        userNickname: { type: string, example: 알레르기맘 }
+        userNickname:
+          type: string
+          description: 작성자 표시명. BE 가 profiles.display_name(커뮤니티 전용 표시명) 조인. 미설정/NULL 시 '익명'.
+          example: 알레르기맘
         title: { type: string, maxLength: 100 }
         content: { type: string, maxLength: 2000 }
         answerCount:
@@ -3186,7 +3255,10 @@ components:
         id: { type: string, format: uuid }
         qnaId: { type: string, format: uuid }
         userId: { type: string, format: uuid }
-        userNickname: { type: string, example: 영양사친구 }
+        userNickname:
+          type: string
+          description: 작성자 표시명. BE 가 profiles.display_name(커뮤니티 전용 표시명) 조인. 미설정/NULL 시 '익명'.
+          example: 영양사친구
         content: { type: string, maxLength: 1000 }
         isAccepted:
           type: boolean
