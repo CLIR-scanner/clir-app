@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,11 @@ import RecommendNavigator from './RecommendNavigator';
 import ProfileNavigator from './ProfileNavigator';
 import { Colors } from '../constants/colors';
 import { FixedTabLabels } from '../constants/strings';
+import { setScanButtonAnchor } from '../lib/scanButtonAnchor';
+
+// 스캔 탭 ScanIcon 의 Svg 정사각 크기 — 스플래시가 동일 글리프를 이 크기로
+// 맞춰 안착시키기 위한 기준값 (ScanIcon 의 width/height 와 동일하게 유지).
+const SCAN_TAB_SVG = 60;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 type TabRoute = keyof MainTabParamList;
@@ -136,6 +142,15 @@ function getIcon(route: TabRoute, active: boolean) {
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets      = useSafeAreaInsets();
   const activeRoute = state.routes[state.index].name as TabRoute;
+  const scanCircleRef = useRef<View>(null);
+
+  function measureScanButton() {
+    // 스플래시 C 가 정확히 이 버튼으로 안착하도록 실제 화면 좌표 게시.
+    scanCircleRef.current?.measureInWindow((x, y, w, h) => {
+      if (!w || !h) return;
+      setScanButtonAnchor({ cx: x + w / 2, cy: y + h / 2, glyphSvg: SCAN_TAB_SVG });
+    });
+  }
 
   if (activeRoute === 'ScanTab') return null;
 
@@ -158,6 +173,8 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   }
 
   function goToScan() {
+    // 카메라 진입 — 최대 세기 햅틱
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     if (activeRoute === 'ScanTab') { navigation.navigate('ScanTab'); return; }
     navigation.navigate('ScanTab', {
       screen: 'Scan',
@@ -198,7 +215,11 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           onPress={goToScan}
           activeOpacity={0.8}
         >
-          <View style={tabStyles.scanCircle}>
+          <View
+            ref={scanCircleRef}
+            style={tabStyles.scanCircle}
+            onLayout={measureScanButton}
+          >
             <ScanIcon />
           </View>
         </TouchableOpacity>

@@ -280,19 +280,17 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         )}
 
         <View style={styles.imgWrap}>
-          <View style={styles.imgBox}>
+          <View style={[styles.imgCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
             {product.image ? (
               <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : null}
           </View>
+          <View style={styles.imgBadge} pointerEvents="none">
+            <RiskBadgeIcon level={riskLevel} size={64} />
+          </View>
         </View>
 
-        <View style={styles.nameRow}>
-          <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
-            <RiskBadgeIcon level={riskLevel} size={17} style={styles.verdictImg} />
-          </View>
-          <Text style={styles.productName}>{product.name}</Text>
-        </View>
+        <Text style={styles.productName}>{product.name}</Text>
 
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
@@ -475,13 +473,19 @@ const styles = StyleSheet.create({
 
   // ── Product image
   imgWrap: { alignItems: 'center', marginBottom: 20 },
-  imgBox: {
-    width: 182, height: 182,
-    borderRadius: 18,
-    backgroundColor: '#E8E8E8',
+  imgCircle: {
+    width: 230, height: 230,
+    borderRadius: 115,
+    backgroundColor: '#BDBDBD',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: DARK_GREEN,
+    borderWidth: 6,
+    // borderColor 는 verdict 색상으로 인라인 주입 (safe/caution/danger)
+  },
+  imgBadge: {
+    position: 'absolute',
+    left: 0, right: 0,
+    bottom: 22,
+    alignItems: 'center',
   },
 
   // ── Name row
@@ -502,7 +506,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   verdictImg:  { width: 17, height: 17 },
-  productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%' },
+  productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38, textAlign: 'center', marginBottom: 4 },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset-style box

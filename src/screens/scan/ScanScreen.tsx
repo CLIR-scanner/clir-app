@@ -117,6 +117,12 @@ export default function ScanScreen({ navigation }: Props) {
   const route  = useRoute<RouteProp<ScanStackParamList, 'Scan'>>();
   const previousTab = route.params?.previousTab;
 
+  // 촬영 C 진입/이탈 단일 제어값 (0=작게/숨김, 1=정상).
+  // 탭 네비는 화면을 언마운트하지 않으므로, 포커스마다 0→1 로 재생(복원)하고
+  // 뒤로가기 시 1→0 후 이동한다. (ref 잔존으로 인한 먹통/사라짐 버그 해결)
+  const shutterAnim   = useRef(new Animated.Value(0)).current;
+  const backAnimating = useRef(false);
+
   const ocrGuideH  = OCR_GUIDE_H;
   const ocrDimTop  = insets.top + 130 + OCR_FRAME_DROP;
   const [permission, requestPermission] = useCameraPermissions();
@@ -241,6 +247,17 @@ export default function ScanScreen({ navigation }: Props) {
       circleScale.setValue(0);
       sheetY.setValue(320);
 
+      // 촬영 C 상태 복원 + 진입 애니메이션 재생 (재진입마다 자연스러운 등장).
+      // 언마운트되지 않는 탭 화면이라 여기서 반드시 초기화해야 버그가 안 남는다.
+      backAnimating.current = false;
+      shutterAnim.setValue(0);
+      Animated.timing(shutterAnim, {
+        toValue: 1,
+        duration: 360,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+
       // history store가 비어있으면 서버에서 로드 — 앱 재시작 후 썸네일 복원
       // 실패 시 재시도 없이 무시하고 다음 focus에서 다시 시도
       if (useScanStore.getState().history.length === 0) {
@@ -255,8 +272,9 @@ export default function ScanScreen({ navigation }: Props) {
         stopBarcodeGuidePreview();
         stopOcrGuidePreview();
         processingRef.current = false;
+        shutterAnim.stopAnimation();
       };
-    }, [circleScale, sheetY, setHistory, startBarcodeGuidePreview, stopBarcodeGuidePreview, stopOcrGuidePreview, toggleSlide]),
+    }, [circleScale, sheetY, shutterAnim, setHistory, startBarcodeGuidePreview, stopBarcodeGuidePreview, stopOcrGuidePreview, toggleSlide]),
   );
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
@@ -542,14 +560,27 @@ export default function ScanScreen({ navigation }: Props) {
     // 스캔 탭은 Tab.Navigator의 한 탭 — 직전 탭으로 돌아가려면 부모(탭) 네비게이터로 이동.
     // previousTab 없으면 기본 탭(Search)로 폴백.
     const target: keyof MainTabParamList = previousTab ?? 'SearchTab';
-    const parent = navigation.getParent<
-      import('@react-navigation/native').NavigationProp<MainTabParamList>
-    >();
-    if (parent) {
-      parent.navigate(target);
-    } else if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
+    const doNavigate = () => {
+      const parent = navigation.getParent<
+        import('@react-navigation/native').NavigationProp<MainTabParamList>
+      >();
+      if (parent) {
+        parent.navigate(target);
+      } else if (navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    };
+
+    if (backAnimating.current) return;
+    backAnimating.current = true;
+    // 촬영 C 가 탭 버튼 쪽으로 작아지며 사라진 뒤 이동 → 진입 애니메이션과 대칭.
+    // backAnimating 은 다음 포커스(useFocusEffect)에서 false 로 복원된다.
+    Animated.timing(shutterAnim, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => doNavigate());
   }
 
   // ── Auto barcode scan ─────────────────────────────────────────────────────
@@ -862,8 +893,7 @@ export default function ScanScreen({ navigation }: Props) {
             onPress={handleManualCapture}
             activeOpacity={0.8}
           >
-            <View style={styles.shutterBackground} />
-            <ScanButtonIcon />
+            <ShutterButtonArt anim={shutterAnim} />
           </TouchableOpacity>
         </View>
       )}
@@ -1182,6 +1212,18 @@ function ScanButtonIcon() {
   );
 }
 
+// 촬영 버튼 글리프는 원본 그대로. 카메라 진입 시 작게→정상으로 부드럽게 등장시켜
+// 스캔 탭 → 카메라 전환이 끊기지 않고 이어지는 느낌만 더한다(글리프 변경 없음).
+function ShutterButtonArt({ anim }: { anim: Animated.Value }) {
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.62, 1] });
+  return (
+    <Animated.View style={[styles.shutterArt, { opacity: anim, transform: [{ scale }] }]}>
+      <View style={styles.shutterBackground} />
+      <ScanButtonIcon />
+    </Animated.View>
+  );
+}
+
 // ── Result badge ──────────────────────────────────────────────────────────────
 function ResultVerdictBadge({
   level,
@@ -1495,6 +1537,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shutterBtn: {
+    width: 83,
+    height: 83,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shutterArt: {
     width: 83,
     height: 83,
     alignItems: 'center',
