@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getAlternatives, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
+import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
@@ -295,6 +296,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
 
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
+        <SevereDisclaimerBox />
+
         {!showRisk && allIngredients.length > 0 && (
           <View style={styles.ingredientSection}>
             <View style={styles.ingredientBox}>
@@ -398,12 +401,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        <View style={{ flex: 1 }} />
-        {allIngredients.length > 0 && (
-          <Text style={styles.disclaimer}>
-            {t('product.severeDisclaimer')}
-          </Text>
-        )}
       </ScrollView>
 
       {/* ── Ingredient detail modal ───────────────────────────────────────── */}
