@@ -1663,13 +1663,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 4,
   },
-  riskAltThumbText: {
-    color: Colors.black,
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 15,
-    textAlign: 'center',
-  },
   goodProductRow: {
     position: 'absolute',
     left: 19,

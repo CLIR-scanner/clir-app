@@ -554,15 +554,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Disclaimer
-  disclaimer: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#333',
-    textAlign: 'left',
-    lineHeight: 14,
-    marginBottom: 4,
-    
-  },
 
   // ── Risk box (fieldset style — pill floats on top border)
   riskSection: {
@@ -614,7 +605,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     letterSpacing: -0.3,
   },
-  riskTapHint: { fontSize: 11, color: '#888', textAlign: 'center', marginTop: 8 },
 
   // ── Alternative products
   section:     { marginBottom: 28 },
