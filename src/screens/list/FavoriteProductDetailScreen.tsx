@@ -482,14 +482,6 @@ const styles = StyleSheet.create({
   ingredientItem:      { fontSize: 13, fontWeight: '500', color: MID_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
 
   // ── Disclaimer
-  disclaimer: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#333',
-    textAlign: 'left',
-    lineHeight: 14,
-    marginBottom: 4,
-  },
 
   // ── Risk box (fieldset)
   riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
