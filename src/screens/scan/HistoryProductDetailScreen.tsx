@@ -489,23 +489,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Name row
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  verdictCircle: {
-    width: 30, height: 30,
-    borderRadius: 15,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  verdictImg:  { width: 17, height: 17 },
   productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38, textAlign: 'center', marginBottom: 4 },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
