@@ -23,9 +23,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: RED,
     borderRadius: 12,
-    backgroundColor: '#FFF6F6',
+    backgroundColor: 'transparent',
     paddingVertical: 12,
     paddingHorizontal: 16,
+    // 전체 성분 박스(ingredientSection)와 동일 폭 — 3개 상세 화면 모두
+    // scroll.paddingHorizontal:24 + ingredientSection.marginHorizontal:12 구조 공유.
+    marginHorizontal: 12,
     marginBottom: 20,
   },
   text: {

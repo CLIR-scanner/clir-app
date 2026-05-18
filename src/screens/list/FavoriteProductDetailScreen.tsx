@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
+import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
@@ -281,6 +282,9 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
+        {/* Severe-allergy disclaimer (공통 컴포넌트 — 맨 위 통일) */}
+        <SevereDisclaimerBox />
+
         {/* 3-A. All Ingredients (Good only) */}
         {!showRisk && allIngredients.length > 0 && (
           <View style={styles.ingredientSection}>
@@ -346,14 +350,6 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
               </View>
             </View>
           </View>
-        )}
-
-        <View style={{ flex: 1 }} />
-        {/* Disclaimer */}
-        {allIngredients.length > 0 && (
-          <Text style={styles.disclaimer}>
-            {t('product.severeDisclaimer')}
-          </Text>
         )}
 
       </ScrollView>
