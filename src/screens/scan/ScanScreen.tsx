@@ -1497,25 +1497,6 @@ const styles = StyleSheet.create({
   },
 
   // Verdict circle — positioned inside guideBox
-  verdictWrap: {
-    position: 'absolute',
-    top:  (GUIDE_H - CIRCLE_D) / 2,
-    left: (GUIDE_W - CIRCLE_D) / 2,
-    width:  CIRCLE_D,
-    height: CIRCLE_D,
-    borderRadius: CIRCLE_D / 2,
-    borderWidth: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  verdictBadge: {
-    width: BADGE_D, height: BADGE_D,
-    borderRadius: BADGE_D / 2,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  verdictBadgeIcon: { fontSize: 26, color: Colors.white, fontWeight: '900', lineHeight: 30 },
-  verdictLabel:     { fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
   resultVerdictWrap: {
     position: 'absolute',
     top: (GUIDE_H - RESULT_BADGE_D) / 2,
@@ -1546,19 +1527,6 @@ const styles = StyleSheet.create({
   },
 
   // Bottom sheet
-  sheet: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingTop: 20, paddingHorizontal: 20,
-  },
-  sheetClose: {
-    position: 'absolute', top: 14, right: 16,
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: Colors.black,
-    alignItems: 'center', justifyContent: 'center',
-  },
   sheetCloseText: { color: Colors.scanResultClose, fontSize: 22, lineHeight: 24, fontWeight: '400' },
   sheetNameRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sheetHeartBtn:  { paddingVertical: 1, paddingHorizontal: 2 },
@@ -1615,27 +1583,6 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
 
-  // Product row
-  productRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 14, paddingRight: 36 },
-  productImg:    { width: 64, height: 64, borderRadius: 10, backgroundColor: Colors.gray100, marginRight: 12, overflow: 'hidden' },
-  productInfo:   { flex: 1 },
-  productName:   { fontSize: 16, fontWeight: '700', color: Colors.black, marginBottom: 2 },
-  productBrand:  { fontSize: 13, color: Colors.gray500, marginBottom: 8 },
-  productActions:{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
-
-  favBtn:         { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.gray300, borderRadius: 20, paddingVertical: 5, paddingHorizontal: 10 },
-  favBtnActive:   { borderColor: Colors.danger },
-  favBtnText:     { fontSize: 12, color: Colors.gray700 },
-  favBtnTextActive:{ color: Colors.danger },
-
-  seeDetailText: { fontSize: 12, color: Colors.gray500, textDecorationLine: 'underline' },
-
-  // Alternatives
-  altSection: { marginTop: 2, paddingBottom: 4 },
-  altTitle:   { fontSize: 13, fontWeight: '600', color: Colors.black, marginBottom: 10 },
-  altRow:     { flexDirection: 'row', gap: 10 },
-  altThumb:   { width: 80, height: 80, borderRadius: 12, backgroundColor: Colors.gray100, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 6 },
-  altThumbText:{ fontSize: 10, color: Colors.gray500, textAlign: 'center' },
   riskProductRow: {
     position: 'absolute',
     left: 19,
@@ -1670,35 +1617,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 18,
     marginTop: -2,
-  },
-  riskProductActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 14,
-    gap: 9,
-  },
-  riskFavBtn: {
-    height: 21,
-    minWidth: 108,
-    borderWidth: 1,
-    borderColor: Colors.black,
-    borderRadius: 50,
-    paddingLeft: 8,
-    paddingRight: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  riskFavBtnActive: {
-    borderColor: Colors.danger,
-  },
-  riskFavBtnText: {
-    color: Colors.black,
-    fontSize: 10,
-    fontWeight: '400',
-    lineHeight: 15,
-  },
-  riskFavBtnTextActive: {
-    color: Colors.danger,
   },
   riskSeeDetailText: {
     color: '#9E9E9E',
@@ -1740,15 +1658,6 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     textAlign: 'center',
   },
-  riskChevronBtn: {
-    position: 'absolute',
-    right: 0,
-    top: 28,
-    width: 28,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   goodProductRow: {
     position: 'absolute',
     left: 19,
@@ -1783,56 +1692,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: -2,
   },
-  goodProductActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 13,
-    gap: 9,
-  },
-  goodFavBtn: {
-    height: 21,
-    minWidth: 108,
-    borderWidth: 1,
-    borderColor: Colors.black,
-    borderRadius: 50,
-    paddingLeft: 8,
-    paddingRight: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goodFavBtnActive: {
-    borderColor: Colors.danger,
-  },
-  goodFavBtnText: {
-    color: Colors.black,
-    fontSize: 10,
-    fontWeight: '400',
-    lineHeight: 15,
-  },
-  goodFavBtnTextActive: {
-    color: Colors.danger,
-  },
   goodSeeDetailText: {
     color: '#9E9E9E',
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 18,
     textDecorationLine: 'underline',
-  },
-  goodChevronBtn: {
-    position: 'absolute',
-    right: 0,
-    top: 25,
-    width: 28,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goodChevron: {
-    color: Colors.white,
-    fontSize: 42,
-    fontWeight: '300',
-    lineHeight: 42,
   },
 });
 
