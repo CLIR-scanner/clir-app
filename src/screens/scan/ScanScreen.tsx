@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect, useIsFocused, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -80,6 +81,12 @@ const CORNER_H   = 42.5;
 // 선두께 2, 바깥 곡률 35 (안 곡률 = 35 - 2 = 33).
 const CORNER_W      = 2;
 const CORNER_RADIUS = 35;
+// 딤(투명 홀)과 코너 테두리 선 사이 간격. 브래킷(바깥 곡률 35)은 그대로 두고
+// 홀만 안쪽으로 SCAN_GAP 들여 딤 띠를 만든다 → clear 곡률 = 35 - SCAN_GAP.
+const SCAN_GAP      = 12;
+// OCR 프레임(코너 브래킷 + 안쪽 딤 사각형)을 세트로 아래로 내리는 양.
+// 위 scan/ocr 토글 버튼과의 간격 확보용. ocrDimTop 한 곳에 더해 함께 이동.
+const OCR_FRAME_DROP = 36;
 const CIRCLE_D   = 120;
 const BADGE_D    = 54;
 const GOOD_COLOR = Colors.scanCorrect;
@@ -110,7 +117,7 @@ export default function ScanScreen({ navigation }: Props) {
   const previousTab = route.params?.previousTab;
 
   const ocrGuideH  = OCR_GUIDE_H;
-  const ocrDimTop  = insets.top + 130;
+  const ocrDimTop  = insets.top + 130 + OCR_FRAME_DROP;
   const [permission, requestPermission] = useCameraPermissions();
   const isFocused = useIsFocused();
   const [guideHydrated, setGuideHydrated] = useState(false);
@@ -380,6 +387,7 @@ export default function ScanScreen({ navigation }: Props) {
     stopOcrGuidePreview();
     setBarcodeDetected(true);
     setProcessing(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     void captureScanPreview();
 
     try {
@@ -568,6 +576,7 @@ export default function ScanScreen({ navigation }: Props) {
       if (!cameraRef.current) return;
       try {
         const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         void processOCRPhoto(photo.uri);
       } catch {
         // 촬영 실패 시 카메라 화면 그대로 유지
@@ -723,9 +732,8 @@ export default function ScanScreen({ navigation }: Props) {
   const resultLevel = scanResult?.analysis.verdict;
   const verdictColor = resultLevel ? VERDICT_DISPLAY[resultLevel].color : GOOD_COLOR;
   const isSafe       = scanResult?.analysis.isSafe ?? true;
-  const cornerColor  = scanResult
-    ? verdictColor
-    : barcodeDetected ? BAD_COLOR : Colors.white;
+  // 스캔 후 fetch 중에는 색을 바꾸지 않는다(빨강 X). 결과가 나오면 verdictColor 적용.
+  const cornerColor  = scanResult ? verdictColor : Colors.white;
   const isGuidePreviewVisible = showBarcodeGuidePreview || showOcrGuidePreview;
 
   return (
@@ -767,11 +775,11 @@ export default function ScanScreen({ navigation }: Props) {
       {isGuidePreviewVisible && !scanResult && !processing ? null : isOCRMode ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <RoundedDimMask
-            x={(SCREEN_W - OCR_GUIDE_W) / 2}
-            y={ocrDimTop}
-            w={OCR_GUIDE_W}
-            h={ocrGuideH}
-            r={CORNER_RADIUS}
+            x={(SCREEN_W - OCR_GUIDE_W) / 2 + SCAN_GAP}
+            y={ocrDimTop + SCAN_GAP}
+            w={OCR_GUIDE_W - SCAN_GAP * 2}
+            h={ocrGuideH - SCAN_GAP * 2}
+            r={CORNER_RADIUS - SCAN_GAP}
           />
           <View
             style={{
@@ -877,13 +885,12 @@ export default function ScanScreen({ navigation }: Props) {
             },
           ]}
         >
-          {/* X close button */}
-          <TouchableOpacity style={isSafe ? styles.goodCardClose : styles.riskCardClose} onPress={dismissOverlay}>
-            <Text style={styles.sheetCloseText}>✕</Text>
-          </TouchableOpacity>
-
-          {/* Product row */}
-          <View style={isSafe ? styles.goodProductRow : styles.riskProductRow}>
+          {/* Tappable content → 세부성분 화면. 하트·X 는 별도 터치로 영역 제외 */}
+          <TouchableOpacity
+            style={isSafe ? styles.goodProductRow : styles.riskProductRow}
+            activeOpacity={0.85}
+            onPress={handleSeeDetail}
+          >
             <View style={isSafe ? styles.goodProductImg : styles.riskProductImg}>
               {scanResult.product.image ? (
                 <Image
@@ -895,62 +902,44 @@ export default function ScanScreen({ navigation }: Props) {
             </View>
 
             <View style={isSafe ? styles.goodProductInfo : styles.riskProductInfo}>
-              <Text style={isSafe ? styles.goodProductName : styles.riskProductName} numberOfLines={1}>
-                {scanResult.product.name}
-              </Text>
-              <Text style={isSafe ? styles.goodProductBrand : styles.riskProductBrand} numberOfLines={1}>
-                {scanResult.product.brand}
-              </Text>
-              <View style={isSafe ? styles.goodProductActions : styles.riskProductActions}>
-                {/* Add to Favorites */}
+              <View style={styles.sheetNameRow}>
+                <Text style={isSafe ? styles.goodProductName : styles.riskProductName} numberOfLines={1}>
+                  {scanResult.product.name}
+                </Text>
                 <TouchableOpacity
-                  style={[
-                    isSafe ? styles.goodFavBtn : styles.riskFavBtn,
-                    favorited && (isSafe ? styles.goodFavBtnActive : styles.riskFavBtnActive),
-                  ]}
+                  style={styles.sheetHeartBtn}
                   onPress={handleFavorite}
                   disabled={favLoading}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   {favLoading ? (
                     <ActivityIndicator size="small" color={Colors.danger} />
                   ) : (
-                    <Text style={[
-                      isSafe ? styles.goodFavBtnText : styles.riskFavBtnText,
-                      favorited && (isSafe ? styles.goodFavBtnTextActive : styles.riskFavBtnTextActive),
-                    ]}>
-                      {favorited ? `♥ ${t('favoriteUi.favorited')}` : `♡  ${t('favoriteUi.add')}`}
+                    <Text style={[styles.sheetHeart, favorited && styles.sheetHeartActive]}>
+                      {favorited ? '♥' : '♡'}
                     </Text>
                   )}
                 </TouchableOpacity>
-
-                {/* See more detail */}
-                <TouchableOpacity
-                  onPress={handleSeeDetail}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={isSafe ? styles.goodSeeDetailText : styles.riskSeeDetailText}>{t('product.seeMoreDetail')}</Text>
-                </TouchableOpacity>
               </View>
-            </View>
 
-            {isSafe ? (
-              <TouchableOpacity
-                style={styles.goodChevronBtn}
-                onPress={handleSeeDetail}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Text style={styles.goodChevron}>›</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.riskChevronBtn}
-                onPress={handleSeeDetail}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Text style={styles.goodChevron}>›</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+              <Text style={isSafe ? styles.goodProductBrand : styles.riskProductBrand} numberOfLines={1}>
+                {scanResult.product.brand}
+              </Text>
+
+              <Text style={[isSafe ? styles.goodSeeDetailText : styles.riskSeeDetailText, styles.sheetSeeMore]}>
+                {t('product.seeMoreDetail')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* X close — 동그라미 없는 쌩 X, 제품명과 동일 높이, 별도 터치 */}
+          <TouchableOpacity
+            style={isSafe ? styles.goodCardClose : styles.riskCardClose}
+            onPress={dismissOverlay}
+            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          >
+            <Text style={styles.sheetCloseText}>✕</Text>
+          </TouchableOpacity>
 
           {!isSafe && (
             <RiskAlternatives alternatives={scanResult.product.alternatives} />
@@ -977,7 +966,7 @@ function RoundedDimMask({
     `A${rr} ${rr} 0 0 1 ${x + rr} ${y} Z`;
   return (
     <Svg style={StyleSheet.absoluteFill} width={SCREEN_W} height={SCREEN_H}>
-      <Path d={d} fill="#000" fillOpacity={0.38} fillRule="evenodd" />
+      <Path d={d} fill="#000000" fillOpacity={0.7} fillRule="evenodd" />
     </Svg>
   );
 }
@@ -993,11 +982,11 @@ function BarcodeScanOverlay({
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <RoundedDimMask
-        x={BARCODE_CLEAR_LEFT}
-        y={BARCODE_CLEAR_TOP}
-        w={BARCODE_CLEAR_W}
-        h={BARCODE_CLEAR_H}
-        r={CORNER_RADIUS}
+        x={BARCODE_CLEAR_LEFT + SCAN_GAP}
+        y={BARCODE_CLEAR_TOP + SCAN_GAP}
+        w={BARCODE_CLEAR_W - SCAN_GAP * 2}
+        h={BARCODE_CLEAR_H - SCAN_GAP * 2}
+        r={CORNER_RADIUS - SCAN_GAP}
       />
 
       <View style={styles.barcodeGuideLayer}>
@@ -1312,7 +1301,7 @@ export function ScanHeader({
           onPress={onBack}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={headerStyles.backArrow}>←</Text>
+          <BackArrowIcon />
         </TouchableOpacity>
 
         <View style={headerStyles.center}>
@@ -1385,6 +1374,21 @@ function HistoryIcon() {
   );
 }
 
+// ── Back arrow (curved) ───────────────────────────────────────────────────────
+function BackArrowIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 5 L4 10 L9 15 M4 10 H13 C18 10 21 13 21 18"
+        stroke={Colors.white}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
@@ -1412,6 +1416,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   toggleRowInner: {
     flexDirection: 'row',
@@ -1554,12 +1559,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.black,
     alignItems: 'center', justifyContent: 'center',
   },
-  sheetCloseText: { color: Colors.white, fontSize: 12, lineHeight: 14 },
+  sheetCloseText: { color: Colors.scanResultClose, fontSize: 22, lineHeight: 24, fontWeight: '400' },
+  sheetNameRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sheetHeartBtn:  { paddingVertical: 1, paddingHorizontal: 2 },
+  sheetHeart:     { fontSize: 20, lineHeight: 22, color: Colors.black },
+  sheetHeartActive:{ color: Colors.danger },
+  sheetSeeMore:   { marginTop: 8 },
   feedbackAnchor: {
     position: 'absolute',
     // riskCard top edge (height 230 + bottom 22 = 252); 위 8px gap.
     // goodCard 일 때는 결과 카드보다 조금 더 높이 떠 있게 됨 — 의도된 동작.
-    bottom: 260,
+    bottom: 294,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -1568,20 +1578,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 14,
     right: 15,
-    bottom: 23,
+    bottom: 57,
     height: 130,
     backgroundColor: Colors.scanLightGreen,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   goodCardClose: {
     position: 'absolute',
-    top: 15,
-    right: 30.9,
-    width: 27.1,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.scanResultClose,
+    top: 25,
+    right: 16,
+    minWidth: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -1590,7 +1598,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 13,
     right: 16,
-    bottom: 22,
+    bottom: 56,
     height: 230,
     backgroundColor: Colors.scanLightGreen,
     borderRadius: 20,
@@ -1598,12 +1606,10 @@ const styles = StyleSheet.create({
   },
   riskCardClose: {
     position: 'absolute',
-    top: 17.7,
-    right: 31.1,
-    width: 27.1,
-    height: 27.7,
-    borderRadius: 14,
-    backgroundColor: Colors.scanResultClose,
+    top: 29,
+    right: 16,
+    minWidth: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -1656,6 +1662,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
+    flexShrink: 1,
   },
   riskProductBrand: {
     color: Colors.black,
@@ -1767,6 +1774,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
+    flexShrink: 1,
   },
   goodProductBrand: {
     color: Colors.black,
@@ -1831,7 +1839,6 @@ const styles = StyleSheet.create({
 const headerStyles = StyleSheet.create({
   wrap:       { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 23, paddingBottom: 0 },
   iconBtn:    { width: 32, height: 42, alignItems: 'center', justifyContent: 'center' },
-  backArrow:  { fontSize: 29, color: Colors.white, lineHeight: 32, marginTop: Platform.OS === 'ios' ? -1 : 0 },
   center:     { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
   title:      { fontSize: 20, fontWeight: '700', color: Colors.white },
   subtitle:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3, textAlign: 'center' },
