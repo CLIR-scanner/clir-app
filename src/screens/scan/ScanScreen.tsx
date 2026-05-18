@@ -61,17 +61,25 @@ const BARCODE_CLEAR_W = Math.min(328, SCREEN_W - 65);
 const BARCODE_CLEAR_H = 167;
 const BARCODE_CLEAR_LEFT = (SCREEN_W - BARCODE_CLEAR_W) / 2;
 const BARCODE_CLEAR_TOP = Math.min(334, SCAN_FOOTER_TOP - BARCODE_CLEAR_H - 32);
-const GUIDE_W = Math.min(350, SCREEN_W - 40);
-const GUIDE_H = 193.5;
-const GUIDE_LEFT = (SCREEN_W - GUIDE_W) / 2;
-const GUIDE_TOP = BARCODE_CLEAR_TOP - 14;
+// 보이는 둥근 테두리 프레임 = 투명 스캔창과 동일한 박스로 통일
+// (Figma 393 기준 328 x 167). 위치까지 일치시켜 코너 브래킷이 창 모서리에 정확히 안착.
+const GUIDE_W = BARCODE_CLEAR_W;
+const GUIDE_H = BARCODE_CLEAR_H;
+const GUIDE_LEFT = BARCODE_CLEAR_LEFT;
+const GUIDE_TOP = BARCODE_CLEAR_TOP;
 
 // OCR frame width (height is insets-dependent, computed inside component)
-const OCR_GUIDE_W = SCREEN_W - 50;
+// OCR 스캔 박스: 폭은 바코드와 동일(328), 높이는 Figma 393 기준 절댓값 429
+const OCR_GUIDE_W = BARCODE_CLEAR_W;
+const OCR_GUIDE_H = 429;
 
 const CORNER_LEN = 39;
 const CORNER_H   = 42.5;
-const CORNER_W   = 2;
+// Figma(393x852) 기준 절댓값 — 곡률은 기기 폭에 비례 스케일하지 않는다.
+// RN border 모델: 바깥 곡률 = CORNER_RADIUS, 안 곡률 = CORNER_RADIUS - CORNER_W.
+// 선두께 2, 바깥 곡률 35 (안 곡률 = 35 - 2 = 33).
+const CORNER_W      = 2;
+const CORNER_RADIUS = 35;
 const CIRCLE_D   = 120;
 const BADGE_D    = 54;
 const DIM        = 'rgba(0,0,0,0.38)';
@@ -102,8 +110,7 @@ export default function ScanScreen({ navigation }: Props) {
   const route  = useRoute<RouteProp<ScanStackParamList, 'Scan'>>();
   const previousTab = route.params?.previousTab;
 
-  // OCR 프레임 높이: 상하 safe area + 헤더(80) + 촬영버튼 영역(100) 제외
-  const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 340;
+  const ocrGuideH  = OCR_GUIDE_H;
   const ocrDimTop  = insets.top + 130;
   const [permission, requestPermission] = useCameraPermissions();
   const isFocused = useIsFocused();
@@ -760,26 +767,35 @@ export default function ScanScreen({ navigation }: Props) {
       {/* Dim overlay with guide window */}
       {isGuidePreviewVisible && !scanResult && !processing ? null : isOCRMode ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <View style={[styles.dimTop, { height: ocrDimTop }]} />
-          <View style={[styles.dimMiddle, { height: ocrGuideH }]}>
-            <View style={styles.dimSide} />
-            <View style={[styles.guideBox, { width: OCR_GUIDE_W, height: ocrGuideH }]}>
-              <ScanCorner pos="topLeft"     color={cornerColor} />
-              <ScanCorner pos="topRight"    color={cornerColor} />
-              <ScanCorner pos="bottomLeft"  color={cornerColor} />
-              <ScanCorner pos="bottomRight" color={cornerColor} />
-              {scanResult && (
-                <OcrResultVerdictBadge
-                  level={scanResult.analysis.verdict}
-                  scaleAnim={circleScale}
-                  top={(ocrGuideH - RESULT_BADGE_D) / 2}
-                  left={(OCR_GUIDE_W - RESULT_BADGE_D) / 2}
-                />
-              )}
-            </View>
-            <View style={styles.dimSide} />
+          <RoundedDimMask
+            x={(SCREEN_W - OCR_GUIDE_W) / 2}
+            y={ocrDimTop}
+            w={OCR_GUIDE_W}
+            h={ocrGuideH}
+            r={CORNER_RADIUS}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: ocrDimTop,
+              left: (SCREEN_W - OCR_GUIDE_W) / 2,
+              width: OCR_GUIDE_W,
+              height: ocrGuideH,
+            }}
+          >
+            <ScanCorner pos="topLeft"     color={cornerColor} />
+            <ScanCorner pos="topRight"    color={cornerColor} />
+            <ScanCorner pos="bottomLeft"  color={cornerColor} />
+            <ScanCorner pos="bottomRight" color={cornerColor} />
+            {scanResult && (
+              <OcrResultVerdictBadge
+                level={scanResult.analysis.verdict}
+                scaleAnim={circleScale}
+                top={(ocrGuideH - RESULT_BADGE_D) / 2}
+                left={(OCR_GUIDE_W - RESULT_BADGE_D) / 2}
+              />
+            )}
           </View>
-          <View style={styles.dimBottom} />
         </View>
       ) : (
         <BarcodeScanOverlay cornerColor={cornerColor}>
@@ -946,6 +962,27 @@ export default function ScanScreen({ navigation }: Props) {
   );
 }
 
+// ── Rounded dim mask ──────────────────────────────────────────────────────────
+// RN 사각 딤 4분할로는 clear 영역 모서리를 둥글릴 수 없다.
+// 전체 화면 딤 + 둥근 사각형 투명 홀을 SVG 단일 Path(evenodd)로 처리한다.
+function RoundedDimMask({
+  x, y, w, h, r,
+}: { x: number; y: number; w: number; h: number; r: number }) {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  const d =
+    `M0 0 H${SCREEN_W} V${SCREEN_H} H0 Z ` +
+    `M${x + rr} ${y} H${x + w - rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x + w} ${y + rr} V${y + h - rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x + w - rr} ${y + h} H${x + rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x} ${y + h - rr} V${y + rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x + rr} ${y} Z`;
+  return (
+    <Svg style={StyleSheet.absoluteFill} width={SCREEN_W} height={SCREEN_H}>
+      <Path d={d} fill="#000" fillOpacity={0.38} fillRule="evenodd" />
+    </Svg>
+  );
+}
+
 // ── Barcode overlay ───────────────────────────────────────────────────────────
 function BarcodeScanOverlay({
   cornerColor,
@@ -956,25 +993,12 @@ function BarcodeScanOverlay({
 }) {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <View
-        style={[
-          styles.barcodeDimTop,
-          { height: BARCODE_CLEAR_TOP },
-        ]}
-      />
-      <View style={styles.barcodeDimMiddle}>
-        <View style={[styles.barcodeDimSide, { width: BARCODE_CLEAR_LEFT }]} />
-        <View style={{ width: BARCODE_CLEAR_W }} />
-        <View style={[styles.barcodeDimSide, { width: BARCODE_CLEAR_LEFT }]} />
-      </View>
-      <View
-        style={[
-          styles.barcodeDimBottom,
-          {
-            top: BARCODE_CLEAR_TOP + BARCODE_CLEAR_H,
-            bottom: 0,
-          },
-        ]}
+      <RoundedDimMask
+        x={BARCODE_CLEAR_LEFT}
+        y={BARCODE_CLEAR_TOP}
+        w={BARCODE_CLEAR_W}
+        h={BARCODE_CLEAR_H}
+        r={CORNER_RADIUS}
       />
 
       <View style={styles.barcodeGuideLayer}>
@@ -1340,10 +1364,10 @@ function ScanCorner({ pos, color }: { pos: CornerPos; color: string }) {
           borderBottomWidth:       isTop  ? 0 : CORNER_W,
           borderLeftWidth:         isLeft ? CORNER_W : 0,
           borderRightWidth:        isLeft ? 0 : CORNER_W,
-          borderTopLeftRadius:     pos === 'topLeft'     ? 3 : 0,
-          borderTopRightRadius:    pos === 'topRight'    ? 3 : 0,
-          borderBottomLeftRadius:  pos === 'bottomLeft'  ? 3 : 0,
-          borderBottomRightRadius: pos === 'bottomRight' ? 3 : 0,
+          borderTopLeftRadius:     pos === 'topLeft'     ? CORNER_RADIUS : 0,
+          borderTopRightRadius:    pos === 'topRight'    ? CORNER_RADIUS : 0,
+          borderBottomLeftRadius:  pos === 'bottomLeft'  ? CORNER_RADIUS : 0,
+          borderBottomRightRadius: pos === 'bottomRight' ? CORNER_RADIUS : 0,
           borderColor: color,
         },
       ]}
