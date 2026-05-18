@@ -82,7 +82,6 @@ const CORNER_W      = 2;
 const CORNER_RADIUS = 35;
 const CIRCLE_D   = 120;
 const BADGE_D    = 54;
-const DIM        = 'rgba(0,0,0,0.38)';
 const GOOD_COLOR = Colors.scanCorrect;
 const BAD_COLOR  = '#FF0000';
 const RESULT_BADGE_D = 190;
@@ -1398,40 +1397,9 @@ const styles = StyleSheet.create({
   permBtn:       { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
   permBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  // Dim overlay
-  dimTop:    { height: GUIDE_TOP, backgroundColor: DIM },
-  dimMiddle: { flexDirection: 'row', height: GUIDE_H },
-  dimSide:   { flex: 1, backgroundColor: DIM },
-  dimBottom: { flex: 1, backgroundColor: DIM },
-  guideBox:  { width: GUIDE_W, height: GUIDE_H },
   resultBackdropTint: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  barcodeDimTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: DIM,
-  },
-  barcodeDimMiddle: {
-    position: 'absolute',
-    top: BARCODE_CLEAR_TOP,
-    left: 0,
-    right: 0,
-    height: BARCODE_CLEAR_H,
-    flexDirection: 'row',
-  },
-  barcodeDimSide: {
-    height: BARCODE_CLEAR_H,
-    backgroundColor: DIM,
-  },
-  barcodeDimBottom: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    backgroundColor: DIM,
   },
   barcodeGuideLayer: {
     position: 'absolute',
