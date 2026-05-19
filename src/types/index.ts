@@ -210,8 +210,6 @@ export interface User extends Profile {
   multiProfiles: Profile[];
   consentFlags: ConsentFlags;
   hasCompletedSurvey?: boolean;
-  /** 베타 코호트 배열. null/빈 배열 = 미통과, 1개 이상 = 통과한 코호트 목록 */
-  betaCohort?: BetaCohort[] | null;
   /** 약관 동의 시각 (ISO8601). null = 미동의 또는 legacy. BE profiles.terms_accepted_at 동기. */
   termsAcceptedAt?: string | null;
   /** 동의한 약관 버전. TERMS_VERSION 상수와 다르면 가입 직후 acceptTerms() 자동 호출. */
