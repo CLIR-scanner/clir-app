@@ -1637,32 +1637,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textDecorationLine: 'underline',
   },
-  riskAltSection: {
-    position: 'absolute',
-    left: 115,
-    top: 126,
-  },
-  riskAltTitle: {
-    color: Colors.black,
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  riskAltRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 4,
-  },
-  riskAltThumb: {
-    width: 60,
-    height: 60,
-    borderRadius: 11,
-    backgroundColor: '#D9D9D9',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 4,
-  },
   goodProductRow: {
     position: 'absolute',
     left: 19,
