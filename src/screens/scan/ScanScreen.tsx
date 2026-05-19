@@ -1547,9 +1547,9 @@ const styles = StyleSheet.create({
   sheetSeeMore:   { marginTop: 8 },
   feedbackAnchor: {
     position: 'absolute',
-    // riskCard top edge (height 230 + bottom 22 = 252); 위 8px gap.
-    // goodCard 일 때는 결과 카드보다 조금 더 높이 떠 있게 됨 — 의도된 동작.
-    bottom: 294,
+    // 결과 카드 top edge = bottom(57) + height(130) = 187, 위 8px gap.
+    // good/risk 카드 크기 통일(130) 후 동일 기준.
+    bottom: 195,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -1575,11 +1575,13 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   riskCard: {
+    // Poor/Bad 결과창 크기 = Good 결과창(goodCard) 기준으로 통일
+    // (대체제품 칸 제거 후 230 → 130 으로 빈 공간 제거)
     position: 'absolute',
-    left: 13,
-    right: 16,
-    bottom: 56,
-    height: 230,
+    left: 14,
+    right: 15,
+    bottom: 57,
+    height: 130,
     backgroundColor: Colors.scanLightGreen,
     borderRadius: 20,
     overflow: 'hidden',
