@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   group: { marginBottom: 20 },
   groupLabel: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: S.primary, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  chip: { borderWidth: 1, borderColor: '#8BC8B0', borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: '#F9FFFB' },
+  chip: { borderWidth: 1, borderColor: '#B8DDD4', borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: '#F9FFFB' },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   chipText: { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: S.primary },
   chipTextSelected: { color: S.textLight },

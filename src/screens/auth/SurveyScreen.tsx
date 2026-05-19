@@ -38,8 +38,7 @@ export default function SurveyScreen() {
     if (selected === 'vegetarian') {
       navigation.navigate('SurveyVegetarian', next);
     } else {
-      // allergy, both 모두 알러지 화면 먼저
-      navigation.navigate('SurveyAllergy', next);
+      navigation.navigate('SurveyAllergySelect', next);
     }
   }
 
@@ -120,9 +119,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   option: {
-    height: 94,
+    height: 100,
     borderWidth: 1,
-    borderColor: '#8BC8B0',
+    borderColor: '#B8DDD4',
     borderRadius: 16,
     paddingHorizontal: 44,
     justifyContent: 'center',

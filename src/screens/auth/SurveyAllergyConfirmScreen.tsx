@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#A9B6A8', marginBottom: 20 },
   groupLabel: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: S.primary, marginBottom: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  chip: { borderWidth: 1, borderColor: '#8BC8B0', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: '#F9FFFB' },
+  chip: { borderWidth: 1, borderColor: '#B8DDD4', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: '#F9FFFB' },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
   chipTextSelected: { color: S.textLight },

@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35 },
   optionsBlock: { flex: 1, justifyContent: 'flex-start', paddingTop: 32 },
   options: { gap: 12 },
-  option: { height: 94, borderWidth: 1, borderColor: '#8BC8B0', borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: '#F9FFFB' },
+  option: { height: 100, borderWidth: 1, borderColor: '#B8DDD4', borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: '#F9FFFB' },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.primary },
   optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: S.textLight },

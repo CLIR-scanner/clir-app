@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, fontFamily: 'Pretendard-ExtraBold', color: '#000000', lineHeight: 32, marginBottom: 12 },
   subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35 },
   options: { gap: 12 },
-  option: { borderWidth: 1, borderColor: '#8BC8B0', borderRadius: 16, paddingVertical: 20, paddingHorizontal: 44, backgroundColor: '#F9FFFB' },
+  option: { borderWidth: 1, borderColor: '#B8DDD4', borderRadius: 16, paddingVertical: 20, paddingHorizontal: 44, backgroundColor: '#F9FFFB' },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   optionLabel: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: S.primary, marginBottom: 6 },
   optionLabelSelected: { color: '#FFFFFF' },
