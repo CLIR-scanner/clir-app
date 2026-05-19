@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-const BG        = '#F9FFF3';
+const BG        = '#FDFFFD';
 const TITLE_CLR = '#1A2E1A';
 
 export default function HomeScreen() {

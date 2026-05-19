@@ -13,7 +13,7 @@ import { useUserStore } from '../../store/user.store';
 type Nav   = NativeStackNavigationProp<ProfileStackParamList, 'MultiProfileDetail'>;
 type Route = RouteProp<ProfileStackParamList, 'MultiProfileDetail'>;
 
-const BG         = '#F9FFF3';
+const BG         = '#FDFFFD';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 const BORDER     = '#A9B6A8';

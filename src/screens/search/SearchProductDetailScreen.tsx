@@ -24,7 +24,7 @@ import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 type Props = NativeStackScreenProps<SearchStackParamList, 'SearchProductDetail'>;
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const BG         = '#F9FFF3';
+const BG         = '#FDFFFD';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 

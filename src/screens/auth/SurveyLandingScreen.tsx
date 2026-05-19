@@ -28,8 +28,8 @@ type Route = RouteProp<AuthStackParamList, 'SurveyLanding'>;
 
 // ── Design tokens (auth/survey 팔레트) ─────────────────────────────────────
 const C = {
-  bg:           '#F9FFF3',
-  primary:      '#1C3A19',
+  bg:           '#FDFFFD',
+  primary:      '#044733',
   primaryText:  '#F9FFF3',
   cardBg:       '#EAF1E2',
   cardBorder:   '#D8E0D5',

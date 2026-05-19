@@ -22,7 +22,7 @@ import { Colors } from '../../constants/colors';
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const BG          = '#F0F5EF';   // 연한 민트/크림 배경
+const BG          = '#FDFFFD';   // 연한 민트/크림 배경
 const TITLE_COLOR = '#1A2E1A';   // 진한 그린 계열 타이틀
 const MID_GREEN   = '#556C53';
 

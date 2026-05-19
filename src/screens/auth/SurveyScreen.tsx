@@ -84,8 +84,8 @@ export default function SurveyScreen() {
 }
 
 const S = {
-  bg:             '#F9FFF3',
-  primary:        '#1C3A19',
+  bg:             '#FDFFFD',
+  primary:        '#044733',
   selectedFill:   '#556C53',
   textLight:      '#F9FFF3',
 };

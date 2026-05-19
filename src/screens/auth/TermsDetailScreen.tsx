@@ -19,7 +19,7 @@ type Route = RouteProp<AuthStackParamList, 'TermsDetail'>;
 
 const S = {
   bg: Colors.scanLightGreen,
-  primary: Colors.searchDarkGreen,
+  primary: '#044733',
   muted: Colors.searchMutedGreen,
   border: Colors.scanMutedGreen,
   black: Colors.profileText,

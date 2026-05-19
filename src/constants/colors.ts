@@ -21,19 +21,19 @@ export const Colors = {
   white: '#FFFFFF',
 
   // Background
-  background: '#FAFAFA',
+  background: '#FDFFFD',
   surface: '#FFFFFF',
   border: '#E8E8E8',
 
   // Scan screen
-  scanLightGreen: '#F9FFF3',
+  scanLightGreen: '#FDFFFD',
   scanSelectedGreen: '#556C53',
   scanMutedGreen: '#A9B6A8',
   scanCorrect: '#25FF81',
   scanResultClose: '#A9B6A8',
 
   // Search design
-  searchBackground: '#F9FFF3',
+  searchBackground: '#FDFFFD',
   searchCard: '#E1E9DC',
   searchBorder: '#A9B6A8',
   searchDivider: '#D9D9D9',
@@ -43,7 +43,7 @@ export const Colors = {
   searchWrong: '#FF3434',
 
   // Profile design
-  profileBackground: '#F9FFF3',
+  profileBackground: '#FDFFFD',
   profileDarkGreen: '#1C3A19',
   profileMutedGreen: '#556C53',
   profileBorder: '#A9B6A8',

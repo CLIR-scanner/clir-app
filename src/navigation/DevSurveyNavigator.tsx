@@ -26,7 +26,7 @@ export default function DevSurveyNavigator() {
   const surveyProgress = useSharedValue(0);
   return (
     <SurveyProgressContext.Provider value={surveyProgress}>
-    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F9FFF3' } }} initialRouteName="SurveyLanding">
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FDFFFD' } }} initialRouteName="SurveyLanding">
       <Stack.Screen name="SurveyLanding"             component={SurveyLandingScreen}             />
       <Stack.Group screenOptions={{ animation: 'none' }}>
         <Stack.Screen name="Survey"                    component={SurveyScreen}                    />

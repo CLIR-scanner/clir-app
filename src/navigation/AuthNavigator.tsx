@@ -30,7 +30,7 @@ export default function AuthNavigator() {
   return (
 
     <SurveyProgressContext.Provider value={surveyProgress}>
-    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F9FFF3' } }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FDFFFD' } }}>
 
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="TermsAgreement" component={TermsAgreementScreen} />

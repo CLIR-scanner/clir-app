@@ -23,7 +23,7 @@ type Route = RouteProp<AuthStackParamList, 'TermsAgreement'>;
 
 const S = {
   bg: Colors.scanLightGreen,
-  darkGreen: Colors.searchDarkGreen,
+  darkGreen: '#044733',
   line: Colors.scanMutedGreen,
   black: Colors.profileText,
   textLight: Colors.scanLightGreen,

@@ -23,7 +23,7 @@ import { Colors } from '../../constants/colors';
 type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 
 // ── Design tokens (Figma: node 223:9179) ──────────────────────────────────────
-const BG         = '#F9FFF3';
+const BG         = '#FDFFFD';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 
