@@ -88,6 +88,24 @@ async function fetchOrThrow(url: string, init: RequestInit, timeoutMs: number): 
   }
 }
 
+// ─── 멱등 GET 재시도 전략 ─────────────────────────────────────────────────────
+// 멱등(GET)에 한해 일시 장애만 최대 2회·지수 백오프 재시도.
+// 비멱등(POST/PUT/PATCH/DELETE)·apiFormFetch(OCR) 은 재시도 안 함
+// (중복 분석/저장·서버 과부하 방지). 4xx/PRODUCT_NOT_FOUND/401 도 재시도 안 함.
+const RETRY_DELAYS_MS = [400, 1200];
+
+const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+
+/** TIMEOUT/NETWORK/5xx 만 재시도 대상. 401·4xx 는 제외. */
+function isRetryable(err: unknown): boolean {
+  if (!(err instanceof ApiError) || err instanceof UnauthorizedError) return false;
+  return err.code === 'TIMEOUT' || err.code === 'NETWORK' || err.status >= 500;
+}
+
+function isIdempotent(method?: string): boolean {
+  return !method || method.toUpperCase() === 'GET';
+}
+
 // ─── fetch 헬퍼 ───────────────────────────────────────────────────────────────
 
 type JsonFetchOptions = Omit<RequestInit, 'headers'> & {
@@ -118,9 +136,26 @@ export async function apiFetch<T>(path: string, options: JsonFetchOptions = {}):
     headers['X-Active-Profile-Id'] = _activeProfileId;
   }
 
-  const response = await fetchOrThrow(`${BASE_URL}${path}`, { ...options, headers }, JSON_TIMEOUT_MS);
+  const url = `${BASE_URL}${path}`;
+  const init = { ...options, headers };
+  const idempotent = isIdempotent(options.method);
+  const maxAttempts = idempotent ? 1 + RETRY_DELAYS_MS.length : 1;
 
-  return handleResponse<T>(response);
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const response = await fetchOrThrow(url, init, JSON_TIMEOUT_MS);
+      return await handleResponse<T>(response);
+    } catch (e) {
+      lastErr = e;
+      if (attempt < maxAttempts - 1 && idempotent && isRetryable(e)) {
+        await sleep(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr; // unreachable — 루프는 반드시 return 또는 throw
 }
 
 /**
