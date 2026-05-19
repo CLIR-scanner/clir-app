@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   option: {
     height: 94,
     borderWidth: 1,
-    borderColor: S.primary,
+    borderColor: '#8BC8B0',
     borderRadius: 16,
     paddingHorizontal: 44,
     justifyContent: 'center',

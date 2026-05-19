@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: S.primary,
+    borderColor: '#8BC8B0',
     borderRadius: 16,
     paddingVertical: 18,
     paddingHorizontal: 20,
