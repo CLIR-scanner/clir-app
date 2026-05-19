@@ -513,17 +513,27 @@ export interface UserStore {
 
 export interface ScanStore {
   history: ScanHistory[];
+  // 캐시 무효화 메타 — 매 화면 진입 fetch 방지(stale 시에만 재조회)
+  historyDirty: boolean;          // true = 다음 진입 시 재조회 필요
+  historySyncedAt: number | null; // 마지막 서버 동기화 시각(ms) — TTL 판정용
   setHistory: (items: ScanHistory[]) => void;
   addHistory: (item: ScanHistory) => void;
   clearHistory: () => void;
+  markHistoryDirty: () => void;
+  markHistorySynced: () => void;
 }
 
 export interface ListStore {
   favorites: FavoriteItem[];
   shoppingItems: ShoppingItem[];
+  // 캐시 무효화 메타 — 매 화면 진입 fetch 방지(stale 시에만 재조회)
+  favoritesDirty: boolean;          // true = 다음 진입 시 재조회 필요
+  favoritesSyncedAt: number | null; // 마지막 서버 동기화 시각(ms) — TTL 판정용
   setFavorites: (items: FavoriteItem[]) => void;
   addFavorite: (item: FavoriteItem) => void;
   removeFavorite: (id: string) => void;
+  markFavoritesDirty: () => void;
+  markFavoritesSynced: () => void;
   setShoppingItems: (items: ShoppingItem[]) => void;
   addShoppingItem: (item: ShoppingItem) => void;
   removeShoppingItem: (id: string) => void;

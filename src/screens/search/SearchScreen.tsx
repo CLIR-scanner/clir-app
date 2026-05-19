@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { SearchStackParamList, Product, RiskLevel } from '../../types';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
 import FilterTuneIcon from '../../components/common/FilterTuneIcon';
 import { getSearchSuggestions, getAllProducts, searchProducts } from '../../services/search.service';
@@ -197,6 +198,26 @@ const favorites             = useListStore(s => s.favorites);
     return () => { cancelled = true; clearTimeout(timer); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, activeFilters, profileVersion]);
+
+  // 풀-투-리프레시 — 현재 query/filters 기준 0페이지 재조회 (스피너 토글 X,
+  // 진행바가 인디케이터). 완료까지 Promise 유지.
+  const refresh = useCallback(async () => {
+    const q = query.trim();
+    const selectedCats = activeFilters.categories.filter(c => c.selected).map(c => c.id);
+    const { safeOnly } = activeFilters;
+    try {
+      const result = await (q
+        ? searchProducts(q, 0, selectedCats, safeOnly)
+        : getAllProducts(0, selectedCats, safeOnly));
+      setItems(result.items);
+      setHasMore(result.hasMore);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+      }
+    }
+  }, [query, activeFilters]);
 
   // 자동완성: query 변경 시 제안 목록 업데이트
   useEffect(() => {
@@ -390,8 +411,9 @@ async function handleFavoriteToggle(product: Product) {
         />
       ) : query.trim() ? (
         /* 검색어 있음 → SearchResultScreen 스타일 리스트 */
-        <FlatList
+        <PullToRefreshList
           key="list"
+          onRefresh={refresh}
           data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 32 }]}
@@ -410,8 +432,9 @@ async function handleFavoriteToggle(product: Product) {
         />
       ) : (
         /* 검색어 없음 → 2열 그리드 */
-        <FlatList
+        <PullToRefreshList
           key="grid"
+          onRefresh={refresh}
           data={items}
           keyExtractor={item => item.id}
           numColumns={2}
