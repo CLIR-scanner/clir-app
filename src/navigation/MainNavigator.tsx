@@ -32,9 +32,7 @@ const LEFT_TABS: TabDescriptor[] = [
   { route: 'ListTab' },
 ];
 const RIGHT_TABS: TabDescriptor[] = [
-  // Community 탭은 베타 v1 에서 비활성 — 콘텐츠/리뷰 데이터 아직 mock 단계.
-  // 바텀 네비 위치는 유지(향후 활성 시 사용자 학습 비용 0)하되 탭 자체는 비활성.
-  { route: 'RecommendTab', disabled: true },
+  { route: 'RecommendTab' },
   { route: 'ProfileTab' },
 ];
 
