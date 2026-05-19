@@ -319,10 +319,10 @@ export default function SurveyLandingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  inner:     { flex: 1, paddingHorizontal: 17 },
+  inner:     { flex: 1 },
 
   scroll:        { flex: 1 },
-  scrollContent: { paddingTop: 60, paddingHorizontal: 22, paddingBottom: 16 },
+  scrollContent: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 16 },
 
   title: {
     fontSize: 30,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   footer: {
     gap: 12,
     paddingTop: 12,
-    paddingHorizontal: 22,
+    paddingHorizontal: 24,
     backgroundColor: C.bg,
   },
   skipButton: {
