@@ -287,7 +287,7 @@ export default function SurveyLandingScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
+        <View style={styles.footer}>
           {!multiProfileMode && !needsInvite && (
             <TouchableOpacity
               style={[styles.skipButton, loading && styles.opacity40]}
@@ -456,6 +456,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 12,
     paddingHorizontal: 24,
+    paddingBottom: 40,
     backgroundColor: C.bg,
   },
   skipButton: {
