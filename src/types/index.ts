@@ -437,8 +437,8 @@ export interface Correction {
 
 // ─── Closed Beta ──────────────────────────────────────────────────────────────
 
-/** 지원 로케일 6종. waitlist.locale 과 i18n 키 양쪽이 사용. */
-export type SupportedLocale = 'en' | 'ko' | 'ja' | 'zh' | 'es' | 'fr';
+/** 지원 로케일 3종 (영어/한국어/스페인어). i18n·waitlist.locale 공통. */
+export type SupportedLocale = 'en' | 'ko' | 'es';
 
 /** 베타 코호트. BE waitlist.cohort + profiles.beta_cohort 와 일치. */
 export type BetaCohort = 'us-allergy' | 'us-ka' | 'us-veg';
