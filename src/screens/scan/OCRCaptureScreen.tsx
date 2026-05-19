@@ -11,7 +11,6 @@ import { ScanStackParamList, Product, FavoriteItem, RiskLevel } from '../../type
 import { Colors } from '../../constants/colors';
 import ScannerCamera, { ScannerCameraHandle } from '../../components/ScannerCamera';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import ScanFeedbackBar from '../../components/common/ScanFeedbackBar';
 import { recognizeIngredients, analyzeProduct, saveScanHistory } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
 import { ScanHeader } from './ScanScreen';
@@ -125,7 +124,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const [state, setState]             = useState<ScreenState>(initialPhotoUri ? 'analyzing' : 'idle');
   const [capturedUri, setCapturedUri] = useState<string | null>(initialPhotoUri ?? null);
   const [ocrProduct, setOcrProduct]   = useState<Product | null>(null);
-  const [scanLogId, setScanLogId]     = useState<string | undefined>(undefined);
   const [errorMsg, setErrorMsg]       = useState('');
   const [favorited, setFavorited]     = useState(false);
   const [favLoading, setFavLoading]   = useState(false);
@@ -162,14 +160,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     setState('analyzing');
     try {
       let product: Product;
-      let resolvedScanLogId: string | undefined;
       if (USE_MOCK) {
         await new Promise(r => setTimeout(r, 800));
         _ocrToggle = !_ocrToggle;
         product = _ocrToggle ? MOCK_GOOD : MOCK_BAD;
       } else {
         const ocrResult = await recognizeIngredients(targetUri);
-        resolvedScanLogId = ocrResult.scanLogId;
         // BE-known productId — product-upsert(Step 8) 가 'ocr-{phash}' 형식으로
         // 채움. 이 값이 있어야 scan_history / favorites FK 제약 통과.
         const beProductId = ocrResult.productId;
@@ -221,7 +217,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
       if (cancelledRef.current) return;
 
       setOcrProduct(product);
-      setScanLogId(resolvedScanLogId);
       setFavorited(favorites.some(f => f.productId === product.id));
 
       circleAnim.setValue(0);
@@ -264,7 +259,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     }
     setCapturedUri(null);
     setOcrProduct(null);
-    setScanLogId(undefined);
     setErrorMsg('');
     setFavorited(false);
     setState('idle');
@@ -395,12 +389,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           onHistory={() => navigation.navigate('ScanHistory')}
         />
 
-        {/* 베타 v1 — 1탭 피드백 (scanLogId 있을 때만) */}
-        {scanLogId && (
-          <View style={styles.feedbackAnchor} pointerEvents="box-none">
-            <ScanFeedbackBar scanLogId={scanLogId} />
-          </View>
-        )}
 
         {/* Bottom sheet */}
         <Animated.View

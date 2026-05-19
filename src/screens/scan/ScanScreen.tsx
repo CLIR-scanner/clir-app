@@ -41,7 +41,6 @@ import ScannerCamera, {
   ScannerResult,
 } from '../../components/ScannerCamera';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import ScanFeedbackBar from '../../components/common/ScanFeedbackBar';
 import { scanGuideStorage } from '../../lib/storage';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'Scan'>;
@@ -142,6 +141,9 @@ export default function ScanScreen({ navigation }: Props) {
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
+  // 스캔 1회 처리(run)의 세대 id. 화면 이탈/취소/모드전환/새 스캔 시 ++ 로 무효화.
+  // async 체인이 화면 떠난 뒤 resolve 돼도 captured id != current → side-effect 폐기.
+  const scanRunIdRef     = useRef(0);
   const cameraRef        = useRef<ScannerCameraHandle>(null);
   const barcodeGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ocrGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -266,11 +268,18 @@ export default function ScanScreen({ navigation }: Props) {
       }
 
       return () => {
-        // Screen blurred → deactivate camera + stop scanning
+        // Screen blurred → deactivate camera + 진행 중 스캔 run 무효화.
+        // (탭 화면은 언마운트 안 됨 → 무효화 안 하면 OCR/바코드 async 가 다른 탭에서
+        //  resolve 되어 결과창이 튀어나옴. 사용자 보고 버그.)
         setCameraActive(false);
         stopBarcodeGuidePreview();
         stopOcrGuidePreview();
         processingRef.current = false;
+        scanRunIdRef.current += 1;
+        setProcessing(false);
+        setScanResult(null);
+        setScanPreviewUri(null);
+        setBarcodeDetected(false);
         shutterAnim.stopAnimation();
       };
     }, [circleScale, sheetY, shutterAnim, setHistory, startBarcodeGuidePreview, stopBarcodeGuidePreview, stopOcrGuidePreview, toggleSlide]),
@@ -280,8 +289,9 @@ export default function ScanScreen({ navigation }: Props) {
 
   function handleToggleMode(ocr: boolean) {
     if (ocr === isOCRMode) return;
-    // Reset scan state on mode switch
+    // Reset scan state on mode switch — 진행 중 스캔 run 무효화
     processingRef.current    = false;
+    scanRunIdRef.current    += 1;
     latestBarcodeRef.current = null;
     setBarcodeDetected(false);
     setProcessing(false);
@@ -401,6 +411,7 @@ export default function ScanScreen({ navigation }: Props) {
   async function processBarcode(barcode: string) {
     if (processingRef.current) return;
     processingRef.current = true;
+    const runId = ++scanRunIdRef.current; // 이 run 의 세대 id (이전 run 무효화)
     stopBarcodeGuidePreview();
     stopOcrGuidePreview();
     setBarcodeDetected(true);
@@ -410,8 +421,10 @@ export default function ScanScreen({ navigation }: Props) {
 
     try {
       const product        = await scanBarcode(barcode);
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
       const ingredientIds  = product.ingredients.map(i => i.id);
       const analysis       = await analyzeProduct({ productId: product.id, ingredientIds });
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
 
       // Save history silently — analysis 결과를 반영한 enrichedProduct로 저장
       // riskIngredients / mayContainIngredients 가 history 상세에서도 표시되도록
@@ -431,9 +444,11 @@ export default function ScanScreen({ navigation }: Props) {
         addHistory({ ...historyItem, product: enrichedProduct });
       } catch { /* silent */ }
 
+      if (runId !== scanRunIdRef.current) return; // 저장 후에도 이탈했으면 결과 폐기
       setProcessing(false);
       showOverlay(product, analysis);
     } catch (err) {
+      if (runId !== scanRunIdRef.current) return; // 이탈/취소면 에러 알럿도 띄우지 않음
       // 스캔 잠금 해제 — 오류 후 재스캔 가능하도록
       processingRef.current    = false;
       latestBarcodeRef.current = null;
@@ -463,6 +478,7 @@ export default function ScanScreen({ navigation }: Props) {
   async function processOCRPhoto(imageUri: string) {
     if (processingRef.current) return;
     processingRef.current = true;
+    const runId = ++scanRunIdRef.current; // 이 run 의 세대 id (이전 run 무효화)
     stopBarcodeGuidePreview();
     stopOcrGuidePreview();
     setBarcodeDetected(false);
@@ -471,6 +487,7 @@ export default function ScanScreen({ navigation }: Props) {
 
     try {
       const ocrResult = await recognizeIngredients(imageUri);
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
       // BE 의 product-upsert 파이프라인(Step 8) 이 성공하면 ocrResult.productId 가
       // 채워져 있다(형식: 'ocr-{phash}'). 이 값을 product.id 로 그대로 써야
       // scan_history / favorites 의 FK 제약을 통과한다 — 무시하고 ocr-${Date.now()}
@@ -480,6 +497,7 @@ export default function ScanScreen({ navigation }: Props) {
         productId: beProductId,  // server-side reverify 가능하면 사용
         ingredientIds: ocrResult.ingredients.map(i => i.id),
       });
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
       const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
         id: t.id,
         name: t.name,
@@ -520,9 +538,11 @@ export default function ScanScreen({ navigation }: Props) {
         } catch { /* silent */ }
       }
 
+      if (runId !== scanRunIdRef.current) return; // 저장 후에도 이탈했으면 결과 폐기
       setProcessing(false);
       showOverlay(product, analysis, ocrResult.scanLogId);
     } catch (err) {
+      if (runId !== scanRunIdRef.current) return; // 이탈/취소면 에러 알럿도 띄우지 않음
       processingRef.current = false;
       setProcessing(false);
       setScanPreviewUri(null);
@@ -545,6 +565,7 @@ export default function ScanScreen({ navigation }: Props) {
     }
     if (processingRef.current || barcodeDetected) {
       processingRef.current    = false;
+      scanRunIdRef.current    += 1; // 진행 중 스캔 취소 — async resolve 돼도 폐기
       latestBarcodeRef.current = null;
       setBarcodeDetected(false);
       setProcessing(false);
@@ -897,12 +918,6 @@ export default function ScanScreen({ navigation }: Props) {
         </View>
       )}
 
-      {/* 베타 v1 — 1탭 피드백 (OCR 결과에 scanLogId 있을 때만 자체 렌더) */}
-      {scanResult?.scanLogId && (
-        <View style={styles.feedbackAnchor} pointerEvents="box-none">
-          <ScanFeedbackBar scanLogId={scanResult.scanLogId} />
-        </View>
-      )}
 
       {/* ── Bottom sheet ─────────────────────────────────────────────────────── */}
       {scanResult && (

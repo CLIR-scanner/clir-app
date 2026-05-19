@@ -455,11 +455,6 @@ export interface WaitlistEntry {
   createdAt: string;
 }
 
-/** POST /scan-logs/:scanLogId/feedback 요청 body. */
-export interface ScanFeedbackInput {
-  helpful: boolean;
-  comment?: string;
-}
 
 // ─── Request Payloads ─────────────────────────────────────────────────────────
 
