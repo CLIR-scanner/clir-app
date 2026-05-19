@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   options: { gap: 12 },
   option: { height: 94, borderWidth: 1, borderColor: '#8BC8B0', borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: '#F9FFFB' },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
-  optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.textLight },
+  optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.primary },
   optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: S.textLight },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueDisabled: { opacity: 0.4 },

@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   chip: { borderWidth: 1, borderColor: '#8BC8B0', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: '#F9FFFB' },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
-  chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.textLight },
+  chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
   chipTextSelected: { color: S.textLight },
   addChip: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
   addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: '#A9B6A8' },
