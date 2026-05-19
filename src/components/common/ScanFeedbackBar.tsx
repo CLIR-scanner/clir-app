@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   btnText: {
     color: '#F9FFF3',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
   },
   thanks: {
     color: '#F9FFF3',

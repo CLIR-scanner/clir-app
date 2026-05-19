@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.searchDarkGreen,
     letterSpacing: -0.38,
     textAlign: 'center',
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: Colors.searchDarkGreen,
     padding: 0,
   },
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  filterBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
+  filterBadgeText: { fontSize: 9, fontFamily: 'Pretendard-Bold', color: Colors.white },
 
   // Sort pill
   toolbar: {
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sortPillActive: { backgroundColor: Colors.searchMutedGreen },
-  sortPillLabel: { fontSize: 14, fontWeight: '400', color: Colors.searchMutedGreen, letterSpacing: -0.27 },
+  sortPillLabel: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: Colors.searchMutedGreen, letterSpacing: -0.27 },
   sortPillLabelActive: { color: Colors.white },
   sortArrow: { fontSize: 15, color: Colors.searchMutedGreen, lineHeight: 16 },
   sortMenu: {
@@ -436,11 +436,11 @@ const styles = StyleSheet.create({
   },
   sortOptionText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: Colors.searchMutedGreen,
   },
   sortOptionTextActive: {
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.searchDarkGreen,
   },
   sortOptionDot: {
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.searchMutedGreen,
     letterSpacing: 0,
     lineHeight: 22,
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     letterSpacing: 0,
   },
 
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   },
   retryBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: Colors.white,
   },
 });

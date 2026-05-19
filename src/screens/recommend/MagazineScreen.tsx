@@ -91,8 +91,8 @@ const pillSt = StyleSheet.create({
   pill:       { borderWidth: 1, borderColor: C.mid, borderRadius: 50, minWidth: 96, height: 25,
                 paddingHorizontal: 19, alignItems: 'center', justifyContent: 'center' },
   pillActive: { backgroundColor: C.mid },
-  text:       { fontSize: 12, fontWeight: '500', color: C.dark, letterSpacing: -0.228 },
-  textActive: { color: Colors.white, fontWeight: '700' },
+  text:       { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.dark, letterSpacing: -0.228 },
+  textActive: { color: Colors.white, fontFamily: 'Pretendard-Bold' },
 });
 
 // ── MagazineCard ──────────────────────────────────────────────────────────────
@@ -145,10 +145,10 @@ const cardSt = StyleSheet.create({
   wrap:     { marginBottom: 28 },
   imgBox:   { height: 243, borderRadius: 15, backgroundColor: C.thumb, overflow: 'hidden', marginBottom: 12 },
   body:     { gap: 4 },
-  title:    { fontSize: 15, fontWeight: '700', color: C.dark,  lineHeight: 21, letterSpacing: -0.285 },
-  bodyText: { fontSize: 13, fontWeight: '400', color: C.mid,   lineHeight: 19, letterSpacing: -0.247 },
+  title:    { fontSize: 15, fontFamily: 'Pretendard-Bold', color: C.dark,  lineHeight: 21, letterSpacing: -0.285 },
+  bodyText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.mid,   lineHeight: 19, letterSpacing: -0.247 },
   footer:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  time:     { fontSize: 10, fontWeight: '400', color: C.muted, letterSpacing: -0.19 },
+  time:     { fontSize: 10, fontFamily: 'Pretendard-Regular', color: C.muted, letterSpacing: -0.19 },
 });
 
 // ── MagazineScreen ────────────────────────────────────────────────────────────
@@ -290,8 +290,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backIcon:    { color: C.dark, fontSize: 28, lineHeight: 30, fontWeight: '400' },
-  headerTitle: { marginTop: 8, color: C.dark, fontSize: 20, fontWeight: '700', letterSpacing: -0.38 },
+  backIcon:    { color: C.dark, fontSize: 28, lineHeight: 30, fontFamily: 'Pretendard-Regular' },
+  headerTitle: { marginTop: 8, color: C.dark, fontSize: 20, fontFamily: 'Pretendard-Bold', letterSpacing: -0.38 },
 
   searchRow: {
     flexDirection: 'row',
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 17,
     gap: 6,
   },
-  searchInput: { flex: 1, color: C.dark, fontSize: 16, fontWeight: '600', padding: 0 },
+  searchInput: { flex: 1, color: C.dark, fontSize: 16, fontFamily: 'Pretendard-SemiBold', padding: 0 },
   clearBtn: { fontSize: 12, color: C.mid },
 
   listContent: { paddingHorizontal: 24 },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   },
 
   sectionLabel: { marginBottom: 12 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: C.dark, lineHeight: 32, letterSpacing: -0.38 },
+  sectionTitle: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: C.dark, lineHeight: 32, letterSpacing: -0.38 },
 
   pillRow: { gap: 5, marginBottom: 22 },
 });

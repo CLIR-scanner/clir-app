@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 22, color: Colors.black, width: 32 },
   headerTitle: {
-    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: Colors.black,
+    flex: 1, textAlign: 'center', fontSize: 17, fontFamily: 'Pretendard-Bold', color: Colors.black,
   },
   headerRight: { width: 32 },
   subtitle: {
@@ -132,10 +132,10 @@ const styles = StyleSheet.create({
   },
   optionSelected: { borderColor: Colors.black },
   optionTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  optionLabel: { fontSize: 16, fontWeight: '700', color: Colors.black },
+  optionLabel: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black },
   optionLabelSelected: { color: Colors.black },
   badge: { borderRadius: 100, paddingVertical: 4, paddingHorizontal: 12 },
-  badgeText: { fontSize: 12, fontWeight: '700' },
+  badgeText: { fontSize: 12, fontFamily: 'Pretendard-Bold' },
   optionDesc: { fontSize: 13, color: Colors.gray500, lineHeight: 20 },
   optionDescSelected: { color: Colors.gray700 },
   radioRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
@@ -146,11 +146,11 @@ const styles = StyleSheet.create({
   radioOuterSelected: { borderColor: Colors.black },
   radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.black },
   radioLabel: { fontSize: 12, color: Colors.gray300 },
-  radioLabelSelected: { color: Colors.black, fontWeight: '600' },
+  radioLabelSelected: { color: Colors.black, fontFamily: 'Pretendard-SemiBold' },
   saveButton: {
     backgroundColor: Colors.white, borderRadius: 100,
     paddingVertical: 18, alignItems: 'center', marginTop: 32,
   },
   saveButtonDisabled: { opacity: 0.4 },
-  saveText: { fontSize: 15, fontWeight: '700', color: Colors.black },
+  saveText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: Colors.black },
 });

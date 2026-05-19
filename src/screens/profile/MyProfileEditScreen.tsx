@@ -322,14 +322,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backBtn:     { fontSize: 22, color: Colors.black, width: 32 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.black },
+  headerTitle: { fontSize: 17, fontFamily: 'Pretendard-Bold', color: Colors.black },
 
   scroll: { flex: 1 },
 
   // 섹션 타이틀
   sectionLabel: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.gray500,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -359,10 +359,10 @@ const styles = StyleSheet.create({
   },
   sensitivityCardSelected: { borderColor: Colors.black },
   sensitivityTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sensitivityLabel: { fontSize: 16, fontWeight: '700', color: Colors.black },
+  sensitivityLabel: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black },
   sensitivityDesc:  { fontSize: 13, color: Colors.gray500, lineHeight: 20 },
   badge:     { borderRadius: 100, paddingVertical: 4, paddingHorizontal: 12, alignSelf: 'flex-start' },
-  badgeText: { fontSize: 12, fontWeight: '700' },
+  badgeText: { fontSize: 12, fontFamily: 'Pretendard-Bold' },
   radioRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   radioOuter: {
     width: 18, height: 18, borderRadius: 9,
@@ -372,12 +372,12 @@ const styles = StyleSheet.create({
   radioOuterSelected: { borderColor: Colors.black },
   radioInner:         { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.black },
   radioLabel:         { fontSize: 12, color: Colors.gray300 },
-  radioLabelSelected: { color: Colors.black, fontWeight: '600' },
+  radioLabelSelected: { color: Colors.black, fontFamily: 'Pretendard-SemiBold' },
 
   // 알러지 카운트 행
   countRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  countText: { fontSize: 13, color: Colors.gray500, fontWeight: '600' },
-  clearText: { fontSize: 13, color: Colors.danger, fontWeight: '600' },
+  countText: { fontSize: 13, color: Colors.gray500, fontFamily: 'Pretendard-SemiBold' },
+  clearText: { fontSize: 13, color: Colors.danger, fontFamily: 'Pretendard-SemiBold' },
 
   // 알러지 카테고리
   allergyList:    { gap: 8 },
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16, paddingHorizontal: 16, gap: 12,
   },
   categoryLabelWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  categoryLabel:     { fontSize: 15, fontWeight: '600', color: Colors.black },
+  categoryLabel:     { fontSize: 15, fontFamily: 'Pretendard-SemiBold', color: Colors.black },
   categoryCount:     { fontSize: 12, color: Colors.gray500 },
   chevron:     { fontSize: 20, color: Colors.gray300, lineHeight: 22 },
   chevronOpen: { transform: [{ rotate: '90deg' }] },
@@ -423,5 +423,5 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   saveButtonDisabled: { opacity: 0.4 },
-  saveText: { fontSize: 15, fontWeight: '700', color: Colors.black },
+  saveText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: Colors.black },
 });

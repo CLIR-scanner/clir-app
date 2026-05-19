@@ -106,14 +106,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerSide:  { flex: 1 },
-  backBtn:     { fontSize: 32, lineHeight: 34, color: Colors.profileDarkGreen, fontWeight: '300' },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: Colors.profileDarkGreen, letterSpacing: -0.3, textAlign: 'center' },
+  backBtn:     { fontSize: 32, lineHeight: 34, color: Colors.profileDarkGreen, fontFamily: 'Pretendard-Light' },
+  headerTitle: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: Colors.profileDarkGreen, letterSpacing: -0.3, textAlign: 'center' },
 
   sectionPill: {
     alignSelf: 'flex-start', borderWidth: 1, borderColor: Colors.profileDarkGreen,
     borderRadius: 10, paddingVertical: 5, paddingHorizontal: 17,
   },
-  sectionPillText: { fontSize: 12, fontWeight: '800', color: Colors.profileDarkGreen },
+  sectionPillText: { fontSize: 12, fontFamily: 'Pretendard-ExtraBold', color: Colors.profileDarkGreen },
 
   menuBlock: { gap: 0 },
 
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   },
   menuRowContent: { flex: 1 },
   menuLabel: {
-    fontSize: 14, fontWeight: '500', color: Colors.profileText,
+    fontSize: 14, fontFamily: 'Pretendard-Regular', color: Colors.profileText,
   },
   menuDescription: {
     fontSize: 11, color: Colors.gray500, marginTop: 2, lineHeight: 16,

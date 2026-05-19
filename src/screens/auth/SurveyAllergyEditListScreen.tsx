@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.black,
     lineHeight: 34,
     marginBottom: 10,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   groupLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.black,
     marginBottom: 10,
   },
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   addConfirm: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: Colors.primary,
   },
   newCatButton: {
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   continueText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.black,
   },
 });

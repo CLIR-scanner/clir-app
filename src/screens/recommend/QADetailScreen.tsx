@@ -227,13 +227,13 @@ const styles = StyleSheet.create({
     color: C.dark,
     fontSize: 28,
     lineHeight: 30,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   headerTitle: {
     marginTop: 8,
     color: C.dark,
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     letterSpacing: -0.38,
   },
   loadingWrap: {
@@ -261,27 +261,27 @@ const styles = StyleSheet.create({
   questionLabel: {
     color: C.muted,
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     marginBottom: 8,
   },
   questionTitle: {
     color: C.dark,
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     lineHeight: 27,
   },
   questionAuthor: {
     color: C.mid,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     marginTop: 6,
     marginBottom: 18,
   },
   questionBody: {
     color: C.mid,
     fontSize: 14,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 21,
   },
   guidelineBox: {
@@ -296,21 +296,21 @@ const styles = StyleSheet.create({
   guidelineEyebrow: {
     color: C.muted,
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     letterSpacing: 1.2,
     marginBottom: 8,
   },
   guidelineTitle: {
     color: C.dark,
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     lineHeight: 24,
     marginBottom: 8,
   },
   guidelineIntro: {
     color: C.mid,
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 20,
     marginBottom: 18,
   },
@@ -325,13 +325,13 @@ const styles = StyleSheet.create({
     width: 24,
     color: C.dark,
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
   },
   guidelineText: {
     flex: 1,
     color: C.mid,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     lineHeight: 19,
   },
   guidelineFooter: {
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   guidelineFooterText: {
     color: C.dark,
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     lineHeight: 18,
   },
   answerTitleRow: {
@@ -356,13 +356,13 @@ const styles = StyleSheet.create({
   answerSectionTitle: {
     color: C.dark,
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     lineHeight: 22,
   },
   answerCount: {
     color: C.mid,
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
   answerRow: {
     flexDirection: 'row',
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   answerAvatarText: {
     color: Colors.white,
     fontSize: 14,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
   },
   answerBody: {
     flex: 1,
@@ -397,17 +397,17 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.dark,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
   answerDate: {
     color: C.muted,
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
   },
   answerText: {
     color: C.mid,
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 19,
   },
   divider: {
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: C.mid,
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     textAlign: 'center',
     paddingVertical: 28,
   },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: C.dark,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
   },
   sendButton: {
     height: 42,
@@ -462,6 +462,6 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: Colors.white,
     fontSize: 13,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
   },
 });

@@ -1,7 +1,11 @@
 import 'react-native-gesture-handler';
 import './src/i18n';           // i18n 초기화 (최상단 임포트)
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Text, TextInput } from 'react-native';
+
+// fontFamily 미지정 Text / TextInput 의 기본 폰트를 Pretendard-Regular 로 설정
+(Text as any).defaultProps = { ...(Text as any).defaultProps, style: { fontFamily: 'Pretendard-Regular' } };
+(TextInput as any).defaultProps = { ...(TextInput as any).defaultProps, style: { fontFamily: 'Pretendard-Regular' } };
 import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: DARK_GREEN,
     lineHeight: 32,
     marginTop: 8,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillText: { fontSize: 14, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.3 },
+  pillText: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.3 },
 
   // Row
   row: {
@@ -243,8 +243,8 @@ const styles = StyleSheet.create({
 
   // Info block
   info:        { flex: 1, gap: 12 },
-  productName: { fontSize: 16, fontWeight: '700', color: MID_GREEN, lineHeight: 22 },
-  brandName:   { fontSize: 12, fontWeight: '400', color: MID_GREEN, lineHeight: 16, marginTop: -8 },
+  productName: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: MID_GREEN, lineHeight: 22 },
+  brandName:   { fontSize: 12, fontFamily: 'Pretendard-Regular', color: MID_GREEN, lineHeight: 16, marginTop: -8 },
 
   // Risk badge — 이미지 인증마크
   badge: {
@@ -259,10 +259,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   badgeIcon: { width: 16, height: 16 },
-  badgeText: { fontSize: 12, fontWeight: '400', letterSpacing: 0 },
+  badgeText: { fontSize: 12, fontFamily: 'Pretendard-Regular', letterSpacing: 0 },
 
   // Chevron
-  chevron: { fontSize: 22, color: DARK_GREEN, fontWeight: '300' },
+  chevron: { fontSize: 22, color: DARK_GREEN, fontFamily: 'Pretendard-Light' },
 
   // Divider
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#D0D0C8' },
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
 
   // Retry button
   retryBtn:  { marginTop: 16, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1, borderColor: DARK_GREEN },
-  retryText: { fontSize: 14, fontWeight: '600', color: DARK_GREEN },
+  retryText: { fontSize: 14, fontFamily: 'Pretendard-SemiBold', color: DARK_GREEN },
 
   // Empty / error state
   empty:     { paddingTop: 80, alignItems: 'center' },

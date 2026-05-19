@@ -1369,10 +1369,10 @@ const styles = StyleSheet.create({
   // Permission
   permContainer: { flex: 1, backgroundColor: Colors.black, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36 },
   permIcon:      { fontSize: 52, marginBottom: 16 },
-  permTitle:     { fontSize: 20, fontWeight: '700', color: Colors.white, marginBottom: 12, textAlign: 'center' },
+  permTitle:     { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white, marginBottom: 12, textAlign: 'center' },
   permDesc:      { fontSize: 14, color: Colors.gray300, textAlign: 'center', lineHeight: 21, marginBottom: 28 },
   permBtn:       { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
-  permBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  permBtnText:   { color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 15 },
 
   // Dim overlay
   dimTop:    { height: GUIDE_TOP, backgroundColor: DIM },
@@ -1439,13 +1439,13 @@ const styles = StyleSheet.create({
   guideHelpText: {
     color: Colors.white,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 16,
   },
   guidePreviewText: {
     color: Colors.scanLightGreen,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     lineHeight: 21,
     textAlign: 'center',
     marginBottom: 28,
@@ -1474,7 +1474,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(0,0,0,0.64)',
   },
-  cameraErrorTitle: { color: Colors.white, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  cameraErrorTitle: { color: Colors.white, fontSize: 14, fontFamily: 'Pretendard-Bold', marginBottom: 4 },
   cameraErrorText: { color: Colors.gray300, fontSize: 12, lineHeight: 17, textAlign: 'center' },
 
   // Bottom camera button
@@ -1517,8 +1517,8 @@ const styles = StyleSheet.create({
     borderRadius: BADGE_D / 2,
     alignItems: 'center', justifyContent: 'center',
   },
-  verdictBadgeIcon: { fontSize: 26, color: Colors.white, fontWeight: '900', lineHeight: 30 },
-  verdictLabel:     { fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
+  verdictBadgeIcon: { fontSize: 26, color: Colors.white, fontFamily: 'Pretendard-ExtraBold', lineHeight: 30 },
+  verdictLabel:     { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 0.3 },
   resultVerdictWrap: {
     position: 'absolute',
     top: (GUIDE_H - RESULT_BADGE_D) / 2,
@@ -1543,7 +1543,7 @@ const styles = StyleSheet.create({
   resultVerdictText: {
     marginTop: 6,
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 29,
     textAlign: 'center',
   },
@@ -1621,7 +1621,7 @@ const styles = StyleSheet.create({
   productRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 14, paddingRight: 36 },
   productImg:    { width: 64, height: 64, borderRadius: 10, backgroundColor: Colors.gray100, marginRight: 12, overflow: 'hidden' },
   productInfo:   { flex: 1 },
-  productName:   { fontSize: 16, fontWeight: '700', color: Colors.black, marginBottom: 2 },
+  productName:   { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black, marginBottom: 2 },
   productBrand:  { fontSize: 13, color: Colors.gray500, marginBottom: 8 },
   productActions:{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
 
@@ -1634,7 +1634,7 @@ const styles = StyleSheet.create({
 
   // Alternatives
   altSection: { marginTop: 2, paddingBottom: 4 },
-  altTitle:   { fontSize: 13, fontWeight: '600', color: Colors.black, marginBottom: 10 },
+  altTitle:   { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: Colors.black, marginBottom: 10 },
   altRow:     { flexDirection: 'row', gap: 10 },
   altThumb:   { width: 80, height: 80, borderRadius: 12, backgroundColor: Colors.gray100, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 6 },
   altThumbText:{ fontSize: 10, color: Colors.gray500, textAlign: 'center' },
@@ -1662,13 +1662,13 @@ const styles = StyleSheet.create({
   riskProductName: {
     color: Colors.black,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 24,
   },
   riskProductBrand: {
     color: Colors.black,
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     marginTop: -2,
   },
@@ -1695,7 +1695,7 @@ const styles = StyleSheet.create({
   riskFavBtnText: {
     color: Colors.black,
     fontSize: 10,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 15,
   },
   riskFavBtnTextActive: {
@@ -1704,7 +1704,7 @@ const styles = StyleSheet.create({
   riskSeeDetailText: {
     color: '#9E9E9E',
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     textDecorationLine: 'underline',
   },
@@ -1716,7 +1716,7 @@ const styles = StyleSheet.create({
   riskAltTitle: {
     color: Colors.black,
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     lineHeight: 18,
   },
   riskAltRow: {
@@ -1737,7 +1737,7 @@ const styles = StyleSheet.create({
   riskAltThumbText: {
     color: Colors.black,
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 15,
     textAlign: 'center',
   },
@@ -1773,13 +1773,13 @@ const styles = StyleSheet.create({
   goodProductName: {
     color: Colors.black,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 24,
   },
   goodProductBrand: {
     color: Colors.black,
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     marginTop: -2,
   },
@@ -1806,7 +1806,7 @@ const styles = StyleSheet.create({
   goodFavBtnText: {
     color: Colors.black,
     fontSize: 10,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 15,
   },
   goodFavBtnTextActive: {
@@ -1815,7 +1815,7 @@ const styles = StyleSheet.create({
   goodSeeDetailText: {
     color: '#9E9E9E',
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     textDecorationLine: 'underline',
   },
@@ -1831,7 +1831,7 @@ const styles = StyleSheet.create({
   goodChevron: {
     color: Colors.white,
     fontSize: 42,
-    fontWeight: '300',
+    fontFamily: 'Pretendard-Light',
     lineHeight: 42,
   },
 });
@@ -1841,7 +1841,7 @@ const headerStyles = StyleSheet.create({
   iconBtn:    { width: 32, height: 42, alignItems: 'center', justifyContent: 'center' },
   backArrow:  { fontSize: 29, color: Colors.white, lineHeight: 32, marginTop: Platform.OS === 'ios' ? -1 : 0 },
   center:     { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
-  title:      { fontSize: 20, fontWeight: '700', color: Colors.white },
+  title:      { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white },
   subtitle:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3, textAlign: 'center' },
   historyBtn: {
     width: 32,
@@ -1881,7 +1881,7 @@ const toggleStyles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: Colors.scanMutedGreen,
   },
   tabTextActive: {

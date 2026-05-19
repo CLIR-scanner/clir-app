@@ -64,7 +64,7 @@ const badgeSt = StyleSheet.create({
     paddingVertical: 3,
     marginBottom: 10,
   },
-  text: { fontSize: 11, fontWeight: '600', color: C.mid, letterSpacing: 0.5 },
+  text: { fontSize: 11, fontFamily: 'Pretendard-SemiBold', color: C.mid, letterSpacing: 0.5 },
 });
 
 // ── MagazineDetailScreen ──────────────────────────────────────────────────────
@@ -227,8 +227,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backIcon:    { color: C.dark, fontSize: 28, lineHeight: 30, fontWeight: '400' },
-  headerTitle: { color: C.dark, fontSize: 20, fontWeight: '700', letterSpacing: -0.38 },
+  backIcon:    { color: C.dark, fontSize: 28, lineHeight: 30, fontFamily: 'Pretendard-Regular' },
+  headerTitle: { color: C.dark, fontSize: 20, fontFamily: 'Pretendard-Bold', letterSpacing: -0.38 },
   headerRight: {
     position: 'absolute',
     right: 20,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
 
   articleTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: C.dark,
     lineHeight: 30,
     letterSpacing: -0.42,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   articleTime: {
     fontSize: 11,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     color: C.muted,
     letterSpacing: -0.19,
     marginBottom: 20,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
 
   articleContent: {
     fontSize: 15,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     color: C.mid,
     lineHeight: 24,
     letterSpacing: -0.285,
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: C.dark,
     letterSpacing: -0.247,
   },
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   footerBookmarkText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: C.dark,
     letterSpacing: -0.247,
   },

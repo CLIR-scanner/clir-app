@@ -241,13 +241,13 @@ const styles = StyleSheet.create({
     color: C.dark,
     fontSize: 28,
     lineHeight: 30,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   headerTitle: {
     marginTop: 8,
     color: C.dark,
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     letterSpacing: -0.38,
   },
   searchRow: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.dark,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     padding: 0,
   },
   clearButton: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     marginBottom: 9,
     color: C.dark,
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     lineHeight: 22,
   },
   listContent: {
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   featuredLabel: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
   },
   noticeMutedText: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   featuredTitle: {
     marginTop: 8,
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
   noticeTitle: {
     color: Colors.white,
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     bottom: 19,
     color: C.muted,
     fontSize: 11,
-    fontWeight: '300',
+    fontFamily: 'Pretendard-Light',
     lineHeight: 13,
   },
   questionRow: {
@@ -353,21 +353,21 @@ const styles = StyleSheet.create({
   questionLabel: {
     color: C.muted,
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     marginBottom: 9,
   },
   questionTitle: {
     color: Colors.black,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 22,
     marginBottom: 5,
   },
   questionBody: {
     color: C.mid,
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     marginBottom: 8,
   },
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
   },
   divider: {

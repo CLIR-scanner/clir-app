@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
   },
   circleText: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: PRIMARY,
     textAlign: 'center',
     lineHeight: 30,
     paddingHorizontal: 32,
     zIndex: 1,
   },
-  quoteChar: { fontSize: 26, fontWeight: '700', color: PRIMARY },
+  quoteChar: { fontSize: 26, fontFamily: 'Pretendard-Bold', color: PRIMARY },
 });

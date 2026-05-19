@@ -87,10 +87,10 @@ const styles = StyleSheet.create({
   },
   backBtn: { fontSize: 22, color: Colors.black, width: 32 },
   headerTitle: {
-    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: Colors.black,
+    flex: 1, textAlign: 'center', fontSize: 17, fontFamily: 'Pretendard-Bold', color: Colors.black,
   },
   body: { flex: 1, paddingHorizontal: 24, paddingTop: 24, gap: 8 },
-  title: { fontSize: 20, fontWeight: '800', color: Colors.black, marginBottom: 4 },
+  title: { fontSize: 20, fontFamily: 'Pretendard-ExtraBold', color: Colors.black, marginBottom: 4 },
   intro: { fontSize: 13, lineHeight: 20, color: '#5A6B58', marginBottom: 20 },
   linkRow: {
     flexDirection: 'row',
@@ -99,11 +99,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   linkText: { flex: 1, gap: 4 },
-  linkTitle: { fontSize: 16, fontWeight: '700', color: Colors.black },
+  linkTitle: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black },
   linkSub: { fontSize: 12, color: '#5A6B58' },
   chevron: { fontSize: 22, color: '#1C3A19', marginLeft: 8 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#D8E0D5' },
   footer: { marginTop: 36, gap: 6 },
   footerLine: { fontSize: 11, color: '#5A6B58', textAlign: 'center' },
-  contactEmail: { fontWeight: '600', color: '#1C3A19' },
+  contactEmail: { fontFamily: 'Pretendard-SemiBold', color: '#1C3A19' },
 });

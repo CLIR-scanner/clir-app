@@ -179,15 +179,15 @@ const styles = StyleSheet.create({
 
   header:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
   headerSide:    { flex: 1 },
-  backArrow:     { fontSize: 32, color: DARK_GREEN, fontWeight: '300', lineHeight: 34 },
-  headerTitle:   { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
+  backArrow:     { fontSize: 32, color: DARK_GREEN, fontFamily: 'Pretendard-Light', lineHeight: 34 },
+  headerTitle:   { fontSize: 16, fontFamily: 'Pretendard-Regular', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
   activeStatusBadge: {
     backgroundColor: DARK_GREEN,
     borderRadius: 100,
     paddingVertical: 4,
     paddingHorizontal: 18,
   },
-  activeStatusText: { fontSize: 13, fontWeight: '400', color: '#FFFFFF' },
+  activeStatusText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: '#FFFFFF' },
   inactiveStatusBadge: {
     backgroundColor: CARD_FILL,
     borderRadius: 100,
@@ -196,13 +196,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 18,
   },
-  inactiveStatusText: { fontSize: 13, fontWeight: '400', color: MID_GREEN },
+  inactiveStatusText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: MID_GREEN },
 
   heroSection:  { alignItems: 'center', paddingVertical: 16, gap: 10 },
   avatarCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: MID_GREEN, alignItems: 'center', justifyContent: 'center' },
   avatarImg:    { width: 80, height: 80, borderRadius: 40 },
-  avatarText:   { fontSize: 32, fontWeight: '800', color: '#FFFFFF' },
-  profileName:  { fontSize: 20, fontWeight: '700', color: DARK_GREEN },
+  avatarText:   { fontSize: 32, fontFamily: 'Pretendard-ExtraBold', color: '#FFFFFF' },
+  profileName:  { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
   infoCard: {
     backgroundColor: BG, borderWidth: 1, borderColor: BORDER,
     borderRadius: 15, overflow: 'hidden',
@@ -211,20 +211,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 17, paddingVertical: 14,
   },
-  infoLabel:   { fontSize: 16, fontWeight: '600', color: DARK_GREEN },
+  infoLabel:   { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: DARK_GREEN },
   infoBlock:   { paddingHorizontal: 17, paddingTop: 12, paddingBottom: 16, gap: 12 },
   cardDivider: { height: 1, backgroundColor: BORDER, marginHorizontal: 9 },
 
   sensitivityBadge:        { borderWidth: 1, borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18 },
   sensitivityStrict:       { backgroundColor: STRICT_BG, borderColor: STRICT_CLR },
   sensitivityNormal:       { backgroundColor: CARD_FILL, borderColor: BORDER },
-  sensitivityText:         { fontSize: 13, fontWeight: '400' },
+  sensitivityText:         { fontSize: 13, fontFamily: 'Pretendard-Regular' },
   sensitivityTextStrict:   { color: STRICT_CLR },
   sensitivityTextNormal:   { color: MID_GREEN },
 
   chips:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip:     { backgroundColor: CARD_FILL, borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18 },
-  chipText: { fontSize: 13, fontWeight: '400', color: MID_GREEN },
+  chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: MID_GREEN },
   emptyText:{ fontSize: 13, color: BORDER },
 
   deleteButton: {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  deleteButtonText: { fontSize: 15, fontWeight: '700', color: STRICT_CLR },
+  deleteButtonText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: STRICT_CLR },
 
   notFound: { fontSize: 15, color: MID_GREEN, textAlign: 'center', marginTop: 60 },
 });

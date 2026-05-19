@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   backArrow: { fontSize: 22, color: TITLE_COLOR },
-  title:     { fontSize: 20, fontWeight: '700', color: TITLE_COLOR },
+  title:     { fontSize: 20, fontFamily: 'Pretendard-Bold', color: TITLE_COLOR },
 
   // List
   listContent: {
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   historyPillText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: TITLE_COLOR,
     letterSpacing: -0.3,
   },
@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
 
   // Info block
   info:        { flex: 1, gap: 12 },
-  productName: { fontSize: 16, fontWeight: '700', color: MID_GREEN, lineHeight: 22 },
-  brandName:   { fontSize: 12, fontWeight: '400', color: MID_GREEN, lineHeight: 16, marginTop: -8 },
+  productName: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: MID_GREEN, lineHeight: 22 },
+  brandName:   { fontSize: 12, fontFamily: 'Pretendard-Regular', color: MID_GREEN, lineHeight: 16, marginTop: -8 },
 
   // Risk badge
   badge: {
@@ -262,10 +262,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   badgeIcon: { width: 16, height: 16 },
-  badgeText: { fontSize: 12, fontWeight: '600' },
+  badgeText: { fontSize: 12, fontFamily: 'Pretendard-SemiBold' },
 
   // Chevron
-  chevron: { fontSize: 22, color: '#1A1A1A', fontWeight: '300' },
+  chevron: { fontSize: 22, color: '#1A1A1A', fontFamily: 'Pretendard-Light' },
 
   // Divider
   divider: { height: 1, backgroundColor: '#D0D0C8' },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
 
   // Retry button
   retryBtn:  { marginTop: 16, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 20, borderWidth: 1.5, borderColor: TITLE_COLOR },
-  retryText: { fontSize: 14, fontWeight: '600', color: TITLE_COLOR },
+  retryText: { fontSize: 14, fontFamily: 'Pretendard-SemiBold', color: TITLE_COLOR },
 
   // Empty state
   empty: {

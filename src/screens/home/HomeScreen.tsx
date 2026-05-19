@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 12,
   },
-  appName:  { fontSize: 48, fontWeight: '800', color: TITLE_CLR, letterSpacing: 6 },
-  tagline:  { fontSize: 14, fontWeight: '500', color: '#4A7A4A', letterSpacing: 1 },
+  appName:  { fontSize: 48, fontFamily: 'Pretendard-ExtraBold', color: TITLE_CLR, letterSpacing: 6 },
+  tagline:  { fontSize: 14, fontFamily: 'Pretendard-Regular', color: '#4A7A4A', letterSpacing: 1 },
   hint:     { fontSize: 13, color: '#888', marginTop: 8, textAlign: 'center' },
 });

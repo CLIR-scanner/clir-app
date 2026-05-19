@@ -350,13 +350,13 @@ const styles = StyleSheet.create({
     color: C.dark,
     fontSize: 28,
     lineHeight: 30,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   headerTitle: {
     marginTop: 8,
     color: C.dark,
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     letterSpacing: -0.38,
   },
   searchRow: {
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.dark,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     padding: 0,
   },
   clearButton: {
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: C.dark,
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     lineHeight: 22,
   },
   listContent: {
@@ -431,12 +431,12 @@ const styles = StyleSheet.create({
   categoryText: {
     color: C.dark,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
   },
   categoryTextActive: {
     color: Colors.white,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
   rankRow: {
     flexDirection: 'row',
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     width: 44,
     color: C.muted,
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     fontStyle: 'italic',
     lineHeight: 30,
     letterSpacing: -0.38,
@@ -481,14 +481,14 @@ const styles = StyleSheet.create({
   productName: {
     color: C.mid,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 21,
     letterSpacing: -0.266,
   },
   brandName: {
     color: C.mid,
     fontSize: 10,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 15,
     letterSpacing: -0.19,
   },
@@ -511,14 +511,14 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     letterSpacing: -0.19,
   },
   scoreText: {
     flex: 1,
     color: C.mid,
     fontSize: 11,
-    fontWeight: '300',
+    fontFamily: 'Pretendard-Light',
     lineHeight: 13,
   },
   rowDivider: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: C.mid,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     textAlign: 'center',
   },
   footerSpinner: {
