@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Alert, Modal, TouchableWithoutFeedback,
+  Animated, Easing,
 } from 'react-native';
 import i18n from '../../i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -76,6 +77,19 @@ export default function ProfileScreen() {
   const currentLanguage = useUserStore(s => s.currentUser.language);
   const setLanguage     = useUserStore(s => s.setLanguage);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  // 배경(backdrop)은 fade, 시트만 아래에서 슬라이드 — slide 애니가 전체화면
+  // backdrop 까지 끌어올려 검은 사각형이 따라오던 현상 제거.
+  const sheetTY = useRef(new Animated.Value(800)).current;
+  useEffect(() => {
+    if (!showLangPicker) return;
+    sheetTY.setValue(800);
+    Animated.timing(sheetTY, {
+      toValue: 0,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [showLangPicker, sheetTY]);
 
   const currentLangLabel = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'English';
 
@@ -302,14 +316,19 @@ function handleLogout() {
     <Modal
       visible={showLangPicker}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={() => setShowLangPicker(false)}
     >
       <TouchableWithoutFeedback onPress={() => setShowLangPicker(false)}>
         <View style={styles.langBackdrop} />
       </TouchableWithoutFeedback>
 
-      <View style={[styles.langSheet, { paddingBottom: insets.bottom + 8 }]}>
+      <Animated.View
+        style={[
+          styles.langSheet,
+          { paddingBottom: insets.bottom + 8, transform: [{ translateY: sheetTY }] },
+        ]}
+      >
         <View style={styles.langHandle} />
         <Text style={styles.langSheetTitle}>{t('language.title')}</Text>
 
@@ -338,7 +357,7 @@ function handleLogout() {
             );
           })}
         </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
     </View>
   );
