@@ -248,7 +248,7 @@ export default function SurveyVegetarianIngredientsScreen() {
   );
 }
 
-const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#F9FFFB', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#044733', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -284,10 +284,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addButtonText: { fontSize: 15, fontFamily: 'Pretendard-SemiBold', color: S.primary },
+  addButtonText: { fontSize: 15, fontFamily: 'Pretendard-SemiBold', color: S.textLight },
   buttons: { gap: 12, paddingTop: 16 },
   editButton: { height: 58, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: S.primary },
-  editButtonText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: S.primary },
+  editButtonText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: S.textLight },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueDisabled: { opacity: 0.4 },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: S.bg,
   },
-  modalItemText: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.primary },
+  modalItemText: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.textLight },
   modalEmpty: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.primary, textAlign: 'center', paddingVertical: 20 },
   modalSave: { marginTop: 16, height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   modalSaveText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },

@@ -330,7 +330,7 @@ export default function SurveyAllergyDocResultScreen() {
   );
 }
 
-const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#F9FFFB', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#044733', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -342,15 +342,15 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   chip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
-  chipText: { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: S.primary },
-  chipTextSelected: { color: S.primary },
+  chipText: { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: S.textLight },
+  chipTextSelected: { color: S.textLight },
   addChip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
-  addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
+  addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.textLight },
   newCatButton: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 12, paddingHorizontal: 20, alignSelf: 'flex-start', backgroundColor: S.bg, marginTop: 4 },
-  newCatText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
+  newCatText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.textLight },
   buttons: { gap: 12, paddingTop: 16 },
   editButton: { height: 58, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: S.primary },
-  editText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: S.primary },
+  editText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: S.textLight },
   completeButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   completeDisabled: { opacity: 0.5 },
   completeText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },

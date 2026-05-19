@@ -430,13 +430,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: C.bg,
   },
-  languageOptionSelected: { backgroundColor: '#F9FFFB', borderColor: C.primary },
+  languageOptionSelected: { backgroundColor: '#044733', borderColor: '#044733' },
   languageText: {
     fontSize: 13,
     fontFamily: 'Pretendard-Bold',
     color: C.textMuted,
   },
-  languageTextSelected: { color: C.primary },
+  languageTextSelected: { color: '#FFFFFF' },
 
   // ── Notices ────────────────────────────────────────────────────────────────
   notices: {

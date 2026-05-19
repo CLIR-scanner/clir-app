@@ -213,7 +213,7 @@ export default function SurveyAllergyIngredientsScreen() {
   );
 }
 
-const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#F9FFFB', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#044733', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -226,8 +226,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   chip: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
-  chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
-  chipTextSelected: { color: S.primary },
+  chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.textLight },
+  chipTextSelected: { color: S.textLight },
   addChip: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
   addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: '#A9B6A8' },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
