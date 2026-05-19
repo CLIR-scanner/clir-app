@@ -168,12 +168,12 @@ const zh = {
     vegetarianAvoidTitle: '作为 {{diet}}，\n您需要避免', vegetarianAvoidSubtitle: '根据所选饮食偏好，这些成分将从\n食品推荐中排除。',
     addToListTitle: '添加到列表', addToListSubtitle: '请选择要额外避免的类别。', allCategoriesAdded: '所有类别已添加完毕。',
     vegetarianTypes: {
-      pescatarian: '鱼素者', vegan: '纯素', lacto_vegetarian: '奶素者', ovo_vegetarian: '蛋素者',
-      lacto_ovo_vegetarian: '蛋奶素者', pesco_vegetarian: '鱼素者', pollo_vegetarian: '禽肉素者', flexitarian: '弹性素食者',
+      pescatarian: '果食者', vegan: '纯素', lacto_vegetarian: '奶素者', ovo_vegetarian: '蛋素者',
+      lacto_ovo_vegetarian: '蛋奶素者', pesco_vegetarian: '果食者', pollo_vegetarian: '禽肉素者', flexitarian: '弹性素食者',
     },
     dietTitles: {
-      pescatarian: '鱼素者', vegan: '纯素者', lacto_vegetarian: '奶素者', ovo_vegetarian: '蛋素者',
-      lacto_ovo_vegetarian: '蛋奶素者', pesco_vegetarian: '鱼素者', pollo_vegetarian: '禽肉素者', flexitarian: '弹性素食者',
+      pescatarian: '果食者', vegan: '纯素者', lacto_vegetarian: '奶素者', ovo_vegetarian: '蛋素者',
+      lacto_ovo_vegetarian: '蛋奶素者', pesco_vegetarian: '果食者', pollo_vegetarian: '禽肉素者', flexitarian: '弹性素食者',
       strict: '严格纯素者', flexible: '灵活纯素者',
     },
     dietCategories: {

@@ -169,11 +169,11 @@ const ja = {
     vegetarianAvoidTitle: '{{diet}}として\n避ける成分', vegetarianAvoidSubtitle: '選択した食事の好みに基づき、これらの成分は\n食品おすすめから除外されます。',
     addToListTitle: 'リストに追加', addToListSubtitle: '追加で避けるカテゴリを選択してください。', allCategoriesAdded: 'すべてのカテゴリが追加済みです。',
     vegetarianTypes: {
-      pescatarian: 'ペスカタリアン', vegan: 'ヴィーガン', lacto_vegetarian: 'ラクト・ベジタリアン', ovo_vegetarian: 'オボ・ベジタリアン',
+      pescatarian: 'フルータリアン', vegan: 'ヴィーガン', lacto_vegetarian: 'ラクト・ベジタリアン', ovo_vegetarian: 'オボ・ベジタリアン',
       lacto_ovo_vegetarian: 'ラクト・オボ・ベジタリアン', pesco_vegetarian: 'ペスコ・ベジタリアン', pollo_vegetarian: 'ポーヨ・ベジタリアン', flexitarian: 'フレキシタリアン',
     },
     dietTitles: {
-      pescatarian: 'ペスカタリアン', vegan: 'ヴィーガン', lacto_vegetarian: 'ラクト・ベジタリアン', ovo_vegetarian: 'オボ・ベジタリアン',
+      pescatarian: 'フルータリアン', vegan: 'ヴィーガン', lacto_vegetarian: 'ラクト・ベジタリアン', ovo_vegetarian: 'オボ・ベジタリアン',
       lacto_ovo_vegetarian: 'ラクト・オボ・ベジタリアン', pesco_vegetarian: 'ペスコ・ベジタリアン', pollo_vegetarian: 'ポーヨ・ベジタリアン', flexitarian: 'フレキシタリアン',
       strict: '厳格ヴィーガン', flexible: '柔軟ヴィーガン',
     },

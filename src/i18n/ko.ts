@@ -410,7 +410,7 @@ const ko = {
     addToListSubtitle:  '추가로 피할 카테고리를 선택하세요.',
     allCategoriesAdded: '모든 카테고리가 이미 추가되었습니다.',
     vegetarianTypes: {
-      pescatarian:          '페스카테리언',
+      pescatarian:          '프루테리언',
       vegan:                '비건',
       lacto_vegetarian:     '락토 베지테리언',
       ovo_vegetarian:       '오보 베지테리언',
@@ -420,7 +420,7 @@ const ko = {
       flexitarian:          '플렉시테리언',
     },
     dietTitles: {
-      pescatarian:          '페스카테리언',
+      pescatarian:          '프루테리언',
       vegan:                '비건',
       lacto_vegetarian:     '락토 베지테리언',
       ovo_vegetarian:       '오보 베지테리언',

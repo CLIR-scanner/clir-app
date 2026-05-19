@@ -172,11 +172,11 @@ const es = {
     vegetarianAvoidTitle: 'Como {{diet}},\nevitas', vegetarianAvoidSubtitle: 'Según tu preferencia alimentaria, estos ingredientes se\nexcluirán de tus recomendaciones.',
     addToListTitle: 'Añadir a tu lista', addToListSubtitle: 'Elige categorías adicionales a evitar.', allCategoriesAdded: 'Todas las categorías ya están añadidas.',
     vegetarianTypes: {
-      pescatarian: 'Pescetariano', vegan: 'Vegano', lacto_vegetarian: 'Lacto-vegetariano', ovo_vegetarian: 'Ovo-vegetariano',
+      pescatarian: 'Frugívoro', vegan: 'Vegano', lacto_vegetarian: 'Lacto-vegetariano', ovo_vegetarian: 'Ovo-vegetariano',
       lacto_ovo_vegetarian: 'Lacto-ovo-vegetariano', pesco_vegetarian: 'Pesco-vegetariano', pollo_vegetarian: 'Pollo-vegetariano', flexitarian: 'Flexitariano',
     },
     dietTitles: {
-      pescatarian: 'pescetariano', vegan: 'vegano', lacto_vegetarian: 'lacto-vegetariano', ovo_vegetarian: 'ovo-vegetariano',
+      pescatarian: 'frugívoro', vegan: 'vegano', lacto_vegetarian: 'lacto-vegetariano', ovo_vegetarian: 'ovo-vegetariano',
       lacto_ovo_vegetarian: 'lacto-ovo-vegetariano', pesco_vegetarian: 'pesco-vegetariano', pollo_vegetarian: 'pollo-vegetariano', flexitarian: 'flexitariano',
       strict: 'vegano estricto', flexible: 'vegano flexible',
     },

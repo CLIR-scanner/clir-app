@@ -405,7 +405,7 @@ const en = {
     addToListSubtitle:  'Choose additional categories to avoid.',
     allCategoriesAdded: 'All categories are already added.',
     vegetarianTypes: {
-      pescatarian:          'Pescatarian',
+      pescatarian:          'Fruitarian',
       vegan:                'Vegan',
       lacto_vegetarian:     'Lacto-vegetarian',
       ovo_vegetarian:       'Ovo-vegetarian',
@@ -415,7 +415,7 @@ const en = {
       flexitarian:          'Flextarian',
     },
     dietTitles: {
-      pescatarian:          'Pescatarian',
+      pescatarian:          'Fruitarian',
       vegan:                'Vegan',
       lacto_vegetarian:     'Lacto-Vegetarian',
       ovo_vegetarian:       'Ovo-Vegetarian',

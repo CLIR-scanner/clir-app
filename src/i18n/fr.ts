@@ -172,11 +172,11 @@ const fr = {
     vegetarianAvoidTitle: 'En tant que {{diet}},\nvous évitez', vegetarianAvoidSubtitle: 'Selon votre préférence alimentaire, ces ingrédients seront\nexclus de vos recommandations.',
     addToListTitle: 'Ajouter à votre liste', addToListSubtitle: 'Choisissez des catégories supplémentaires à éviter.', allCategoriesAdded: 'Toutes les catégories ont déjà été ajoutées.',
     vegetarianTypes: {
-      pescatarian: 'Pescétarien', vegan: 'Végan', lacto_vegetarian: 'Lacto-végétarien', ovo_vegetarian: 'Ovo-végétarien',
+      pescatarian: 'Frugivore', vegan: 'Végan', lacto_vegetarian: 'Lacto-végétarien', ovo_vegetarian: 'Ovo-végétarien',
       lacto_ovo_vegetarian: 'Lacto-ovo-végétarien', pesco_vegetarian: 'Pesco-végétarien', pollo_vegetarian: 'Pollo-végétarien', flexitarian: 'Flexitarien',
     },
     dietTitles: {
-      pescatarian: 'pescétarien', vegan: 'végan', lacto_vegetarian: 'lacto-végétarien', ovo_vegetarian: 'ovo-végétarien',
+      pescatarian: 'frugivore', vegan: 'végan', lacto_vegetarian: 'lacto-végétarien', ovo_vegetarian: 'ovo-végétarien',
       lacto_ovo_vegetarian: 'lacto-ovo-végétarien', pesco_vegetarian: 'pesco-végétarien', pollo_vegetarian: 'pollo-végétarien', flexitarian: 'flexitarien',
       strict: 'végan strict', flexible: 'végan flexible',
     },
