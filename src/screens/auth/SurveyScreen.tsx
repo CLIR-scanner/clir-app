@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 44,
     justifyContent: 'center',
-    backgroundColor: S.bg,
+    backgroundColor: '#F9FFFB',
   },
   optionSelected: {
     borderColor: S.primary,
