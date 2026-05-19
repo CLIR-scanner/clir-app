@@ -54,12 +54,12 @@ const FALLBACK_TAB_SVG = 60;       // 폴백 시 가정하는 탭 글리프 Svg 
 const TUCK_X_NUDGE = 0;            // 실기기 미세 보정
 const TUCK_Y_NUDGE = 0;
 
-// 인트로 (총 ≈ 2.9s)
-const MARK_IN = 1100;
-const SETTLE_UP = 380;
-const SETTLE_DN = 420;
-const WORD_IN = 1500;
-const HOLD_BEAT = 300;
+// 인트로 (calm Focus→Lock→Resolve, 총 ≈ 1.37s — 단축된 현재 기준 유지)
+const MARK_IN = 520;
+const SETTLE_UP = 180;
+const SETTLE_DN = 200;
+const WORD_IN = 710;
+const HOLD_BEAT = 140;
 // 아웃트로
 const COLLAPSE = 280;       // lir 만 접힘 (브랜드 C 는 유지)
 const TUCK = 820;           // C 가 스캔버튼으로 축소·이동
