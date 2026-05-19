@@ -1560,15 +1560,6 @@ const styles = StyleSheet.create({
   sheetHeart:     { fontSize: 20, lineHeight: 22, color: Colors.black },
   sheetHeartActive:{ color: Colors.danger },
   sheetSeeMore:   { marginTop: 8 },
-  feedbackAnchor: {
-    position: 'absolute',
-    // 결과 카드 top edge = bottom(57) + height(130) = 187, 위 8px gap.
-    // good/risk 카드 크기 통일(130) 후 동일 기준.
-    bottom: 195,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
   goodCard: {
     position: 'absolute',
     left: 14,

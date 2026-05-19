@@ -631,9 +631,6 @@ const styles = StyleSheet.create({
   },
   retakePill:     { borderWidth: 1.5, borderColor: Colors.white, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 28 },
   retakePillText: { color: Colors.white, fontSize: 15, fontWeight: '600' },
-  analyzeBtn:     { backgroundColor: Colors.primary, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 36, minWidth: 120, alignItems: 'center' },
-  analyzeBtnOff:  { opacity: 0.6 },
-  analyzeBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
 
   // Result — bottom sheet
   sheet: {
@@ -641,14 +638,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 20,
-  },
-  feedbackAnchor: {
-    position: 'absolute',
-    // verdict 원 (CIRCLE_D=190) 아래 16px gap. 화면 중앙선 + 95 + 16.
-    top: DIM_TOP_H + (GUIDE_H + CIRCLE_D) / 2 + 16,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
   },
   sheetClose: {
     position: 'absolute', top: 16, right: 16,

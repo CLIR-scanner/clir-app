@@ -452,13 +452,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  feedbackAnchor: {
-    position: 'absolute',
-    // verdict 원 아래쪽 (원 끝: GUIDE_TOP + GUIDE_H/2 + CIRCLE_R + 22 outer ring)
-    top: GUIDE_TOP + GUIDE_H / 2 + CIRCLE_R + 24,
-    left: 0, right: 0,
-    alignItems: 'center',
-  },
   verdictOuterRing: {
     position: 'absolute',
     width: CIRCLE_D + 22,
