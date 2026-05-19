@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,6 +15,7 @@ import ProfileNavigator from './ProfileNavigator';
 import { Colors } from '../constants/colors';
 import { FixedTabLabels } from '../constants/strings';
 import { setScanButtonAnchor } from '../lib/scanButtonAnchor';
+import { splashHandoff } from '../lib/splashHandoff';
 
 // 스캔 탭 ScanIcon 의 Svg 정사각 크기 — 스플래시가 동일 글리프를 이 크기로
 // 맞춰 안착시키기 위한 기준값 (ScanIcon 의 width/height 와 동일하게 유지).
@@ -144,6 +145,14 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const activeRoute = state.routes[state.index].name as TabRoute;
   const scanCircleRef = useRef<View>(null);
 
+  // 스플래시 C 가 스캔버튼으로 이동을 "완료"하기 전까지는 아이콘을 채우지 않는다
+  // (빈 원 유지). 그래야 날아오는 오버레이 C 와 겹쳐 두 개로 보이지 않는다.
+  const [scanReady, setScanReady] = useState(splashHandoff.getSnapshot());
+  useEffect(
+    () => splashHandoff.subscribe(() => setScanReady(splashHandoff.getSnapshot())),
+    [],
+  );
+
   function measureScanButton() {
     // 스플래시 C 가 정확히 이 버튼으로 안착하도록 실제 화면 좌표 게시.
     scanCircleRef.current?.measureInWindow((x, y, w, h) => {
@@ -220,7 +229,7 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             style={tabStyles.scanCircle}
             onLayout={measureScanButton}
           >
-            <ScanIcon />
+            {scanReady ? <ScanIcon /> : null}
           </View>
         </TouchableOpacity>
       </View>

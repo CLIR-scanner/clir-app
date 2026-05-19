@@ -282,7 +282,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         <View style={styles.imgWrap}>
           <View style={[styles.imgCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
             {product.image ? (
-              <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              <Image source={{ uri: product.image }} style={[StyleSheet.absoluteFill, { opacity: 0.6 }]} resizeMode="cover" />
             ) : null}
           </View>
           <View style={styles.imgBadge} pointerEvents="none">

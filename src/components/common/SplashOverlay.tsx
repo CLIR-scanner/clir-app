@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { getScanButtonAnchor } from '../../lib/scanButtonAnchor';
+import { splashHandoff } from '../../lib/splashHandoff';
 import ScanGlyph, { SCAN_GLYPH_C_H, SCAN_GLYPH_VIEWBOX } from './ScanGlyph';
 
 // 런치 스플래시 → 앱으로의 유기적 전환 오버레이.
@@ -60,11 +61,13 @@ const SETTLE_DN = 420;
 const WORD_IN = 1500;
 const HOLD_BEAT = 300;
 // 아웃트로
-const COLLAPSE = 300;
-const TUCK = 760;
-const BG_FADE = 480;
-const BG_FADE_DELAY = 260;
-const LOGO_FADE = 160;
+const COLLAPSE = 280;       // lir 만 접힘 (브랜드 C 는 유지)
+const TUCK = 820;           // C 가 스캔버튼으로 축소·이동
+const CROSSFADE_DELAY = 70; // tuck 시작 후 잠깐 뒤부터
+const CROSSFADE = 520;      // 이동 중 브랜드 C → ScanGlyph (움직임이 모양차를 가림)
+const BG_FADE = 500;
+const BG_FADE_DELAY = 280;
+const LOGO_FADE = 150;
 const REDUCED_HOLD = 1200;
 
 export default function SplashOverlay({
@@ -97,12 +100,14 @@ export default function SplashOverlay({
   const finish = () => {
     if (finishedRef.current) return;
     finishedRef.current = true;
+    splashHandoff.markDone(); // 어떤 종료 경로든 탭 아이콘은 반드시 채워지도록(방어)
     onFinished();
   };
 
   // 인트로
   useEffect(() => {
     let active = true;
+    splashHandoff.reset(); // 스플래시 (재)시작 → 핸드오프 전까지 탭 아이콘 숨김
     AccessibilityInfo.isReduceMotionEnabled()
       .then(reduced => {
         if (!active) return;
@@ -172,26 +177,37 @@ export default function SplashOverlay({
     }
 
     Animated.sequence([
-      // 3) 워드마크 collapse + 브랜드 C → ScanGlyph 제자리 크로스페이드
+      // 3) lir 만 접힘 (브랜드 C 는 그대로 — 아직 변형 안 함)
       Animated.parallel([
         Animated.timing(wordOpacity, { toValue: 0, duration: COLLAPSE, easing: Easing.in(Easing.quad), useNativeDriver: true }),
         Animated.timing(wordTX,      { toValue: -8, duration: COLLAPSE, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-        Animated.timing(markOpacity, { toValue: 0, duration: COLLAPSE, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(scanOpacity, { toValue: 1, duration: COLLAPSE, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
       ]),
-      // 4) ScanGlyph 가 실제 스캔버튼으로 tuck + 배경 페이드아웃(앱 노출)
+      // 4) C 가 스캔버튼으로 축소·이동 + "이동 중에" 브랜드 C → ScanGlyph 크로스페이드
+      //    (정지가 아닌 움직임·축소 중 변형 → 미세 모양차가 자연스럽게 묻힘) + 배경 페이드
       Animated.parallel([
         Animated.timing(groupScale, { toValue: scaleTarget, duration: TUCK, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
         Animated.timing(groupTX,    { toValue: tuckTX,     duration: TUCK, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
         Animated.timing(groupTY,    { toValue: tuckTY,     duration: TUCK, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
         Animated.sequence([
+          Animated.delay(CROSSFADE_DELAY),
+          Animated.parallel([
+            Animated.timing(markOpacity, { toValue: 0, duration: CROSSFADE, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+            Animated.timing(scanOpacity, { toValue: 1, duration: CROSSFADE, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+          ]),
+        ]),
+        Animated.sequence([
           Animated.delay(BG_FADE_DELAY),
           Animated.timing(bgOpacity, { toValue: 0, duration: BG_FADE, easing: Easing.out(Easing.quad), useNativeDriver: true }),
         ]),
       ]),
-      // 5) 실제 버튼 위로 겹친 글리프를 살짝 페이드 → 동일 글리프 → 끊김 없는 핸드오프
-      Animated.timing(logoOpacity, { toValue: 0, duration: LOGO_FADE, easing: Easing.linear, useNativeDriver: true }),
-    ]).start(() => finish());
+    ]).start(() => {
+      // 이동 완료 시점에서야 실제 탭 아이콘을 채운다(그 전까지 빈 원).
+      // 오버레이 ScanGlyph 가 그 자리에 픽셀 일치로 있으므로 한 개의 C 만 보임.
+      splashHandoff.markDone();
+      // 동일 글리프 위에서 오버레이를 짧게 페이드 → 끊김 없는 핸드오프 후 종료.
+      Animated.timing(logoOpacity, { toValue: 0, duration: LOGO_FADE, easing: Easing.linear, useNativeDriver: true })
+        .start(() => finish());
+    });
   }, [introDone, ready, SW, SH, insets.bottom, bgOpacity, groupScale, groupTX, groupTY, logoOpacity, markOpacity, scanOpacity, wordOpacity, wordTX]);
 
   return (

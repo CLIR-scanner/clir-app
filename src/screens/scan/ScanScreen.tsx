@@ -27,7 +27,6 @@ import {
   analyzeProduct,
   saveScanHistory,
   getScanHistory,
-  getAlternatives,
 } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
 import {
@@ -971,10 +970,6 @@ export default function ScanScreen({ navigation }: Props) {
           >
             <Text style={styles.sheetCloseText}>✕</Text>
           </TouchableOpacity>
-
-          {!isSafe && (
-            <RiskAlternatives productId={scanResult.product.id} />
-          )}
         </Animated.View>
       )}
     </View>
@@ -1284,49 +1279,6 @@ function OcrResultVerdictBadge({
         {label}
       </Text>
     </Animated.View>
-  );
-}
-
-// ── Risk result alternatives ──────────────────────────────────────────────────
-function RiskAlternatives({ productId }: { productId: string }) {
-  const { t } = useTranslation();
-  const [alternatives, setAlternatives] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    getAlternatives(productId)
-      .then(list => { if (alive) setAlternatives(list); })
-      .catch(() => { if (alive) setAlternatives([]); }) // best-effort: 실패 시 빈 박스
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, [productId]);
-
-  const slots = [0, 1, 2];
-
-  return (
-    <View style={styles.riskAltSection}>
-      <Text style={styles.riskAltTitle}>{t('product.alternativeProducts')}</Text>
-      <View style={styles.riskAltRow}>
-        {slots.map(index => {
-          const alt = alternatives[index];
-          return (
-            <View key={alt?.id ?? `alt-${index}`} style={styles.riskAltThumb}>
-              {loading ? (
-                <ActivityIndicator size="small" color={Colors.scanResultClose} />
-              ) : alt?.image ? (
-                <Image
-                  source={{ uri: alt.image }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode="cover"
-                />
-              ) : null}
-            </View>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 
