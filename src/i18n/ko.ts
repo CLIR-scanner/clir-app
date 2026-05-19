@@ -248,6 +248,7 @@ const ko = {
     ocrGuideInstruction:'내용이 선명하게 보이도록 맞추고\n프레임 안에 모두 넣어 주세요',
     connectionError:    '연결 오류',
     connectionMessage:  '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.',
+    cameraError:        '카메라를 사용할 수 없습니다. 앱을 다시 시작하거나 권한을 확인해주세요.',
     productNotFound:    '제품을 찾을 수 없습니다',
     scanLabelInstead:   '대신 OCR로 성분표를 스캔하세요.',
     scanLabel:          '성분표 스캔',

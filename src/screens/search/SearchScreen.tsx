@@ -129,6 +129,8 @@ export default function SearchScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
+  // 즐겨찾기 토글 in-flight 가드 — 연타 시 중복 POST/DELETE 차단
+  const favInFlightRef = useRef<Set<string>>(new Set());
 
   const [query,         setQuery]         = useState('');
   const [isFocused,     setIsFocused]     = useState(false);
@@ -263,6 +265,8 @@ const favorites             = useListStore(s => s.favorites);
   }
 
 async function handleFavoriteToggle(product: Product) {
+    if (favInFlightRef.current.has(product.id)) return; // 연타 중복 호출 차단
+    favInFlightRef.current.add(product.id);
     const existing = favorites.find(f => f.productId === product.id);
     try {
       if (existing) {
@@ -278,6 +282,8 @@ async function handleFavoriteToggle(product: Product) {
         useUserStore.getState().logout();
       }
       // 그 외 네트워크/서버 에러는 silent — 사용자가 다시 누르면 재시도됨
+    } finally {
+      favInFlightRef.current.delete(product.id);
     }
   }
 

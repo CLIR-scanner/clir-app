@@ -140,7 +140,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
         }),
       ]).start();
     } catch {
-      setError('Failed to load product information.');
+      setError(t('scanUi.connectionMessage'));
     } finally {
       setLoading(false);
     }

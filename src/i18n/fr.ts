@@ -112,6 +112,7 @@ const fr = {
     analyzing: 'Analyse...', tryAgain: 'Réessayer', barcode: 'CODE-BARRES', ocr: 'OCR', barcodeGuideInstruction: 'Centrez le code-barres\net gardez l\'appareil stable', ocrGuideInstruction: 'Gardez le contenu net et lisible,\nentièrement visible dans le cadre.',
     ocrSubtitle: 'Scanner l\'OCR du produit', connectionError: 'Erreur de connexion',
     connectionMessage: 'Impossible de se connecter au serveur. Veuillez réessayer plus tard.',
+    cameraError: "L'appareil photo est indisponible. Redémarrez l'application ou vérifiez les autorisations.",
     productNotFound: 'Produit introuvable', scanLabelInstead: 'Scannez plutôt l\'étiquette des ingrédients avec OCR.',
     scanLabel: 'Scanner l\'étiquette', recognitionFailed: 'Reconnaissance échouée', analysisFailed: 'Analyse échouée',
     clearerPhoto: 'Prenez une photo plus claire et lumineuse de l\'étiquette.', analyzeFailed: 'Impossible d\'analyser cette étiquette. Veuillez réessayer.',

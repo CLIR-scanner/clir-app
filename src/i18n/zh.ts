@@ -110,6 +110,7 @@ const zh = {
     retake: '重新拍摄', analyzing: '分析中...', tryAgain: '重试', barcode: '条形码', ocr: 'OCR', barcodeGuideInstruction: '将条形码置于中央\n并保持稳定', ocrGuideInstruction: '请保持内容清晰对焦，\n并完整置于框内',
     ocrSubtitle: '扫描产品成分表 OCR', connectionError: '连接错误',
     connectionMessage: '无法连接到服务器。请稍后重试。',
+    cameraError: '相机不可用。请重启应用或检查权限。',
     productNotFound: '未找到产品', scanLabelInstead: '请改用 OCR 扫描成分标签。',
     scanLabel: '扫描标签', recognitionFailed: '识别失败', analysisFailed: '分析失败',
     clearerPhoto: '请拍摄更明亮、更清晰的成分标签照片。', analyzeFailed: '无法分析该成分标签。请重试。',

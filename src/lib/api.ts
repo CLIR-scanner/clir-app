@@ -63,6 +63,31 @@ export class UnauthorizedError extends ApiError {
   }
 }
 
+// 요청 타임아웃(ms). OCR 이미지 업로드는 무거워 별도 상한.
+const JSON_TIMEOUT_MS = 15000;
+const FORM_TIMEOUT_MS = 30000;
+
+/**
+ * fetch 를 타임아웃·네트워크 실패까지 ApiError 로 정규화한다.
+ * → 호출부는 항상 ApiError 만 catch 하면 되고, raw TypeError/AbortError 가
+ *   화면에 노출되거나 unhandled 로 새지 않는다. (전 경로 예외처리 일원화)
+ */
+async function fetchOrThrow(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (e) {
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new ApiError(0, 'TIMEOUT', '요청 시간이 초과되었습니다.');
+    }
+    // 네트워크 단절 등 fetch reject — raw TypeError 를 그대로 던지지 않는다.
+    throw new ApiError(0, 'NETWORK', '네트워크에 연결할 수 없습니다.');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ─── fetch 헬퍼 ───────────────────────────────────────────────────────────────
 
 type JsonFetchOptions = Omit<RequestInit, 'headers'> & {
@@ -93,7 +118,7 @@ export async function apiFetch<T>(path: string, options: JsonFetchOptions = {}):
     headers['X-Active-Profile-Id'] = _activeProfileId;
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const response = await fetchOrThrow(`${BASE_URL}${path}`, { ...options, headers }, JSON_TIMEOUT_MS);
 
   return handleResponse<T>(response);
 }
@@ -116,11 +141,11 @@ export async function apiFormFetch<T>(path: string, body: FormData): Promise<T> 
     headers['X-Active-Profile-Id'] = _activeProfileId;
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
-    headers,
-    body,
-  });
+  const response = await fetchOrThrow(
+    `${BASE_URL}${path}`,
+    { method: 'POST', headers, body },
+    FORM_TIMEOUT_MS,
+  );
 
   return handleResponse<T>(response);
 }

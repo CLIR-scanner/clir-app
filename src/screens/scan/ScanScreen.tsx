@@ -467,7 +467,8 @@ export default function ScanScreen({ navigation }: Props) {
             ],
           );
         } else {
-          Alert.alert(t('common.error'), err.message);
+          // 그 외 ApiError(서버 5xx / TIMEOUT / NETWORK 등) — raw message 노출 금지
+          Alert.alert(t('scanUi.connectionError'), t('scanUi.connectionMessage'));
         }
       } else {
         Alert.alert(t('scanUi.connectionError'), t('scanUi.connectionMessage'));
@@ -799,11 +800,9 @@ export default function ScanScreen({ navigation }: Props) {
           active={!isOCRMode && !processingRef.current && !showBarcodeGuidePreview}
           barcodeTypes={BARCODE_TYPES}
           onBarcodeScanned={handleBarcodeScanned}
-          onError={(reason, raw) => {
-            const message = raw && typeof raw === 'object' && 'message' in raw
-              ? String((raw as { message: unknown }).message)
-              : reason;
-            setCameraError(message);
+          onError={() => {
+            // raw 네이티브/카메라 에러 메시지를 그대로 노출하지 않는다.
+            setCameraError(t('scanUi.cameraError'));
           }}
         />
       )}

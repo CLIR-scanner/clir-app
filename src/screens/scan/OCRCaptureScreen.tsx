@@ -142,12 +142,14 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   // ── Capture ───────────────────────────────────────────────────────────────────
   async function handleCapture() {
     if (!cameraRef.current) return;
+    // 분석 중 촬영 버튼 연타 → 중복 OCR 업로드(서버 과부하) 차단
+    if (state === 'analyzing') return;
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
       setCapturedUri(photo.uri);
       void handleAnalyze(photo.uri);
     } catch {
-      setErrorMsg('Failed to capture photo. Please try again.');
+      setErrorMsg(t('scanUi.cameraError'));
       setState('error');
     }
   }
