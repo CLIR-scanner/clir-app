@@ -53,7 +53,7 @@ function GoogleIcon({ iconOpacity = 1 }: { iconOpacity?: number }) {
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'AuthHome'>;
 
-const S = { bg: '#FDFFFD', primary: '#044733', textLight: '#F9FFF3', muted: '#495551' };
+const S = { bg: '#FDFFFD', primary: '#044733', textLight: '#F9FFF3', muted: 'rgba(4, 71, 51, 0.45)' };
 
 export default function AuthHomeScreen() {
   const navigation = useNavigation<Nav>();
