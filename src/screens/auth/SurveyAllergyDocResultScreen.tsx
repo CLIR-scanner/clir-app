@@ -330,7 +330,7 @@ export default function SurveyAllergyDocResultScreen() {
   );
 }
 
-const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#556C53', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#F9FFFB', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   chip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   chipText: { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: S.primary },
-  chipTextSelected: { color: '#FFFFFF' },
+  chipTextSelected: { color: S.primary },
   addChip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: S.bg },
   addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
   newCatButton: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 12, paddingHorizontal: 20, alignSelf: 'flex-start', backgroundColor: S.bg, marginTop: 4 },

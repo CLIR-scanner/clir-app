@@ -75,7 +75,7 @@ export default function SurveyAllergyDocScreen() {
   );
 }
 
-const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#556C53', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#F9FFFB', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },

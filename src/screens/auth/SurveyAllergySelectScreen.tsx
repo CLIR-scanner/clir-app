@@ -74,7 +74,7 @@ export default function SurveyAllergySelectScreen() {
   );
 }
 
-const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#556C53', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#F9FFFB', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   option: { height: 94, borderWidth: 1, borderColor: S.primary, borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: S.bg },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.primary },
-  optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: '#FFFFFF' },
+  optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: S.primary },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueDisabled: { opacity: 0.4 },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },

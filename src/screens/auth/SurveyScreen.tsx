@@ -86,7 +86,7 @@ export default function SurveyScreen() {
 const S = {
   bg:             '#FDFFFD',
   primary:        '#044733',
-  selectedFill:   '#556C53',
+  selectedFill:   '#F9FFFB',
   textLight:      '#F9FFF3',
 };
 
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   optionTextSelected: {
     fontFamily: 'Pretendard-SemiBold',
-    color: '#FFFFFF',
+    color: S.primary,
   },
   continueButton: {
     height: 58,
