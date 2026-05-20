@@ -54,6 +54,30 @@ export const useUserStore = create<UserStore>((set, get) => ({
     if (restored) {
       get().setUser(restored);
     }
+
+    // ─── DEV ONLY ─── (BE 복구 후 이 블록 전체 삭제 — grep "DEV ONLY")
+    // Railway BE 다운 상태에서 community 탭 디자인 작업을 위한 임시 자동 로그인.
+    // __DEV__ 가드라 production build 영향 없음. restoreSession 성공 시엔 동작 안 함.
+    if (__DEV__ && !get().currentUser.id) {
+      const devUser: User = {
+        id: 'dev-user-id',
+        email: 'dev@clir.app',
+        name: 'Dev User',
+        displayName: null,
+        allergyProfile: ['ing-peanut', 'ing-dairy'],
+        dietaryRestrictions: ['vegan'],
+        sensitivityLevel: 'strict',
+        language: get().currentUser.language || DEFAULT_LANGUAGE,
+        multiProfiles: [],
+        consentFlags: { imageRetention: false, corrections: false },
+        hasCompletedSurvey: true,
+        termsAcceptedAt: new Date().toISOString(),
+        termsVersion: '1.0',
+      };
+      get().setUser(devUser);
+    }
+    // ─── /DEV ONLY ───
+
     set({ isInitialized: true });
   },
 
