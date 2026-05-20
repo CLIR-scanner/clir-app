@@ -1,6 +1,6 @@
 import type { IngredientSummary } from '../types';
 
-const SUPPORTED_DISPLAY_LANGUAGES = ['en', 'ko', 'ja', 'zh', 'es', 'fr'];
+const SUPPORTED_DISPLAY_LANGUAGES = ['en', 'ko', 'es'];
 
 type DisplayNameSource = {
   id?: string;

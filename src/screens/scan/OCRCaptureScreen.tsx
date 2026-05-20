@@ -11,7 +11,6 @@ import { ScanStackParamList, Product, FavoriteItem, RiskLevel } from '../../type
 import { Colors } from '../../constants/colors';
 import ScannerCamera, { ScannerCameraHandle } from '../../components/ScannerCamera';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import ScanFeedbackBar from '../../components/common/ScanFeedbackBar';
 import { recognizeIngredients, analyzeProduct, saveScanHistory } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
 import { ScanHeader } from './ScanScreen';
@@ -125,7 +124,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const [state, setState]             = useState<ScreenState>(initialPhotoUri ? 'analyzing' : 'idle');
   const [capturedUri, setCapturedUri] = useState<string | null>(initialPhotoUri ?? null);
   const [ocrProduct, setOcrProduct]   = useState<Product | null>(null);
-  const [scanLogId, setScanLogId]     = useState<string | undefined>(undefined);
   const [errorMsg, setErrorMsg]       = useState('');
   const [favorited, setFavorited]     = useState(false);
   const [favLoading, setFavLoading]   = useState(false);
@@ -144,12 +142,14 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   // ── Capture ───────────────────────────────────────────────────────────────────
   async function handleCapture() {
     if (!cameraRef.current) return;
+    // 분석 중 촬영 버튼 연타 → 중복 OCR 업로드(서버 과부하) 차단
+    if (state === 'analyzing') return;
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
       setCapturedUri(photo.uri);
       void handleAnalyze(photo.uri);
     } catch {
-      setErrorMsg('Failed to capture photo. Please try again.');
+      setErrorMsg(t('scanUi.cameraError'));
       setState('error');
     }
   }
@@ -162,14 +162,12 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     setState('analyzing');
     try {
       let product: Product;
-      let resolvedScanLogId: string | undefined;
       if (USE_MOCK) {
         await new Promise(r => setTimeout(r, 800));
         _ocrToggle = !_ocrToggle;
         product = _ocrToggle ? MOCK_GOOD : MOCK_BAD;
       } else {
         const ocrResult = await recognizeIngredients(targetUri);
-        resolvedScanLogId = ocrResult.scanLogId;
         // BE-known productId — product-upsert(Step 8) 가 'ocr-{phash}' 형식으로
         // 채움. 이 값이 있어야 scan_history / favorites FK 제약 통과.
         const beProductId = ocrResult.productId;
@@ -221,7 +219,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
       if (cancelledRef.current) return;
 
       setOcrProduct(product);
-      setScanLogId(resolvedScanLogId);
       setFavorited(favorites.some(f => f.productId === product.id));
 
       circleAnim.setValue(0);
@@ -264,7 +261,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
     }
     setCapturedUri(null);
     setOcrProduct(null);
-    setScanLogId(undefined);
     setErrorMsg('');
     setFavorited(false);
     setState('idle');
@@ -395,12 +391,6 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
           onHistory={() => navigation.navigate('ScanHistory')}
         />
 
-        {/* 베타 v1 — 1탭 피드백 (scanLogId 있을 때만) */}
-        {scanLogId && (
-          <View style={styles.feedbackAnchor} pointerEvents="box-none">
-            <ScanFeedbackBar scanLogId={scanLogId} />
-          </View>
-        )}
 
         {/* Bottom sheet */}
         <Animated.View
@@ -568,16 +558,16 @@ const styles = StyleSheet.create({
 
   // Permission
   permIcon:    { fontSize: 52, marginBottom: 16 },
-  permTitle:   { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white, marginBottom: 12, textAlign: 'center' },
+  permTitle:   { fontSize: 20, fontWeight: '700', color: Colors.white, marginBottom: 12, textAlign: 'center' },
   permDesc:    { fontSize: 14, color: Colors.gray300, textAlign: 'center', lineHeight: 21, marginBottom: 28 },
   permBtn:     { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
-  permBtnText: { color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 15 },
+  permBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Error
   errIcon:       { fontSize: 48, marginBottom: 16 },
   errMsg:        { fontSize: 15, color: Colors.gray300, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
   retakeBtn:     { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 36 },
-  retakeBtnText: { color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 15 },
+  retakeBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Dim overlay (idle + result)
   dimTop:    { height: DIM_TOP_H, backgroundColor: DIM },
@@ -607,7 +597,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   verdictIcon:  { width: BADGE_ICON_D, height: BADGE_ICON_D, marginTop: 12 },
-  verdictLabel: { fontSize: 24, fontFamily: 'Pretendard-Bold', lineHeight: 29, marginTop: 6, textAlign: 'center' },
+  verdictLabel: { fontSize: 24, fontWeight: '700', lineHeight: 29, marginTop: 6, textAlign: 'center' },
 
   // Shutter
   bottomBar: {
@@ -636,16 +626,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center', justifyContent: 'center', gap: 12,
   },
-  analyzingText: { fontSize: 15, color: Colors.white, fontFamily: 'Pretendard-SemiBold' },
+  analyzingText: { fontSize: 15, color: Colors.white, fontWeight: '600' },
   previewActions: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 16, paddingTop: 20, paddingHorizontal: 24, backgroundColor: '#111',
   },
   retakePill:     { borderWidth: 1.5, borderColor: Colors.white, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 28 },
-  retakePillText: { color: Colors.white, fontSize: 15, fontFamily: 'Pretendard-SemiBold' },
-  analyzeBtn:     { backgroundColor: Colors.primary, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 36, minWidth: 120, alignItems: 'center' },
-  analyzeBtnOff:  { opacity: 0.6 },
-  analyzeBtnText: { color: Colors.white, fontSize: 15, fontFamily: 'Pretendard-Bold' },
+  retakePillText: { color: Colors.white, fontSize: 15, fontWeight: '600' },
 
   // Result — bottom sheet
   sheet: {
@@ -654,14 +641,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 20,
   },
-  feedbackAnchor: {
-    position: 'absolute',
-    // verdict 원 (CIRCLE_D=190) 아래 16px gap. 화면 중앙선 + 95 + 16.
-    top: DIM_TOP_H + (GUIDE_H + CIRCLE_D) / 2 + 16,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
   sheetClose: {
     position: 'absolute', top: 16, right: 16,
     width: 28, height: 28, borderRadius: 14,
@@ -669,7 +648,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     zIndex: 1,
   },
-  sheetCloseText: { fontSize: 13, color: Colors.black, fontFamily: 'Pretendard-SemiBold' },
+  sheetCloseText: { fontSize: 13, color: Colors.black, fontWeight: '600' },
 
   productRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 16 },
   productImageBox: {
@@ -677,7 +656,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray100, flexShrink: 0, overflow: 'hidden',
   },
   productInfo: { flex: 1, gap: 4 },
-  productName: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black },
+  productName: { fontSize: 16, fontWeight: '700', color: Colors.black },
   brandName:   { fontSize: 13, color: Colors.gray500 },
   actionRow:   { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 6, flexWrap: 'wrap' },
 
@@ -686,14 +665,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6, paddingHorizontal: 12, backgroundColor: Colors.white,
   },
   favBtnActive:     { borderColor: Colors.black, backgroundColor: Colors.black },
-  favBtnText:       { fontSize: 12, color: Colors.gray700, fontFamily: 'Pretendard-SemiBold' },
+  favBtnText:       { fontSize: 12, color: Colors.gray700, fontWeight: '600' },
   favBtnTextActive: { color: Colors.white },
 
   detailText: { fontSize: 12, color: Colors.gray500, textDecorationLine: 'underline' },
 
   // Alternatives (Bad only)
   altsSection: { borderTopWidth: 1, borderTopColor: Colors.gray100, paddingTop: 14, marginBottom: 4 },
-  altsLabel:   { fontSize: 14, fontFamily: 'Pretendard-Bold', color: Colors.black, marginBottom: 10 },
+  altsLabel:   { fontSize: 14, fontWeight: '700', color: Colors.black, marginBottom: 10 },
   altsRow:     { flexDirection: 'row', gap: 10 },
   altBox: {
     flex: 1, aspectRatio: 1,

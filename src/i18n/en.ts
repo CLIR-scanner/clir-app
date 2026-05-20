@@ -243,6 +243,7 @@ const en = {
     ocrGuideInstruction:'Keep the content clear, in focus, and\nfully visible inside the frame.',
     connectionError:    'Connection Error',
     connectionMessage:  'Unable to connect to the server. Please try again later.',
+    cameraError:        'Camera is unavailable. Please restart the app or check permissions.',
     productNotFound:    'Product Not Found',
     scanLabelInstead:   'Scan the ingredient label with OCR instead.',
     scanLabel:          'Scan Label',

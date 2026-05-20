@@ -53,11 +53,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingBottom: 40,
   },
-  logoText: {
-    fontSize: 48,
-    color: '#1C3A19',
-    fontFamily: 'Pretendard-ExtraBold',
-  },
   indicator: {
     position: 'absolute',
     bottom: 60,

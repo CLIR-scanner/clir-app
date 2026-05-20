@@ -112,6 +112,7 @@ const es = {
     analyzing: 'Analizando...', tryAgain: 'Intentar de nuevo', barcode: 'CÓDIGO', ocr: 'OCR', barcodeGuideInstruction: 'Centra el código de barras\ny mantén estable', ocrGuideInstruction: 'Mantén el contenido claro, enfocado\ny visible dentro del marco.',
     ocrSubtitle: 'Escanear OCR del producto', connectionError: 'Error de conexión',
     connectionMessage: 'No se puede conectar al servidor. Inténtalo más tarde.',
+    cameraError: 'La cámara no está disponible. Reinicia la app o revisa los permisos.',
     productNotFound: 'Producto no encontrado', scanLabelInstead: 'Escanea la etiqueta de ingredientes con OCR.',
     scanLabel: 'Escanear etiqueta', recognitionFailed: 'Reconocimiento fallido', analysisFailed: 'Análisis fallido',
     clearerPhoto: 'Toma una foto más clara y luminosa de la etiqueta.', analyzeFailed: 'No pudimos analizar esta etiqueta. Inténtalo de nuevo.',

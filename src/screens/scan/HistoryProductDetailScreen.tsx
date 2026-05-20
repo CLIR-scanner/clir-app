@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { ScanStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getAlternatives, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
+import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
@@ -46,7 +47,7 @@ const DUMMY_GOOD_PRODUCT: Product = {
 };
 
 // ── Design tokens (Figma: node 223:9111) ─────────────────────────────────────
-const BG         = '#FDFFFD';
+const BG         = '#F9FFF3';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 
@@ -279,21 +280,21 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         )}
 
         <View style={styles.imgWrap}>
-          <View style={styles.imgBox}>
+          <View style={[styles.imgCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
             {product.image ? (
-              <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              <Image source={{ uri: product.image }} style={[StyleSheet.absoluteFill, { opacity: 0.6 }]} resizeMode="cover" />
             ) : null}
           </View>
+          <View style={styles.imgBadge} pointerEvents="none">
+            <RiskBadgeIcon level={riskLevel} size={64} />
+          </View>
         </View>
 
-        <View style={styles.nameRow}>
-          <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
-            <RiskBadgeIcon level={riskLevel} size={17} style={styles.verdictImg} />
-          </View>
-          <Text style={styles.productName}>{product.name}</Text>
-        </View>
+        <Text style={styles.productName}>{product.name}</Text>
 
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
+
+        <SevereDisclaimerBox />
 
         {!showRisk && allIngredients.length > 0 && (
           <View style={styles.ingredientSection}>
@@ -398,12 +399,6 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           </View>
         )}
 
-        <View style={{ flex: 1 }} />
-        {allIngredients.length > 0 && (
-          <Text style={styles.disclaimer}>
-            {t('product.severeDisclaimer')}
-          </Text>
-        )}
       </ScrollView>
 
       {/* ── Ingredient detail modal ───────────────────────────────────────── */}
@@ -471,41 +466,30 @@ const styles = StyleSheet.create({
   backArrow:   { fontSize: 22, color: DARK_GREEN },
   heartIcon:   { fontSize: 22, color: '#CCCCCC' },
   heartActive: { color: '#FF3B3B' },
-  headerTitle: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, lineHeight: 32 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, lineHeight: 32 },
 
   // ── Scroll
   scroll: { paddingHorizontal: 24, paddingTop: 40 },
 
   // ── Product image
   imgWrap: { alignItems: 'center', marginBottom: 20 },
-  imgBox: {
-    width: 182, height: 182,
-    borderRadius: 18,
-    backgroundColor: '#E8E8E8',
+  imgCircle: {
+    width: 230, height: 230,
+    borderRadius: 115,
+    backgroundColor: '#BDBDBD',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: DARK_GREEN,
+    borderWidth: 6,
+    // borderColor 는 verdict 색상으로 인라인 주입 (safe/caution/danger)
+  },
+  imgBadge: {
+    position: 'absolute',
+    left: 0, right: 0,
+    bottom: 22,
+    alignItems: 'center',
   },
 
   // ── Name row
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  verdictCircle: {
-    width: 30, height: 30,
-    borderRadius: 15,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  verdictImg:  { width: 17, height: 17 },
-  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%' },
+  productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38, textAlign: 'center', marginBottom: 4 },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset-style box
@@ -543,13 +527,13 @@ const styles = StyleSheet.create({
   },
   ingredientLabelText: {
     fontSize: 16,
-    fontFamily: 'Pretendard-Bold',
+    fontWeight: '700',
     color: DARK_GREEN,
     letterSpacing: -0.3,
   },
   ingredientItem: {
     fontSize: 13,
-    fontFamily: 'Pretendard-Regular',
+    fontWeight: '500',
     color: MID_GREEN,
     textAlign: 'center',
     lineHeight: 20,
@@ -557,15 +541,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Disclaimer
-  disclaimer: {
-    fontSize: 12,
-    fontFamily: 'Pretendard-Bold',
-    color: '#333',
-    textAlign: 'left',
-    lineHeight: 14,
-    marginBottom: 4,
-    
-  },
 
   // ── Risk box (fieldset style — pill floats on top border)
   riskSection: {
@@ -599,10 +574,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   riskLabelIcon: { width: 22, height: 22 },
-  riskLabelText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', letterSpacing: -0.3 },
+  riskLabelText: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
   riskWarning: {
     fontSize: 10,
-    fontFamily: 'Pretendard-Light',
+    fontWeight: '300',
     color: DARK_GREEN,
     textAlign: 'center',
     lineHeight: 13,
@@ -611,24 +586,23 @@ const styles = StyleSheet.create({
   },
   riskIngredient: {
     fontSize: 16,
-    fontFamily: 'Pretendard-ExtraBold',
+    fontWeight: '800',
     color: '#000',
     textAlign: 'center',
     marginBottom: 4,
     letterSpacing: -0.3,
   },
-  riskTapHint: { fontSize: 11, color: '#888', textAlign: 'center', marginTop: 8 },
 
   // ── Alternative products
   section:     { marginBottom: 28 },
   altPillWrap: { alignItems: 'center', marginBottom: 16 },
   altPill:     { borderWidth: 1, borderColor: DARK_GREEN, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 20 },
-  altPillText: { fontSize: 14, fontFamily: 'Pretendard-SemiBold', color: DARK_GREEN },
+  altPillText: { fontSize: 14, fontWeight: '600', color: DARK_GREEN },
 
   altRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, gap: 16 },
   altThumb:    { width: 80, height: 80, borderRadius: 11, backgroundColor: '#D9D9D9', overflow: 'hidden', flexShrink: 0 },
   altInfo:     { flex: 1, gap: 4 },
-  altName:     { fontSize: 16, fontFamily: 'Pretendard-Bold', color: MID_GREEN },
+  altName:     { fontSize: 16, fontWeight: '700', color: MID_GREEN },
   altBrand:    { fontSize: 12, color: MID_GREEN },
   altBadge:    { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1, borderColor: MID_GREEN, borderRadius: 28, paddingVertical: 5, paddingLeft: 11, paddingRight: 18, gap: 6 },
   altBadgeIcon: { width: 16, height: 16 },
@@ -646,12 +620,12 @@ const styles = StyleSheet.create({
   modalLoadingWrap: { paddingVertical: 40, alignItems: 'center' },
   modalHeader:      { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
   modalTitles:      { flex: 1 },
-  modalName:        { fontSize: 20, fontFamily: 'Pretendard-ExtraBold', color: '#1A1A1A' },
+  modalName:        { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
   modalNameKo:      { fontSize: 14, color: '#666', marginTop: 2 },
   modalCloseBtn:    { width: 28, height: 36, borderRadius: 14, backgroundColor: '#F0F0F0', alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
   modalCloseText:   { fontSize: 12, color: '#666' },
   modalDesc:        { fontSize: 14, color: '#333', lineHeight: 22, marginBottom: 20 },
   modalSources:     { borderTopWidth: 1, borderTopColor: '#E8E8E8', paddingTop: 16 },
-  modalSourcesTitle:{ fontSize: 12, fontFamily: 'Pretendard-Bold', color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  modalSourcesTitle:{ fontSize: 12, fontWeight: '700', color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
   modalSourceLink:  { fontSize: 13, color: '#1A7A3A', marginBottom: 8, lineHeight: 18 },
 });

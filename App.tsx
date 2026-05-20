@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import './src/i18n';           // i18n 초기화 (최상단 임포트)
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator, Text, TextInput } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput } from 'react-native';
 
 // fontFamily 미지정 Text / TextInput 의 기본 폰트를 Pretendard-Regular 로 설정
 (Text as any).defaultProps = { ...(Text as any).defaultProps, style: { fontFamily: 'Pretendard-Regular' } };
@@ -13,7 +13,7 @@ import * as Sentry from '@sentry/react-native';
 import i18n from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useUserStore } from './src/store/user.store';
-import ClirLogo from './src/components/common/ClirLogo';
+import SplashOverlay from './src/components/common/SplashOverlay';
 
 // 크래시 / unhandled error 리포팅. DSN 미설정 시 SDK 가 no-op (안전).
 // release / dist 는 native build 정보(CFBundleVersion / versionName) 에서 자동 감지 —
@@ -30,6 +30,10 @@ function App() {
   const isInitialized = useUserStore(s => s.isInitialized);
   const initialize    = useUserStore(s => s.initialize);
   const language      = useUserStore(s => s.currentUser.language);
+
+  // 스플래시 오버레이가 전 과정(인트로→hold→C 수축→스캔버튼 tuck→앱 노출)을
+  // 끝낼 때까지 위에 떠 있는다. 로딩이 아무리 빨라도 모션이 잘리지 않는다.
+  const [splashFinished, setSplashFinished] = useState(false);
 
   const [fontsLoaded] = useFonts({
     'Pretendard-Regular':    require('./assets/fonts/Pretendard-Regular.ttf'),
@@ -50,21 +54,19 @@ function App() {
     }
   }, [language]);
 
-  if (!isInitialized || !fontsLoaded) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#F9FFF3', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 80 }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ClirLogo width={140} height={83} />
-        </View>
-        <ActivityIndicator color="#1C3A19" />
-      </View>
-    );
-  }
+  const appReady = isInitialized && fontsLoaded;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <RootNavigator />
+        <View style={{ flex: 1, backgroundColor: '#F9FFF3' }}>
+          {/* 앱은 오버레이 아래에 미리 mount — 배경 페이드 시 즉시 드러난다 */}
+          {appReady && <RootNavigator />}
+          {/* 스플래시 전 과정 종료 전까지 최상단 유지 */}
+          {!splashFinished && (
+            <SplashOverlay ready={appReady} onFinished={() => setSplashFinished(true)} />
+          )}
+        </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

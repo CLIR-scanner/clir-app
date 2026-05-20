@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCameraPermissions } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect, useIsFocused, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +41,6 @@ import ScannerCamera, {
   ScannerResult,
 } from '../../components/ScannerCamera';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import ScanFeedbackBar from '../../components/common/ScanFeedbackBar';
 import { scanGuideStorage } from '../../lib/storage';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'Scan'>;
@@ -61,20 +61,33 @@ const BARCODE_CLEAR_W = Math.min(328, SCREEN_W - 65);
 const BARCODE_CLEAR_H = 167;
 const BARCODE_CLEAR_LEFT = (SCREEN_W - BARCODE_CLEAR_W) / 2;
 const BARCODE_CLEAR_TOP = Math.min(334, SCAN_FOOTER_TOP - BARCODE_CLEAR_H - 32);
-const GUIDE_W = Math.min(350, SCREEN_W - 40);
-const GUIDE_H = 193.5;
-const GUIDE_LEFT = (SCREEN_W - GUIDE_W) / 2;
-const GUIDE_TOP = BARCODE_CLEAR_TOP - 14;
+// 보이는 둥근 테두리 프레임 = 투명 스캔창과 동일한 박스로 통일
+// (Figma 393 기준 328 x 167). 위치까지 일치시켜 코너 브래킷이 창 모서리에 정확히 안착.
+const GUIDE_W = BARCODE_CLEAR_W;
+const GUIDE_H = BARCODE_CLEAR_H;
+const GUIDE_LEFT = BARCODE_CLEAR_LEFT;
+const GUIDE_TOP = BARCODE_CLEAR_TOP;
 
 // OCR frame width (height is insets-dependent, computed inside component)
-const OCR_GUIDE_W = SCREEN_W - 50;
+// OCR 스캔 박스: 폭은 바코드와 동일(328), 높이는 Figma 393 기준 절댓값 429
+const OCR_GUIDE_W = BARCODE_CLEAR_W;
+const OCR_GUIDE_H = 429;
 
 const CORNER_LEN = 39;
 const CORNER_H   = 42.5;
-const CORNER_W   = 2;
+// Figma(393x852) 기준 절댓값 — 곡률은 기기 폭에 비례 스케일하지 않는다.
+// RN border 모델: 바깥 곡률 = CORNER_RADIUS, 안 곡률 = CORNER_RADIUS - CORNER_W.
+// 선두께 2, 바깥 곡률 35 (안 곡률 = 35 - 2 = 33).
+const CORNER_W      = 2;
+const CORNER_RADIUS = 35;
+// 딤(투명 홀)과 코너 테두리 선 사이 간격. 브래킷(바깥 곡률 35)은 그대로 두고
+// 홀만 안쪽으로 SCAN_GAP 들여 딤 띠를 만든다 → clear 곡률 = 35 - SCAN_GAP.
+const SCAN_GAP      = 12;
+// OCR 프레임(코너 브래킷 + 안쪽 딤 사각형)을 세트로 아래로 내리는 양.
+// 위 scan/ocr 토글 버튼과의 간격 확보용. ocrDimTop 한 곳에 더해 함께 이동.
+const OCR_FRAME_DROP = 36;
 const CIRCLE_D   = 120;
 const BADGE_D    = 54;
-const DIM        = 'rgba(0,0,0,0.38)';
 const GOOD_COLOR = Colors.scanCorrect;
 const BAD_COLOR  = '#FF0000';
 const RESULT_BADGE_D = 190;
@@ -102,9 +115,14 @@ export default function ScanScreen({ navigation }: Props) {
   const route  = useRoute<RouteProp<ScanStackParamList, 'Scan'>>();
   const previousTab = route.params?.previousTab;
 
-  // OCR 프레임 높이: 상하 safe area + 헤더(80) + 촬영버튼 영역(100) 제외
-  const ocrGuideH  = SCREEN_H - insets.top - insets.bottom - 340;
-  const ocrDimTop  = insets.top + 130;
+  // 촬영 C 진입/이탈 단일 제어값 (0=작게/숨김, 1=정상).
+  // 탭 네비는 화면을 언마운트하지 않으므로, 포커스마다 0→1 로 재생(복원)하고
+  // 뒤로가기 시 1→0 후 이동한다. (ref 잔존으로 인한 먹통/사라짐 버그 해결)
+  const shutterAnim   = useRef(new Animated.Value(0)).current;
+  const backAnimating = useRef(false);
+
+  const ocrGuideH  = OCR_GUIDE_H;
+  const ocrDimTop  = insets.top + 130 + OCR_FRAME_DROP;
   const [permission, requestPermission] = useCameraPermissions();
   const isFocused = useIsFocused();
   const [guideHydrated, setGuideHydrated] = useState(false);
@@ -123,6 +141,9 @@ export default function ScanScreen({ navigation }: Props) {
 
   const processingRef    = useRef(false);
   const latestBarcodeRef = useRef<string | null>(null);
+  // 스캔 1회 처리(run)의 세대 id. 화면 이탈/취소/모드전환/새 스캔 시 ++ 로 무효화.
+  // async 체인이 화면 떠난 뒤 resolve 돼도 captured id != current → side-effect 폐기.
+  const scanRunIdRef     = useRef(0);
   const cameraRef        = useRef<ScannerCameraHandle>(null);
   const barcodeGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ocrGuideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,6 +248,17 @@ export default function ScanScreen({ navigation }: Props) {
       circleScale.setValue(0);
       sheetY.setValue(320);
 
+      // 촬영 C 상태 복원 + 진입 애니메이션 재생 (재진입마다 자연스러운 등장).
+      // 언마운트되지 않는 탭 화면이라 여기서 반드시 초기화해야 버그가 안 남는다.
+      backAnimating.current = false;
+      shutterAnim.setValue(0);
+      Animated.timing(shutterAnim, {
+        toValue: 1,
+        duration: 360,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+
       // history store가 비어있으면 서버에서 로드 — 앱 재시작 후 썸네일 복원
       // 실패 시 재시도 없이 무시하고 다음 focus에서 다시 시도
       if (useScanStore.getState().history.length === 0) {
@@ -236,21 +268,30 @@ export default function ScanScreen({ navigation }: Props) {
       }
 
       return () => {
-        // Screen blurred → deactivate camera + stop scanning
+        // Screen blurred → deactivate camera + 진행 중 스캔 run 무효화.
+        // (탭 화면은 언마운트 안 됨 → 무효화 안 하면 OCR/바코드 async 가 다른 탭에서
+        //  resolve 되어 결과창이 튀어나옴. 사용자 보고 버그.)
         setCameraActive(false);
         stopBarcodeGuidePreview();
         stopOcrGuidePreview();
         processingRef.current = false;
+        scanRunIdRef.current += 1;
+        setProcessing(false);
+        setScanResult(null);
+        setScanPreviewUri(null);
+        setBarcodeDetected(false);
+        shutterAnim.stopAnimation();
       };
-    }, [circleScale, sheetY, setHistory, startBarcodeGuidePreview, stopBarcodeGuidePreview, stopOcrGuidePreview, toggleSlide]),
+    }, [circleScale, sheetY, shutterAnim, setHistory, startBarcodeGuidePreview, stopBarcodeGuidePreview, stopOcrGuidePreview, toggleSlide]),
   );
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
 
   function handleToggleMode(ocr: boolean) {
     if (ocr === isOCRMode) return;
-    // Reset scan state on mode switch
+    // Reset scan state on mode switch — 진행 중 스캔 run 무효화
     processingRef.current    = false;
+    scanRunIdRef.current    += 1;
     latestBarcodeRef.current = null;
     setBarcodeDetected(false);
     setProcessing(false);
@@ -370,16 +411,20 @@ export default function ScanScreen({ navigation }: Props) {
   async function processBarcode(barcode: string) {
     if (processingRef.current) return;
     processingRef.current = true;
+    const runId = ++scanRunIdRef.current; // 이 run 의 세대 id (이전 run 무효화)
     stopBarcodeGuidePreview();
     stopOcrGuidePreview();
     setBarcodeDetected(true);
     setProcessing(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     void captureScanPreview();
 
     try {
       const product        = await scanBarcode(barcode);
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
       const ingredientIds  = product.ingredients.map(i => i.id);
       const analysis       = await analyzeProduct({ productId: product.id, ingredientIds });
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
 
       // Save history silently — analysis 결과를 반영한 enrichedProduct로 저장
       // riskIngredients / mayContainIngredients 가 history 상세에서도 표시되도록
@@ -399,9 +444,11 @@ export default function ScanScreen({ navigation }: Props) {
         addHistory({ ...historyItem, product: enrichedProduct });
       } catch { /* silent */ }
 
+      if (runId !== scanRunIdRef.current) return; // 저장 후에도 이탈했으면 결과 폐기
       setProcessing(false);
       showOverlay(product, analysis);
     } catch (err) {
+      if (runId !== scanRunIdRef.current) return; // 이탈/취소면 에러 알럿도 띄우지 않음
       // 스캔 잠금 해제 — 오류 후 재스캔 가능하도록
       processingRef.current    = false;
       latestBarcodeRef.current = null;
@@ -420,7 +467,8 @@ export default function ScanScreen({ navigation }: Props) {
             ],
           );
         } else {
-          Alert.alert(t('common.error'), err.message);
+          // 그 외 ApiError(서버 5xx / TIMEOUT / NETWORK 등) — raw message 노출 금지
+          Alert.alert(t('scanUi.connectionError'), t('scanUi.connectionMessage'));
         }
       } else {
         Alert.alert(t('scanUi.connectionError'), t('scanUi.connectionMessage'));
@@ -431,6 +479,7 @@ export default function ScanScreen({ navigation }: Props) {
   async function processOCRPhoto(imageUri: string) {
     if (processingRef.current) return;
     processingRef.current = true;
+    const runId = ++scanRunIdRef.current; // 이 run 의 세대 id (이전 run 무효화)
     stopBarcodeGuidePreview();
     stopOcrGuidePreview();
     setBarcodeDetected(false);
@@ -439,6 +488,7 @@ export default function ScanScreen({ navigation }: Props) {
 
     try {
       const ocrResult = await recognizeIngredients(imageUri);
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
       // BE 의 product-upsert 파이프라인(Step 8) 이 성공하면 ocrResult.productId 가
       // 채워져 있다(형식: 'ocr-{phash}'). 이 값을 product.id 로 그대로 써야
       // scan_history / favorites 의 FK 제약을 통과한다 — 무시하고 ocr-${Date.now()}
@@ -448,6 +498,7 @@ export default function ScanScreen({ navigation }: Props) {
         productId: beProductId,  // server-side reverify 가능하면 사용
         ingredientIds: ocrResult.ingredients.map(i => i.id),
       });
+      if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
       const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
         id: t.id,
         name: t.name,
@@ -488,9 +539,11 @@ export default function ScanScreen({ navigation }: Props) {
         } catch { /* silent */ }
       }
 
+      if (runId !== scanRunIdRef.current) return; // 저장 후에도 이탈했으면 결과 폐기
       setProcessing(false);
       showOverlay(product, analysis, ocrResult.scanLogId);
     } catch (err) {
+      if (runId !== scanRunIdRef.current) return; // 이탈/취소면 에러 알럿도 띄우지 않음
       processingRef.current = false;
       setProcessing(false);
       setScanPreviewUri(null);
@@ -513,6 +566,7 @@ export default function ScanScreen({ navigation }: Props) {
     }
     if (processingRef.current || barcodeDetected) {
       processingRef.current    = false;
+      scanRunIdRef.current    += 1; // 진행 중 스캔 취소 — async resolve 돼도 폐기
       latestBarcodeRef.current = null;
       setBarcodeDetected(false);
       setProcessing(false);
@@ -527,14 +581,27 @@ export default function ScanScreen({ navigation }: Props) {
     // 스캔 탭은 Tab.Navigator의 한 탭 — 직전 탭으로 돌아가려면 부모(탭) 네비게이터로 이동.
     // previousTab 없으면 기본 탭(Search)로 폴백.
     const target: keyof MainTabParamList = previousTab ?? 'SearchTab';
-    const parent = navigation.getParent<
-      import('@react-navigation/native').NavigationProp<MainTabParamList>
-    >();
-    if (parent) {
-      parent.navigate(target);
-    } else if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
+    const doNavigate = () => {
+      const parent = navigation.getParent<
+        import('@react-navigation/native').NavigationProp<MainTabParamList>
+      >();
+      if (parent) {
+        parent.navigate(target);
+      } else if (navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    };
+
+    if (backAnimating.current) return;
+    backAnimating.current = true;
+    // 촬영 C 가 탭 버튼 쪽으로 작아지며 사라진 뒤 이동 → 진입 애니메이션과 대칭.
+    // backAnimating 은 다음 포커스(useFocusEffect)에서 false 로 복원된다.
+    Animated.timing(shutterAnim, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => doNavigate());
   }
 
   // ── Auto barcode scan ─────────────────────────────────────────────────────
@@ -562,6 +629,7 @@ export default function ScanScreen({ navigation }: Props) {
       if (!cameraRef.current) return;
       try {
         const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         void processOCRPhoto(photo.uri);
       } catch {
         // 촬영 실패 시 카메라 화면 그대로 유지
@@ -717,9 +785,8 @@ export default function ScanScreen({ navigation }: Props) {
   const resultLevel = scanResult?.analysis.verdict;
   const verdictColor = resultLevel ? VERDICT_DISPLAY[resultLevel].color : GOOD_COLOR;
   const isSafe       = scanResult?.analysis.isSafe ?? true;
-  const cornerColor  = scanResult
-    ? verdictColor
-    : barcodeDetected ? BAD_COLOR : Colors.white;
+  // 스캔 후 fetch 중에는 색을 바꾸지 않는다(빨강 X). 결과가 나오면 verdictColor 적용.
+  const cornerColor  = scanResult ? verdictColor : Colors.white;
   const isGuidePreviewVisible = showBarcodeGuidePreview || showOcrGuidePreview;
 
   return (
@@ -733,11 +800,9 @@ export default function ScanScreen({ navigation }: Props) {
           active={!isOCRMode && !processingRef.current && !showBarcodeGuidePreview}
           barcodeTypes={BARCODE_TYPES}
           onBarcodeScanned={handleBarcodeScanned}
-          onError={(reason, raw) => {
-            const message = raw && typeof raw === 'object' && 'message' in raw
-              ? String((raw as { message: unknown }).message)
-              : reason;
-            setCameraError(message);
+          onError={() => {
+            // raw 네이티브/카메라 에러 메시지를 그대로 노출하지 않는다.
+            setCameraError(t('scanUi.cameraError'));
           }}
         />
       )}
@@ -760,26 +825,35 @@ export default function ScanScreen({ navigation }: Props) {
       {/* Dim overlay with guide window */}
       {isGuidePreviewVisible && !scanResult && !processing ? null : isOCRMode ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <View style={[styles.dimTop, { height: ocrDimTop }]} />
-          <View style={[styles.dimMiddle, { height: ocrGuideH }]}>
-            <View style={styles.dimSide} />
-            <View style={[styles.guideBox, { width: OCR_GUIDE_W, height: ocrGuideH }]}>
-              <ScanCorner pos="topLeft"     color={cornerColor} />
-              <ScanCorner pos="topRight"    color={cornerColor} />
-              <ScanCorner pos="bottomLeft"  color={cornerColor} />
-              <ScanCorner pos="bottomRight" color={cornerColor} />
-              {scanResult && (
-                <OcrResultVerdictBadge
-                  level={scanResult.analysis.verdict}
-                  scaleAnim={circleScale}
-                  top={(ocrGuideH - RESULT_BADGE_D) / 2}
-                  left={(OCR_GUIDE_W - RESULT_BADGE_D) / 2}
-                />
-              )}
-            </View>
-            <View style={styles.dimSide} />
+          <RoundedDimMask
+            x={(SCREEN_W - OCR_GUIDE_W) / 2 + SCAN_GAP}
+            y={ocrDimTop + SCAN_GAP}
+            w={OCR_GUIDE_W - SCAN_GAP * 2}
+            h={ocrGuideH - SCAN_GAP * 2}
+            r={CORNER_RADIUS - SCAN_GAP}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: ocrDimTop,
+              left: (SCREEN_W - OCR_GUIDE_W) / 2,
+              width: OCR_GUIDE_W,
+              height: ocrGuideH,
+            }}
+          >
+            <ScanCorner pos="topLeft"     color={cornerColor} />
+            <ScanCorner pos="topRight"    color={cornerColor} />
+            <ScanCorner pos="bottomLeft"  color={cornerColor} />
+            <ScanCorner pos="bottomRight" color={cornerColor} />
+            {scanResult && (
+              <OcrResultVerdictBadge
+                level={scanResult.analysis.verdict}
+                scaleAnim={circleScale}
+                top={(ocrGuideH - RESULT_BADGE_D) / 2}
+                left={(OCR_GUIDE_W - RESULT_BADGE_D) / 2}
+              />
+            )}
           </View>
-          <View style={styles.dimBottom} />
         </View>
       ) : (
         <BarcodeScanOverlay cornerColor={cornerColor}>
@@ -838,18 +912,11 @@ export default function ScanScreen({ navigation }: Props) {
             onPress={handleManualCapture}
             activeOpacity={0.8}
           >
-            <View style={styles.shutterBackground} />
-            <ScanButtonIcon />
+            <ShutterButtonArt anim={shutterAnim} />
           </TouchableOpacity>
         </View>
       )}
 
-      {/* 베타 v1 — 1탭 피드백 (OCR 결과에 scanLogId 있을 때만 자체 렌더) */}
-      {scanResult?.scanLogId && (
-        <View style={styles.feedbackAnchor} pointerEvents="box-none">
-          <ScanFeedbackBar scanLogId={scanResult.scanLogId} />
-        </View>
-      )}
 
       {/* ── Bottom sheet ─────────────────────────────────────────────────────── */}
       {scanResult && (
@@ -862,13 +929,12 @@ export default function ScanScreen({ navigation }: Props) {
             },
           ]}
         >
-          {/* X close button */}
-          <TouchableOpacity style={isSafe ? styles.goodCardClose : styles.riskCardClose} onPress={dismissOverlay}>
-            <Text style={styles.sheetCloseText}>✕</Text>
-          </TouchableOpacity>
-
-          {/* Product row */}
-          <View style={isSafe ? styles.goodProductRow : styles.riskProductRow}>
+          {/* Tappable content → 세부성분 화면. 하트·X 는 별도 터치로 영역 제외 */}
+          <TouchableOpacity
+            style={isSafe ? styles.goodProductRow : styles.riskProductRow}
+            activeOpacity={0.85}
+            onPress={handleSeeDetail}
+          >
             <View style={isSafe ? styles.goodProductImg : styles.riskProductImg}>
               {scanResult.product.image ? (
                 <Image
@@ -880,69 +946,68 @@ export default function ScanScreen({ navigation }: Props) {
             </View>
 
             <View style={isSafe ? styles.goodProductInfo : styles.riskProductInfo}>
-              <Text style={isSafe ? styles.goodProductName : styles.riskProductName} numberOfLines={1}>
-                {scanResult.product.name}
-              </Text>
-              <Text style={isSafe ? styles.goodProductBrand : styles.riskProductBrand} numberOfLines={1}>
-                {scanResult.product.brand}
-              </Text>
-              <View style={isSafe ? styles.goodProductActions : styles.riskProductActions}>
-                {/* Add to Favorites */}
+              <View style={styles.sheetNameRow}>
+                <Text style={isSafe ? styles.goodProductName : styles.riskProductName} numberOfLines={1}>
+                  {scanResult.product.name}
+                </Text>
                 <TouchableOpacity
-                  style={[
-                    isSafe ? styles.goodFavBtn : styles.riskFavBtn,
-                    favorited && (isSafe ? styles.goodFavBtnActive : styles.riskFavBtnActive),
-                  ]}
+                  style={styles.sheetHeartBtn}
                   onPress={handleFavorite}
                   disabled={favLoading}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   {favLoading ? (
                     <ActivityIndicator size="small" color={Colors.danger} />
                   ) : (
-                    <Text style={[
-                      isSafe ? styles.goodFavBtnText : styles.riskFavBtnText,
-                      favorited && (isSafe ? styles.goodFavBtnTextActive : styles.riskFavBtnTextActive),
-                    ]}>
-                      {favorited ? `♥ ${t('favoriteUi.favorited')}` : `♡  ${t('favoriteUi.add')}`}
+                    <Text style={[styles.sheetHeart, favorited && styles.sheetHeartActive]}>
+                      {favorited ? '♥' : '♡'}
                     </Text>
                   )}
                 </TouchableOpacity>
-
-                {/* See more detail */}
-                <TouchableOpacity
-                  onPress={handleSeeDetail}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={isSafe ? styles.goodSeeDetailText : styles.riskSeeDetailText}>{t('product.seeMoreDetail')}</Text>
-                </TouchableOpacity>
               </View>
+
+              <Text style={isSafe ? styles.goodProductBrand : styles.riskProductBrand} numberOfLines={1}>
+                {scanResult.product.brand}
+              </Text>
+
+              <Text style={[isSafe ? styles.goodSeeDetailText : styles.riskSeeDetailText, styles.sheetSeeMore]}>
+                {t('product.seeMoreDetail')}
+              </Text>
             </View>
+          </TouchableOpacity>
 
-            {isSafe ? (
-              <TouchableOpacity
-                style={styles.goodChevronBtn}
-                onPress={handleSeeDetail}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Text style={styles.goodChevron}>›</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.riskChevronBtn}
-                onPress={handleSeeDetail}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Text style={styles.goodChevron}>›</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {!isSafe && (
-            <RiskAlternatives alternatives={scanResult.product.alternatives} />
-          )}
+          {/* X close — 동그라미 없는 쌩 X, 제품명과 동일 높이, 별도 터치 */}
+          <TouchableOpacity
+            style={isSafe ? styles.goodCardClose : styles.riskCardClose}
+            onPress={dismissOverlay}
+            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          >
+            <Text style={styles.sheetCloseText}>✕</Text>
+          </TouchableOpacity>
         </Animated.View>
       )}
     </View>
+  );
+}
+
+// ── Rounded dim mask ──────────────────────────────────────────────────────────
+// RN 사각 딤 4분할로는 clear 영역 모서리를 둥글릴 수 없다.
+// 전체 화면 딤 + 둥근 사각형 투명 홀을 SVG 단일 Path(evenodd)로 처리한다.
+function RoundedDimMask({
+  x, y, w, h, r,
+}: { x: number; y: number; w: number; h: number; r: number }) {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  const d =
+    `M0 0 H${SCREEN_W} V${SCREEN_H} H0 Z ` +
+    `M${x + rr} ${y} H${x + w - rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x + w} ${y + rr} V${y + h - rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x + w - rr} ${y + h} H${x + rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x} ${y + h - rr} V${y + rr} ` +
+    `A${rr} ${rr} 0 0 1 ${x + rr} ${y} Z`;
+  return (
+    <Svg style={StyleSheet.absoluteFill} width={SCREEN_W} height={SCREEN_H}>
+      <Path d={d} fill="#000000" fillOpacity={0.7} fillRule="evenodd" />
+    </Svg>
   );
 }
 
@@ -956,25 +1021,12 @@ function BarcodeScanOverlay({
 }) {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <View
-        style={[
-          styles.barcodeDimTop,
-          { height: BARCODE_CLEAR_TOP },
-        ]}
-      />
-      <View style={styles.barcodeDimMiddle}>
-        <View style={[styles.barcodeDimSide, { width: BARCODE_CLEAR_LEFT }]} />
-        <View style={{ width: BARCODE_CLEAR_W }} />
-        <View style={[styles.barcodeDimSide, { width: BARCODE_CLEAR_LEFT }]} />
-      </View>
-      <View
-        style={[
-          styles.barcodeDimBottom,
-          {
-            top: BARCODE_CLEAR_TOP + BARCODE_CLEAR_H,
-            bottom: 0,
-          },
-        ]}
+      <RoundedDimMask
+        x={BARCODE_CLEAR_LEFT + SCAN_GAP}
+        y={BARCODE_CLEAR_TOP + SCAN_GAP}
+        w={BARCODE_CLEAR_W - SCAN_GAP * 2}
+        h={BARCODE_CLEAR_H - SCAN_GAP * 2}
+        r={CORNER_RADIUS - SCAN_GAP}
       />
 
       <View style={styles.barcodeGuideLayer}>
@@ -1169,6 +1221,18 @@ function ScanButtonIcon() {
   );
 }
 
+// 촬영 버튼 글리프는 원본 그대로. 카메라 진입 시 작게→정상으로 부드럽게 등장시켜
+// 스캔 탭 → 카메라 전환이 끊기지 않고 이어지는 느낌만 더한다(글리프 변경 없음).
+function ShutterButtonArt({ anim }: { anim: Animated.Value }) {
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.62, 1] });
+  return (
+    <Animated.View style={[styles.shutterArt, { opacity: anim, transform: [{ scale }] }]}>
+      <View style={styles.shutterBackground} />
+      <ScanButtonIcon />
+    </Animated.View>
+  );
+}
+
 // ── Result badge ──────────────────────────────────────────────────────────────
 function ResultVerdictBadge({
   level,
@@ -1232,38 +1296,6 @@ function OcrResultVerdictBadge({
   );
 }
 
-// ── Risk result alternatives ──────────────────────────────────────────────────
-function RiskAlternatives({ alternatives }: { alternatives: Product[] }) {
-  const { t } = useTranslation();
-  const slots = [0, 1, 2];
-
-  return (
-    <View style={styles.riskAltSection}>
-      <Text style={styles.riskAltTitle}>{t('product.alternativeProducts')}</Text>
-      <View style={styles.riskAltRow}>
-        {slots.map(index => {
-          const alt = alternatives[index];
-          return (
-            <View key={alt?.id ?? `alt-${index}`} style={styles.riskAltThumb}>
-              {alt?.image ? (
-                <Image
-                  source={{ uri: alt.image }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text style={styles.riskAltThumbText} numberOfLines={2}>
-                  {alt ? alt.name : t('product.image')}
-                </Text>
-              )}
-            </View>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 // ── Shared header (exported for OCRCaptureScreen) ─────────────────────────────
 export function ScanHeader({
   insetTop,
@@ -1289,7 +1321,7 @@ export function ScanHeader({
           onPress={onBack}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={headerStyles.backArrow}>←</Text>
+          <BackArrowIcon />
         </TouchableOpacity>
 
         <View style={headerStyles.center}>
@@ -1340,10 +1372,10 @@ function ScanCorner({ pos, color }: { pos: CornerPos; color: string }) {
           borderBottomWidth:       isTop  ? 0 : CORNER_W,
           borderLeftWidth:         isLeft ? CORNER_W : 0,
           borderRightWidth:        isLeft ? 0 : CORNER_W,
-          borderTopLeftRadius:     pos === 'topLeft'     ? 3 : 0,
-          borderTopRightRadius:    pos === 'topRight'    ? 3 : 0,
-          borderBottomLeftRadius:  pos === 'bottomLeft'  ? 3 : 0,
-          borderBottomRightRadius: pos === 'bottomRight' ? 3 : 0,
+          borderTopLeftRadius:     pos === 'topLeft'     ? CORNER_RADIUS : 0,
+          borderTopRightRadius:    pos === 'topRight'    ? CORNER_RADIUS : 0,
+          borderBottomLeftRadius:  pos === 'bottomLeft'  ? CORNER_RADIUS : 0,
+          borderBottomRightRadius: pos === 'bottomRight' ? CORNER_RADIUS : 0,
           borderColor: color,
         },
       ]}
@@ -1362,6 +1394,21 @@ function HistoryIcon() {
   );
 }
 
+// ── Back arrow (curved) ───────────────────────────────────────────────────────
+function BackArrowIcon() {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 5 L4 10 L9 15 M4 10 H13 C18 10 21 13 21 18"
+        stroke={Colors.white}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
@@ -1369,45 +1416,14 @@ const styles = StyleSheet.create({
   // Permission
   permContainer: { flex: 1, backgroundColor: Colors.black, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36 },
   permIcon:      { fontSize: 52, marginBottom: 16 },
-  permTitle:     { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white, marginBottom: 12, textAlign: 'center' },
+  permTitle:     { fontSize: 20, fontWeight: '700', color: Colors.white, marginBottom: 12, textAlign: 'center' },
   permDesc:      { fontSize: 14, color: Colors.gray300, textAlign: 'center', lineHeight: 21, marginBottom: 28 },
   permBtn:       { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
-  permBtnText:   { color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 15 },
+  permBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  // Dim overlay
-  dimTop:    { height: GUIDE_TOP, backgroundColor: DIM },
-  dimMiddle: { flexDirection: 'row', height: GUIDE_H },
-  dimSide:   { flex: 1, backgroundColor: DIM },
-  dimBottom: { flex: 1, backgroundColor: DIM },
-  guideBox:  { width: GUIDE_W, height: GUIDE_H },
   resultBackdropTint: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  barcodeDimTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: DIM,
-  },
-  barcodeDimMiddle: {
-    position: 'absolute',
-    top: BARCODE_CLEAR_TOP,
-    left: 0,
-    right: 0,
-    height: BARCODE_CLEAR_H,
-    flexDirection: 'row',
-  },
-  barcodeDimSide: {
-    height: BARCODE_CLEAR_H,
-    backgroundColor: DIM,
-  },
-  barcodeDimBottom: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    backgroundColor: DIM,
   },
   barcodeGuideLayer: {
     position: 'absolute',
@@ -1420,6 +1436,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   toggleRowInner: {
     flexDirection: 'row',
@@ -1439,13 +1456,13 @@ const styles = StyleSheet.create({
   guideHelpText: {
     color: Colors.white,
     fontSize: 14,
-    fontFamily: 'Pretendard-Bold',
+    fontWeight: '700',
     lineHeight: 16,
   },
   guidePreviewText: {
     color: Colors.scanLightGreen,
     fontSize: 16,
-    fontFamily: 'Pretendard-SemiBold',
+    fontWeight: '600',
     lineHeight: 21,
     textAlign: 'center',
     marginBottom: 28,
@@ -1474,7 +1491,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(0,0,0,0.64)',
   },
-  cameraErrorTitle: { color: Colors.white, fontSize: 14, fontFamily: 'Pretendard-Bold', marginBottom: 4 },
+  cameraErrorTitle: { color: Colors.white, fontSize: 14, fontWeight: '700', marginBottom: 4 },
   cameraErrorText: { color: Colors.gray300, fontSize: 12, lineHeight: 17, textAlign: 'center' },
 
   // Bottom camera button
@@ -1491,6 +1508,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  shutterArt: {
+    width: 83,
+    height: 83,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   shutterBackground: {
     position: 'absolute',
     width: 77,
@@ -1500,25 +1523,6 @@ const styles = StyleSheet.create({
   },
 
   // Verdict circle — positioned inside guideBox
-  verdictWrap: {
-    position: 'absolute',
-    top:  (GUIDE_H - CIRCLE_D) / 2,
-    left: (GUIDE_W - CIRCLE_D) / 2,
-    width:  CIRCLE_D,
-    height: CIRCLE_D,
-    borderRadius: CIRCLE_D / 2,
-    borderWidth: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  verdictBadge: {
-    width: BADGE_D, height: BADGE_D,
-    borderRadius: BADGE_D / 2,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  verdictBadgeIcon: { fontSize: 26, color: Colors.white, fontFamily: 'Pretendard-ExtraBold', lineHeight: 30 },
-  verdictLabel:     { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 0.3 },
   resultVerdictWrap: {
     position: 'absolute',
     top: (GUIDE_H - RESULT_BADGE_D) / 2,
@@ -1543,101 +1547,61 @@ const styles = StyleSheet.create({
   resultVerdictText: {
     marginTop: 6,
     fontSize: 24,
-    fontFamily: 'Pretendard-Bold',
+    fontWeight: '700',
     lineHeight: 29,
     textAlign: 'center',
   },
 
   // Bottom sheet
-  sheet: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingTop: 20, paddingHorizontal: 20,
-  },
-  sheetClose: {
-    position: 'absolute', top: 14, right: 16,
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: Colors.black,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  sheetCloseText: { color: Colors.white, fontSize: 12, lineHeight: 14 },
-  feedbackAnchor: {
-    position: 'absolute',
-    // riskCard top edge (height 230 + bottom 22 = 252); 위 8px gap.
-    // goodCard 일 때는 결과 카드보다 조금 더 높이 떠 있게 됨 — 의도된 동작.
-    bottom: 260,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
+  sheetCloseText: { color: Colors.scanResultClose, fontSize: 22, lineHeight: 24, fontWeight: '400' },
+  sheetNameRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sheetHeartBtn:  { paddingVertical: 1, paddingHorizontal: 2 },
+  sheetHeart:     { fontSize: 20, lineHeight: 22, color: Colors.black },
+  sheetHeartActive:{ color: Colors.danger },
+  sheetSeeMore:   { marginTop: 8 },
   goodCard: {
     position: 'absolute',
     left: 14,
     right: 15,
-    bottom: 23,
+    bottom: 57,
     height: 130,
     backgroundColor: Colors.scanLightGreen,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   goodCardClose: {
     position: 'absolute',
-    top: 15,
-    right: 30.9,
-    width: 27.1,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.scanResultClose,
+    top: 25,
+    right: 16,
+    minWidth: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
   },
   riskCard: {
+    // Poor/Bad 결과창 크기 = Good 결과창(goodCard) 기준으로 통일
+    // (대체제품 칸 제거 후 230 → 130 으로 빈 공간 제거)
     position: 'absolute',
-    left: 13,
-    right: 16,
-    bottom: 22,
-    height: 230,
+    left: 14,
+    right: 15,
+    bottom: 57,
+    height: 130,
     backgroundColor: Colors.scanLightGreen,
     borderRadius: 20,
     overflow: 'hidden',
   },
   riskCardClose: {
     position: 'absolute',
-    top: 17.7,
-    right: 31.1,
-    width: 27.1,
-    height: 27.7,
-    borderRadius: 14,
-    backgroundColor: Colors.scanResultClose,
+    top: 29,
+    right: 16,
+    minWidth: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
   },
 
-  // Product row
-  productRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 14, paddingRight: 36 },
-  productImg:    { width: 64, height: 64, borderRadius: 10, backgroundColor: Colors.gray100, marginRight: 12, overflow: 'hidden' },
-  productInfo:   { flex: 1 },
-  productName:   { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black, marginBottom: 2 },
-  productBrand:  { fontSize: 13, color: Colors.gray500, marginBottom: 8 },
-  productActions:{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
-
-  favBtn:         { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.gray300, borderRadius: 20, paddingVertical: 5, paddingHorizontal: 10 },
-  favBtnActive:   { borderColor: Colors.danger },
-  favBtnText:     { fontSize: 12, color: Colors.gray700 },
-  favBtnTextActive:{ color: Colors.danger },
-
-  seeDetailText: { fontSize: 12, color: Colors.gray500, textDecorationLine: 'underline' },
-
-  // Alternatives
-  altSection: { marginTop: 2, paddingBottom: 4 },
-  altTitle:   { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: Colors.black, marginBottom: 10 },
-  altRow:     { flexDirection: 'row', gap: 10 },
-  altThumb:   { width: 80, height: 80, borderRadius: 12, backgroundColor: Colors.gray100, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 6 },
-  altThumbText:{ fontSize: 10, color: Colors.gray500, textAlign: 'center' },
   riskProductRow: {
     position: 'absolute',
     left: 19,
@@ -1662,93 +1626,23 @@ const styles = StyleSheet.create({
   riskProductName: {
     color: Colors.black,
     fontSize: 16,
-    fontFamily: 'Pretendard-Bold',
+    fontWeight: '700',
     lineHeight: 24,
+    flexShrink: 1,
   },
   riskProductBrand: {
     color: Colors.black,
     fontSize: 12,
-    fontFamily: 'Pretendard-Regular',
+    fontWeight: '400',
     lineHeight: 18,
     marginTop: -2,
-  },
-  riskProductActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 14,
-    gap: 9,
-  },
-  riskFavBtn: {
-    height: 21,
-    minWidth: 108,
-    borderWidth: 1,
-    borderColor: Colors.black,
-    borderRadius: 50,
-    paddingLeft: 8,
-    paddingRight: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  riskFavBtnActive: {
-    borderColor: Colors.danger,
-  },
-  riskFavBtnText: {
-    color: Colors.black,
-    fontSize: 10,
-    fontFamily: 'Pretendard-Regular',
-    lineHeight: 15,
-  },
-  riskFavBtnTextActive: {
-    color: Colors.danger,
   },
   riskSeeDetailText: {
     color: '#9E9E9E',
     fontSize: 12,
-    fontFamily: 'Pretendard-Regular',
+    fontWeight: '500',
     lineHeight: 18,
     textDecorationLine: 'underline',
-  },
-  riskAltSection: {
-    position: 'absolute',
-    left: 115,
-    top: 126,
-  },
-  riskAltTitle: {
-    color: Colors.black,
-    fontSize: 12,
-    fontFamily: 'Pretendard-SemiBold',
-    lineHeight: 18,
-  },
-  riskAltRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 4,
-  },
-  riskAltThumb: {
-    width: 60,
-    height: 60,
-    borderRadius: 11,
-    backgroundColor: '#D9D9D9',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 4,
-  },
-  riskAltThumbText: {
-    color: Colors.black,
-    fontSize: 10,
-    fontFamily: 'Pretendard-Bold',
-    lineHeight: 15,
-    textAlign: 'center',
-  },
-  riskChevronBtn: {
-    position: 'absolute',
-    right: 0,
-    top: 28,
-    width: 28,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   goodProductRow: {
     position: 'absolute',
@@ -1773,75 +1667,31 @@ const styles = StyleSheet.create({
   goodProductName: {
     color: Colors.black,
     fontSize: 16,
-    fontFamily: 'Pretendard-Bold',
+    fontWeight: '700',
     lineHeight: 24,
+    flexShrink: 1,
   },
   goodProductBrand: {
     color: Colors.black,
     fontSize: 12,
-    fontFamily: 'Pretendard-Regular',
+    fontWeight: '400',
     lineHeight: 18,
     marginTop: -2,
-  },
-  goodProductActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 13,
-    gap: 9,
-  },
-  goodFavBtn: {
-    height: 21,
-    minWidth: 108,
-    borderWidth: 1,
-    borderColor: Colors.black,
-    borderRadius: 50,
-    paddingLeft: 8,
-    paddingRight: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goodFavBtnActive: {
-    borderColor: Colors.danger,
-  },
-  goodFavBtnText: {
-    color: Colors.black,
-    fontSize: 10,
-    fontFamily: 'Pretendard-Regular',
-    lineHeight: 15,
-  },
-  goodFavBtnTextActive: {
-    color: Colors.danger,
   },
   goodSeeDetailText: {
     color: '#9E9E9E',
     fontSize: 12,
-    fontFamily: 'Pretendard-Regular',
+    fontWeight: '500',
     lineHeight: 18,
     textDecorationLine: 'underline',
-  },
-  goodChevronBtn: {
-    position: 'absolute',
-    right: 0,
-    top: 25,
-    width: 28,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goodChevron: {
-    color: Colors.white,
-    fontSize: 42,
-    fontFamily: 'Pretendard-Light',
-    lineHeight: 42,
   },
 });
 
 const headerStyles = StyleSheet.create({
   wrap:       { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 23, paddingBottom: 0 },
   iconBtn:    { width: 32, height: 42, alignItems: 'center', justifyContent: 'center' },
-  backArrow:  { fontSize: 29, color: Colors.white, lineHeight: 32, marginTop: Platform.OS === 'ios' ? -1 : 0 },
   center:     { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
-  title:      { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white },
+  title:      { fontSize: 20, fontWeight: '700', color: Colors.white },
   subtitle:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3, textAlign: 'center' },
   historyBtn: {
     width: 32,
@@ -1881,7 +1731,7 @@ const toggleStyles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
-    fontFamily: 'Pretendard-Regular',
+    fontWeight: '500',
     color: Colors.scanMutedGreen,
   },
   tabTextActive: {

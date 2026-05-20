@@ -1,8 +1,14 @@
 import { create } from 'zustand';
 import { ScanStore, ScanHistory } from '../types';
 
+// 스캔 이력 캐시 수명. 이 시간이 지나면 다음 진입 시 재조회(서버 측 변경 흡수).
+export const HISTORY_CACHE_TTL_MS = 5 * 60 * 1000;
+
 export const useScanStore = create<ScanStore>(set => ({
   history: [],
+  // init dirty=true → 최초 진입은 반드시 fetch. synced 후 false.
+  historyDirty: true,
+  historySyncedAt: null,
 
   setHistory: (items: ScanHistory[]) => {
     set(state => {
@@ -14,10 +20,20 @@ export const useScanStore = create<ScanStore>(set => ({
   },
 
   addHistory: (item: ScanHistory) => {
-    set(state => ({ history: [item, ...state.history] }));
+    // 스캔 완료 = 이력 stale → 다음 진입 시 서버 정합 위해 재조회 필요
+    set(state => ({ history: [item, ...state.history], historyDirty: true }));
   },
 
   clearHistory: () => {
-    set({ history: [] });
+    // 프로필 변경 등으로 캐시 무효화 → 재조회 필요
+    set({ history: [], historyDirty: true });
+  },
+
+  markHistoryDirty: () => {
+    set({ historyDirty: true });
+  },
+
+  markHistorySynced: () => {
+    set({ historyDirty: false, historySyncedAt: Date.now() });
   },
 }));

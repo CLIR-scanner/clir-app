@@ -181,18 +181,6 @@ export async function saveScanHistory(params: {
   };
 }
 
-/** POST /scan-logs/:scanLogId/feedback — 1탭 helpful 피드백.
- *  본인 scan_log row 만 수정 가능. 멱등 (덮어쓰기 허용). */
-export async function submitScanFeedback(
-  scanLogId: string,
-  helpful: boolean,
-  comment?: string,
-): Promise<void> {
-  await apiFetch(`/scan-logs/${encodeURIComponent(scanLogId)}/feedback`, {
-    method: 'POST',
-    body: JSON.stringify({ helpful, comment }),
-  });
-}
 
 /**
  * GET /ingredients/:id

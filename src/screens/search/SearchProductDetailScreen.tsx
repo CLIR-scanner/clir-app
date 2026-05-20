@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { SearchStackParamList, Product, RiskLevel, Ingredient } from '../../types';
 import { getIngredient, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
+import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
@@ -24,7 +25,7 @@ import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 type Props = NativeStackScreenProps<SearchStackParamList, 'SearchProductDetail'>;
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const BG         = '#FDFFFD';
+const BG         = '#F9FFF3';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 
@@ -222,6 +223,9 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
 
+        {/* Severe-allergy disclaimer (공통 컴포넌트 — 맨 위 통일) */}
+        <SevereDisclaimerBox />
+
         {/* 3-A. All Ingredients (Good only) */}
         {!showRisk && allIngredients.length > 0 && (
           <View style={styles.ingredientSection}>
@@ -287,14 +291,6 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
               </View>
             </View>
           </View>
-        )}
-
-        <View style={{ flex: 1 }} />
-        {/* Disclaimer */}
-        {allIngredients.length > 0 && (
-          <Text style={styles.disclaimer}>
-            {t('product.severeDisclaimer')}
-          </Text>
         )}
 
       </ScrollView>
@@ -364,7 +360,7 @@ const styles = StyleSheet.create({
   backArrow:   { fontSize: 22, color: DARK_GREEN },
   heartIcon:   { fontSize: 22, color: '#CCCCCC' },
   heartActive: { color: '#FF3B3B' },
-  headerTitle: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, lineHeight: 32 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, lineHeight: 32 },
 
   // ── Scroll
   scroll: { paddingHorizontal: 24, paddingTop: 40 },
@@ -398,7 +394,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   verdictImg:  { width: 17, height: 17 },
-  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%' },
+  productName: { fontSize: 20, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%' },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset
@@ -423,19 +419,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ingredientLabelText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.3 },
-  ingredientItem:      { fontSize: 13, fontFamily: 'Pretendard-Regular', color: MID_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
+  ingredientLabelText: { fontSize: 16, fontWeight: '700', color: DARK_GREEN, letterSpacing: -0.3 },
+  ingredientItem:      { fontSize: 13, fontWeight: '500', color: MID_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
 
   // ── Disclaimer
-  disclaimer: {
-    fontSize: 12,
-    fontFamily: 'Pretendard-Bold',
-    color: '#333',
-    textAlign: 'left',
-    lineHeight: 14,
-    marginBottom: 4,
-    
-  },
 
   // ── Risk box (fieldset)
   riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
@@ -459,10 +446,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   riskLabelIcon: { width: 22, height: 22 },
-  riskLabelText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', letterSpacing: -0.3 },
+  riskLabelText: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
   riskWarning: {
     fontSize: 10,
-    fontFamily: 'Pretendard-Light',
+    fontWeight: '300',
     color: DARK_GREEN,
     textAlign: 'center',
     lineHeight: 13,
@@ -471,7 +458,7 @@ const styles = StyleSheet.create({
   },
   riskIngredient: {
     fontSize: 16,
-    fontFamily: 'Pretendard-ExtraBold',
+    fontWeight: '800',
     color: '#000',
     textAlign: 'center',
     marginBottom: 4,
@@ -488,12 +475,12 @@ const styles = StyleSheet.create({
   modalLoadingWrap: { paddingVertical: 40, alignItems: 'center' },
   modalHeader:      { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
   modalTitles:      { flex: 1 },
-  modalName:        { fontSize: 20, fontFamily: 'Pretendard-ExtraBold', color: '#1A1A1A' },
+  modalName:        { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
   modalNameKo:      { fontSize: 14, color: '#666', marginTop: 2 },
   modalCloseBtn:    { width: 28, height: 36, borderRadius: 14, backgroundColor: '#F0F0F0', alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
   modalCloseText:   { fontSize: 12, color: '#666' },
   modalDesc:        { fontSize: 14, color: '#333', lineHeight: 22, marginBottom: 20 },
   modalSources:     { borderTopWidth: 1, borderTopColor: '#E8E8E8', paddingTop: 16 },
-  modalSourcesTitle:{ fontSize: 12, fontFamily: 'Pretendard-Bold', color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  modalSourcesTitle:{ fontSize: 12, fontWeight: '700', color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
   modalSourceLink:  { fontSize: 13, color: '#1A7A3A', marginBottom: 8, lineHeight: 18 },
 });

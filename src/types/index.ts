@@ -210,8 +210,6 @@ export interface User extends Profile {
   multiProfiles: Profile[];
   consentFlags: ConsentFlags;
   hasCompletedSurvey?: boolean;
-  /** 베타 코호트 배열. null/빈 배열 = 미통과, 1개 이상 = 통과한 코호트 목록 */
-  betaCohort?: BetaCohort[] | null;
   /** 약관 동의 시각 (ISO8601). null = 미동의 또는 legacy. BE profiles.terms_accepted_at 동기. */
   termsAcceptedAt?: string | null;
   /** 동의한 약관 버전. TERMS_VERSION 상수와 다르면 가입 직후 acceptTerms() 자동 호출. */
@@ -439,8 +437,8 @@ export interface Correction {
 
 // ─── Closed Beta ──────────────────────────────────────────────────────────────
 
-/** 지원 로케일 6종. waitlist.locale 과 i18n 키 양쪽이 사용. */
-export type SupportedLocale = 'en' | 'ko' | 'ja' | 'zh' | 'es' | 'fr';
+/** 지원 로케일 3종 (영어/한국어/스페인어). i18n·waitlist.locale 공통. */
+export type SupportedLocale = 'en' | 'ko' | 'es';
 
 /** 베타 코호트. BE waitlist.cohort + profiles.beta_cohort 와 일치. */
 export type BetaCohort = 'us-allergy' | 'us-ka' | 'us-veg';
@@ -457,11 +455,6 @@ export interface WaitlistEntry {
   createdAt: string;
 }
 
-/** POST /scan-logs/:scanLogId/feedback 요청 body. */
-export interface ScanFeedbackInput {
-  helpful: boolean;
-  comment?: string;
-}
 
 // ─── Request Payloads ─────────────────────────────────────────────────────────
 
@@ -520,17 +513,27 @@ export interface UserStore {
 
 export interface ScanStore {
   history: ScanHistory[];
+  // 캐시 무효화 메타 — 매 화면 진입 fetch 방지(stale 시에만 재조회)
+  historyDirty: boolean;          // true = 다음 진입 시 재조회 필요
+  historySyncedAt: number | null; // 마지막 서버 동기화 시각(ms) — TTL 판정용
   setHistory: (items: ScanHistory[]) => void;
   addHistory: (item: ScanHistory) => void;
   clearHistory: () => void;
+  markHistoryDirty: () => void;
+  markHistorySynced: () => void;
 }
 
 export interface ListStore {
   favorites: FavoriteItem[];
   shoppingItems: ShoppingItem[];
+  // 캐시 무효화 메타 — 매 화면 진입 fetch 방지(stale 시에만 재조회)
+  favoritesDirty: boolean;          // true = 다음 진입 시 재조회 필요
+  favoritesSyncedAt: number | null; // 마지막 서버 동기화 시각(ms) — TTL 판정용
   setFavorites: (items: FavoriteItem[]) => void;
   addFavorite: (item: FavoriteItem) => void;
   removeFavorite: (id: string) => void;
+  markFavoritesDirty: () => void;
+  markFavoritesSynced: () => void;
   setShoppingItems: (items: ShoppingItem[]) => void;
   addShoppingItem: (item: ShoppingItem) => void;
   removeShoppingItem: (id: string) => void;

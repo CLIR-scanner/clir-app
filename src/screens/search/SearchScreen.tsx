@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { SearchStackParamList, Product, RiskLevel } from '../../types';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
 import FilterTuneIcon from '../../components/common/FilterTuneIcon';
 import { getSearchSuggestions, getAllProducts, searchProducts } from '../../services/search.service';
@@ -129,6 +130,8 @@ export default function SearchScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
+  // 즐겨찾기 토글 in-flight 가드 — 연타 시 중복 POST/DELETE 차단
+  const favInFlightRef = useRef<Set<string>>(new Set());
 
   const [query,         setQuery]         = useState('');
   const [isFocused,     setIsFocused]     = useState(false);
@@ -195,6 +198,26 @@ const favorites             = useListStore(s => s.favorites);
     return () => { cancelled = true; clearTimeout(timer); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, activeFilters, profileVersion]);
+
+  // 풀-투-리프레시 — 현재 query/filters 기준 0페이지 재조회 (스피너 토글 X,
+  // 진행바가 인디케이터). 완료까지 Promise 유지.
+  const refresh = useCallback(async () => {
+    const q = query.trim();
+    const selectedCats = activeFilters.categories.filter(c => c.selected).map(c => c.id);
+    const { safeOnly } = activeFilters;
+    try {
+      const result = await (q
+        ? searchProducts(q, 0, selectedCats, safeOnly)
+        : getAllProducts(0, selectedCats, safeOnly));
+      setItems(result.items);
+      setHasMore(result.hasMore);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+      }
+    }
+  }, [query, activeFilters]);
 
   // 자동완성: query 변경 시 제안 목록 업데이트
   useEffect(() => {
@@ -263,6 +286,8 @@ const favorites             = useListStore(s => s.favorites);
   }
 
 async function handleFavoriteToggle(product: Product) {
+    if (favInFlightRef.current.has(product.id)) return; // 연타 중복 호출 차단
+    favInFlightRef.current.add(product.id);
     const existing = favorites.find(f => f.productId === product.id);
     try {
       if (existing) {
@@ -278,6 +303,8 @@ async function handleFavoriteToggle(product: Product) {
         useUserStore.getState().logout();
       }
       // 그 외 네트워크/서버 에러는 silent — 사용자가 다시 누르면 재시도됨
+    } finally {
+      favInFlightRef.current.delete(product.id);
     }
   }
 
@@ -384,8 +411,9 @@ async function handleFavoriteToggle(product: Product) {
         />
       ) : query.trim() ? (
         /* 검색어 있음 → SearchResultScreen 스타일 리스트 */
-        <FlatList
+        <PullToRefreshList
           key="list"
+          onRefresh={refresh}
           data={items}
           keyExtractor={item => item.id}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 32 }]}
@@ -404,8 +432,9 @@ async function handleFavoriteToggle(product: Product) {
         />
       ) : (
         /* 검색어 없음 → 2열 그리드 */
-        <FlatList
+        <PullToRefreshList
           key="grid"
+          onRefresh={refresh}
           data={items}
           keyExtractor={item => item.id}
           numColumns={2}

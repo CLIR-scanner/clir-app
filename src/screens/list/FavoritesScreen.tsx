@@ -1,10 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Image,
   ActivityIndicator,
   Alert,
@@ -14,10 +13,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { ListStackParamList, FavoriteItem, RiskLevel } from '../../types';
-import { useListStore } from '../../store/list.store';
+import { useListStore, FAVORITES_CACHE_TTL_MS } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getFavorites, removeFavorite } from '../../services/list.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { Colors } from '../../constants/colors';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
@@ -58,16 +58,46 @@ export default function FavoritesScreen({ navigation }: Props) {
           ...data,
         ];
         setFavorites(merged);
+        useListStore.getState().markFavoritesSynced();
+        syncedProfileRef.current = profileVersion;
       })
       .catch(()   => { if (!cancelled) setIsError(true); })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }
 
-  // 화면 포커스 진입 + 프로필 변경 시 재조회 — 두 트리거 모두 커버
+  // 풀-투-리프레시용 — 전체 스피너 없이 진행바만, 완료까지 Promise 유지
+  async function refresh() {
+    setIsError(false);
+    try {
+      const data = await getFavorites();
+      const localFavorites = useListStore.getState().favorites.filter(f => f.id.startsWith('fav-local-'));
+      setFavorites([
+        ...localFavorites.filter(local =>
+          !data.some(item => item.productId === local.productId || item.product?.id === local.product?.id),
+        ),
+        ...data,
+      ]);
+      useListStore.getState().markFavoritesSynced();
+      syncedProfileRef.current = profileVersion;
+    } catch {
+      setIsError(true);
+    }
+  }
+
+  // 매 진입 fetch 방지 — dirty(외부 추가·삭제·프로필 변경) / 최초 미동기화 /
+  // TTL(5분) 경과 / 프로필 버전 변화 중 하나라도면 재조회, 아니면 캐시 사용.
   const profileVersion = useUserStore(s => s.profileVersion);
+  const syncedProfileRef = useRef<number | null>(null);
   useFocusEffect(
     useCallback(() => {
+      const s = useListStore.getState();
+      const stale =
+        s.favoritesDirty ||
+        s.favoritesSyncedAt === null ||
+        Date.now() - s.favoritesSyncedAt > FAVORITES_CACHE_TTL_MS ||
+        syncedProfileRef.current !== profileVersion;
+      if (!stale) return;          // 캐시 신선 → API 호출 생략
       return fetchFavorites();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [profileVersion]),
@@ -167,7 +197,8 @@ export default function FavoritesScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
+        <PullToRefreshList
+          onRefresh={refresh}
           data={sorted}
           keyExtractor={item => item.id}
           renderItem={renderItem}

@@ -1,10 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Image,
   ActivityIndicator,
 } from 'react-native';
@@ -13,10 +12,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { ScanStackParamList, ScanHistory, RiskLevel } from '../../types';
-import { useScanStore } from '../../store/scan.store';
+import { useScanStore, HISTORY_CACHE_TTL_MS } from '../../store/scan.store';
 import { useUserStore } from '../../store/user.store';
 import { getScanHistory } from '../../services/scan.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { Colors } from '../../constants/colors';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
@@ -46,16 +46,42 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     setIsLoading(true);
     setIsError(false);
     getScanHistory()
-      .then(data => { if (!cancelled) setHistory(data); })
+      .then(data => {
+        if (cancelled) return;
+        setHistory(data);
+        useScanStore.getState().markHistorySynced();
+        syncedProfileRef.current = profileVersion;
+      })
       .catch(() => { if (!cancelled) setIsError(true); })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }
 
-  // 화면 진입 + 프로필 변경 시 최신 데이터 fetch — cleanup으로 취소 처리
+  // 풀-투-리프레시용 — 전체 스피너 없이 진행바만, 완료까지 Promise 유지
+  async function refresh() {
+    setIsError(false);
+    try {
+      setHistory(await getScanHistory());
+      useScanStore.getState().markHistorySynced();
+      syncedProfileRef.current = profileVersion;
+    } catch {
+      setIsError(true);
+    }
+  }
+
+  // 매 진입 fetch 방지 — dirty(스캔 완료·프로필 변경) / 최초 미동기화 /
+  // TTL(5분) 경과 / 프로필 버전 변화 중 하나라도면 재조회, 아니면 캐시 사용.
   const profileVersion = useUserStore(s => s.profileVersion);
+  const syncedProfileRef = useRef<number | null>(null);
   useFocusEffect(
     useCallback(() => {
+      const s = useScanStore.getState();
+      const stale =
+        s.historyDirty ||
+        s.historySyncedAt === null ||
+        Date.now() - s.historySyncedAt > HISTORY_CACHE_TTL_MS ||
+        syncedProfileRef.current !== profileVersion;
+      if (!stale) return;          // 캐시 신선 → API 호출 생략
       return fetchHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [profileVersion]),
@@ -151,7 +177,8 @@ export default function ScanHistoryScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       ) : (
-      <FlatList
+      <PullToRefreshList
+        onRefresh={refresh}
         data={sorted}
         keyExtractor={item => item.id}
         renderItem={renderItem}

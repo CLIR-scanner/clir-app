@@ -131,11 +131,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
         sensitivityLevel: nextActive.sensitivityLevel,
       });
       // 프로필이 바뀌면 BE 가 scan_history 를 재계산하고, GET 경로는 실시간 재판정을
-      // 한다. 로컬 캐시(Zustand)는 이전 프로필 기준 결과를 보유하므로 무효화해
-      // 다음 화면 진입 시 최신 값을 받도록 강제.
-      useScanStore.getState().clearHistory();
+      // 한다. 로컬 캐시(Zustand)는 이전 프로필 기준 결과를 보유하므로 비우고 dirty
+      // 로 마킹 → 다음 화면 진입 시 새 프로필 기준으로 재조회되도록 강제.
+      useScanStore.getState().clearHistory();          // clearHistory 가 dirty=true
       useListStore.getState().setFavorites([]);
-      // 화면들이 useEffect dep 로 구독하므로 — 카운터 증가 시점에 자동 재조회 트리거.
+      useListStore.getState().markFavoritesDirty();    // 프로필 변경 = 즐겨찾기 stale
+      // profileVersion 증가 — 화면이 dep/ref 로 감지해 재조회 트리거.
       set(state => ({ profileVersion: state.profileVersion + 1 }));
     } catch (err) {
       set({ activeProfile: prevActive, currentUser: prevUser });

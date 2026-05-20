@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,12 @@ import RecommendNavigator from './RecommendNavigator';
 import ProfileNavigator from './ProfileNavigator';
 import { Colors } from '../constants/colors';
 import { FixedTabLabels } from '../constants/strings';
+import { setScanButtonAnchor } from '../lib/scanButtonAnchor';
+import { splashHandoff } from '../lib/splashHandoff';
+
+// 스캔 탭 ScanIcon 의 Svg 정사각 크기 — 스플래시가 동일 글리프를 이 크기로
+// 맞춰 안착시키기 위한 기준값 (ScanIcon 의 width/height 와 동일하게 유지).
+const SCAN_TAB_SVG = 60;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 type TabRoute = keyof MainTabParamList;
@@ -25,9 +32,7 @@ const LEFT_TABS: TabDescriptor[] = [
   { route: 'ListTab' },
 ];
 const RIGHT_TABS: TabDescriptor[] = [
-  // Community 탭은 베타 v1 에서 비활성 — 콘텐츠/리뷰 데이터 아직 mock 단계.
-  // 바텀 네비 위치는 유지(향후 활성 시 사용자 학습 비용 0)하되 탭 자체는 비활성.
-  { route: 'RecommendTab', disabled: true },
+  { route: 'RecommendTab' },
   { route: 'ProfileTab' },
 ];
 
@@ -136,6 +141,23 @@ function getIcon(route: TabRoute, active: boolean) {
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets      = useSafeAreaInsets();
   const activeRoute = state.routes[state.index].name as TabRoute;
+  const scanCircleRef = useRef<View>(null);
+
+  // 스플래시 C 가 스캔버튼으로 이동을 "완료"하기 전까지는 아이콘을 채우지 않는다
+  // (빈 원 유지). 그래야 날아오는 오버레이 C 와 겹쳐 두 개로 보이지 않는다.
+  const [scanReady, setScanReady] = useState(splashHandoff.getSnapshot());
+  useEffect(
+    () => splashHandoff.subscribe(() => setScanReady(splashHandoff.getSnapshot())),
+    [],
+  );
+
+  function measureScanButton() {
+    // 스플래시 C 가 정확히 이 버튼으로 안착하도록 실제 화면 좌표 게시.
+    scanCircleRef.current?.measureInWindow((x, y, w, h) => {
+      if (!w || !h) return;
+      setScanButtonAnchor({ cx: x + w / 2, cy: y + h / 2, glyphSvg: SCAN_TAB_SVG });
+    });
+  }
 
   if (activeRoute === 'ScanTab') return null;
 
@@ -158,6 +180,8 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   }
 
   function goToScan() {
+    // 카메라 진입 — 최대 세기 햅틱
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     if (activeRoute === 'ScanTab') { navigation.navigate('ScanTab'); return; }
     navigation.navigate('ScanTab', {
       screen: 'Scan',
@@ -198,8 +222,12 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           onPress={goToScan}
           activeOpacity={0.8}
         >
-          <View style={tabStyles.scanCircle}>
-            <ScanIcon />
+          <View
+            ref={scanCircleRef}
+            style={tabStyles.scanCircle}
+            onLayout={measureScanButton}
+          >
+            {scanReady ? <ScanIcon /> : null}
           </View>
         </TouchableOpacity>
       </View>

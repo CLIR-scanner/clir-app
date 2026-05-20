@@ -2,10 +2,8 @@ import React from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   ScrollView,
   KeyboardAvoidingView,
@@ -21,7 +19,6 @@ import { AuthStackParamList, SurveyParams } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import * as AuthService from '../../services/auth.service';
-import { ApiError } from '../../lib/api';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyLanding'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyLanding'>;
@@ -108,7 +105,6 @@ export default function SurveyLandingScreen() {
   const { t }       = useTranslation();
   const insets      = useSafeAreaInsets();
   const setUser            = useUserStore(s => s.setUser);
-  const currentUser        = useUserStore(s => s.currentUser);
   const currentLanguage    = useUserStore(s => s.currentUser.language);
   const setLanguage        = useUserStore(s => s.setLanguage);
   const multiProfileMode   = useUserStore(s => s.multiProfileMode);
@@ -118,54 +114,15 @@ export default function SurveyLandingScreen() {
   const params: SurveyParams = route.params ?? {};
   const isDevMode = String(route.name) === 'DevSurveyLanding';
 
-  // 베타 게이트: betaCohort null/빈 배열 → invite 입력 필요. DEV/멀티프로필 모드는 자동 통과.
-  const hasCohort = (currentUser.betaCohort?.length ?? 0) > 0;
-  const needsInvite = !isDevMode && !multiProfileMode && !hasCohort;
-  const [inviteCode, setInviteCode] = React.useState('');
-  const [inviteState, setInviteState] = React.useState<{
-    submitting: boolean;
-    error?: string;
-    success?: string;
-  }>({ submitting: false });
-
-  // Expandable open state — needsInvite 일 때 invite 자동 펼침 (사용자 액션 필요).
-  // 언어는 기본 collapsed — 명시적으로 변경하고 싶을 때만 열림.
-  const [inviteOpen,   setInviteOpen]   = React.useState(needsInvite);
+  // 언어 섹션은 기본 collapsed — 명시적으로 변경하고 싶을 때만 열림.
   const [languageOpen, setLanguageOpen] = React.useState(false);
 
-  // needsInvite 변화 시 invite 섹션 자동 동기화 (redeem 성공 후 닫기 자연스럽게).
-  React.useEffect(() => {
-    if (!needsInvite) setInviteOpen(false);
-  }, [needsInvite]);
-
-  async function handleRedeem() {
-    const code = inviteCode.trim().toLowerCase();
-    if (code.length < 6) {
-      setInviteState({ submitting: false, error: t('survey.inviteErrorTooShort') });
-      return;
-    }
-    setInviteState({ submitting: true });
-    try {
-      const { cohort } = await AuthService.redeemInvite(code);
-      setUser({ ...currentUser, betaCohort: cohort });
-      setInviteState({ submitting: false, success: t('survey.inviteSuccess') });
-    } catch (err) {
-      const msg =
-        err instanceof ApiError && err.code === 'INVALID_INVITE_CODE'
-          ? t('survey.inviteErrorInvalid')
-          : t('survey.inviteErrorGeneric');
-      setInviteState({ submitting: false, error: msg });
-    }
-  }
-
   function handleContinue() {
-    if (needsInvite) return;
     navigation.navigate('Survey', params);
   }
 
   async function handleSkip() {
     if (loading) return;
-    if (needsInvite) return;
 
     if (multiProfileMode) {
       setMultiProfileMode(false);
@@ -212,42 +169,6 @@ export default function SurveyLandingScreen() {
         >
           <Text style={styles.title}>{t('survey.landingTitle')}</Text>
 
-          {needsInvite && (
-            <ExpandableSection
-              title={t('survey.inviteTitle')}
-              subtitle={t('survey.inviteDesc')}
-              open={inviteOpen}
-              onToggle={() => setInviteOpen(o => !o)}
-              badge={<View style={styles.requiredBadge} />}
-            >
-              <TextInput
-                style={styles.inviteInput}
-                placeholder={t('survey.invitePlaceholder')}
-                placeholderTextColor={C.placeholder}
-                value={inviteCode}
-                onChangeText={setInviteCode}
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={64}
-                editable={!inviteState.submitting}
-              />
-              <TouchableOpacity
-                style={[styles.redeemButton, inviteState.submitting && styles.opacity60]}
-                onPress={handleRedeem}
-                disabled={inviteState.submitting || inviteCode.trim().length < 6}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={t('survey.inviteVerify')}
-              >
-                {inviteState.submitting
-                  ? <ActivityIndicator color={C.primaryText} />
-                  : <Text style={styles.redeemText}>{t('survey.inviteVerify')}</Text>}
-              </TouchableOpacity>
-              {inviteState.error && <Text style={styles.errorText}>{inviteState.error}</Text>}
-              {inviteState.success && <Text style={styles.successText}>{inviteState.success}</Text>}
-            </ExpandableSection>
-          )}
-
           {!multiProfileMode && (
             <ExpandableSection
               title={t('survey.languageTitle')}
@@ -287,8 +208,8 @@ export default function SurveyLandingScreen() {
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
-          {!multiProfileMode && !needsInvite && (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
+          {!multiProfileMode && (
             <TouchableOpacity
               style={[styles.skipButton, loading && styles.opacity40]}
               onPress={handleSkip}
@@ -302,10 +223,9 @@ export default function SurveyLandingScreen() {
           )}
 
           <TouchableOpacity
-            style={[styles.continueButton, needsInvite && styles.opacity40]}
+            style={styles.continueButton}
             onPress={handleContinue}
             activeOpacity={0.8}
-            disabled={needsInvite}
             accessibilityRole="button"
             accessibilityLabel={t('common.continue')}
           >
