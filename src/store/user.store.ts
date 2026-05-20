@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
 import { signOut as authSignOut, submitSurvey, restoreSession } from '../services/auth.service';
+import { setAuthToken } from '../lib/api';
 import { updateLanguage as apiUpdateLanguage } from '../services/user.service';
 import { languageStorage } from '../lib/storage';
 import i18n from '../i18n';
@@ -47,35 +48,29 @@ export const useUserStore = create<UserStore>((set, get) => ({
         hasExplicitLanguage: true,
       }));
     }
-    // 저장된 refresh_token 으로 세션 자동 복원 — 성공 시 setUser 가 RootNavigator 를
-    // MainNavigator 로 swap (사용자는 Splash·AuthHome 안 거치고 메인 직행).
-    // 실패 시 sessionStore 가 자동 정리되므로 후속 cold start 에서 재시도 안 함.
-    const restored = await restoreSession();
-    if (restored) {
-      get().setUser(restored);
-    }
-
-    // ─── DEV ONLY ─── (BE 복구 후 이 블록 전체 삭제 — grep "DEV ONLY")
-    // Railway BE 다운 상태에서 community 탭 디자인 작업을 위한 임시 자동 로그인.
-    // __DEV__ 가드라 production build 영향 없음. restoreSession 성공 시엔 동작 안 함.
-    if (__DEV__ && !get().currentUser.id) {
-      const devUser: User = {
-        id: 'dev-user-id',
-        email: 'dev@clir.app',
-        name: 'Dev User',
-        displayName: null,
-        allergyProfile: ['ing-peanut', 'ing-dairy'],
-        dietaryRestrictions: ['vegan'],
-        sensitivityLevel: 'strict',
-        language: get().currentUser.language || DEFAULT_LANGUAGE,
-        multiProfiles: [],
-        consentFlags: { imageRetention: false, corrections: false },
-        hasCompletedSurvey: true,
-        termsAcceptedAt: new Date().toISOString(),
-        termsVersion: '1.0',
-      };
-      get().setUser(devUser);
-    }
+    // ─── DEV ONLY ─── (BE 복구 후 이 블록 전체 삭제 + 아래 restoreSession 흐름 부활 — grep "DEV ONLY")
+    // 로그인 과정 건너뛰기: OAuth flow 우회, mock token + mock user 강제 주입.
+    // __DEV__ 가드 없이 무조건 — production build 에 박히면 실사용자가 mock 으로 보임. 출시 전 반드시 제거.
+    setAuthToken('dev-mock-token');
+    const devUser: User = {
+      id: 'dev-user-id',
+      email: 'dev@clir.app',
+      name: 'Dev User',
+      displayName: null,
+      allergyProfile: ['ing-peanut', 'ing-dairy'],
+      dietaryRestrictions: ['vegan'],
+      sensitivityLevel: 'strict',
+      language: get().currentUser.language || DEFAULT_LANGUAGE,
+      multiProfiles: [],
+      consentFlags: { imageRetention: false, corrections: false },
+      hasCompletedSurvey: false,
+      termsAcceptedAt: new Date().toISOString(),
+      termsVersion: '1.0',
+    };
+    get().setUser(devUser);
+    // 아래는 BE 복구 후 부활시킬 정상 자동 로그인 흐름 (현재는 dead code):
+    // const restored = await restoreSession();
+    // if (restored) { get().setUser(restored); }
     // ─── /DEV ONLY ───
 
     set({ isInitialized: true });

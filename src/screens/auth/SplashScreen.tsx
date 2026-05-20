@@ -6,6 +6,7 @@ import { AuthStackParamList } from '../../types';
 import ClirLogo from '../../components/common/ClirLogo';
 import { termsStorage } from '../../lib/storage';
 import { TERMS_VERSION } from '../../constants/legal-version';
+import { useUserStore } from '../../store/user.store';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
@@ -21,6 +22,13 @@ export default function SplashScreen() {
       const remaining = Math.max(0, 1500 - (Date.now() - start));
       setTimeout(() => {
         if (cancelled) return;
+        // ─── DEV ONLY ─── (BE 복구 후 이 if 블록 삭제 — grep "DEV ONLY")
+        // user.store 가 주입한 mock user 가 있으면 AuthHome 건너뛰고 SurveyLanding 직행.
+        if (useUserStore.getState().currentUser.id === 'dev-user-id') {
+          navigation.replace('SurveyLanding', {});
+          return;
+        }
+        // ─── /DEV ONLY ───
         navigation.replace(accepted === TERMS_VERSION ? 'AuthHome' : 'TermsAgreement');
       }, remaining);
     });
