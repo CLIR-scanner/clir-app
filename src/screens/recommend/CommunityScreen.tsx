@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { MagazineItem, Product, Profile, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
@@ -311,20 +312,29 @@ function CategoryPreviewList({
   onSelect: (id: string) => void;
 }) {
   return (
-    <FlatList
-      data={CATEGORY_IDS}
-      keyExtractor={item => item}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.categoryPreviewList}
-      renderItem={({ item }) => (
-        <CategoryPill
-          id={item}
-          selected={selectedCategory === item}
-          onPress={() => onSelect(item)}
-        />
-      )}
-    />
+    <View style={styles.trendScrollWrap}>
+      <FlatList
+        data={CATEGORY_IDS}
+        keyExtractor={item => item}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryPreviewList}
+        renderItem={({ item }) => (
+          <CategoryPill
+            id={item}
+            selected={selectedCategory === item}
+            onPress={() => onSelect(item)}
+          />
+        )}
+      />
+      <LinearGradient
+        colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.trendFade}
+        pointerEvents="none"
+      />
+    </View>
   );
 }
 
@@ -640,26 +650,35 @@ export default function CommunityScreen({ navigation }: Props) {
           <View style={styles.section}>
             <SectionHeader title={t('recommendUi.trending')} onPress={() => navigation.navigate('WeekendPopular')} />
             <CategoryPreviewList selectedCategory={trendingCategory} onSelect={setTrendingCategory} />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.trendList}
-            >
-              {[0, 1, 2].map(colIdx => {
-                const colItems = trendingPreview.slice(colIdx * 3, colIdx * 3 + 3);
-                if (colItems.length === 0) return null;
-                return (
-                  <View key={colIdx} style={styles.trendCard}>
-                    {colItems.map((item, idx) => (
-                      <View key={item.id}>
-                        <ProductRow item={item} />
-                        {idx < colItems.length - 1 && <View style={styles.rowDivider} />}
-                      </View>
-                    ))}
-                  </View>
-                );
-              })}
-            </ScrollView>
+            <View style={styles.trendScrollWrap}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.trendList}
+              >
+                {[0, 1, 2].map(colIdx => {
+                  const colItems = trendingPreview.slice(colIdx * 3, colIdx * 3 + 3);
+                  if (colItems.length === 0) return null;
+                  return (
+                    <View key={colIdx} style={styles.trendCard}>
+                      {colItems.map((item, idx) => (
+                        <View key={item.id}>
+                          <ProductRow item={item} />
+                          {idx < colItems.length - 1 && <View style={styles.rowDivider} />}
+                        </View>
+                      ))}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+              <LinearGradient
+                colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.trendFade}
+                pointerEvents="none"
+              />
+            </View>
           </View>
         );
 
@@ -986,10 +1005,10 @@ const styles = StyleSheet.create({
   },
 
   // Product row (shared for Trending + Similar inner)
-  productRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  productRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 8 },
   productThumb: {
-    width: 78,
-    height: 78,
+    width: 86,
+    height: 86,
     borderRadius: 9,
     backgroundColor: C.thumbBg,
     overflow: 'hidden',
@@ -1003,13 +1022,21 @@ const styles = StyleSheet.create({
   rowChevron:   { fontSize: 18, color: C.dark, marginLeft: 4 },
 
   // Trending list
+  trendScrollWrap: { position: 'relative' },
+  trendFade: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 60,
+  },
   trendList: { gap: 10, paddingVertical: 4 },
   trendCard: {
-    width: SCREEN_W - 100,
+    width: SCREEN_W - 130,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  rowDivider:{ height: 1, backgroundColor: C.line, marginVertical: 14 },
+  rowDivider:{ height: 1, backgroundColor: C.line, marginVertical: 6 },
 
   // Similar cards
   cardList: { gap: 12 },
