@@ -10,9 +10,6 @@ import TermsAgreementScreen from '../screens/auth/TermsAgreementScreen';
 import TermsDetailScreen from '../screens/auth/TermsDetailScreen';
 import SurveyLandingScreen from '../screens/auth/SurveyLandingScreen';
 import SurveyScreen from '../screens/auth/SurveyScreen';
-import SurveyAllergyScreen from '../screens/auth/SurveyAllergyScreen';
-import SurveyAllergyDocScreen from '../screens/auth/SurveyAllergyDocScreen';
-import SurveyAllergyDocResultScreen from '../screens/auth/SurveyAllergyDocResultScreen';
 import SurveyAllergyEditListScreen from '../screens/auth/SurveyAllergyEditListScreen';
 import SurveyAllergySelectScreen from '../screens/auth/SurveyAllergySelectScreen';
 import SurveyAllergyReactionScreen from '../screens/auth/SurveyAllergyReactionScreen';
@@ -30,7 +27,7 @@ export default function AuthNavigator() {
   return (
 
     <SurveyProgressContext.Provider value={surveyProgress}>
-    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F9FFF3' } }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FDFFFD' } }}>
 
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="TermsAgreement" component={TermsAgreementScreen} />
@@ -39,9 +36,6 @@ export default function AuthNavigator() {
       <Stack.Screen name="SurveyLanding" component={SurveyLandingScreen} />
       <Stack.Group screenOptions={{ animation: 'none' }}>
         <Stack.Screen name="Survey" component={SurveyScreen} />
-        <Stack.Screen name="SurveyAllergy" component={SurveyAllergyScreen} />
-        <Stack.Screen name="SurveyAllergyDoc" component={SurveyAllergyDocScreen} />
-        <Stack.Screen name="SurveyAllergyDocResult" component={SurveyAllergyDocResultScreen} />
         <Stack.Screen name="SurveyAllergyEditList" component={SurveyAllergyEditListScreen} />
         <Stack.Screen name="SurveyAllergySelect" component={SurveyAllergySelectScreen} />
         <Stack.Screen name="SurveyAllergyReaction" component={SurveyAllergyReactionScreen} />

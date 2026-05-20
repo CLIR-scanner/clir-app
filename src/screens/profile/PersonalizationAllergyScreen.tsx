@@ -24,7 +24,7 @@ import { getCatalogLanguage } from '../../constants/languages';
 import { getCatalogCategoryDisplayName, getIngredientDisplayName } from '../../lib/display-names';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const BG         = '#F9FFF3';
+const BG         = '#FDFFFD';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 const BORDER     = '#A9B6A8';
@@ -654,12 +654,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerSide:  { flex: 1 },
-  backBtn:     { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontWeight: '300' },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
+  backBtn:     { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontFamily: 'Pretendard-Light' },
+  headerTitle: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
 
   // ── Section header
   sectionHeader:   { gap: 4, marginTop: 12 },
-  sectionTitle:    { fontSize: 16, fontWeight: '700', color: DARK_GREEN },
+  sectionTitle:    { fontSize: 16, fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
   sectionSubtitle: { fontSize: 12, color: DARK_GREEN, lineHeight: 18 },
 
   // ── Sensitivity cards
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  sensitivityCardTitle: { fontSize: 16, fontWeight: '700', color: DARK_GREEN },
+  sensitivityCardTitle: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
   sensitivityCardDesc:  { fontSize: 12, color: MID_GREEN, lineHeight: 18 },
   strictBadge: {
     backgroundColor: STRICT_BG,
@@ -690,7 +690,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 3,
   },
-  strictBadgeText: { fontSize: 13, fontWeight: '500', color: STRICT_CLR },
+  strictBadgeText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: STRICT_CLR },
   normalBadge: {
     backgroundColor: MID_GREEN,
     borderWidth: 1,
@@ -699,9 +699,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 3,
   },
-  normalBadgeText: { fontSize: 13, fontWeight: '500', color: '#FFFFFF' },
+  normalBadgeText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: '#FFFFFF' },
   activeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  activeText: { fontSize: 11, fontWeight: '800', color: MID_GREEN },
+  activeText: { fontSize: 11, fontFamily: 'Pretendard-ExtraBold', color: MID_GREEN },
 
   // ── Divider
   divider: { height: 1, backgroundColor: BORDER, marginVertical: 8, marginHorizontal: 6 },
@@ -709,11 +709,11 @@ const styles = StyleSheet.create({
   // ── Vegetarian radio list
   radioList: { gap: 14 },
   radioRow:  { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  radioLabel: { fontSize: 16, color: MID_GREEN, fontWeight: '400' },
-  radioLabelActive: { fontWeight: '700', color: DARK_GREEN },
+  radioLabel: { fontSize: 16, color: MID_GREEN, fontFamily: 'Pretendard-Regular' },
+  radioLabelActive: { fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
 
   // ── Sub label
-  subLabel: { fontSize: 12, fontWeight: '700', color: MID_GREEN, marginTop: 4 },
+  subLabel: { fontSize: 12, fontFamily: 'Pretendard-Bold', color: MID_GREEN, marginTop: 4 },
 
   // ── Accordion (allergen)
   accordionItem: {
@@ -731,9 +731,9 @@ const styles = StyleSheet.create({
     height: 57,
     gap: 10,
   },
-  accordionLabel:        { flex: 1, fontSize: 15, fontWeight: '500', color: MID_GREEN },
-  accordionLabelChecked: { fontWeight: '700', color: DARK_GREEN },
-  accordionCount:        { fontSize: 15, fontWeight: '500', color: BORDER, minWidth: 32, textAlign: 'right' },
+  accordionLabel:        { flex: 1, fontSize: 15, fontFamily: 'Pretendard-Regular', color: MID_GREEN },
+  accordionLabelChecked: { fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
+  accordionCount:        { fontSize: 15, fontFamily: 'Pretendard-Regular', color: BORDER, minWidth: 32, textAlign: 'right' },
   accordionChildren: {
     borderTopWidth: 1,
     borderTopColor: BORDER,
@@ -759,8 +759,8 @@ const styles = StyleSheet.create({
   dietRowActive:   { backgroundColor: CARD_FILL },
   dietRowInactive: { backgroundColor: BG },
   dietLeft:        { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  dietLabel:       { fontSize: 15, fontWeight: '500', color: MID_GREEN },
-  dietLabelActive: { fontWeight: '700', color: DARK_GREEN },
+  dietLabel:       { fontSize: 15, fontFamily: 'Pretendard-Regular', color: MID_GREEN },
+  dietLabelActive: { fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
 
   // ── Add Allergy button (Layout A 전용)
   addAllergyBtn: {
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: BG,
   },
-  addAllergyBtnText: { fontSize: 14, fontWeight: '700', color: DARK_GREEN },
+  addAllergyBtnText: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
 
   // ── Header Save button
   headerSaveBtn: {
@@ -781,5 +781,5 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 14,
   },
-  headerSaveBtnText: { fontSize: 13, fontWeight: '600', color: DARK_GREEN },
+  headerSaveBtnText: { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: DARK_GREEN },
 });

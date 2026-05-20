@@ -25,8 +25,8 @@ type Route = RouteProp<AuthStackParamList, 'SurveyLanding'>;
 
 // ── Design tokens (auth/survey 팔레트) ─────────────────────────────────────
 const C = {
-  bg:           '#F9FFF3',
-  primary:      '#1C3A19',
+  bg:           '#FDFFFD',
+  primary:      '#044733',
   primaryText:  '#F9FFF3',
   cardBg:       '#EAF1E2',
   cardBorder:   '#D8E0D5',
@@ -239,10 +239,10 @@ export default function SurveyLandingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  inner:     { flex: 1, paddingHorizontal: 17 },
+  inner:     { flex: 1 },
 
   scroll:        { flex: 1 },
-  scrollContent: { paddingTop: 60, paddingHorizontal: 22, paddingBottom: 16 },
+  scrollContent: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 16 },
 
   title: {
     fontSize: 30,
@@ -345,12 +345,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: C.textMuted,
+    borderColor: '#B8DDD4',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: C.bg,
   },
-  languageOptionSelected: { backgroundColor: C.textMuted },
+  languageOptionSelected: { backgroundColor: '#044733', borderColor: '#044733' },
   languageText: {
     fontSize: 13,
     fontFamily: 'Pretendard-Bold',
@@ -375,7 +375,8 @@ const styles = StyleSheet.create({
   footer: {
     gap: 12,
     paddingTop: 12,
-    paddingHorizontal: 22,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
     backgroundColor: C.bg,
   },
   skipButton: {

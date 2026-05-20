@@ -163,7 +163,7 @@ export default function MultiProfileScreen() {
   );
 }
 
-const BG         = '#F9FFF3';
+const BG         = '#FDFFFD';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 const BORDER     = '#A9B6A8';
@@ -181,12 +181,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 16,
   },
-  backText: { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontWeight: '300', width: 32 },
+  backText: { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontFamily: 'Pretendard-Light', width: 32 },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: DARK_GREEN,
     letterSpacing: -0.3,
   },
@@ -213,21 +213,21 @@ const styles = StyleSheet.create({
   },
   avatarMain: { backgroundColor: DARK_GREEN, borderColor: DARK_GREEN },
   avatarEnabled: { backgroundColor: CARD_FILL, borderColor: DARK_GREEN },
-  avatarText: { fontSize: 28, lineHeight: 32, fontWeight: '800', color: MID_GREEN },
+  avatarText: { fontSize: 28, lineHeight: 32, fontFamily: 'Pretendard-ExtraBold', color: MID_GREEN },
   avatarTextMain: { color: '#FFFFFF' },
   avatarTextEnabled: { color: DARK_GREEN },
 
   cardInfo: { flex: 1, gap: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  cardName: { fontSize: 16, fontWeight: '800', color: DARK_GREEN },
-  cardSub:  { fontSize: 13, fontWeight: '500', color: MID_GREEN },
+  cardName: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: DARK_GREEN },
+  cardSub:  { fontSize: 13, fontFamily: 'Pretendard-Regular', color: MID_GREEN },
 
   mainBadge: {
     backgroundColor: CARD_FILL, borderRadius: 100,
     paddingVertical: 2, paddingHorizontal: 8,
     borderWidth: 1, borderColor: BORDER,
   },
-  mainBadgeText: { fontSize: 11, fontWeight: '600', color: MID_GREEN },
+  mainBadgeText: { fontSize: 11, fontFamily: 'Pretendard-SemiBold', color: MID_GREEN },
 
   // Toggle switch
   toggleBtn: {
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18, alignItems: 'center',
     borderWidth: 1.5, borderColor: BORDER,
   },
-  addButtonText: { fontSize: 15, fontWeight: '700', color: DARK_GREEN },
+  addButtonText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
 
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   modalCard: {
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     backgroundColor: BG, borderRadius: 20,
     padding: 24, gap: 12, borderWidth: 1, borderColor: BORDER,
   },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: DARK_GREEN },
+  modalTitle: { fontSize: 17, fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
   modalSub:   { fontSize: 13, color: MID_GREEN },
   modalInput: {
     borderWidth: 1, borderColor: BORDER, borderRadius: 12,
@@ -281,5 +281,5 @@ const styles = StyleSheet.create({
     backgroundColor: DARK_GREEN, borderRadius: 100,
     paddingVertical: 14, alignItems: 'center', marginTop: 4,
   },
-  modalBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  modalBtnText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: '#FFFFFF' },
 });

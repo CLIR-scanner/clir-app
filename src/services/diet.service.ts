@@ -46,7 +46,7 @@ export interface DietCatalog {
 // products.category(meat/seafood/...) 로 번역한다 (UI_CAT_TO_PRODUCT_CATS).
 const BOOTSTRAP_TYPES: DietTypeCatalog[] = [
   { code: 'vegan',                name: 'Vegan',                avoidedAllergenIds: ['ing-milk','ing-egg','ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood','dairy','eggs'], cautionCategories: [] },
-  { code: 'pescatarian',          name: 'Pescatarian',          avoidedAllergenIds: [], avoidedCategories: ['red_meat','poultry'], cautionCategories: [] },
+  { code: 'fruitarian',           name: 'Fruitarian',           avoidedAllergenIds: ['ing-milk','ing-egg','ing-fish','ing-shellfish'], avoidedCategories: ['vegetables','dairy','eggs','seafood','poultry','red_meat'], cautionCategories: [] },
   { code: 'lacto_vegetarian',     name: 'Lacto-Vegetarian',     avoidedAllergenIds: ['ing-egg','ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood','eggs'], cautionCategories: [] },
   { code: 'ovo_vegetarian',       name: 'Ovo-Vegetarian',       avoidedAllergenIds: ['ing-milk','ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood','dairy'], cautionCategories: [] },
   { code: 'lacto_ovo_vegetarian', name: 'Lacto-Ovo Vegetarian', avoidedAllergenIds: ['ing-fish','ing-shellfish'], avoidedCategories: ['red_meat','poultry','seafood'], cautionCategories: [] },

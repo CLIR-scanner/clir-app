@@ -180,7 +180,7 @@ export default function SurveyAllergyIngredientsScreen() {
               value={modalSearch}
               onChangeText={setModalSearch}
               placeholder={t('survey.searchIngredients')}
-              placeholderTextColor={Colors.gray300}
+              placeholderTextColor={'#B7BDB6'}
             />
 
             <ScrollView
@@ -213,7 +213,7 @@ export default function SurveyAllergyIngredientsScreen() {
   );
 }
 
-const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#044733', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -222,24 +222,24 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35, marginBottom: 28 },
   group: { marginBottom: 20 },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#A9B6A8', marginBottom: 20 },
-  groupLabel: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: S.primary, marginBottom: 14 },
+  groupLabel: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: '#1A1A1A', marginBottom: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  chip: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
+  chip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: '#F9FFFB' },
   chipSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   chipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
-  chipTextSelected: { color: '#FFFFFF' },
-  addChip: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
-  addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: '#A9B6A8' },
+  chipTextSelected: { color: S.textLight },
+  addChip: { borderWidth: 1, borderColor: S.primary, borderRadius: 100, paddingVertical: 10, paddingHorizontal: 18, backgroundColor: S.bg },
+  addChipText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
   modalSheet: { backgroundColor: S.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 32, paddingTop: 36, paddingBottom: 40, maxHeight: '75%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 },
   modalTitle: { fontSize: 19, fontFamily: 'Pretendard-ExtraBold', color: '#000000' },
   modalSubtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, marginTop: 4 },
   modalClose: { fontSize: 18, color: S.primary, paddingLeft: 8 },
-  searchInput: { borderWidth: 1, borderColor: '#A9B6A8', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: S.primary, marginBottom: 32, backgroundColor: S.bg },
+  searchInput: { borderWidth: 1, borderColor: '#B7BDB6', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 14, fontSize: 14, color: S.primary, marginBottom: 32, backgroundColor: S.bg },
   modalScroll: { maxHeight: 220 },
   modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 8 },
   saveButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginTop: 16 },

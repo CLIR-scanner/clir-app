@@ -32,7 +32,7 @@ const AnimatedRadialGradient  = Animated.createAnimatedComponent(RadialGradient)
 // ── Exported label maps ───────────────────────────────────────────────────────
 
 export const VEGETARIAN_LABELS: Record<NonNullable<SurveyParams['vegetarianType']>, string> = {
-  pescatarian:          'Pescatarian',
+  fruitarian:          'Fruitarian',
   vegan:                'Vegan',
   lacto_vegetarian:     'Lacto - Vegetarian',
   ovo_vegetarian:       'Ovo - Vegetarian',
@@ -65,7 +65,7 @@ export default function VegetarianDietConfirmCircle({ label }: { label: string }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Orb hot-spot positions — each cx/cy drifts on a lissajous-like orbit ──
-  // Orb 1 (#7EC850 lime): horizontal-biased orbit
+  // Orb 1 (#C4F5DF lime): horizontal-biased orbit
   const orb1AP = useAnimatedProps(() => {
     const t = liquidPhase.value;
     return {
@@ -74,7 +74,7 @@ export default function VegetarianDietConfirmCircle({ label }: { label: string }
     };
   });
 
-  // Orb 2 (#D4ED7A yellow-green): tighter, faster-Y orbit
+  // Orb 2 (#85E4BF yellow-green): tighter, faster-Y orbit
   const orb2AP = useAnimatedProps(() => {
     const t = liquidPhase.value + 0.33;
     return {
@@ -83,7 +83,7 @@ export default function VegetarianDietConfirmCircle({ label }: { label: string }
     };
   });
 
-  // Orb 3 (#4EC8A0 teal): wider, slower-Y orbit
+  // Orb 3 (#52C99A teal): wider, slower-Y orbit
   const orb3AP = useAnimatedProps(() => {
     const t = liquidPhase.value + 0.67;
     return {
@@ -115,10 +115,10 @@ export default function VegetarianDietConfirmCircle({ label }: { label: string }
             r={135}
             gradientUnits="userSpaceOnUse"
           >
-            <Stop offset="0%"   stopColor="#7EC850" stopOpacity="0.78" />
-            <Stop offset="38%"  stopColor="#7EC850" stopOpacity="0.48" />
-            <Stop offset="68%"  stopColor="#7EC850" stopOpacity="0.14" />
-            <Stop offset="100%" stopColor="#7EC850" stopOpacity="0"    />
+            <Stop offset="0%"   stopColor="#C4F5DF" stopOpacity="0.78" />
+            <Stop offset="38%"  stopColor="#C4F5DF" stopOpacity="0.48" />
+            <Stop offset="68%"  stopColor="#C4F5DF" stopOpacity="0.14" />
+            <Stop offset="100%" stopColor="#C4F5DF" stopOpacity="0"    />
           </AnimatedRadialGradient>
 
           {/* Orb 2 — yellow-green */}
@@ -128,10 +128,10 @@ export default function VegetarianDietConfirmCircle({ label }: { label: string }
             r={128}
             gradientUnits="userSpaceOnUse"
           >
-            <Stop offset="0%"   stopColor="#D4ED7A" stopOpacity="0.72" />
-            <Stop offset="36%"  stopColor="#D4ED7A" stopOpacity="0.44" />
-            <Stop offset="66%"  stopColor="#D4ED7A" stopOpacity="0.13" />
-            <Stop offset="100%" stopColor="#D4ED7A" stopOpacity="0"    />
+            <Stop offset="0%"   stopColor="#85E4BF" stopOpacity="0.72" />
+            <Stop offset="36%"  stopColor="#85E4BF" stopOpacity="0.44" />
+            <Stop offset="66%"  stopColor="#85E4BF" stopOpacity="0.13" />
+            <Stop offset="100%" stopColor="#85E4BF" stopOpacity="0"    />
           </AnimatedRadialGradient>
 
           {/* Orb 3 — teal */}
@@ -141,10 +141,10 @@ export default function VegetarianDietConfirmCircle({ label }: { label: string }
             r={145}
             gradientUnits="userSpaceOnUse"
           >
-            <Stop offset="0%"   stopColor="#4EC8A0" stopOpacity="0.74" />
-            <Stop offset="40%"  stopColor="#4EC8A0" stopOpacity="0.45" />
-            <Stop offset="70%"  stopColor="#4EC8A0" stopOpacity="0.14" />
-            <Stop offset="100%" stopColor="#4EC8A0" stopOpacity="0"    />
+            <Stop offset="0%"   stopColor="#52C99A" stopOpacity="0.74" />
+            <Stop offset="40%"  stopColor="#52C99A" stopOpacity="0.45" />
+            <Stop offset="70%"  stopColor="#52C99A" stopOpacity="0.14" />
+            <Stop offset="100%" stopColor="#52C99A" stopOpacity="0"    />
           </AnimatedRadialGradient>
         </Defs>
 
@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
   },
   circleText: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: PRIMARY,
     textAlign: 'center',
     lineHeight: 30,
     paddingHorizontal: 32,
     zIndex: 1,
   },
-  quoteChar: { fontSize: 26, fontWeight: '700', color: PRIMARY },
+  quoteChar: { fontSize: 26, fontFamily: 'Pretendard-Bold', color: PRIMARY },
 });

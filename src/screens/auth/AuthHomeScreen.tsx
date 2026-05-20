@@ -53,7 +53,7 @@ function GoogleIcon({ iconOpacity = 1 }: { iconOpacity?: number }) {
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'AuthHome'>;
 
-const S = { bg: '#F9FFF3', primary: '#1C3A19', textLight: '#F9FFF3', muted: '#495551' };
+const S = { bg: '#FDFFFD', primary: '#044733', textLight: '#F9FFF3', muted: '#9E9E9E' };
 
 export default function AuthHomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -223,10 +223,9 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#1f1f1f',
     fontSize: 16,
-    fontWeight: '400',
+    fontFamily: Platform.OS === 'android' ? 'Roboto' : 'Pretendard-Regular',
     letterSpacing: 0.25,
     textAlign: 'center',
-    fontFamily: Platform.OS === 'android' ? 'Roboto' : undefined,
   },
   googleButtonState: {
     position: 'absolute',
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     textAlign: 'center',
   },
   appleButtonState: {
@@ -287,7 +286,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: S.muted,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 14,
   },
   termsLink: {
     fontSize: 11,

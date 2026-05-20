@@ -19,7 +19,7 @@ import { useUserStore } from '../../store/user.store';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'PersonalName'>;
 
-const BG         = '#F9FFF3';
+const BG         = '#FDFFFD';
 const DARK_GREEN = '#1C3A19';
 const MID_GREEN  = '#556C53';
 const BORDER     = '#A9B6A8';
@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   headerSide:  { flex: 1 },
-  backBtn:     { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontWeight: '300' },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
+  backBtn:     { fontSize: 32, lineHeight: 34, color: DARK_GREEN, fontFamily: 'Pretendard-Light' },
+  headerTitle: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
 
   avatarSection: { alignItems: 'center', gap: 12, marginBottom: 18 },
   avatarWrap:    { position: 'relative' },
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     backgroundColor: MID_GREEN, alignItems: 'center', justifyContent: 'center',
   },
   avatarImg:  { width: 94, height: 94, borderRadius: 47 },
-  avatarText: { fontSize: 40, fontWeight: '800', color: '#FFFFFF', lineHeight: 46 },
+  avatarText: { fontSize: 40, fontFamily: 'Pretendard-ExtraBold', color: '#FFFFFF', lineHeight: 46 },
   cameraBadge: {
     position: 'absolute', bottom: 2, right: 2,
     width: 25, height: 25, borderRadius: 13,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   displayName: {
-    fontSize: 20, fontWeight: '700', color: '#000000',
+    fontSize: 20, fontFamily: 'Pretendard-Bold', color: '#000000',
     textAlign: 'center', lineHeight: 32,
   },
 
@@ -184,13 +184,13 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: DARK_GREEN,
   },
   fieldValueText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     color: BORDER,
     textAlign: 'right',
   },

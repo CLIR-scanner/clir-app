@@ -40,7 +40,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FFF3',
+    backgroundColor: '#FDFFFD',
     paddingBottom: 40,
   },
   logoArea: {

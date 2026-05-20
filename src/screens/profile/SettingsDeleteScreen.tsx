@@ -93,11 +93,11 @@ const styles = StyleSheet.create({
   },
   backBtn: { fontSize: 22, color: Colors.black, width: 32 },
   headerTitle: {
-    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: Colors.black,
+    flex: 1, textAlign: 'center', fontSize: 17, fontFamily: 'Pretendard-Bold', color: Colors.black,
   },
   body: { flex: 1, paddingHorizontal: 24, paddingTop: 32, gap: 16 },
   warningTitle: {
-    fontSize: 18, fontWeight: '700', color: '#B0421F',
+    fontSize: 18, fontFamily: 'Pretendard-Bold', color: '#B0421F',
   },
   warningBody: {
     fontSize: 14, lineHeight: 22, color: Colors.black,
@@ -116,6 +116,6 @@ const styles = StyleSheet.create({
   deleteBtnText: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
 });

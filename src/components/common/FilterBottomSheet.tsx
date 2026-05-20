@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 19,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: Colors.searchDarkGreen,
     letterSpacing: -0.3,
     marginTop: 8,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 30,
     color: Colors.searchDarkGreen,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   topDivider: {
     height: 1,
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.black,
     lineHeight: 22,
   },
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   categoryLabel: {
     marginLeft: 15,
     fontSize: 16,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     color: Colors.black,
     lineHeight: 27,
   },
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   safeLabel: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.black,
     lineHeight: 22,
   },

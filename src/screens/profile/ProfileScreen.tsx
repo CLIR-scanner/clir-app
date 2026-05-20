@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   },
   langSheetTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: DARK_GREEN,
     textAlign: 'center',
     marginBottom: 8,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   langRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  langNative:  { fontSize: 16, fontWeight: '600', color: DARK_GREEN },
+  langNative:  { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: DARK_GREEN },
   langLabel:   { fontSize: 13, color: MID_GREEN },
   langCheckCircle: {
     width: 24,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  langCheckMark: { fontSize: 13, color: Colors.white, fontWeight: '700' },
+  langCheckMark: { fontSize: 13, color: Colors.white, fontFamily: 'Pretendard-Bold' },
   langDivider:   { height: 1, backgroundColor: BORDER },
   content: {
     paddingHorizontal: 26,
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   // ── Header
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: DARK_GREEN,
     textAlign: 'center',
     letterSpacing: -0.38,
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: Colors.white,
     lineHeight: 32,
   },
@@ -467,12 +467,12 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: Colors.profileText,
   },
   userEmail: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: MID_GREEN,
   },
   chevron: {
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   // ── Section label
   sectionLabel: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: DARK_GREEN,
     marginLeft: 2,
     marginTop: 18,
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   allergyRowLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: DARK_GREEN,
   },
   sensitivityBadge: {
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   },
   sensitivityBadgeText: {
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   sensitivityBadgeTextStrict: {
     color: STRICT_CLR,
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   },
   preferenceBadgeText: {
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     color: DARK_GREEN,
   },
   allergyBlock: {
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     color: CHIP_TEXT,
   },
   emptyChip: {
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 16,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     color: Colors.profileText,
   },
 
@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: STRICT_CLR,
   },
 });

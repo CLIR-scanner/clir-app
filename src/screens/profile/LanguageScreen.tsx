@@ -112,14 +112,14 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, alignItems: 'center' },
   backText: { fontSize: 32, color: Colors.black, lineHeight: 36 },
-  title: { fontSize: 17, fontWeight: '700', color: Colors.black },
+  title: { fontSize: 17, fontFamily: 'Pretendard-Bold', color: Colors.black },
   list: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 48, gap: 12 },
   notice: {
     backgroundColor: Colors.primaryLight, borderRadius: 12,
     paddingVertical: 12, paddingHorizontal: 16,
   },
   noticeText: { fontSize: 13, color: Colors.primary },
-  noticeHighlight: { fontWeight: '700' },
+  noticeHighlight: { fontFamily: 'Pretendard-Bold' },
   section: {
     backgroundColor: Colors.white, borderRadius: 16,
     borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 20,
@@ -129,13 +129,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', paddingVertical: 16,
   },
   itemLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  itemNative: { fontSize: 16, fontWeight: '600', color: Colors.black },
+  itemNative: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: Colors.black },
   itemLabel: { fontSize: 14, color: Colors.gray500 },
   deviceBadge: {
     backgroundColor: Colors.primaryLight, borderRadius: 100,
     paddingVertical: 2, paddingHorizontal: 8,
   },
-  deviceBadgeText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
-  checkmark: { fontSize: 18, color: Colors.primary, fontWeight: '700' },
+  deviceBadgeText: { fontSize: 11, fontFamily: 'Pretendard-SemiBold', color: Colors.primary },
+  checkmark: { fontSize: 18, color: Colors.primary, fontFamily: 'Pretendard-Bold' },
   divider: { height: 1, backgroundColor: Colors.border },
 });

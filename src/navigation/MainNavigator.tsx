@@ -294,12 +294,12 @@ const tabStyles = StyleSheet.create({
   label: {
     color: TAB_GREEN,
     fontSize: 11,
-    fontWeight: '300',
+    fontFamily: 'Pretendard-Light',
     lineHeight: 13,
     textAlign: 'center',
   },
   labelActive: {
-    fontWeight: '900',
+    fontFamily: 'Pretendard-ExtraBold',
   },
   centerSlot: {
     width: 66,

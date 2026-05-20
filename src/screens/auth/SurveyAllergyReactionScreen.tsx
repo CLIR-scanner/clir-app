@@ -74,7 +74,7 @@ export default function SurveyAllergyReactionScreen() {
   );
 }
 
-const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#044733', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -83,10 +83,10 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35 },
   optionsBlock: { flex: 1, justifyContent: 'flex-start', paddingTop: 32 },
   options: { gap: 12 },
-  option: { height: 94, borderWidth: 1, borderColor: S.primary, borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: S.bg },
+  option: { height: 100, borderWidth: 1, borderColor: '#B8DDD4', borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: '#F9FFFB' },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.primary },
-  optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: '#FFFFFF' },
+  optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: S.textLight },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueDisabled: { opacity: 0.4 },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },

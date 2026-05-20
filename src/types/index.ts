@@ -553,7 +553,7 @@ export type SurveyParams = {
   hasAllergyDoc?: boolean;
   allergySeverity?: 'mild' | 'moderate' | 'severe';
   allergyReactionType?: 'immediate' | 'delayed' | 'not_sure';
-  vegetarianType?: 'pescatarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian' | 'lacto_ovo_vegetarian' | 'pesco_vegetarian' | 'pollo_vegetarian' | 'flexitarian';
+  vegetarianType?: 'fruitarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian' | 'lacto_ovo_vegetarian' | 'pesco_vegetarian' | 'pollo_vegetarian' | 'flexitarian';
   veganStrictness?: 'strict' | 'flexible';
   /** Both 플로우: 알러지 플로우에서 수집한 allergyProfile을 채식 플로우로 전달 */
   allergyProfileJson?: string;
@@ -598,16 +598,16 @@ export type AuthStackParamList = {
   SurveyLanding: SurveyParams;
   /** Survey 1: 식이 유형 선택 */
   Survey: SurveyParams;
-  /** Survey 2-A: 알러지 진단 여부 확인 */
+  /** @deprecated 진단서 flow 제거됨 — 파일 보존용 */
   SurveyAllergy: SurveyParams;
-  /** Survey 3-A-Yes: 진단서 보유 → 문서 업로드 */
+  /** @deprecated 진단서 flow 제거됨 — 파일 보존용 */
   SurveyAllergyDoc: SurveyParams;
-  /** Survey 4-A-Yes: 문서 분석 결과 확인 */
+  /** @deprecated 진단서 flow 제거됨 — 파일 보존용 */
   SurveyAllergyDocResult: SurveyParams;
-  /** Survey 4-A-Yes Edit: 분석 결과 직접 편집 */
-  SurveyAllergyEditList: SurveyParams & { categoriesJson: string };
-  /** Survey 3-A-No: 알러지 심각도 선택 */
+  /** Survey 2-A: 알러지 심각도 선택 */
   SurveyAllergySelect: SurveyParams;
+  /** Survey 2-A Edit: 성분 직접 편집 */
+  SurveyAllergyEditList: SurveyParams & { categoriesJson: string };
   /** Survey 4-A-No: 반응 유형 선택 (즉각/지연/모름) */
   SurveyAllergyReaction: SurveyParams;
   /** Survey 5-A-No: 알러지 유발 식품 직접 선택 */

@@ -481,13 +481,13 @@ const styles = StyleSheet.create({
     color: C.dark,
     fontSize: 28,
     lineHeight: 30,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   headerTitle: {
     marginTop: 8,
     color: C.dark,
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     letterSpacing: -0.38,
   },
   listHeader: {
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   searchInput: {
     color: C.dark,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     padding: 0,
   },
   shareBanner: {
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.white,
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.304,
   },
   writeButton: {
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   writeButtonText: {
     color: Colors.white,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
   },
   writeIcon: {
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: C.dark,
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     lineHeight: 22,
   },
   categoryWrap: {
@@ -593,12 +593,12 @@ const styles = StyleSheet.create({
   categoryText: {
     color: C.dark,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
   },
   categoryTextActive: {
     color: Colors.white,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
   listContent: {
     paddingTop: 0,
@@ -659,14 +659,14 @@ const styles = StyleSheet.create({
   productName: {
     color: C.mid,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 21,
     letterSpacing: -0.266,
   },
   brandName: {
     color: C.mid,
     fontSize: 10,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 15,
     letterSpacing: -0.19,
   },
@@ -689,14 +689,14 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     letterSpacing: -0.19,
   },
   scoreText: {
     flex: 1,
     color: C.mid,
     fontSize: 11,
-    fontWeight: '300',
+    fontFamily: 'Pretendard-Light',
     lineHeight: 13,
   },
   chevronButton: {
@@ -737,13 +737,13 @@ const styles = StyleSheet.create({
   author: {
     color: C.mid,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 22,
   },
   location: {
     color: C.mid,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
   },
   stars: {
@@ -769,13 +769,13 @@ const styles = StyleSheet.create({
   tagText: {
     color: C.mid,
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 20,
   },
   reviewText: {
     color: C.mid,
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 22,
     letterSpacing: -0.285,
     marginTop: 7,
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   actionText: {
     color: C.mid,
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
   },
   emptyBox: {
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: C.mid,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     textAlign: 'center',
   },
 });

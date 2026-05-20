@@ -98,10 +98,10 @@ const styles = StyleSheet.create({
   },
   backBtn: { fontSize: 22, color: Colors.black, width: 32 },
   headerTitle: {
-    flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: Colors.black,
+    flex: 1, textAlign: 'center', fontSize: 17, fontFamily: 'Pretendard-Bold', color: Colors.black,
   },
   body: { flex: 1, paddingHorizontal: 24, paddingTop: 32, gap: 14 },
-  title: { fontSize: 20, fontWeight: '800', color: Colors.black },
+  title: { fontSize: 20, fontFamily: 'Pretendard-ExtraBold', color: Colors.black },
   body1: { fontSize: 14, lineHeight: 22, color: Colors.black },
   body2: { fontSize: 13, lineHeight: 20, color: '#5A6B58' },
   sendBtn: {
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   sendBtnText: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
   contact: {
     marginTop: 16,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   contactEmail: {
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: '#1C3A19',
   },
 });

@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   errorIcon:   { fontSize: 44 },
   errorText:   { color: Colors.white, fontSize: 14, textAlign: 'center', paddingHorizontal: 40, lineHeight: 21 },
   retryBtn:    { marginTop: 8, backgroundColor: Colors.primary, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 28 },
-  retryBtnText:{ color: Colors.white, fontWeight: '700', fontSize: 14 },
+  retryBtnText:{ color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 14 },
 
   // Verdict circle
   verdictWrap: {
@@ -473,8 +473,8 @@ const styles = StyleSheet.create({
     width: 52, height: 52, borderRadius: 26,
     alignItems: 'center', justifyContent: 'center',
   },
-  verdictIconText: { fontSize: 30, color: Colors.white, fontWeight: '900', lineHeight: 34 },
-  verdictLabel:    { fontSize: 22, fontWeight: '800', letterSpacing: 0.4 },
+  verdictIconText: { fontSize: 30, color: Colors.white, fontFamily: 'Pretendard-ExtraBold', lineHeight: 34 },
+  verdictLabel:    { fontSize: 22, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 0.4 },
 
   // Bottom sheet
   sheet: {
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   productRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 14, paddingRight: 36 },
   productImg:    { width: 64, height: 64, borderRadius: 10, backgroundColor: Colors.gray100, marginRight: 12, overflow: 'hidden' },
   productInfo:   { flex: 1 },
-  productName:   { fontSize: 16, fontWeight: '700', color: Colors.black, marginBottom: 2 },
+  productName:   { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black, marginBottom: 2 },
   productBrand:  { fontSize: 13, color: Colors.gray500, marginBottom: 8 },
   productActions:{ flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
 
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
 
   // Alternatives
   altSection: { paddingBottom: 4 },
-  altTitle:   { fontSize: 13, fontWeight: '600', color: Colors.black, marginBottom: 10 },
+  altTitle:   { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: Colors.black, marginBottom: 10 },
   altRow:     { flexDirection: 'row', gap: 10 },
   altThumb:   {
     width: 80, height: 80, borderRadius: 12,

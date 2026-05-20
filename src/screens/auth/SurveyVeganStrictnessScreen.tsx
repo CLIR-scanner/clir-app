@@ -90,7 +90,7 @@ export default function SurveyVeganStrictnessScreen() {
   );
 }
 
-const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#044733', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, fontFamily: 'Pretendard-ExtraBold', color: '#000000', lineHeight: 32, marginBottom: 12 },
   subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35 },
   options: { gap: 12 },
-  option: { borderWidth: 1, borderColor: S.primary, borderRadius: 16, paddingVertical: 20, paddingHorizontal: 44, backgroundColor: S.bg },
+  option: { borderWidth: 1, borderColor: '#B8DDD4', borderRadius: 16, paddingVertical: 20, paddingHorizontal: 44, backgroundColor: '#F9FFFB' },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
   optionLabel: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: S.primary, marginBottom: 6 },
   optionLabelSelected: { color: '#FFFFFF' },

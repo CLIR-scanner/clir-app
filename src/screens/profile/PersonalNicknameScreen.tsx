@@ -155,23 +155,23 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerSide:  { flex: 1 },
-  backBtn:     { fontSize: 32, lineHeight: 34, color: Colors.profileDarkGreen, fontWeight: '300' },
-  headerTitle: { fontSize: 16, fontWeight: '500', color: Colors.profileDarkGreen, letterSpacing: -0.3, textAlign: 'center' },
+  backBtn:     { fontSize: 32, lineHeight: 34, color: Colors.profileDarkGreen, fontFamily: 'Pretendard-Light' },
+  headerTitle: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: Colors.profileDarkGreen, letterSpacing: -0.3, textAlign: 'center' },
 
   sectionPill: {
     alignSelf: 'flex-start', borderWidth: 1, borderColor: Colors.profileDarkGreen,
     borderRadius: 10, paddingVertical: 5, paddingHorizontal: 17,
   },
-  sectionPillText: { fontSize: 12, fontWeight: '800', color: Colors.profileDarkGreen },
+  sectionPillText: { fontSize: 12, fontFamily: 'Pretendard-ExtraBold', color: Colors.profileDarkGreen },
 
   fieldsBlock: { gap: 0 },
   fieldLabel: {
-    fontSize: 10, fontWeight: '500', color: Colors.profileMutedGreen,
+    fontSize: 10, fontFamily: 'Pretendard-Regular', color: Colors.profileMutedGreen,
     lineHeight: 20, marginTop: 8,
   },
 
   input: {
-    fontSize: 15, fontWeight: '400', color: Colors.profileText,
+    fontSize: 15, fontFamily: 'Pretendard-Regular', color: Colors.profileText,
     borderWidth: 1, borderColor: Colors.profileBorder,
     borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
     backgroundColor: Colors.white,
@@ -212,6 +212,6 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   saveBtnText: {
-    fontSize: 15, fontWeight: '700', color: Colors.white,
+    fontSize: 15, fontFamily: 'Pretendard-Bold', color: Colors.white,
   },
 });

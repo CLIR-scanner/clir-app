@@ -38,8 +38,7 @@ export default function SurveyScreen() {
     if (selected === 'vegetarian') {
       navigation.navigate('SurveyVegetarian', next);
     } else {
-      // allergy, both 모두 알러지 화면 먼저
-      navigation.navigate('SurveyAllergy', next);
+      navigation.navigate('SurveyAllergySelect', next);
     }
   }
 
@@ -84,9 +83,9 @@ export default function SurveyScreen() {
 }
 
 const S = {
-  bg:             '#F9FFF3',
-  primary:        '#1C3A19',
-  selectedFill:   '#556C53',
+  bg:             '#FDFFFD',
+  primary:        '#044733',
+  selectedFill:   '#044733',
   textLight:      '#F9FFF3',
 };
 
@@ -120,13 +119,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   option: {
-    height: 94,
+    height: 100,
     borderWidth: 1,
-    borderColor: S.primary,
+    borderColor: '#B8DDD4',
     borderRadius: 16,
     paddingHorizontal: 44,
     justifyContent: 'center',
-    backgroundColor: S.bg,
+    backgroundColor: '#F9FFFB',
   },
   optionSelected: {
     borderColor: S.primary,
@@ -139,7 +138,7 @@ const styles = StyleSheet.create({
   },
   optionTextSelected: {
     fontFamily: 'Pretendard-SemiBold',
-    color: '#FFFFFF',
+    color: S.textLight,
   },
   continueButton: {
     height: 58,

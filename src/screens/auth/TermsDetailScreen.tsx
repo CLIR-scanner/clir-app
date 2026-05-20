@@ -19,7 +19,7 @@ type Route = RouteProp<AuthStackParamList, 'TermsDetail'>;
 
 const S = {
   bg: Colors.scanLightGreen,
-  primary: Colors.searchDarkGreen,
+  primary: '#044733',
   muted: Colors.searchMutedGreen,
   border: Colors.scanMutedGreen,
   black: Colors.profileText,
@@ -110,13 +110,13 @@ const styles = StyleSheet.create({
   backText: {
     color: S.primary,
     fontSize: 22,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   headerTitle: {
     flex: 1,
     color: S.primary,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     textAlign: 'center',
   },
   headerSpacer: {
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   title: {
     color: S.black,
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     lineHeight: 36,
   },
   metaRow: {
@@ -146,13 +146,13 @@ const styles = StyleSheet.create({
   badge: {
     color: S.primary,
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 16,
   },
   updated: {
     color: S.muted,
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 16,
   },
   divider: {
@@ -164,13 +164,13 @@ const styles = StyleSheet.create({
   body: {
     color: S.black,
     fontSize: 13,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 20,
   },
   contact: {
     color: S.primary,
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 20,
     marginTop: 28,
   },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   agreeButtonText: {
     color: S.bg,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 22,
   },
 });

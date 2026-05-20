@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.searchDarkGreen,
     letterSpacing: -0.38,
     textAlign: 'center',
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: Colors.searchDarkGreen,
     padding: 0,
   },
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  filterBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
+  filterBadgeText: { fontSize: 9, fontFamily: 'Pretendard-Bold', color: Colors.white },
 
 
   // Auto-suggest
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   },
   rowProductName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.searchMutedGreen,
     lineHeight: 22,
   },
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
   },
   rowBadgeText: {
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   rowChevron: {
     fontSize: 48,
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
   },
   riskLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     letterSpacing: -0.23,
   },
   bookmarkBtn: {
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: Colors.black,
     letterSpacing: 0,
     lineHeight: 22,
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
   },
   cardBrand: {
     fontSize: 11,
-    fontWeight: '300',
+    fontFamily: 'Pretendard-Light',
     color: Colors.black,
     letterSpacing: 0,
     lineHeight: 13,

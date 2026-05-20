@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView,
+  ScrollView, Modal,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
+import { DIET_TYPE_DESCRIPTIONS } from '../../constants/dietary';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarian'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyVegetarian'>;
@@ -17,7 +18,7 @@ type Route = RouteProp<AuthStackParamList, 'SurveyVegetarian'>;
 type VegetarianType = NonNullable<SurveyParams['vegetarianType']>;
 
 const OPTIONS: { value: VegetarianType }[] = [
-  { value: 'pescatarian' },
+  { value: 'fruitarian' },
   { value: 'vegan' },
   { value: 'lacto_vegetarian' },
   { value: 'ovo_vegetarian' },
@@ -34,6 +35,7 @@ export default function SurveyVegetarianScreen() {
   const params = route.params;
   const { step, total } = getSurveyProgress('SurveyVegetarian', params.dietaryType);
   const [selected, setSelected] = useState<VegetarianType | null>(null);
+  const [infoType, setInfoType] = useState<VegetarianType | null>(null);
 
   function handleContinue() {
     if (!selected) return;
@@ -73,11 +75,44 @@ export default function SurveyVegetarianScreen() {
                 <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                   {t(`survey.vegetarianTypes.${opt.value}`)}
                 </Text>
+                <TouchableOpacity
+                  style={[styles.infoButton, isSelected && styles.infoButtonSelected]}
+                  onPress={() => setInfoType(opt.value)}
+                  hitSlop={8}
+                >
+                  <Text style={[styles.infoButtonText, isSelected && styles.infoButtonTextSelected]}>?</Text>
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
+
+      {/* 설명 모달 */}
+      <Modal
+        visible={infoType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoType(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setInfoType(null)}
+        >
+          <View style={styles.infoCard}>
+            <Text style={styles.infoTitle} numberOfLines={1}>
+              {infoType ? t(`survey.vegetarianTypes.${infoType}`) : ''}
+            </Text>
+            <Text style={styles.infoBody} numberOfLines={2}>
+              {infoType ? (DIET_TYPE_DESCRIPTIONS[infoType] ?? '') : ''}
+            </Text>
+            <TouchableOpacity style={styles.infoClose} onPress={() => setInfoType(null)}>
+              <Text style={styles.infoCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* 하단 고정 버튼 */}
       <TouchableOpacity
@@ -91,7 +126,7 @@ export default function SurveyVegetarianScreen() {
   );
 }
 
-const S = { bg: '#F9FFF3', primary: '#1C3A19', selectedFill: '#556C53', textLight: '#F9FFF3' };
+const S = { bg: '#FDFFFD', primary: '#044733', selectedFill: '#044733', textLight: '#F9FFF3' };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
@@ -100,10 +135,20 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, fontFamily: 'Pretendard-ExtraBold', color: '#000000', lineHeight: 32, marginBottom: 12 },
   subtitle: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 13 * 1.35, marginBottom: 32 },
   options: { gap: 12 },
-  option: { height: 94, borderWidth: 1, borderColor: S.primary, borderRadius: 16, paddingHorizontal: 44, justifyContent: 'center', backgroundColor: S.bg },
+  option: { height: 100, borderWidth: 1, borderColor: '#B8DDD4', borderRadius: 16, paddingLeft: 36, paddingRight: 36, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FFFB' },
   optionSelected: { borderColor: S.primary, backgroundColor: S.selectedFill },
-  optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.primary },
-  optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: '#FFFFFF' },
+  optionText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: S.primary, flex: 1 },
+  optionTextSelected: { fontFamily: 'Pretendard-SemiBold', color: S.textLight },
+  infoButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 0.8, borderColor: S.primary, alignItems: 'center', justifyContent: 'center' },
+  infoButtonSelected: { borderColor: 'rgba(255,255,255,0.7)', backgroundColor: 'rgba(255,255,255,0.15)' },
+  infoButtonText: { fontSize: 12, fontFamily: 'Pretendard-Bold', color: S.primary },
+  infoButtonTextSelected: { color: '#FFFFFF' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  infoCard: { backgroundColor: S.bg, borderRadius: 20, paddingVertical: 28, paddingHorizontal: 24, marginHorizontal: 24, alignSelf: 'stretch' },
+  infoTitle: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: '#000000', height: 24, marginBottom: 12 },
+  infoBody: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 22, height: 44, marginBottom: 24 },
+  infoClose: { height: 48, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  infoCloseText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: S.textLight },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   continueDisabled: { opacity: 0.4 },
   continueText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: S.textLight },

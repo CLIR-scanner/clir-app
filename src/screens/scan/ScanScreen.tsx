@@ -1416,10 +1416,10 @@ const styles = StyleSheet.create({
   // Permission
   permContainer: { flex: 1, backgroundColor: Colors.black, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36 },
   permIcon:      { fontSize: 52, marginBottom: 16 },
-  permTitle:     { fontSize: 20, fontWeight: '700', color: Colors.white, marginBottom: 12, textAlign: 'center' },
+  permTitle:     { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white, marginBottom: 12, textAlign: 'center' },
   permDesc:      { fontSize: 14, color: Colors.gray300, textAlign: 'center', lineHeight: 21, marginBottom: 28 },
   permBtn:       { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
-  permBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  permBtnText:   { color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 15 },
 
   resultBackdropTint: {
     ...StyleSheet.absoluteFillObject,
@@ -1456,13 +1456,13 @@ const styles = StyleSheet.create({
   guideHelpText: {
     color: Colors.white,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 16,
   },
   guidePreviewText: {
     color: Colors.scanLightGreen,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     lineHeight: 21,
     textAlign: 'center',
     marginBottom: 28,
@@ -1491,7 +1491,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(0,0,0,0.64)',
   },
-  cameraErrorTitle: { color: Colors.white, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  cameraErrorTitle: { color: Colors.white, fontSize: 14, fontFamily: 'Pretendard-Bold', marginBottom: 4 },
   cameraErrorText: { color: Colors.gray300, fontSize: 12, lineHeight: 17, textAlign: 'center' },
 
   // Bottom camera button
@@ -1547,13 +1547,13 @@ const styles = StyleSheet.create({
   resultVerdictText: {
     marginTop: 6,
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 29,
     textAlign: 'center',
   },
 
   // Bottom sheet
-  sheetCloseText: { color: Colors.scanResultClose, fontSize: 22, lineHeight: 24, fontWeight: '400' },
+  sheetCloseText: { color: Colors.scanResultClose, fontSize: 22, lineHeight: 24, fontFamily: 'Pretendard-Regular' },
   sheetNameRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sheetHeartBtn:  { paddingVertical: 1, paddingHorizontal: 2 },
   sheetHeart:     { fontSize: 20, lineHeight: 22, color: Colors.black },
@@ -1626,21 +1626,21 @@ const styles = StyleSheet.create({
   riskProductName: {
     color: Colors.black,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 24,
     flexShrink: 1,
   },
   riskProductBrand: {
     color: Colors.black,
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     marginTop: -2,
   },
   riskSeeDetailText: {
     color: '#9E9E9E',
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     textDecorationLine: 'underline',
   },
@@ -1667,21 +1667,21 @@ const styles = StyleSheet.create({
   goodProductName: {
     color: Colors.black,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     lineHeight: 24,
     flexShrink: 1,
   },
   goodProductBrand: {
     color: Colors.black,
     fontSize: 12,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     marginTop: -2,
   },
   goodSeeDetailText: {
     color: '#9E9E9E',
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     lineHeight: 18,
     textDecorationLine: 'underline',
   },
@@ -1691,7 +1691,7 @@ const headerStyles = StyleSheet.create({
   wrap:       { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 23, paddingBottom: 0 },
   iconBtn:    { width: 32, height: 42, alignItems: 'center', justifyContent: 'center' },
   center:     { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
-  title:      { fontSize: 20, fontWeight: '700', color: Colors.white },
+  title:      { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white },
   subtitle:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 3, textAlign: 'center' },
   historyBtn: {
     width: 32,
@@ -1731,7 +1731,7 @@ const toggleStyles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: Colors.scanMutedGreen,
   },
   tabTextActive: {

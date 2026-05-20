@@ -558,16 +558,16 @@ const styles = StyleSheet.create({
 
   // Permission
   permIcon:    { fontSize: 52, marginBottom: 16 },
-  permTitle:   { fontSize: 20, fontWeight: '700', color: Colors.white, marginBottom: 12, textAlign: 'center' },
+  permTitle:   { fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.white, marginBottom: 12, textAlign: 'center' },
   permDesc:    { fontSize: 14, color: Colors.gray300, textAlign: 'center', lineHeight: 21, marginBottom: 28 },
   permBtn:     { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
-  permBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  permBtnText: { color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 15 },
 
   // Error
   errIcon:       { fontSize: 48, marginBottom: 16 },
   errMsg:        { fontSize: 15, color: Colors.gray300, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
   retakeBtn:     { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 36 },
-  retakeBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  retakeBtnText: { color: Colors.white, fontFamily: 'Pretendard-Bold', fontSize: 15 },
 
   // Dim overlay (idle + result)
   dimTop:    { height: DIM_TOP_H, backgroundColor: DIM },
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   verdictIcon:  { width: BADGE_ICON_D, height: BADGE_ICON_D, marginTop: 12 },
-  verdictLabel: { fontSize: 24, fontWeight: '700', lineHeight: 29, marginTop: 6, textAlign: 'center' },
+  verdictLabel: { fontSize: 24, fontFamily: 'Pretendard-Bold', lineHeight: 29, marginTop: 6, textAlign: 'center' },
 
   // Shutter
   bottomBar: {
@@ -626,13 +626,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center', justifyContent: 'center', gap: 12,
   },
-  analyzingText: { fontSize: 15, color: Colors.white, fontWeight: '600' },
+  analyzingText: { fontSize: 15, color: Colors.white, fontFamily: 'Pretendard-SemiBold' },
   previewActions: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 16, paddingTop: 20, paddingHorizontal: 24, backgroundColor: '#111',
   },
   retakePill:     { borderWidth: 1.5, borderColor: Colors.white, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 28 },
-  retakePillText: { color: Colors.white, fontSize: 15, fontWeight: '600' },
+  retakePillText: { color: Colors.white, fontSize: 15, fontFamily: 'Pretendard-SemiBold' },
 
   // Result — bottom sheet
   sheet: {
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     zIndex: 1,
   },
-  sheetCloseText: { fontSize: 13, color: Colors.black, fontWeight: '600' },
+  sheetCloseText: { fontSize: 13, color: Colors.black, fontFamily: 'Pretendard-SemiBold' },
 
   productRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 16 },
   productImageBox: {
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray100, flexShrink: 0, overflow: 'hidden',
   },
   productInfo: { flex: 1, gap: 4 },
-  productName: { fontSize: 16, fontWeight: '700', color: Colors.black },
+  productName: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: Colors.black },
   brandName:   { fontSize: 13, color: Colors.gray500 },
   actionRow:   { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 6, flexWrap: 'wrap' },
 
@@ -665,14 +665,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6, paddingHorizontal: 12, backgroundColor: Colors.white,
   },
   favBtnActive:     { borderColor: Colors.black, backgroundColor: Colors.black },
-  favBtnText:       { fontSize: 12, color: Colors.gray700, fontWeight: '600' },
+  favBtnText:       { fontSize: 12, color: Colors.gray700, fontFamily: 'Pretendard-SemiBold' },
   favBtnTextActive: { color: Colors.white },
 
   detailText: { fontSize: 12, color: Colors.gray500, textDecorationLine: 'underline' },
 
   // Alternatives (Bad only)
   altsSection: { borderTopWidth: 1, borderTopColor: Colors.gray100, paddingTop: 14, marginBottom: 4 },
-  altsLabel:   { fontSize: 14, fontWeight: '700', color: Colors.black, marginBottom: 10 },
+  altsLabel:   { fontSize: 14, fontFamily: 'Pretendard-Bold', color: Colors.black, marginBottom: 10 },
   altsRow:     { flexDirection: 'row', gap: 10 },
   altBox: {
     flex: 1, aspectRatio: 1,

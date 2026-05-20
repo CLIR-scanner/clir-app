@@ -40,7 +40,7 @@ export default function SurveyHeader({ step, total }: Props) {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 40 },
-  backText: { fontSize: 22, color: '#1C3A19' },
-  bar: { flex: 1, height: 4, backgroundColor: '#D6E8D4', borderRadius: 2, overflow: 'hidden' },
-  fill: { height: '100%', backgroundColor: '#1C3A19', borderRadius: 2 },
+  backText: { fontSize: 22, color: '#044733' },
+  bar: { flex: 1, height: 4, backgroundColor: '#D6E6E1', borderRadius: 2, overflow: 'hidden' },
+  fill: { height: '100%', backgroundColor: '#044733', borderRadius: 2 },
 });

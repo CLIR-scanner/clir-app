@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     color: '#fff',
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     marginBottom: 10,
     textAlign: 'center',
   },

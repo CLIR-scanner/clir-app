@@ -252,14 +252,14 @@ const bannerSt = StyleSheet.create({
   },
   tag: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: '#25FF81',
     letterSpacing: 1.5,
     marginBottom: 6,
   },
   title: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     color: '#FFFFFF',
     lineHeight: 28,
     marginBottom: 6,
@@ -488,9 +488,9 @@ const sheetStyles = StyleSheet.create({
   },
   handle:   { width: 40, height: 4, backgroundColor: C.muted, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 6 },
   header:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  title:    { fontSize: 16, fontWeight: '700', color: C.dark },
-  closeBtn: { fontSize: 14, fontWeight: '600', color: C.dark, minWidth: 44 },
-  doneBtn:  { fontSize: 14, fontWeight: '700', color: C.dark, textAlign: 'right', minWidth: 44 },
+  title:    { fontSize: 16, fontFamily: 'Pretendard-Bold', color: C.dark },
+  closeBtn: { fontSize: 14, fontFamily: 'Pretendard-SemiBold', color: C.dark, minWidth: 44 },
+  doneBtn:  { fontSize: 14, fontFamily: 'Pretendard-Bold', color: C.dark, textAlign: 'right', minWidth: 44 },
   divider:  { height: 1, backgroundColor: C.line, marginHorizontal: 12 },
   hint:     { fontSize: 12, color: C.muted, paddingHorizontal: 24, paddingTop: 14, paddingBottom: 6 },
   row: {
@@ -499,7 +499,7 @@ const sheetStyles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   rowActive:      { backgroundColor: '#F0F5EF' },
-  rowLabel:       { flex: 1, fontSize: 15, fontWeight: '600', color: C.dark },
+  rowLabel:       { flex: 1, fontSize: 15, fontFamily: 'Pretendard-SemiBold', color: C.dark },
   rowLabelActive: { color: C.mid },
   dropLine:       { height: 2, backgroundColor: C.mid, marginHorizontal: 24, borderRadius: 1 },
 });
@@ -842,7 +842,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
     color: C.dark,
     letterSpacing: -0.38,
   },
@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     color: C.muted,
     padding: 0,
   },
@@ -904,13 +904,13 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: C.muted,
     lineHeight: 16,
   },
   tabTextActive: {
     color: C.dark,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
   },
   tabUnderline: {
     position: 'absolute',
@@ -943,8 +943,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  sectionTitle:  { fontSize: 16, fontWeight: '800', color: C.dark },
-  sectionChevron:{ fontSize: 18, color: C.dark, fontWeight: '400' },
+  sectionTitle:  { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.dark },
+  sectionChevron:{ fontSize: 18, color: C.dark, fontFamily: 'Pretendard-Regular' },
 
   // Category pill
   categoryPill: {
@@ -966,13 +966,13 @@ const styles = StyleSheet.create({
   },
   categoryPillText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: C.dark,
     letterSpacing: -0.228,
   },
   categoryPillTextActive: {
     color: Colors.white,
-    fontWeight: '700',
+    fontFamily: 'Pretendard-Bold',
   },
 
   // Product row (shared for Trending + Similar inner)
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   productInfo:  { flex: 1, gap: 3 },
-  productName:  { fontSize: 14, fontWeight: '700', color: C.mid, letterSpacing: -0.266 },
+  productName:  { fontSize: 14, fontFamily: 'Pretendard-Bold', color: C.mid, letterSpacing: -0.266 },
   productBrand: { fontSize: 10, color: C.mid, letterSpacing: -0.19 },
   productMeta:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   productRating:{ fontSize: 10, color: C.mid, letterSpacing: -0.19 },
@@ -1020,12 +1020,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: C.mid,
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     letterSpacing: -0.2,
   },
   reviewText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Pretendard-Regular',
     color: C.mid,
     letterSpacing: -0.285,
     lineHeight: 21,
@@ -1033,8 +1033,8 @@ const styles = StyleSheet.create({
 
   // Q&A
   qaRow:   { paddingVertical: 12 },
-  qaTitle: { fontSize: 14, fontWeight: '700', color: C.dark, letterSpacing: -0.266, marginBottom: 4 },
-  qaBody:  { fontSize: 12, fontWeight: '400', color: C.mid, lineHeight: 17, marginBottom: 6 },
+  qaTitle: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: C.dark, letterSpacing: -0.266, marginBottom: 4 },
+  qaBody:  { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.mid, lineHeight: 17, marginBottom: 6 },
   qaMeta:  { flexDirection: 'row', justifyContent: 'space-between' },
   qaUser:  { fontSize: 10, color: C.dark, letterSpacing: -0.19 },
   qaDate:  { fontSize: 10, color: C.dark, letterSpacing: -0.19 },
@@ -1052,7 +1052,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
     letterSpacing: -0.1,
   },
 
@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     paddingBottom: 10,
   },
-  magTitle:   { fontSize: 15, fontWeight: '700', color: C.dark, lineHeight: 20 },
+  magTitle:   { fontSize: 15, fontFamily: 'Pretendard-Bold', color: C.dark, lineHeight: 20 },
   magDesc:    { fontSize: 10, color: C.mid, lineHeight: 14, marginTop: 8 },
   magSeeMore: { fontSize: 10, color: C.dark, textDecorationLine: 'underline', marginTop: 8 },
 
