@@ -135,9 +135,6 @@ function TrendingRow({
           <Text style={styles.brandName} numberOfLines={1}>{product.brand}</Text>
           <View style={styles.metaRow}>
             <RiskBadge level={product.riskLevel} />
-            <Text style={styles.scoreText} numberOfLines={1}>
-              {'\u2B50'} {rating.toFixed(2)} ({favoriteCount.toLocaleString()})
-            </Text>
           </View>
         </View>
       </View>

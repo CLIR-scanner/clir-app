@@ -33,17 +33,17 @@ type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const { height: SCREEN_H } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const SECTION_ROW_H = 56;
 
 const TABS = ['Week Trends', 'Similar Trends', 'Q&A', 'Magazine'] as const;
 type Tab = typeof TABS[number];
 
 const SECTION_LABEL_KEY: Record<Tab, string> = {
-  'Week Trends':    'recommendUi.trending',
-  'Similar Trends': 'recommendUi.similarPicks',
+  'Week Trends':    'recommendUi.trendingTab',
+  'Similar Trends': 'recommendUi.similarPicksTab',
   'Q&A':            'recommendUi.qa',
-  'Magazine':       'recommendUi.magazine',
+  'Magazine':       'recommendUi.magazineTab',
 };
 const CATEGORY_IDS = ['all', ...INITIAL_FILTER_CATEGORIES.map(cat => cat.id)];
 
@@ -172,9 +172,6 @@ function ProductRow({
         <Text style={styles.productBrand}>{item.brand}</Text>
         <View style={styles.productMeta}>
           <RiskBadge riskLevel={item.riskLevel} />
-          <Text style={styles.productRating}>
-            ⭐️ {item.rating.toFixed(2)} ({item.reviewCount.toLocaleString()})
-          </Text>
         </View>
       </View>
       {showChevron && <Text style={styles.rowChevron}>›</Text>}
@@ -579,7 +576,7 @@ export default function CommunityScreen({ navigation }: Props) {
 
   const trendingPreview = trendingProducts
     .filter(product => trendingCategory === 'all' || product.category === trendingCategory)
-    .slice(0, 3);
+    .slice(0, 9);
   const similarPreview = similarProducts
     .slice(0, 3)
     .map((product, index) => toSimilarPreview(product, index, activeProfile, language));
@@ -643,14 +640,26 @@ export default function CommunityScreen({ navigation }: Props) {
           <View style={styles.section}>
             <SectionHeader title={t('recommendUi.trending')} onPress={() => navigation.navigate('WeekendPopular')} />
             <CategoryPreviewList selectedCategory={trendingCategory} onSelect={setTrendingCategory} />
-            <View style={styles.trendList}>
-              {trendingPreview.map((item, idx) => (
-                <View key={item.id}>
-                  <ProductRow item={item} />
-                  {idx < trendingPreview.length - 1 && <View style={styles.rowDivider} />}
-                </View>
-              ))}
-            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.trendList}
+            >
+              {[0, 1, 2].map(colIdx => {
+                const colItems = trendingPreview.slice(colIdx * 3, colIdx * 3 + 3);
+                if (colItems.length === 0) return null;
+                return (
+                  <View key={colIdx} style={styles.trendCard}>
+                    {colItems.map((item, idx) => (
+                      <View key={item.id}>
+                        <ProductRow item={item} />
+                        {idx < colItems.length - 1 && <View style={styles.rowDivider} />}
+                      </View>
+                    ))}
+                  </View>
+                );
+              })}
+            </ScrollView>
           </View>
         );
 
@@ -778,7 +787,6 @@ export default function CommunityScreen({ navigation }: Props) {
           );
         })}
       </ScrollView>
-      <View style={styles.tabBarLine} />
 
       {/* ── Main scroll ────────────────────────────────────────────────── */}
       <ScrollView
@@ -837,8 +845,8 @@ const styles = StyleSheet.create({
   // Header
   header: {
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingTop: 8,
+    paddingBottom: 50,
   },
   headerTitle: {
     fontSize: 20,
@@ -852,16 +860,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 25,
-    marginBottom: 12,
+    paddingHorizontal: 22,
+    marginBottom: 24,
   },
   searchInputWrap: {
     flex: 1,
+    height: 52,
     borderWidth: 1,
     borderColor: C.dark,
     borderRadius: 10,
-    paddingHorizontal: 17,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
   },
   searchInput: {
     flex: 1,
@@ -871,8 +880,8 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   searchFilterBtn: {
-    width: 42,
-    height: 42,
+    width: 52,
+    height: 52,
     borderWidth: 1,
     borderColor: C.dark,
     borderRadius: 10,
@@ -889,13 +898,13 @@ const styles = StyleSheet.create({
 
   // Tabs
   tabScroll: {
-    maxHeight: 28,
+    maxHeight: 40,
   },
   tabRow: {
     flexDirection: 'row',
     paddingHorizontal: 25,
     paddingBottom: 3,
-    gap: 14,
+    gap: 24,
   },
   tabItem: {
     alignItems: 'center',
@@ -903,10 +912,10 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 14,
     fontFamily: 'Pretendard-Regular',
     color: C.muted,
-    lineHeight: 16,
+    lineHeight: 20,
   },
   tabTextActive: {
     color: C.dark,
@@ -943,7 +952,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  sectionTitle:  { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.dark },
+  sectionTitle:  { fontSize: 18, fontFamily: 'Pretendard-Bold', color: C.dark, letterSpacing: -0.38 },
   sectionChevron:{ fontSize: 18, color: C.dark, fontFamily: 'Pretendard-Regular' },
 
   // Category pill
@@ -952,20 +961,21 @@ const styles = StyleSheet.create({
     borderColor: C.mid,
     borderRadius: 50,
     minWidth: 96,
-    height: 25,
-    paddingHorizontal: 19,
+    height: 30,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryPillActive: {
-    backgroundColor: C.mid,
+    backgroundColor: C.dark,
+    borderColor: C.dark,
   },
   categoryPreviewList: {
     gap: 5,
     marginBottom: 18,
   },
   categoryPillText: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Pretendard-Regular',
     color: C.dark,
     letterSpacing: -0.228,
@@ -976,24 +986,29 @@ const styles = StyleSheet.create({
   },
 
   // Product row (shared for Trending + Similar inner)
-  productRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  productRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   productThumb: {
-    width: 68,
-    height: 68,
+    width: 78,
+    height: 78,
     borderRadius: 9,
     backgroundColor: C.thumbBg,
     overflow: 'hidden',
     flexShrink: 0,
   },
-  productInfo:  { flex: 1, gap: 3 },
-  productName:  { fontSize: 14, fontFamily: 'Pretendard-Bold', color: C.mid, letterSpacing: -0.266 },
-  productBrand: { fontSize: 10, color: C.mid, letterSpacing: -0.19 },
-  productMeta:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  productInfo:  { flex: 1, gap: 4 },
+  productName:  { fontSize: 16, fontFamily: 'Pretendard-Bold', color: C.mid, letterSpacing: -0.266, marginTop: 6 },
+  productBrand: { fontSize: 12, color: C.mid, letterSpacing: -0.19 },
+  productMeta:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   productRating:{ fontSize: 10, color: C.mid, letterSpacing: -0.19 },
   rowChevron:   { fontSize: 18, color: C.dark, marginLeft: 4 },
 
   // Trending list
-  trendList: { gap: 0 },
+  trendList: { gap: 10, paddingVertical: 4 },
+  trendCard: {
+    width: SCREEN_W - 100,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   rowDivider:{ height: 1, backgroundColor: C.line, marginVertical: 14 },
 
   // Similar cards

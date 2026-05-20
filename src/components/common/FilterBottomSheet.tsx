@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   switchTrackOn: {
-    backgroundColor: Colors.searchMutedGreen,
+    backgroundColor: '#044733',
   },
   switchThumb: {
     width: 18,

@@ -24,7 +24,7 @@ type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 
 // ── Design tokens (Figma: node 223:9179) ──────────────────────────────────────
 const BG         = '#FDFFFD';
-const DARK_GREEN = '#1C3A19';
+const DARK_GREEN = '#044733';
 const MID_GREEN  = '#556C53';
 
 const BADGE_COLOR: Record<RiskLevel, string> = {

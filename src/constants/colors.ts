@@ -27,7 +27,7 @@ export const Colors = {
 
   // Scan screen
   scanLightGreen: '#FDFFFD',
-  scanSelectedGreen: '#556C53',
+  scanSelectedGreen: '#044733',
   scanMutedGreen: '#A9B6A8',
   scanCorrect: '#25FF81',
   scanResultClose: '#A9B6A8',
@@ -37,14 +37,14 @@ export const Colors = {
   searchCard: '#E1E9DC',
   searchBorder: '#A9B6A8',
   searchDivider: '#D9D9D9',
-  searchDarkGreen: '#1C3A19',
+  searchDarkGreen: '#044733',
   searchMutedGreen: '#556C53',
   searchPoor: '#FF9D00',
   searchWrong: '#FF3434',
 
   // Profile design
   profileBackground: '#FDFFFD',
-  profileDarkGreen: '#1C3A19',
+  profileDarkGreen: '#044733',
   profileMutedGreen: '#556C53',
   profileBorder: '#A9B6A8',
   profileCard: '#E9F0E4',

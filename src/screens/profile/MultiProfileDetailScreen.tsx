@@ -14,7 +14,7 @@ type Nav   = NativeStackNavigationProp<ProfileStackParamList, 'MultiProfileDetai
 type Route = RouteProp<ProfileStackParamList, 'MultiProfileDetail'>;
 
 const BG         = '#FDFFFD';
-const DARK_GREEN = '#1C3A19';
+const DARK_GREEN = '#044733';
 const MID_GREEN  = '#556C53';
 const BORDER     = '#A9B6A8';
 const CARD_FILL  = '#E9F0E4';
