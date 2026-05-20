@@ -47,8 +47,8 @@ const DUMMY_GOOD_PRODUCT: Product = {
 };
 
 // ── Design tokens (Figma: node 223:9111 / 223:9138) ──────────────────────────
-const BG         = '#F9FFF3';
-const DARK_GREEN = '#1C3A19';
+const BG         = '#FDFFFD';
+const DARK_GREEN = '#044733';
 const MID_GREEN  = '#556C53';
 
 const VERDICT_BORDER: Record<RiskLevel, string> = {
