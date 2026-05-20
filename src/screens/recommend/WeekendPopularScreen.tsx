@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
 import {
   FilterState,
@@ -33,6 +34,7 @@ const C = {
   mid: Colors.searchMutedGreen,
   muted: Colors.scanMutedGreen,
   line: Colors.searchDivider,
+  productText: '#044733',
 };
 
 const BADGE_COLOR: Record<RiskLevel, string> = {
@@ -284,6 +286,13 @@ export default function WeekendPopularScreen({ navigation }: Props) {
             />
           )}
         />
+        <LinearGradient
+          colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.92)', 'rgba(253,255,253,1)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.categoryFade}
+          pointerEvents="none"
+        />
       </View>
 
       <FlatList
@@ -393,9 +402,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: C.dark,
-    fontSize: 16,
-    fontFamily: 'Pretendard-ExtraBold',
-    lineHeight: 22,
+    fontSize: 18,
+    fontFamily: 'Pretendard-Bold',
+    letterSpacing: -0.38,
   },
   listContent: {
     paddingTop: 8,
@@ -411,23 +420,33 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
     paddingTop: 8,
     paddingBottom: 28,
+    position: 'relative',
+  },
+  categoryFade: {
+    position: 'absolute',
+    right: 0,
+    top: 8,
+    height: 25,
+    width: 60,
+    zIndex: 1,
   },
   categoryChip: {
     minWidth: 96,
     height: 25,
     borderWidth: 1,
-    borderColor: C.mid,
+    borderColor: C.dark,
     borderRadius: 50,
     paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryChipActive: {
-    backgroundColor: C.mid,
+    backgroundColor: C.dark,
+    borderColor: C.dark,
   },
   categoryText: {
     color: C.dark,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
   },
@@ -473,43 +492,41 @@ const styles = StyleSheet.create({
   productInfo: {
     flex: 1,
     minWidth: 0,
-    gap: 2,
+    gap: 4,
   },
   productName: {
-    color: C.mid,
-    fontSize: 14,
+    color: C.productText,
+    fontSize: 16,
     fontFamily: 'Pretendard-Bold',
-    lineHeight: 21,
     letterSpacing: -0.266,
+    marginTop: 6,
   },
   brandName: {
-    color: C.mid,
-    fontSize: 10,
+    color: C.productText,
+    fontSize: 12,
     fontFamily: 'Pretendard-Regular',
-    lineHeight: 15,
     letterSpacing: -0.19,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 9,
+    marginTop: 8,
   },
   badge: {
-    height: 19,
-    minWidth: 56,
-    borderWidth: 1,
-    borderRadius: 24,
-    paddingHorizontal: 7,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    gap: 5,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Pretendard-SemiBold',
-    letterSpacing: -0.19,
+    letterSpacing: -0.1,
   },
   scoreText: {
     flex: 1,

@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
 import { clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getAllergenDisplayName } from '../../lib/display-names';
@@ -436,6 +437,13 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
                   />
                 )}
               />
+              <LinearGradient
+                colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.92)', 'rgba(253,255,253,1)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.categoryFade}
+                pointerEvents="none"
+              />
             </View>
           </View>
         }
@@ -559,14 +567,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: C.dark,
-    fontSize: 16,
-    fontFamily: 'Pretendard-ExtraBold',
-    lineHeight: 22,
+    fontSize: 18,
+    fontFamily: 'Pretendard-Bold',
+    letterSpacing: -0.38,
   },
   categoryWrap: {
     backgroundColor: C.bg,
     paddingTop: 8,
     paddingBottom: 26,
+    position: 'relative',
   },
   categoryList: {
     paddingHorizontal: 28,
@@ -576,20 +585,29 @@ const styles = StyleSheet.create({
     minWidth: 96,
     height: 25,
     borderWidth: 1,
-    borderColor: C.mid,
+    borderColor: C.dark,
     borderRadius: 50,
     paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryChipActive: {
-    backgroundColor: C.mid,
+    backgroundColor: C.dark,
+    borderColor: C.dark,
   },
   categoryText: {
     color: C.dark,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
+  },
+  categoryFade: {
+    position: 'absolute',
+    right: 0,
+    top: 8,
+    height: 25,
+    width: 60,
+    zIndex: 1,
   },
   categoryTextActive: {
     color: Colors.white,
