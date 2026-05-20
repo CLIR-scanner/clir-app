@@ -30,7 +30,7 @@ type DietaryType    = 'allergy' | 'vegetarian' | 'both';
 type Severity       = 'mild' | 'moderate' | 'severe';
 type ReactionType   = 'immediate' | 'delayed' | 'not_sure';
 type VegetarianType =
-  | 'pescatarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian'
+  | 'fruitarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian'
   | 'lacto_ovo_vegetarian' | 'pesco_vegetarian' | 'pollo_vegetarian' | 'flexitarian';
 type VeganStrictness = 'strict' | 'flexible';
 type Step =
@@ -284,7 +284,7 @@ function StepVegetarianType({ selected, onSelect, onNext }: {
 }) {
   const { t } = useTranslation();
   const options: { value: VegetarianType }[] = [
-    { value: 'pescatarian' },
+    { value: 'fruitarian' },
     { value: 'vegan' },
     { value: 'lacto_vegetarian' },
     { value: 'ovo_vegetarian' },
@@ -570,7 +570,7 @@ export default function MultiProfileAddScreen() {
       case 'vege_confirm': {
         const confirmLabel = veganStrictness
           ? t(`survey.dietTitles.${veganStrictness}`)
-          : t(`survey.vegetarianTypes.${vegetarianType ?? 'pescatarian'}`);
+          : t(`survey.vegetarianTypes.${vegetarianType ?? 'fruitarian'}`);
         return (
           <StepVegeConfirm
             label={confirmLabel}

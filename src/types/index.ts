@@ -553,7 +553,7 @@ export type SurveyParams = {
   hasAllergyDoc?: boolean;
   allergySeverity?: 'mild' | 'moderate' | 'severe';
   allergyReactionType?: 'immediate' | 'delayed' | 'not_sure';
-  vegetarianType?: 'pescatarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian' | 'lacto_ovo_vegetarian' | 'pesco_vegetarian' | 'pollo_vegetarian' | 'flexitarian';
+  vegetarianType?: 'fruitarian' | 'vegan' | 'lacto_vegetarian' | 'ovo_vegetarian' | 'lacto_ovo_vegetarian' | 'pesco_vegetarian' | 'pollo_vegetarian' | 'flexitarian';
   veganStrictness?: 'strict' | 'flexible';
   /** Both 플로우: 알러지 플로우에서 수집한 allergyProfile을 채식 플로우로 전달 */
   allergyProfileJson?: string;

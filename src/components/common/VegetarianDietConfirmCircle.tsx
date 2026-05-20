@@ -32,7 +32,7 @@ const AnimatedRadialGradient  = Animated.createAnimatedComponent(RadialGradient)
 // ── Exported label maps ───────────────────────────────────────────────────────
 
 export const VEGETARIAN_LABELS: Record<NonNullable<SurveyParams['vegetarianType']>, string> = {
-  pescatarian:          'Fruitarian',
+  fruitarian:          'Fruitarian',
   vegan:                'Vegan',
   lacto_vegetarian:     'Lacto - Vegetarian',
   ovo_vegetarian:       'Ovo - Vegetarian',

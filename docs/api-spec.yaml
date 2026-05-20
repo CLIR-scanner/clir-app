@@ -110,7 +110,7 @@ paths:
                   description: |
                     식이 제한 목록. type + 선택적 vegan modifier 가 함께 저장된다.
                     유효한 값:
-                      - DietaryRestriction enum: vegan / pescatarian / lacto_vegetarian /
+                      - DietaryRestriction enum: vegan / fruitarian / lacto_vegetarian /
                         ovo_vegetarian / lacto_ovo_vegetarian / pesco_vegetarian /
                         pollo_vegetarian / flexitarian
                       - vegan 전용 modifier: strict / flexible
@@ -2598,7 +2598,7 @@ components:
       type: string
       enum:
         - vegan
-        - pescatarian
+        - fruitarian
         - lacto_vegetarian
         - ovo_vegetarian
         - lacto_ovo_vegetarian

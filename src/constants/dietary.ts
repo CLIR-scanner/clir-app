@@ -9,7 +9,7 @@ export const DIET_RESTRICTION_CATEGORIES = [
 ];
 
 export const DIET_LABELS: Record<string, string> = {
-  pescatarian:          'Fruitarian',
+  fruitarian:          'Fruitarian',
   vegan:                'Vegan',
   lacto_vegetarian:     'Lacto-Vegetarian',
   ovo_vegetarian:       'Ovo-Vegetarian',
@@ -22,7 +22,7 @@ export const DIET_LABELS: Record<string, string> = {
 };
 
 export const DIET_TITLES: Record<string, string> = {
-  pescatarian:          'a Fruitarian',
+  fruitarian:          'a Fruitarian',
   vegan:                'a Vegan',
   lacto_vegetarian:     'a Lacto-Vegetarian',
   ovo_vegetarian:       'an Ovo-Vegetarian',
@@ -35,7 +35,7 @@ export const DIET_TITLES: Record<string, string> = {
 };
 
 export const DIET_TYPE_DESCRIPTIONS: Record<string, string> = {
-  pescatarian:          '✓  Fruits, grains, nuts\n✗  Vegetables, meat, dairy, eggs, seafood',
+  fruitarian:          '✓  Fruits, grains, nuts\n✗  Vegetables, meat, dairy, eggs, seafood',
   vegan:                '✓  All plant-based foods\n✗  Meat, seafood, dairy, eggs, honey',
   lacto_vegetarian:     '✓  Vegetables, dairy\n✗  Meat, seafood, eggs',
   ovo_vegetarian:       '✓  Vegetables, eggs\n✗  Meat, seafood, dairy',
@@ -56,7 +56,7 @@ export const DIET_CATEGORY_DESCRIPTIONS: Record<string, string> = {
 };
 
 export const DIET_AVOIDED_CATEGORIES: Record<string, string[]> = {
-  pescatarian:          ['Poultry', 'Red Meat'],
+  fruitarian:           ['Vegetables', 'Dairy', 'Eggs', 'Seafood', 'Poultry', 'Red Meat'],
   vegan:                ['Dairy', 'Eggs', 'Seafood', 'Poultry', 'Red Meat'],
   lacto_vegetarian:     ['Eggs', 'Seafood', 'Poultry', 'Red Meat'],
   ovo_vegetarian:       ['Dairy', 'Seafood', 'Poultry', 'Red Meat'],

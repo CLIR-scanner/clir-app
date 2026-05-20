@@ -18,7 +18,7 @@ type Route = RouteProp<AuthStackParamList, 'SurveyVegetarian'>;
 type VegetarianType = NonNullable<SurveyParams['vegetarianType']>;
 
 const OPTIONS: { value: VegetarianType }[] = [
-  { value: 'pescatarian' },
+  { value: 'fruitarian' },
   { value: 'vegan' },
   { value: 'lacto_vegetarian' },
   { value: 'ovo_vegetarian' },
