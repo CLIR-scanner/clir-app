@@ -43,18 +43,18 @@ export function relativeTime(iso: string): string {
 
 export function BookmarkIcon({
   filled,
-  size = 21,
-  color = C.dark,
+  size = 28,
 }: {
   filled: boolean;
   size?: number;
-  color?: string;
 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 21 21" fill="none">
       <Path
-        d="M5.25 17.0625V4.914C5.25 4.51092 5.38504 4.17462 5.65512 3.90512C5.92521 3.63562 6.2615 3.50058 6.664 3.5H14.3369C14.7394 3.5 15.0757 3.63504 15.3458 3.90512C15.6158 4.17521 15.7506 4.5115 15.75 4.914V17.0625L10.5 14.8076L5.25 17.0625ZM6.125 15.7063L10.5 13.825L14.875 15.7063V4.914C14.875 4.77925 14.819 4.65558 14.707 4.543C14.595 4.43042 14.4713 4.37442 14.336 4.375H6.664C6.52925 4.375 6.40558 4.431 6.293 4.543C6.18042 4.655 6.12442 4.77867 6.125 4.914V15.7063Z"
-        fill={filled ? color : C.muted}
+        d={filled
+          ? 'M5.25 17.0625V4.914C5.25 4.51092 5.38504 4.17462 5.65512 3.90512C5.92521 3.63562 6.2615 3.50058 6.664 3.5H14.3369C14.7394 3.5 15.0757 3.63504 15.3458 3.90512C15.6158 4.17521 15.7506 4.5115 15.75 4.914V17.0625L10.5 14.8076L5.25 17.0625Z'
+          : 'M5.25 17.0625V4.914C5.25 4.51092 5.38504 4.17462 5.65512 3.90512C5.92521 3.63562 6.2615 3.50058 6.664 3.5H14.3369C14.7394 3.5 15.0757 3.63504 15.3458 3.90512C15.6158 4.17521 15.7506 4.5115 15.75 4.914V17.0625L10.5 14.8076L5.25 17.0625ZM6.125 15.7063L10.5 13.825L14.875 15.7063V4.914C14.875 4.77925 14.819 4.65558 14.707 4.543C14.595 4.43042 14.4713 4.37442 14.336 4.375H6.664C6.52925 4.375 6.40558 4.431 6.293 4.543C6.18042 4.655 6.12442 4.77867 6.125 4.914V15.7063Z'}
+        fill={filled ? '#044733' : C.muted}
       />
     </Svg>
   );
@@ -140,10 +140,10 @@ const cardSt = StyleSheet.create({
   wrap:     { marginBottom: 28 },
   imgBox:   { height: 243, borderRadius: 15, backgroundColor: C.thumb, overflow: 'hidden', marginBottom: 12 },
   body:     { gap: 4 },
-  title:    { fontSize: 15, fontFamily: 'Pretendard-Bold', color: C.dark,  lineHeight: 21, letterSpacing: -0.285 },
+  title:    { fontSize: 18, fontFamily: 'Pretendard-Bold', color: C.dark,  lineHeight: 24, letterSpacing: -0.285 },
   bodyText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.mid,   lineHeight: 19, letterSpacing: -0.247 },
   footer:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  time:     { fontSize: 10, fontFamily: 'Pretendard-Regular', color: C.muted, letterSpacing: -0.19 },
+  time:     { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.muted, letterSpacing: -0.19 },
 });
 
 // ── MagazineScreen ────────────────────────────────────────────────────────────
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     backgroundColor: C.thumb,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 32,
     justifyContent: 'flex-end',
     padding: 18,
   },
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   },
 
   sectionLabel: { marginBottom: 6 },
-  sectionTitle: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: C.dark, lineHeight: 32, letterSpacing: -0.38 },
+  sectionTitle: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: C.dark, lineHeight: 32, letterSpacing: -0.38 },
 
   pillRow: { gap: 5, marginBottom: 22 },
 });
