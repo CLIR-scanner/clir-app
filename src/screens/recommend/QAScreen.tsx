@@ -246,6 +246,17 @@ export default function QAScreen({ navigation }: Props) {
           <QuestionRow item={item} onPress={() => openQuestion(item.id)} />
         )}
       />
+
+      <TouchableOpacity
+        style={[styles.fab, { bottom: insets.bottom - 8 }]}
+        onPress={() => navigation.navigate('QACreate')}
+        activeOpacity={0.85}
+      >
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+          <Path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
+        </Svg>
+        <Text style={styles.fabText}>Ask Questions</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -458,5 +469,22 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: Colors.white,
     fontFamily: 'Pretendard-Bold',
+  },
+  fab: {
+    position: 'absolute',
+    right: 24,
+    backgroundColor: '#044733',
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    gap: 4,
+  },
+  fabText: {
+    fontSize: 14,
+    fontFamily: 'Pretendard-Medium',
+    color: Colors.white,
+    letterSpacing: -0.228,
   },
 });
