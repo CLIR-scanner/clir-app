@@ -135,7 +135,7 @@ export default function MagazineDetailScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
           >
             <Animated.View style={{ transform: [{ scale: bmScale }] }}>
-              <BookmarkIcon filled={bookmarked} size={24} />
+              <BookmarkIcon filled={bookmarked} size={28} />
             </Animated.View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -192,7 +192,7 @@ export default function MagazineDetailScreen({ navigation, route }: Props) {
               style={styles.footerBookmark}
             >
               <Animated.View style={{ transform: [{ scale: bmScale }] }}>
-                <BookmarkIcon filled={bookmarked} size={20} />
+                <BookmarkIcon filled={bookmarked} size={28} />
               </Animated.View>
               <Text style={styles.footerBookmarkText}>
                 {bookmarked ? t('recommendUi.magazineBookmark') : t('recommendUi.magazineBookmark')}
@@ -212,27 +212,24 @@ const styles = StyleSheet.create({
 
   header: {
     height: 95,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 16,
-    paddingHorizontal: 20,
   },
   backBtn: {
     position: 'absolute',
     left: 15,
-    bottom: 14,
+    bottom: 26,
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backIcon:    { color: C.dark, fontSize: 28, lineHeight: 30, fontFamily: 'Pretendard-Regular' },
-  headerTitle: { color: C.dark, fontSize: 20, fontFamily: 'Pretendard-Bold', letterSpacing: -0.38 },
+  headerTitle: { marginTop: 8, color: C.dark, fontSize: 20, fontFamily: 'Pretendard-Bold', letterSpacing: -0.38 },
   headerRight: {
     position: 'absolute',
     right: 20,
-    bottom: 16,
+    bottom: 32,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,

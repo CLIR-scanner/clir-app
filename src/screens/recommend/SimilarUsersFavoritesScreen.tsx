@@ -127,7 +127,7 @@ function RiskBadge({ level }: { level: RiskLevel }) {
 
   return (
     <View style={[styles.badge, { borderColor: color }]}>
-      <RiskBadgeIcon level={level} size={12} />
+      <RiskBadgeIcon level={level} size={16} />
       <Text style={[styles.badgeText, { color }]}>{label}</Text>
     </View>
   );
@@ -203,21 +203,12 @@ function ProductSummary({
         accessibilityLabel={expanded ? 'Hide review' : 'Show review'}
         activeOpacity={0.7}
       >
-        <Text style={styles.chevron}>{expanded ? '⌃' : '⌄'}</Text>
+        <Text style={[styles.chevron, !expanded && { transform: [{ scaleY: -1 }] }]}>⌃</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function Stars({ rating }: { rating: number }) {
-  const fullStars = Math.max(0, Math.min(5, Math.round(rating)));
-  return (
-    <Text style={styles.stars}>
-      {'★'.repeat(fullStars)}
-      <Text style={styles.emptyStars}>{'☆'.repeat(5 - fullStars)}</Text>
-    </Text>
-  );
-}
 
 function ViewIcon() {
   return (
@@ -276,7 +267,6 @@ function ReviewCard({
               <Text style={styles.author}>{review.author}</Text>
               <Text style={styles.location}>{review.location}</Text>
             </View>
-            <Stars rating={review.rating} />
           </View>
           <View style={styles.tag}>
             <Text style={styles.tagText} numberOfLines={1}>{review.tag}</Text>
@@ -504,15 +494,15 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     flex: 1,
-    height: 42,
+    height: 52,
     borderWidth: 1,
     borderColor: C.dark,
     borderRadius: 10,
-    paddingHorizontal: 17,
+    paddingHorizontal: 16,
     justifyContent: 'center',
   },
   searchInput: {
-    color: C.dark,
+    color: C.muted,
     fontSize: 16,
     fontFamily: 'Pretendard-SemiBold',
     padding: 0,
@@ -520,12 +510,13 @@ const styles = StyleSheet.create({
   shareBanner: {
     height: 70,
     marginHorizontal: 22,
-    marginTop: 28,
+    marginTop: 14,
     borderRadius: 13,
     backgroundColor: C.dark,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingLeft: 22,
+    paddingRight: 15,
   },
   shareIcon: {
     color: Colors.white,
@@ -540,26 +531,26 @@ const styles = StyleSheet.create({
     letterSpacing: -0.304,
   },
   writeButton: {
-    height: 26,
-    minWidth: 133,
+    height: 36,
+    minWidth: 150,
     borderRadius: 10,
     backgroundColor: C.mid,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   writeButtonText: {
     color: Colors.white,
-    fontSize: 12,
+    fontSize: 15,
     fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
   },
   writeIcon: {
     color: Colors.white,
-    fontSize: 12,
-    lineHeight: 14,
+    fontSize: 13,
+    lineHeight: 16,
   },
   titleWrap: {
     paddingHorizontal: 28,
@@ -573,8 +564,8 @@ const styles = StyleSheet.create({
   },
   categoryWrap: {
     backgroundColor: C.bg,
-    paddingTop: 8,
-    paddingBottom: 26,
+    paddingTop: 12,
+    paddingBottom: 18,
     position: 'relative',
   },
   categoryList: {
@@ -583,9 +574,9 @@ const styles = StyleSheet.create({
   },
   categoryChip: {
     minWidth: 96,
-    height: 25,
+    height: 30,
     borderWidth: 1,
-    borderColor: C.dark,
+    borderColor: C.mid,
     borderRadius: 50,
     paddingHorizontal: 14,
     alignItems: 'center',
@@ -604,8 +595,8 @@ const styles = StyleSheet.create({
   categoryFade: {
     position: 'absolute',
     right: 0,
-    top: 8,
-    height: 25,
+    top: 12,
+    height: 30,
     width: 60,
     zIndex: 1,
   },
@@ -631,11 +622,11 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
   },
   productHeader: {
-    minHeight: 88,
+    minHeight: 104,
     backgroundColor: C.card,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
   },
   productHeaderOpen: {
     borderTopLeftRadius: 20,
@@ -652,13 +643,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   thumb: {
-    width: 68,
-    height: 68,
+    width: 82,
+    height: 82,
     borderWidth: 1,
     borderColor: C.muted,
     borderRadius: 9,
     backgroundColor: Colors.white,
     overflow: 'hidden',
+    flexShrink: 0,
   },
   thumbPlaceholder: {
     flex: 1,
@@ -667,43 +659,42 @@ const styles = StyleSheet.create({
   productInfo: {
     flex: 1,
     minWidth: 0,
-    gap: 2,
+    gap: 1,
   },
   productName: {
     color: C.mid,
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Pretendard-Bold',
-    lineHeight: 21,
+    lineHeight: 22,
     letterSpacing: -0.266,
   },
   brandName: {
     color: C.mid,
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Pretendard-Regular',
-    lineHeight: 15,
+    lineHeight: 17,
     letterSpacing: -0.19,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 9,
+    marginTop: 10,
   },
   badge: {
-    height: 19,
-    minWidth: 56,
-    borderWidth: 1,
-    borderRadius: 24,
-    paddingHorizontal: 7,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    gap: 5,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Pretendard-SemiBold',
-    letterSpacing: -0.19,
+    letterSpacing: -0.1,
   },
   scoreText: {
     flex: 1,
@@ -758,14 +749,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Pretendard-Regular',
     letterSpacing: -0.228,
-  },
-  stars: {
-    color: Colors.searchPoor,
-    fontSize: 15,
-    letterSpacing: 0,
-  },
-  emptyStars: {
-    color: Colors.searchPoor,
   },
   tag: {
     alignSelf: 'flex-start',

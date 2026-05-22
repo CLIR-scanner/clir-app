@@ -43,23 +43,18 @@ export function relativeTime(iso: string): string {
 
 export function BookmarkIcon({
   filled,
-  size = 22,
-  color = C.dark,
+  size = 28,
 }: {
   filled: boolean;
   size?: number;
-  color?: string;
 }) {
-  // viewBox 0 0 14 20 — ribbon with pointed bottom
-  const w = size * (14 / 20);
   return (
-    <Svg width={w} height={size} viewBox="0 0 14 20">
+    <Svg width={size} height={size} viewBox="0 0 21 21" fill="none">
       <Path
-        d="M1 0 H13 Q14 0 14 1 V20 L7 15 L0 20 V1 Q0 0 1 0 Z"
-        fill={filled ? color : 'none'}
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinejoin="round"
+        d={filled
+          ? 'M5.25 17.0625V4.914C5.25 4.51092 5.38504 4.17462 5.65512 3.90512C5.92521 3.63562 6.2615 3.50058 6.664 3.5H14.3369C14.7394 3.5 15.0757 3.63504 15.3458 3.90512C15.6158 4.17521 15.7506 4.5115 15.75 4.914V17.0625L10.5 14.8076L5.25 17.0625Z'
+          : 'M5.25 17.0625V4.914C5.25 4.51092 5.38504 4.17462 5.65512 3.90512C5.92521 3.63562 6.2615 3.50058 6.664 3.5H14.3369C14.7394 3.5 15.0757 3.63504 15.3458 3.90512C15.6158 4.17521 15.7506 4.5115 15.75 4.914V17.0625L10.5 14.8076L5.25 17.0625ZM6.125 15.7063L10.5 13.825L14.875 15.7063V4.914C14.875 4.77925 14.819 4.65558 14.707 4.543C14.595 4.43042 14.4713 4.37442 14.336 4.375H6.664C6.52925 4.375 6.40558 4.431 6.293 4.543C6.18042 4.655 6.12442 4.77867 6.125 4.914V15.7063Z'}
+        fill={filled ? '#044733' : C.muted}
       />
     </Svg>
   );
@@ -88,10 +83,10 @@ function CategoryPill({
 }
 
 const pillSt = StyleSheet.create({
-  pill:       { borderWidth: 1, borderColor: C.mid, borderRadius: 50, minWidth: 96, height: 25,
-                paddingHorizontal: 19, alignItems: 'center', justifyContent: 'center' },
-  pillActive: { backgroundColor: C.mid },
-  text:       { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.dark, letterSpacing: -0.228 },
+  pill:       { borderWidth: 1, borderColor: C.mid, borderRadius: 50, minWidth: 96, height: 30,
+                paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
+  pillActive: { backgroundColor: C.dark, borderColor: C.dark },
+  text:       { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.dark, letterSpacing: -0.228 },
   textActive: { color: Colors.white, fontFamily: 'Pretendard-Bold' },
 });
 
@@ -145,10 +140,10 @@ const cardSt = StyleSheet.create({
   wrap:     { marginBottom: 28 },
   imgBox:   { height: 243, borderRadius: 15, backgroundColor: C.thumb, overflow: 'hidden', marginBottom: 12 },
   body:     { gap: 4 },
-  title:    { fontSize: 15, fontFamily: 'Pretendard-Bold', color: C.dark,  lineHeight: 21, letterSpacing: -0.285 },
+  title:    { fontSize: 18, fontFamily: 'Pretendard-Bold', color: C.dark,  lineHeight: 24, letterSpacing: -0.285 },
   bodyText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.mid,   lineHeight: 19, letterSpacing: -0.247 },
   footer:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  time:     { fontSize: 10, fontFamily: 'Pretendard-Regular', color: C.muted, letterSpacing: -0.19 },
+  time:     { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.muted, letterSpacing: -0.19 },
 });
 
 // ── MagazineScreen ────────────────────────────────────────────────────────────
@@ -244,7 +239,11 @@ export default function MagazineScreen({ navigation }: Props) {
                 onPress={() => navigation.navigate('MagazineDetail', { articleId: featured.id })}
                 activeOpacity={0.9}
               >
-                <Image source={{ uri: featured.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                <Image source={{ uri: 'https://loremflickr.com/800/380/healthy,food,grocery?lock=77' }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                <View style={styles.heroOverlay} />
+                <Text style={styles.heroTag}>{t('recommendUi.featured')}</Text>
+                <Text style={styles.heroTitle}>{t('recommendUi.bannerTitle')}</Text>
+                <Text style={styles.heroSub}>{t('recommendUi.featuredSubtitle')}</Text>
               </TouchableOpacity>
             )}
 
@@ -296,34 +295,58 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     marginBottom: 14,
   },
   searchBox: {
     flex: 1,
-    height: 42,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: C.dark,
     borderRadius: 10,
-    paddingHorizontal: 17,
+    paddingHorizontal: 16,
     gap: 6,
   },
-  searchInput: { flex: 1, color: C.dark, fontSize: 16, fontFamily: 'Pretendard-SemiBold', padding: 0 },
+  searchInput: { flex: 1, color: C.muted, fontSize: 16, fontFamily: 'Pretendard-SemiBold', padding: 0 },
   clearBtn: { fontSize: 12, color: C.mid },
 
   listContent: { paddingHorizontal: 24 },
 
   heroWrap: {
-    height: 196,
-    borderRadius: 15,
+    height: 190,
+    borderRadius: 9,
     backgroundColor: C.thumb,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 32,
+    justifyContent: 'flex-end',
+    padding: 18,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+  },
+  heroTag: {
+    fontSize: 10,
+    fontFamily: 'Pretendard-Bold',
+    color: '#25FF81',
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontFamily: 'Pretendard-ExtraBold',
+    color: '#FFFFFF',
+    lineHeight: 28,
+    marginBottom: 6,
+  },
+  heroSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
   },
 
-  sectionLabel: { marginBottom: 12 },
+  sectionLabel: { marginBottom: 6 },
   sectionTitle: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: C.dark, lineHeight: 32, letterSpacing: -0.38 },
 
   pillRow: { gap: 5, marginBottom: 22 },

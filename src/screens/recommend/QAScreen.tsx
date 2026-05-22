@@ -19,6 +19,13 @@ import { QAQuestion, RecommendStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'QAScreen'>;
 
+const CATEGORIES = [
+  { id: 'all',      label: 'All Categories' },
+  { id: 'asking',  label: 'Asking' },
+  { id: 'product', label: 'Product Asking' },
+  { id: 'allergy', label: 'Allergy & Vegetarian Diet' },
+] as const;
+
 const C = {
   bg: Colors.searchBackground,
   dark: Colors.searchDarkGreen,
@@ -91,7 +98,9 @@ function FeaturedQuestionCard({ item, onPress }: { item: QAQuestion; onPress: ()
       {isNotice ? (
         <Text style={styles.noticeAuthor}>{item.author}</Text>
       ) : (
-        <Meta views={item.viewCount} answers={item.answerCount} color={C.mid} />
+        <View style={styles.askingMeta}>
+          <Meta views={item.viewCount} answers={item.answerCount} color={C.mid} />
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -114,6 +123,7 @@ export default function QAScreen({ navigation }: Props) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [questions, setQuestions] = useState<QAQuestion[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -127,13 +137,16 @@ export default function QAScreen({ navigation }: Props) {
   const listQuestions = useMemo(() => {
     const q = query.trim().toLowerCase();
     const source = questions.filter(item => !item.isNotice);
-    if (!q) return source;
-    return source.filter(item =>
-      item.title.toLowerCase().includes(q) ||
-      item.body.toLowerCase().includes(q) ||
-      item.label.toLowerCase().includes(q),
-    );
-  }, [query, questions]);
+    return source
+      .filter(item => {
+        if (selectedCategory === 'all') return true;
+        if (selectedCategory === 'asking') return item.label === 'Asking';
+        if (selectedCategory === 'product') return item.label === 'Products Asking' || item.label === 'Product Asking';
+        if (selectedCategory === 'allergy') return item.label.toLowerCase().includes('allergy') || item.label.toLowerCase().includes('diet') || item.label.toLowerCase().includes('vegan');
+        return true;
+      })
+      .filter(item => !q || item.title.toLowerCase().includes(q) || item.body.toLowerCase().includes(q) || item.label.toLowerCase().includes(q));
+  }, [query, questions, selectedCategory]);
 
   function handleClearSearch() {
     setQuery('');
@@ -207,6 +220,25 @@ export default function QAScreen({ navigation }: Props) {
                 />
               ))}
             </ScrollView>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryList}
+              style={styles.categoryRow}
+            >
+              {CATEGORIES.map(cat => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[styles.categoryChip, selectedCategory === cat.id && styles.categoryChipActive]}
+                  onPress={() => setSelectedCategory(cat.id)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.categoryText, selectedCategory === cat.id && styles.categoryTextActive]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         }
         ItemSeparatorComponent={() => <View style={styles.divider} />}
@@ -258,18 +290,18 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     flex: 1,
-    height: 42,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: C.dark,
     borderRadius: 10,
-    paddingHorizontal: 17,
+    paddingHorizontal: 16,
     gap: 6,
   },
   searchInput: {
     flex: 1,
-    color: C.dark,
+    color: C.muted,
     fontSize: 16,
     fontFamily: 'Pretendard-SemiBold',
     padding: 0,
@@ -283,12 +315,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginLeft: 28,
-    marginTop: 36,
+    marginTop: 28,
     marginBottom: 9,
     color: C.dark,
-    fontSize: 16,
-    fontFamily: 'Pretendard-ExtraBold',
-    lineHeight: 22,
+    fontSize: 18,
+    fontFamily: 'Pretendard-Bold',
+    letterSpacing: -0.38,
   },
   listContent: {
     paddingTop: 9,
@@ -346,6 +378,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Light',
     lineHeight: 13,
   },
+  askingMeta: {
+    position: 'absolute',
+    left: 22,
+    bottom: 19,
+  },
   questionRow: {
     paddingHorizontal: 32,
     paddingVertical: 15,
@@ -390,5 +427,36 @@ const styles = StyleSheet.create({
     height: 1,
     marginHorizontal: 32,
     backgroundColor: C.line,
+  },
+  categoryRow: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  categoryList: {
+    paddingHorizontal: 28,
+    gap: 5,
+  },
+  categoryChip: {
+    height: 30,
+    borderWidth: 1,
+    borderColor: C.mid,
+    borderRadius: 50,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryChipActive: {
+    backgroundColor: C.dark,
+    borderColor: C.dark,
+  },
+  categoryText: {
+    color: C.dark,
+    fontSize: 13,
+    fontFamily: 'Pretendard-Regular',
+    letterSpacing: -0.228,
+  },
+  categoryTextActive: {
+    color: Colors.white,
+    fontFamily: 'Pretendard-Bold',
   },
 });
