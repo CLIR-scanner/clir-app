@@ -266,11 +266,11 @@ const bannerSt = StyleSheet.create({
   },
 });
 
-function SectionHeader({ title, onPress }: { title: string; onPress?: () => void }) {
+function SectionHeader({ title, onPress, showChevron = true }: { title: string; onPress?: () => void; showChevron?: boolean }) {
   return (
     <TouchableOpacity style={styles.sectionHeader} onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {onPress && (
+      {onPress && showChevron && (
         <View style={styles.sectionMoreButton}>
           <Text style={styles.sectionChevron}>›</Text>
         </View>
@@ -486,7 +486,7 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Week Trends':
         return (
           <View style={[styles.section, styles.weekSection]}>
-            <SectionHeader title={t('recommendUi.trending')} />
+            <SectionHeader title={t('recommendUi.trending')} onPress={() => navigation.navigate('WeekendPopular')} showChevron={false} />
             <CategoryPreviewList
               selectedCategory={trendingCategory}
               onSelect={setTrendingCategory}
@@ -527,7 +527,7 @@ export default function CommunityScreen({ navigation }: Props) {
       case 'Similar Trends':
         return (
           <View style={styles.section}>
-            <SectionHeader title={t('recommendUi.similarPicks')} />
+            <SectionHeader title={t('recommendUi.similarPicks')} onPress={() => navigation.navigate('SimilarUsersFavorites')} showChevron={false} />
             <CategoryPreviewList
               selectedCategory="all"
               onSelect={() => {}}
