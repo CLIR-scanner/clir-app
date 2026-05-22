@@ -104,9 +104,13 @@ export default function SurveyVegetarianScreen() {
             <Text style={styles.infoTitle} numberOfLines={1}>
               {infoType ? t(`survey.vegetarianTypes.${infoType}`) : ''}
             </Text>
-            <Text style={styles.infoBody} numberOfLines={2}>
-              {infoType ? (DIET_TYPE_DESCRIPTIONS[infoType] ?? '') : ''}
-            </Text>
+            <View style={styles.infoBodyWrapper}>
+              {infoType && (DIET_TYPE_DESCRIPTIONS[infoType] ?? '').split('\n').map((line, i) => (
+                <Text key={i} style={[styles.infoBody, line.startsWith('✗') && styles.infoBodyDanger]}>
+                  {line}
+                </Text>
+              ))}
+            </View>
             <TouchableOpacity style={styles.infoClose} onPress={() => setInfoType(null)}>
               <Text style={styles.infoCloseText}>Close</Text>
             </TouchableOpacity>
@@ -146,7 +150,9 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   infoCard: { backgroundColor: S.bg, borderRadius: 20, paddingVertical: 28, paddingHorizontal: 24, marginHorizontal: 24, alignSelf: 'stretch' },
   infoTitle: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: '#000000', height: 24, marginBottom: 12 },
-  infoBody: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 22, height: 44, marginBottom: 24 },
+  infoBodyWrapper: { marginBottom: 36 },
+  infoBody: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 22 },
+  infoBodyDanger: { color: '#FF3B30' },
   infoClose: { height: 48, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   infoCloseText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: S.textLight },
   continueButton: { height: 58, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },

@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnActive: { backgroundColor: Colors.searchMutedGreen },
+  filterBtnActive: { backgroundColor: '#044733' },
   filterBadge: {
     position: 'absolute',
     top: 6, right: 6,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  sortPillActive: { backgroundColor: Colors.searchMutedGreen },
+  sortPillActive: { backgroundColor: '#044733' },
   sortPillLabel: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: Colors.searchMutedGreen, letterSpacing: -0.27 },
   sortPillLabelActive: { color: Colors.white },
   sortArrow: { fontSize: 15, color: Colors.searchMutedGreen, lineHeight: 16 },

@@ -20,7 +20,7 @@ import { useUserStore } from '../../store/user.store';
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'PersonalName'>;
 
 const BG         = '#FDFFFD';
-const DARK_GREEN = '#1C3A19';
+const DARK_GREEN = '#044733';
 const MID_GREEN  = '#556C53';
 const BORDER     = '#A9B6A8';
 

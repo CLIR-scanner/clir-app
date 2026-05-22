@@ -27,7 +27,8 @@ const BORDER      = Colors.profileBorder;
 const CARD_FILL   = Colors.profileCard;
 const STRICT_BG   = Colors.profileStrictBackground;
 const STRICT_CLR  = Colors.profileStrict;
-const CHIP_TEXT   = MID_GREEN;
+const CHIP_FILL   = '#F9FFFB';
+const CHIP_TEXT   = DARK_GREEN;
 
 // ── Dietary helpers ───────────────────────────────────────────────────────────
 
@@ -451,14 +452,14 @@ const styles = StyleSheet.create({
     width: 66,
     height: 66,
     borderRadius: 33,
-    backgroundColor: MID_GREEN,
+    backgroundColor: DARK_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
     fontSize: 28,
     fontFamily: 'Pretendard-ExtraBold',
-    color: Colors.white,
+    color: Colors.scanLightGreen,
     lineHeight: 32,
   },
   userInfo: {
@@ -564,7 +565,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: CARD_FILL,
+    backgroundColor: CHIP_FILL,
+    borderWidth: 1,
+    borderColor: DARK_GREEN,
     borderRadius: 100,
     paddingVertical: 10,
     paddingHorizontal: 18,

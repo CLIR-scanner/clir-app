@@ -175,20 +175,6 @@ export default function SurveyVegetarianIngredientsScreen() {
                 activeOpacity={isEditing ? 0.7 : 1}
               >
                 <Text style={styles.itemText}>{getDietCategoryLabel(item)}</Text>
-                <View style={styles.itemRight}>
-                  {isEditing && (
-                    <View style={styles.removeBox}>
-                      <Text style={styles.removeIcon}>−</Text>
-                    </View>
-                  )}
-                  <TouchableOpacity
-                    style={styles.infoButton}
-                    onPress={() => setInfoCategory(item)}
-                    hitSlop={8}
-                  >
-                    <Text style={styles.infoButtonText}>?</Text>
-                  </TouchableOpacity>
-                </View>
               </TouchableOpacity>
             ))}
 
@@ -204,15 +190,6 @@ export default function SurveyVegetarianIngredientsScreen() {
 
       {/* 하단 버튼 */}
       <View style={styles.buttons}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => setIsEditing(e => !e)}
-        >
-          <Text style={styles.editButtonText}>
-            {isEditing ? t('common.done') : t('survey.editList')}
-          </Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.continueButton, loading && styles.continueDisabled]}
           onPress={handleContinue}
@@ -312,20 +289,20 @@ const styles = StyleSheet.create({
     borderColor: S.primary,
     borderRadius: 16,
     height: 100,
-    paddingLeft: 24,
-    paddingRight: 16,
+    paddingLeft: 36,
+    paddingRight: 36,
     backgroundColor: S.selectedFill,
   },
   itemText: { fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: '#FFFFFF', flex: 1 },
   itemRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  removeBox: { width: 28, height: 28, borderRadius: 8, borderWidth: 1.5, borderColor: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  removeIcon: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: '#FFFFFF', lineHeight: 18 },
-  infoButton: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-  infoButtonText: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: '#FFFFFF' },
-  infoCard: { backgroundColor: S.bg, borderRadius: 20, paddingVertical: 28, paddingHorizontal: 24, marginHorizontal: 24, gap: 12 },
-  infoTitle: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: '#000000' },
-  infoBody: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 22 },
-  infoClose: { marginTop: 8, height: 48, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
+  removeBox: { width: 22, height: 22, borderRadius: 11, borderWidth: 0.8, borderColor: 'rgba(255,255,255,0.7)', backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  removeIcon: { fontSize: 12, fontFamily: 'Pretendard-Bold', color: '#FFFFFF', lineHeight: 14 },
+  infoButton: { width: 22, height: 22, borderRadius: 11, borderWidth: 0.8, borderColor: 'rgba(255,255,255,0.7)', backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  infoButtonText: { fontSize: 12, fontFamily: 'Pretendard-Bold', color: '#FFFFFF' },
+  infoCard: { backgroundColor: S.bg, borderRadius: 20, paddingVertical: 28, paddingHorizontal: 24, marginHorizontal: 24 },
+  infoTitle: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: '#000000', marginBottom: 12 },
+  infoBody: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: S.primary, lineHeight: 22, marginBottom: 36 },
+  infoClose: { height: 48, backgroundColor: S.primary, borderRadius: 35, alignItems: 'center', justifyContent: 'center' },
   infoCloseText: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: S.textLight },
   addBox: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: S.primary, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   addBoxChecked: { backgroundColor: S.primary },

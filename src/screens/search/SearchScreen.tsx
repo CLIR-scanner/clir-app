@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnActive: { backgroundColor: Colors.searchMutedGreen },
+  filterBtnActive: { backgroundColor: '#044733' },
   filterBadge: {
     position: 'absolute',
     top: 6, right: 6,
