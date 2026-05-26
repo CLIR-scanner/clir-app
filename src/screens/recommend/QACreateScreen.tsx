@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -58,6 +60,10 @@ export default function QACreateScreen({ navigation }: Props) {
   const [productQuery,       setProductQuery]       = useState('');
   const [productSelected,    setProductSelected]    = useState<ProductSuggestion | null>(null);
   const [productSuggestions, setProductSuggestions] = useState<ProductSuggestion[]>([]);
+
+  // 키보드-aware: input focus 시 picker section 을 화면 상단 가까이로 스크롤.
+  const scrollRef = useRef<ScrollView>(null);
+  const productSectionY = useRef(0);
 
   // 검색 debounce — 300ms 후 /search/suggestions 호출.
   useEffect(() => {
@@ -136,6 +142,10 @@ export default function QACreateScreen({ navigation }: Props) {
   }
 
   return (
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
@@ -159,6 +169,7 @@ export default function QACreateScreen({ navigation }: Props) {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -189,7 +200,10 @@ export default function QACreateScreen({ navigation }: Props) {
 
         {/* ── Related Product (category === 'product' 일 때만) ── */}
         {selectedCategory === 'product' && (
-          <View style={styles.productPickerWrap}>
+          <View
+            style={styles.productPickerWrap}
+            onLayout={e => { productSectionY.current = e.nativeEvent.layout.y; }}
+          >
             <Text style={[styles.sectionLabel, { marginTop: 40 }]}>Related Product</Text>
             <View style={styles.productInputBox}>
               <TextInput
@@ -201,6 +215,16 @@ export default function QACreateScreen({ navigation }: Props) {
                   setProductQuery(text);
                   // 사용자가 다시 입력하면 이전 선택 무효화 (검색 재개).
                   if (productSelected && text !== productSelected.name) setProductSelected(null);
+                }}
+                onFocus={() => {
+                  // 키보드 애니메이션 시작 직후 picker section 을 화면 상단으로 스크롤.
+                  // dropdown 이 키보드에 가리지 않도록 보장. KeyboardAvoidingView 와 보완관계.
+                  setTimeout(() => {
+                    scrollRef.current?.scrollTo({
+                      y: Math.max(0, productSectionY.current - 20),
+                      animated: true,
+                    });
+                  }, 150);
                 }}
                 autoCorrect={false}
                 autoCapitalize="none"
@@ -302,6 +326,7 @@ export default function QACreateScreen({ navigation }: Props) {
       </ScrollView>
     </View>
     </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
