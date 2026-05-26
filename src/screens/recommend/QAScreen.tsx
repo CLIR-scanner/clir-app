@@ -108,12 +108,62 @@ function FeaturedQuestionCard({ item, onPress }: { item: QAQuestion; onPress: ()
   );
 }
 
-function QuestionRow({ item, onPress }: { item: QAQuestion; onPress: () => void }) {
+/** 검색어 매칭 구간만 강조 색으로 감싸는 헬퍼.
+ *  case-insensitive 부분 일치. 빈 query 면 원문 그대로 반환. */
+function HighlightedText({
+  text,
+  query,
+  style,
+  highlightStyle,
+  numberOfLines,
+}: {
+  text: string;
+  query: string;
+  style: object;
+  highlightStyle: object;
+  numberOfLines?: number;
+}) {
+  if (!query) {
+    return <Text style={style} numberOfLines={numberOfLines}>{text}</Text>;
+  }
+  // 정규식 메타문자 escape — 사용자 입력이 패턴화되는 것 방지.
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return (
+    <Text style={style} numberOfLines={numberOfLines}>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase()
+          ? <Text key={i} style={highlightStyle}>{part}</Text>
+          : part,
+      )}
+    </Text>
+  );
+}
+
+function QuestionRow({
+  item, onPress, query,
+}: {
+  item: QAQuestion;
+  onPress: () => void;
+  query: string;
+}) {
   return (
     <TouchableOpacity style={styles.questionRow} onPress={onPress} activeOpacity={0.75}>
       <Text style={styles.questionLabel}>{item.label}</Text>
-      <Text style={styles.questionTitle} numberOfLines={1}>{item.title}</Text>
-      <Text style={styles.questionBody} numberOfLines={2}>{item.body}</Text>
+      <HighlightedText
+        text={item.title}
+        query={query}
+        style={styles.questionTitle}
+        highlightStyle={styles.highlight}
+        numberOfLines={1}
+      />
+      <HighlightedText
+        text={item.body}
+        query={query}
+        style={styles.questionBody}
+        highlightStyle={styles.highlight}
+        numberOfLines={2}
+      />
       <Meta views={item.viewCount} answers={item.answerCount} />
     </TouchableOpacity>
   );
@@ -282,7 +332,7 @@ export default function QAScreen({ navigation }: Props) {
         }
         ItemSeparatorComponent={() => <View style={styles.divider} />}
         renderItem={({ item }) => (
-          <QuestionRow item={item} onPress={() => openQuestion(item.id)} />
+          <QuestionRow item={item} onPress={() => openQuestion(item.id)} query={debouncedQuery} />
         )}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
@@ -528,6 +578,11 @@ const styles = StyleSheet.create({
   loadMoreFooter: {
     paddingVertical: 20,
     alignItems: 'center',
+  },
+  highlight: {
+    color: '#044733',
+    backgroundColor: '#FFF3B0',
+    fontFamily: 'Pretendard-Bold',
   },
   emptyText: {
     color: C.mid,
