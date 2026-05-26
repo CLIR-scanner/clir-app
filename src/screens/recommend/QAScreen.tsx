@@ -15,16 +15,17 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { getQAQuestions } from '../../services/recommend.service';
-import { QAQuestion, RecommendStackParamList } from '../../types';
+import { QAQuestion, QnaCategory, RecommendStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'QAScreen'>;
 
-const CATEGORIES = [
-  { id: 'all',      label: 'All Categories' },
-  { id: 'asking',  label: 'Asking' },
-  { id: 'product', label: 'Product Asking' },
-  { id: 'allergy', label: 'Allergy & Vegetarian Diet' },
-] as const;
+/** BE QnaCategory enum 과 1:1 매칭. 'all' 은 product/allergy/vegetarian 합집합. */
+const CATEGORIES: ReadonlyArray<{ id: QnaCategory; label: string }> = [
+  { id: 'all',        label: 'All Categories' },
+  { id: 'product',    label: 'Product Asking' },
+  { id: 'allergy',    label: 'Allergy' },
+  { id: 'vegetarian', label: 'Vegetarian Diet' },
+];
 
 const C = {
   bg: Colors.searchBackground,
@@ -123,30 +124,29 @@ export default function QAScreen({ navigation }: Props) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [questions, setQuestions] = useState<QAQuestion[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<QnaCategory>('all');
 
+  // 카테고리 변경 시 서버사이드 재조회 (BE 가 'all' 합집합 처리).
+  // 검색은 클라이언트 측에서 즉시 필터링 (debounce 미적용 — 후속 PR).
   useEffect(() => {
     let cancelled = false;
-    getQAQuestions().then(next => {
+    getQAQuestions({ category: selectedCategory }).then(({ questions: next }) => {
       if (!cancelled) setQuestions(next);
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedCategory]);
 
   const featuredQuestions = questions.slice(0, 2);
   const listQuestions = useMemo(() => {
     const q = query.trim().toLowerCase();
     const source = questions.filter(item => !item.isNotice);
-    return source
-      .filter(item => {
-        if (selectedCategory === 'all') return true;
-        if (selectedCategory === 'asking') return item.label === 'Asking';
-        if (selectedCategory === 'product') return item.label === 'Products Asking' || item.label === 'Product Asking';
-        if (selectedCategory === 'allergy') return item.label.toLowerCase().includes('allergy') || item.label.toLowerCase().includes('diet') || item.label.toLowerCase().includes('vegan');
-        return true;
-      })
-      .filter(item => !q || item.title.toLowerCase().includes(q) || item.body.toLowerCase().includes(q) || item.label.toLowerCase().includes(q));
-  }, [query, questions, selectedCategory]);
+    if (!q) return source;
+    return source.filter(item =>
+      item.title.toLowerCase().includes(q) ||
+      item.body.toLowerCase().includes(q) ||
+      item.label.toLowerCase().includes(q),
+    );
+  }, [query, questions]);
 
   function handleClearSearch() {
     setQuery('');
@@ -246,6 +246,17 @@ export default function QAScreen({ navigation }: Props) {
           <QuestionRow item={item} onPress={() => openQuestion(item.id)} />
         )}
       />
+
+      <TouchableOpacity
+        style={[styles.fab, { bottom: insets.bottom - 8 }]}
+        onPress={() => navigation.navigate('QACreate')}
+        activeOpacity={0.85}
+      >
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+          <Path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
+        </Svg>
+        <Text style={styles.fabText}>Ask Questions</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -458,5 +469,22 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: Colors.white,
     fontFamily: 'Pretendard-Bold',
+  },
+  fab: {
+    position: 'absolute',
+    right: 24,
+    backgroundColor: '#044733',
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    gap: 4,
+  },
+  fabText: {
+    fontSize: 14,
+    fontFamily: 'Pretendard-Medium',
+    color: Colors.white,
+    letterSpacing: -0.228,
   },
 });

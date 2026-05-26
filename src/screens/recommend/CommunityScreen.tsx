@@ -404,11 +404,11 @@ export default function CommunityScreen({ navigation }: Props) {
   useEffect(() => {
     let cancelled = false;
     Promise.all([getWeekendPopular(), getSimilarUsersFavorites(), getQAQuestions(), getMagazineItems()])
-      .then(([products, similar, questions, magazines]) => {
+      .then(([products, similar, qa, magazines]) => {
         if (cancelled) return;
         setTrendingProducts(products.map(toPreviewProduct));
         setSimilarProducts(similar);
-        setQaPreview(questions.filter(question => !question.isNotice).slice(0, 3));
+        setQaPreview(qa.questions.filter(question => !question.isNotice).slice(0, 3));
         setMagazinePreview(magazines.slice(0, 3));
       })
       .catch(() => {
