@@ -30,12 +30,12 @@ function ProfileCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, isEnabled && !isMain && styles.cardEnabled]}
+      style={[styles.card, !isMain && !isEnabled && styles.cardDisabled]}
       onPress={onPress}
       activeOpacity={0.8}
     >
       <View style={styles.cardLeft}>
-        <View style={[styles.avatar, isMain && styles.avatarMain, !isMain && isEnabled && styles.avatarEnabled]}>
+        <View style={[styles.avatar, isMain && styles.avatarMain, !isMain && isEnabled && styles.avatarEnabled, !isMain && !isEnabled && styles.avatarDisabled]}>
           <Text style={[styles.avatarText, isMain && styles.avatarTextMain, !isMain && isEnabled && styles.avatarTextEnabled]}>
             {profile.name ? profile.name[0].toUpperCase() : '?'}
           </Text>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     height: 94,
     paddingHorizontal: 17,
   },
-  cardEnabled: { borderColor: DARK_GREEN, backgroundColor: CARD_FILL },
+  cardDisabled: { backgroundColor: BG },
   cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1 },
 
   avatar: {
@@ -212,10 +212,11 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_FILL, alignItems: 'center', justifyContent: 'center',
   },
   avatarMain: { backgroundColor: DARK_GREEN, borderColor: DARK_GREEN },
-  avatarEnabled: { backgroundColor: CARD_FILL, borderColor: DARK_GREEN },
+  avatarEnabled: { backgroundColor: DARK_GREEN, borderColor: DARK_GREEN },
+  avatarDisabled: { backgroundColor: BG, borderColor: BORDER },
   avatarText: { fontSize: 28, lineHeight: 32, fontFamily: 'Pretendard-ExtraBold', color: MID_GREEN },
   avatarTextMain: { color: '#FFFFFF' },
-  avatarTextEnabled: { color: DARK_GREEN },
+  avatarTextEnabled: { color: '#FFFFFF' },
 
   cardInfo: { flex: 1, gap: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
