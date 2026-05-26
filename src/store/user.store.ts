@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { UserStore, User, Profile } from '../types';
 import { signOut as authSignOut, submitSurvey, restoreSession } from '../services/auth.service';
-import { setAuthToken } from '../lib/api';
 import { updateLanguage as apiUpdateLanguage } from '../services/user.service';
 import { languageStorage } from '../lib/storage';
 import i18n from '../i18n';
@@ -48,30 +47,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
         hasExplicitLanguage: true,
       }));
     }
-    // ─── DEV ONLY ─── (BE 복구 후 이 블록 전체 삭제 + 아래 restoreSession 흐름 부활 — grep "DEV ONLY")
-    // 로그인 과정 건너뛰기: OAuth flow 우회, mock token + mock user 강제 주입.
-    // __DEV__ 가드 없이 무조건 — production build 에 박히면 실사용자가 mock 으로 보임. 출시 전 반드시 제거.
-    setAuthToken('dev-mock-token');
-    const devUser: User = {
-      id: 'dev-user-id',
-      email: 'dev@clir.app',
-      name: 'Dev User',
-      displayName: null,
-      allergyProfile: ['ing-peanut', 'ing-dairy'],
-      dietaryRestrictions: ['vegan'],
-      sensitivityLevel: 'strict',
-      language: get().currentUser.language || DEFAULT_LANGUAGE,
-      multiProfiles: [],
-      consentFlags: { imageRetention: false, corrections: false },
-      hasCompletedSurvey: false,
-      termsAcceptedAt: new Date().toISOString(),
-      termsVersion: '1.0',
-    };
-    get().setUser(devUser);
-    // 아래는 BE 복구 후 부활시킬 정상 자동 로그인 흐름 (현재는 dead code):
-    // const restored = await restoreSession();
-    // if (restored) { get().setUser(restored); }
-    // ─── /DEV ONLY ───
+    const restored = await restoreSession();
+    if (restored) {
+      get().setUser(restored);
+    }
 
     set({ isInitialized: true });
   },
