@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -13,10 +14,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { AuthStackParamList, TermsAgreementListItem, TermsSectionKey } from '../../types';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
-import { Strings } from '../../constants/strings';
 import { TERMS_VERSION } from '../../constants/legal-version';
 import { termsStorage } from '../../lib/storage';
+import { SUPPORTED_LANGUAGES } from '../../constants/languages';
+import { useUserStore } from '../../store/user.store';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'TermsAgreement'>;
 type Route = RouteProp<AuthStackParamList, 'TermsAgreement'>;
@@ -36,24 +39,6 @@ const FONT = {
   extraBold:  'Pretendard-ExtraBold',
 };
 
-const AGREEMENTS: TermsAgreementListItem[] = [
-  { id: 'terms', title: Strings.termsAgreement.termsService, required: true },
-  { id: 'privacy', title: Strings.termsAgreement.privacyPolicy, required: true },
-  {
-    id: 'personalInfo',
-    title: Strings.termsAgreement.personalInformation,
-    required: true,
-  },
-  {
-    id: 'healthDisclaimer',
-    title: Strings.termsAgreement.healthDisclaimer,
-    required: true,
-    description: Strings.termsAgreement.healthDisclaimerDescription,
-  },
-  { id: 'ageConfirm', title: Strings.termsAgreement.ageConfirm, required: true, hasDetail: false },
-  { id: 'marketing', title: Strings.termsAgreement.marketing, required: false },
-  { id: 'dataAnalytics', title: Strings.termsAgreement.dataAnalytics, required: false },
-];
 
 function CheckIcon({ checked }: { checked: boolean }) {
   return (
@@ -92,6 +77,30 @@ export default function TermsAgreementScreen() {
   const route = useRoute<Route>();
   const [checkedIds, setCheckedIds] = useState<Set<TermsSectionKey>>(new Set());
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const agreements: TermsAgreementListItem[] = [
+    { id: 'terms',           title: t('auth.termsAgreement.termsService'),        required: true },
+    { id: 'privacy',         title: t('auth.termsAgreement.privacyPolicy'),        required: true },
+    { id: 'personalInfo',    title: t('auth.termsAgreement.personalInformation'),  required: true },
+    { id: 'healthDisclaimer',title: t('auth.termsAgreement.healthDisclaimer'),     required: true,  description: t('auth.termsAgreement.healthDisclaimerDescription') },
+    { id: 'ageConfirm',      title: t('auth.termsAgreement.ageConfirm'),           required: true,  hasDetail: false },
+    { id: 'marketing',       title: t('auth.termsAgreement.marketing'),            required: false },
+    { id: 'dataAnalytics',   title: t('auth.termsAgreement.dataAnalytics'),        required: false },
+  ];
+  const [langModalVisible, setLangModalVisible] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const langButtonRef = useRef<View>(null);
+  const currentLanguage = useUserStore(s => s.currentUser.language);
+  const setLanguage = useUserStore(s => s.setLanguage);
+
+  const currentLangLabel = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'EN';
+
+  function openLangDropdown() {
+    langButtonRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
+      setDropdownPos({ top: pageY + height + 4, left: pageX, width });
+      setLangModalVisible(true);
+    });
+  }
 
   React.useEffect(() => {
     const agreedSection = route.params?.agreedSection;
@@ -107,14 +116,14 @@ export default function TermsAgreementScreen() {
   }, [navigation, route.params?.agreedSection]);
 
   const requiredIds = useMemo(
-    () => AGREEMENTS.filter(item => item.required).map(item => item.id),
+    () => agreements.filter(item => item.required).map(item => item.id),
     [],
   );
   const allRequiredChecked = requiredIds.every(id => checkedIds.has(id));
-  const allChecked = AGREEMENTS.every(item => checkedIds.has(item.id));
+  const allChecked = agreements.every(item => checkedIds.has(item.id));
 
   function toggleAll() {
-    setCheckedIds(allChecked ? new Set() : new Set(AGREEMENTS.map(item => item.id)));
+    setCheckedIds(allChecked ? new Set() : new Set(agreements.map(item => item.id)));
   }
 
   function toggleOne(id: TermsSectionKey) {
@@ -136,6 +145,12 @@ export default function TermsAgreementScreen() {
     setLoading(true);
     try {
       await termsStorage.write(TERMS_VERSION);
+      // ─── DEV ONLY ─── (BE 복구 후 이 if 블록 삭제 — grep "DEV ONLY")
+      if (useUserStore.getState().currentUser.id === 'dev-user-id') {
+        navigation.replace('SurveyLanding', {});
+        return;
+      }
+      // ─── /DEV ONLY ───
       navigation.replace('AuthHome');
     } finally {
       setLoading(false);
@@ -144,6 +159,46 @@ export default function TermsAgreementScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Modal
+        visible={langModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={() => setLangModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setLangModalVisible(false)}>
+          <View style={[styles.modalCard, { position: 'absolute', top: dropdownPos.top, left: dropdownPos.left, width: 135 }]}>
+            {SUPPORTED_LANGUAGES.map((lang, idx) => {
+              const isSelected = currentLanguage === lang.code;
+              return (
+                <React.Fragment key={lang.code}>
+                  {idx > 0 && <View style={styles.modalDivider} />}
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => { setLanguage(lang.code); setLangModalVisible(false); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.modalItemText, isSelected && styles.modalItemTextSelected]}>
+                      {lang.native}
+                    </Text>
+                    {isSelected && (
+                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                        <Path
+                          d="M20 6L9 17L4 12"
+                          stroke={S.darkGreen}
+                          strokeWidth={2.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </Svg>
+                    )}
+                  </TouchableOpacity>
+                </React.Fragment>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
+
       <View style={styles.container}>
         <ScrollView
           style={styles.scroll}
@@ -151,18 +206,37 @@ export default function TermsAgreementScreen() {
           showsVerticalScrollIndicator={false}
           scrollEnabled={false}
         >
-          <Text style={styles.title}>{Strings.termsAgreement.title}</Text>
+          <Text style={styles.title}>{t('auth.termsAgreement.title')}</Text>
+
+          <TouchableOpacity
+            ref={langButtonRef}
+            style={styles.langButton}
+            onPress={openLangDropdown}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+          >
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 0c-2.5 2.5-4 6-4 10s1.5 7.5 4 10m0-20c2.5 2.5 4 6 4 10s-1.5 7.5-4 10M2 12h20"
+                stroke={S.darkGreen}
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+            <Text style={styles.langButtonText}>{currentLangLabel}</Text>
+          </TouchableOpacity>
 
           <Pressable style={styles.allRow} onPress={toggleAll} accessibilityRole="checkbox" accessibilityState={{ checked: allChecked }}>
             <CheckIcon checked={allChecked} />
-            <Text style={styles.allText}>{Strings.termsAgreement.agreeAll}</Text>
+            <Text style={styles.allText}>{t('auth.termsAgreement.agreeAll')}</Text>
           </Pressable>
-          <Text style={styles.allDescription}>{Strings.termsAgreement.agreeAllDescription}</Text>
+          <Text style={styles.allDescription}>{t('auth.termsAgreement.agreeAllDescription')}</Text>
 
           <View style={styles.fullDivider} />
 
           <View style={styles.agreementList}>
-            {AGREEMENTS.map((item, index) => {
+            {agreements.map((item, index) => {
               const checked = checkedIds.has(item.id);
               const shouldSeparate = index === 5;
               return (
@@ -177,10 +251,12 @@ export default function TermsAgreementScreen() {
                     >
                       <CheckIcon checked={checked} />
                       <View style={styles.itemTextArea}>
-                        <Text style={styles.itemTitle}>{item.title}</Text>
-                        <Text style={styles.itemBadge}>
-                          {item.required ? Strings.termsAgreement.required : Strings.termsAgreement.optional}
-                        </Text>
+                        <View style={styles.itemTitleLine}>
+                          <Text style={styles.itemTitle}>{item.title}</Text>
+                          <Text style={styles.itemBadge}>
+                            {item.required ? t('auth.termsAgreement.required') : t('auth.termsAgreement.optional')}
+                          </Text>
+                        </View>
                         {item.description && <Text style={styles.itemDescription}>{item.description}</Text>}
                       </View>
                     </Pressable>
@@ -211,13 +287,14 @@ export default function TermsAgreementScreen() {
           {loading ? (
             <ActivityIndicator color={S.textLight} />
           ) : (
-            <Text style={styles.agreeButtonText}>{Strings.termsAgreement.agreeButton}</Text>
+            <Text style={styles.agreeButtonText}>{t('auth.termsAgreement.agreeButton')}</Text>
           )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -246,7 +323,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 31,
+    marginTop: 16,
   },
   allText: {
     color: S.black,
@@ -343,9 +420,9 @@ const styles = StyleSheet.create({
   },
   agreeButton: {
     position: 'absolute',
-    left: 17,
-    right: 17,
-    bottom: 36,
+    left: 24,
+    right: 24,
+    bottom: 24,
     height: 58,
     borderRadius: 35,
     backgroundColor: S.darkGreen,
@@ -360,5 +437,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     fontFamily: FONT.bold,
+  },
+  langButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: S.darkGreen,
+    marginTop: 24,
+  },
+  langButtonText: {
+    color: S.darkGreen,
+    fontSize: 13,
+    fontFamily: FONT.regular,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalCard: {
+    backgroundColor: S.bg,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: S.line,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  modalDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: S.line,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  modalItemText: {
+    fontSize: 15,
+    fontFamily: FONT.regular,
+    color: S.black,
+  },
+  modalItemTextSelected: {
+    fontFamily: FONT.bold,
+    color: S.darkGreen,
   },
 });
