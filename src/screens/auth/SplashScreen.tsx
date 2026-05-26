@@ -23,9 +23,9 @@ export default function SplashScreen() {
       setTimeout(() => {
         if (cancelled) return;
         // ─── DEV ONLY ─── (BE 복구 후 이 if 블록 삭제 — grep "DEV ONLY")
-        // DEV 유저는 항상 TermsAgreement 부터 진입 (약관 화면 확인용).
+        // user.store 가 주입한 mock user 가 있으면 AuthHome 건너뛰고 SurveyLanding 직행.
         if (useUserStore.getState().currentUser.id === 'dev-user-id') {
-          navigation.replace('TermsAgreement');
+          navigation.replace('SurveyLanding', {});
           return;
         }
         // ─── /DEV ONLY ───
