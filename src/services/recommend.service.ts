@@ -1,5 +1,6 @@
 // TODO: Real API 연동 시 이 파일의 구현부만 교체
-import { MagazineItem, Product, QAAnswer, QAQuestion, RiskLevel } from '../types';
+import { MagazineItem, Product, QAAnswer, QAQuestion, QnaCategory, RiskLevel } from '../types';
+import { apiFetch, apiFormFetch } from '../lib/api';
 
 type RankedProduct = Product & {
   favoriteCount: number;
@@ -103,101 +104,76 @@ const EXTRA_WEEKEND_POPULAR_PRODUCTS: RankedProduct[] = Array.from({ length: 45 
   });
 });
 
-const QA_QUESTIONS: QAQuestion[] = [
-  {
-    id: 'qa-notice-guideline',
-    label: 'Notice',
-    title: 'Clir Guideline',
-    body: 'Official notes from the Clir team on how to ask clearer product safety questions.',
-    author: 'Clir Official Team',
-    viewCount: 125,
-    answerCount: 12,
-    isNotice: true,
-  },
-  {
-    id: 'qa-product-match',
-    label: 'Asking',
-    title: 'Which is the right product?',
-    body: 'I found two similar packages at the store. Which one should I choose for a dairy allergy profile?',
-    author: 'mika_shop',
-    viewCount: 125,
-    answerCount: 12,
-  },
-  {
-    id: 'qa-hidden-dairy',
-    label: 'Products Asking',
-    title: 'Which product is this? Does it contain hidden dairy?',
-    body: 'This product is not working. I want to go to the who will categories who want to yes please of course yes who ...',
-    author: 'allergy_mom',
-    viewCount: 125,
-    answerCount: 12,
-  },
-  {
-    id: 'qa-oat-milk',
-    label: 'Products Asking',
-    title: 'Is this oat milk safe for strict vegan settings?',
-    body: 'The label mentions vitamin D and natural flavor. Has anyone checked whether this brand is okay?',
-    author: 'vegan_k',
-    viewCount: 98,
-    answerCount: 8,
-  },
-  {
-    id: 'qa-bakery',
-    label: 'Products Asking',
-    title: 'Can I buy this bread with a peanut allergy?',
-    body: 'The package says it may contain tree nuts but does not mention peanuts. I am confused about the risk level.',
-    author: 'jun_food',
-    viewCount: 87,
-    answerCount: 6,
-  },
-  {
-    id: 'qa-sauce',
-    label: 'Products Asking',
-    title: 'Does this sauce include anchovy or seafood extract?',
-    body: 'I scanned it but the ingredient text was blurry. Looking for help from anyone who bought the same product.',
-    author: 'safe_cart',
-    viewCount: 72,
-    answerCount: 4,
-  },
-];
+// ─── Q&A API 내부 타입 (BE QnaPostSummary / QnaAnswer / QnaImage 와 1:1) ─────
 
-let QA_ANSWERS: QAAnswer[] = [
-  {
-    id: 'answer-guideline-1',
-    questionId: 'qa-notice-guideline',
-    author: 'Clir Official Team',
-    body: 'Please include the product name, brand, and a clear photo of the ingredient label when you ask a safety question.',
-    createdAt: '2026-05-01T10:00:00Z',
-  },
-  {
-    id: 'answer-product-match-1',
-    questionId: 'qa-product-match',
-    author: 'safe_reader',
-    body: 'For dairy allergy, choose the one with a clear allergen statement. If the package only says natural flavor, I would avoid it until verified.',
-    createdAt: '2026-05-02T08:30:00Z',
-  },
-  {
-    id: 'answer-product-match-2',
-    questionId: 'qa-product-match',
-    author: 'Clir Official Team',
-    body: 'The safer option is usually the product with complete ingredient disclosure and no may-contain dairy warning.',
-    createdAt: '2026-05-02T12:15:00Z',
-  },
-  {
-    id: 'answer-hidden-dairy-1',
-    questionId: 'qa-hidden-dairy',
-    author: 'label_helper',
-    body: 'Check for whey, casein, lactose, milk powder, and butter oil. Those are common hidden dairy terms.',
-    createdAt: '2026-05-03T09:10:00Z',
-  },
-  {
-    id: 'answer-oat-milk-1',
-    questionId: 'qa-oat-milk',
-    author: 'vegan_labeler',
-    body: 'Some vitamin D can be animal-derived. If strict vegan mode matters, look for D2 or explicit vegan certification.',
-    createdAt: '2026-05-03T15:42:00Z',
-  },
-];
+type QnaImageApi = {
+  storagePath: string;
+  url: string;
+  expiresAt: string;
+};
+
+type QnaPostSummaryApi = {
+  id: string;
+  userId: string;
+  userNickname?: string;
+  title: string;
+  content: string;
+  category: QnaCategory;
+  answerCount: number;
+  isResolved: boolean;
+  relatedProductId?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  /** 목록은 항상 빈 배열, 상세에서만 채워짐 (BE 비용 절감 정책). */
+  images: QnaImageApi[];
+};
+
+type QnaAnswerApi = {
+  id: string;
+  qnaId: string;
+  userId: string;
+  userNickname?: string;
+  content: string;
+  isAccepted: boolean;
+  createdAt: string;
+};
+
+type QnaPostDetailApi = QnaPostSummaryApi & {
+  relatedProduct?: { productId: string; name: string; image: string | null } | null;
+  answers: QnaAnswerApi[];
+};
+
+/** category → 화면 표시 label. QACreateScreen 의 카테고리 칩과 동일 텍스트. */
+const CATEGORY_LABEL: Record<QnaCategory, string> = {
+  all:        'All',
+  product:    'Product Asking',
+  allergy:    'Allergy',
+  vegetarian: 'Vegetarian Diet',
+};
+
+function mapQnaToQuestion(post: QnaPostSummaryApi): QAQuestion {
+  return {
+    id: post.id,
+    label: CATEGORY_LABEL[post.category],
+    title: post.title,
+    body: post.content,
+    author: post.userNickname ?? '익명',
+    viewCount: 0,                      // BE 미지원 — 후속 PR
+    answerCount: post.answerCount,
+    category: post.category,
+    images: post.images.map(i => i.url),
+  };
+}
+
+function mapQnaAnswer(ans: QnaAnswerApi): QAAnswer {
+  return {
+    id: ans.id,
+    questionId: ans.qnaId,
+    author: ans.userNickname ?? '익명',
+    body: ans.content,
+    createdAt: ans.createdAt,
+  };
+}
 
 /**
  * /recommend/weekend — 주말 인기 제품 목록을 반환한다.
@@ -222,53 +198,103 @@ export async function getSimilarUsersFavorites(): Promise<Product[]> {
 }
 
 /**
- * /recommend/qa — 커뮤니티 Q&A 질문 목록을 반환한다.
+ * GET /qna — Q&A 게시글 목록.
+ *  - opts.category 'all' 또는 미지정 = 전체 (필터 없음)
+ *  - opts.category product/allergy/vegetarian = 해당 + 'all' 합집합
+ *  - 기본 sort=latest, limit=20
  */
-export async function getQAQuestions(): Promise<QAQuestion[]> {
-  return QA_QUESTIONS.map(question => ({
-    ...question,
-    answerCount: QA_ANSWERS.filter(answer => answer.questionId === question.id).length || question.answerCount,
-  }));
+export async function getQAQuestions(opts: {
+  category?: QnaCategory;
+  search?: string;
+  sort?: 'latest' | 'oldest' | 'mostAnswered';
+  limit?: number;
+  offset?: number;
+} = {}): Promise<{ questions: QAQuestion[]; total: number; hasMore: boolean }> {
+  const params = new URLSearchParams();
+  if (opts.category) params.set('category', opts.category);
+  if (opts.search)   params.set('search', opts.search);
+  params.set('sort',   opts.sort ?? 'latest');
+  params.set('limit',  String(opts.limit  ?? 20));
+  params.set('offset', String(opts.offset ?? 0));
+
+  const data = await apiFetch<{
+    posts: QnaPostSummaryApi[];
+    total: number;
+    hasMore: boolean;
+  }>(`/qna?${params.toString()}`);
+
+  return {
+    questions: data.posts.map(mapQnaToQuestion),
+    total: data.total,
+    hasMore: data.hasMore,
+  };
 }
 
 /**
- * /recommend/qa/:id — Q&A 질문 상세와 답글 목록을 반환한다.
+ * GET /qna/:id — Q&A 상세. 응답의 images 는 TTL 5분 signed URL.
+ * 만료 시 동일 호출로 새 URL 회수.
  */
 export async function getQAQuestionDetail(questionId: string): Promise<{
   question: QAQuestion;
   answers: QAAnswer[];
 }> {
-  const question = QA_QUESTIONS.find(item => item.id === questionId);
-  if (!question) {
-    throw new Error('Question not found');
-  }
-  const answers = QA_ANSWERS.filter(answer => answer.questionId === questionId);
+  const data = await apiFetch<QnaPostDetailApi>(
+    `/qna/${encodeURIComponent(questionId)}`,
+  );
   return {
-    question: {
-      ...question,
-      answerCount: answers.length || question.answerCount,
-    },
-    answers,
+    question: mapQnaToQuestion(data),
+    answers: data.answers.map(mapQnaAnswer),
   };
 }
 
 /**
- * /recommend/qa/:id/answers — Q&A 답글을 추가한다.
+ * POST /qna/:id/answers — 답변 등록. 작성자는 토큰에서 추출되므로 author 미전송.
  */
 export async function addQAAnswer(params: {
   questionId: string;
   author: string;
   body: string;
 }): Promise<QAAnswer> {
-  const answer: QAAnswer = {
-    id: `answer-local-${Date.now()}`,
-    questionId: params.questionId,
-    author: params.author,
-    body: params.body,
-    createdAt: new Date().toISOString(),
-  };
-  QA_ANSWERS = [...QA_ANSWERS, answer];
-  return answer;
+  const data = await apiFetch<QnaAnswerApi>(
+    `/qna/${encodeURIComponent(params.questionId)}/answers`,
+    { method: 'POST', body: JSON.stringify({ content: params.body }) },
+  );
+  return mapQnaAnswer(data);
+}
+
+/**
+ * POST /qna — Q&A 게시글 등록 (multipart). 이미지 ≤4장, 파일당 ≤5MB.
+ *  - category 필수 (all/product/allergy/vegetarian)
+ *  - photos 는 RN 이미지 picker 의 uri 배열 (file:// 등)
+ */
+export async function createQAQuestion(params: {
+  title: string;
+  content: string;
+  category: QnaCategory;
+  photos: string[];
+  relatedProductId?: string;
+}): Promise<QAQuestion> {
+  const form = new FormData();
+  form.append('title',    params.title);
+  form.append('content',  params.content);
+  form.append('category', params.category);
+  if (params.relatedProductId) form.append('relatedProductId', params.relatedProductId);
+
+  for (const uri of params.photos) {
+    const ext = (uri.split('.').pop() ?? 'jpg').toLowerCase();
+    const mime = ext === 'png'  ? 'image/png'
+               : ext === 'webp' ? 'image/webp'
+               :                  'image/jpeg';
+    // RN FormData 의 파일 시그니처 — { uri, name, type }
+    form.append('images', {
+      uri,
+      name: `photo-${Date.now()}-${Math.floor(Math.random() * 1e6)}.${ext}`,
+      type: mime,
+    } as unknown as Blob);
+  }
+
+  const data = await apiFormFetch<QnaPostSummaryApi>('/qna', form);
+  return mapQnaToQuestion(data);
 }
 
 const MAGAZINE_ITEMS: MagazineItem[] = [

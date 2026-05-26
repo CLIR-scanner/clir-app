@@ -245,15 +245,23 @@ export interface ShoppingItem {
   product: Product;
 }
 
+/** Q&A 카테고리 4종 — 'all' 은 product/allergy/vegetarian 어떤 필터에도 매칭되는 유니버설 값.
+ *  api-spec.yaml QnaPostSummary.category enum 과 1:1 매칭. */
+export type QnaCategory = 'all' | 'product' | 'allergy' | 'vegetarian';
+
 export interface QAQuestion {
   id: string;
-  label: string;
+  label: string;          // CATEGORY_LABEL[category] (FE 표시명)
   title: string;
   body: string;
   author: string;
   viewCount: number;
   answerCount: number;
   isNotice?: boolean;
+  /** 백엔드 category 원본 — 필터 칩·라벨 매핑용. */
+  category?: QnaCategory;
+  /** 첨부 이미지 signed URL (TTL 5분). 목록은 항상 빈 배열·undefined, 상세에서만 채워짐. */
+  images?: string[];
 }
 
 export interface QAAnswer {
@@ -518,6 +526,8 @@ export interface ScanStore {
   historySyncedAt: number | null; // 마지막 서버 동기화 시각(ms) — TTL 판정용
   setHistory: (items: ScanHistory[]) => void;
   addHistory: (item: ScanHistory) => void;
+  /** store-first 흐름: local id 로 추가된 항목을 BE 응답의 server id 로 교체. */
+  replaceHistory: (localId: string, item: ScanHistory) => void;
   clearHistory: () => void;
   markHistoryDirty: () => void;
   markHistorySynced: () => void;
@@ -676,6 +686,7 @@ export type RecommendStackParamList = {
   SimilarUsersFavorites: undefined;
   QAScreen: undefined;
   QADetail: { questionId: string };
+  QACreate: undefined;
   MagazineScreen: undefined;
   MagazineDetail: { articleId: string };
   RecommendProductDetail: { product: Product };
