@@ -9,10 +9,17 @@ import {
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types';
+import { AuthStackParamList, TermsSectionKey } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { getLegalSections } from '../../constants/legal-content';
+
+let _pendingAgreedSection: TermsSectionKey | null = null;
+export function consumePendingAgreedSection(): TermsSectionKey | null {
+  const s = _pendingAgreedSection;
+  _pendingAgreedSection = null;
+  return s;
+}
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'TermsDetail'>;
 type Route = RouteProp<AuthStackParamList, 'TermsDetail'>;
@@ -35,8 +42,9 @@ export default function TermsDetailScreen() {
 
   function handleAgree() {
     setAgreed(true);
+    _pendingAgreedSection = section.id;
     setTimeout(() => {
-      navigation.navigate('TermsAgreement', { agreedSection: section.id });
+      navigation.goBack();
     }, 160);
   }
 

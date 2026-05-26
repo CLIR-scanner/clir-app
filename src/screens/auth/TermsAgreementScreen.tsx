@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { AuthStackParamList, TermsAgreementListItem, TermsSectionKey } from '../../types';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import { TERMS_VERSION } from '../../constants/legal-version';
 import { termsStorage } from '../../lib/storage';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import { useUserStore } from '../../store/user.store';
+import { consumePendingAgreedSection } from './TermsDetailScreen';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'TermsAgreement'>;
 type Route = RouteProp<AuthStackParamList, 'TermsAgreement'>;
@@ -102,18 +103,16 @@ export default function TermsAgreementScreen() {
     });
   }
 
-  React.useEffect(() => {
-    const agreedSection = route.params?.agreedSection;
-    if (!agreedSection) return;
-
+  useFocusEffect(useCallback(() => {
+    const pending = consumePendingAgreedSection();
+    if (!pending) return;
     setCheckedIds(current => {
-      if (current.has(agreedSection)) return current;
+      if (current.has(pending)) return current;
       const next = new Set(current);
-      next.add(agreedSection);
+      next.add(pending);
       return next;
     });
-    navigation.setParams({ agreedSection: undefined });
-  }, [navigation, route.params?.agreedSection]);
+  }, []));
 
   const requiredIds = useMemo(
     () => agreements.filter(item => item.required).map(item => item.id),
@@ -251,12 +250,12 @@ export default function TermsAgreementScreen() {
                     >
                       <CheckIcon checked={checked} />
                       <View style={styles.itemTextArea}>
-                        <View style={styles.itemTitleLine}>
-                          <Text style={styles.itemTitle}>{item.title}</Text>
+                        <Text style={styles.itemTitle}>
+                          {item.title}
                           <Text style={styles.itemBadge}>
-                            {item.required ? t('auth.termsAgreement.required') : t('auth.termsAgreement.optional')}
+                            {' '}{item.required ? t('auth.termsAgreement.required') : t('auth.termsAgreement.optional')}
                           </Text>
-                        </View>
+                        </Text>
                         {item.description && <Text style={styles.itemDescription}>{item.description}</Text>}
                       </View>
                     </Pressable>
