@@ -90,20 +90,39 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   toggleProfileEnabled: (profileId: string) => {
+    // 멀티 프로필 적용 토글은 활성 알러지·식이 조합을 바꾸는 의미 → 캐시 무효화 필요.
+    // BE 가 멀티 프로필 합산을 지원하지 않더라도 FE 가 다음 진입 시 재조회·재판정하도록
+    // history/favorites 를 stale 마킹 + profileVersion++ 로 화면 useFocusEffect 트리거.
     set(state => {
       const ids = state.enabledProfileIds;
       return {
         enabledProfileIds: ids.includes(profileId)
           ? ids.filter(id => id !== profileId)
           : [...ids, profileId],
+        profileVersion: state.profileVersion + 1,
       };
     });
+    useScanStore.getState().clearHistory();
+    useListStore.getState().markFavoritesDirty();
   },
 
   updateActiveProfile: (updates: Partial<Profile>) => {
     set(state => ({
       activeProfile: { ...state.activeProfile, ...updates },
     }));
+    // 안전망: allergyProfile / sensitivityLevel / dietaryRestrictions 가 바뀌면
+    // history·favorites 의 BE 재판정 결과를 다시 받아야 한다. 이 메서드를 BE 동기화
+    // 없이 사용하는 호출처(예: optimistic update before syncActiveProfile 완료)에서도
+    // 캐시가 stale 임을 자동으로 인식하도록 보장.
+    const touchesJudgment =
+      'allergyProfile' in updates ||
+      'sensitivityLevel' in updates ||
+      'dietaryRestrictions' in updates;
+    if (touchesJudgment) {
+      set(state => ({ profileVersion: state.profileVersion + 1 }));
+      useScanStore.getState().clearHistory();
+      useListStore.getState().markFavoritesDirty();
+    }
   },
 
   syncActiveProfile: async (updates) => {

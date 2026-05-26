@@ -71,9 +71,11 @@ export default function ScanHistoryScreen({ navigation }: Props) {
 
   // 매 진입 fetch 방지 — dirty(스캔 완료·프로필 변경) / 최초 미동기화 /
   // TTL(5분) 경과 / 프로필 버전 변화 중 하나라도면 재조회, 아니면 캐시 사용.
+  // activeProfile 기준으로 재판정 — 메인/멀티 프로필 활성 모두 정합.
+  // (currentUser 만 보면 멀티 프로필 활성 중 편집이 반영 안 됨.)
   const profileVersion   = useUserStore(s => s.profileVersion);
-  const allergyProfile   = useUserStore(s => s.currentUser.allergyProfile);
-  const sensitivityLevel = useUserStore(s => s.currentUser.sensitivityLevel);
+  const allergyProfile   = useUserStore(s => s.activeProfile.allergyProfile);
+  const sensitivityLevel = useUserStore(s => s.activeProfile.sensitivityLevel);
   const syncedProfileRef = useRef<number | null>(null);
   useFocusEffect(
     useCallback(() => {
