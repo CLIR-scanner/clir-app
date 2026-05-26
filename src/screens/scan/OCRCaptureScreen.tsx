@@ -119,7 +119,8 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const currentUser   = useUserStore(s => s.currentUser);
   const addFavToStore = useListStore(s => s.addFavorite);
   const favorites     = useListStore(s => s.favorites);
-  const addHistory    = useScanStore(s => s.addHistory);
+  const addHistory     = useScanStore(s => s.addHistory);
+  const replaceHistory = useScanStore(s => s.replaceHistory);
 
   const [state, setState]             = useState<ScreenState>(initialPhotoUri ? 'analyzing' : 'idle');
   const [capturedUri, setCapturedUri] = useState<string | null>(initialPhotoUri ?? null);
@@ -203,17 +204,25 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         };
       }
 
-      // 스캔 이력 저장 — BE-known productId 또는 barcode 일 때만(둘 다 products 테이블
-      // 존재 보장). 로컬 fallback('ocr-local-') 은 FK 제약으로 BE 400/404 가 떨어지므로
-      // 호출 자체를 스킵 — 분석 결과 화면 표시는 유지.
+      // store-first: BE 응답과 무관하게 로컬에 먼저 추가 → BE 죽음·OCR fallback 도 History 탭 표시.
+      const localId = `local-${Date.now()}`;
+      addHistory({
+        id: localId,
+        productId: product.id,
+        userId: '',
+        scannedAt: new Date(),
+        result: product.riskLevel,
+        product,
+      });
+      // BE 동기화 — 'ocr-local-' fallback 은 FK 제약으로 BE 거부 → 호출 스킵. 그 외는 시도하고 실패 silent.
       if (!product.id.startsWith('ocr-local-')) {
         try {
-          const historyItem = await saveScanHistory({
+          const serverItem = await saveScanHistory({
             productId: product.id,
             result: product.riskLevel,
           });
-          addHistory({ ...historyItem, product });
-        } catch { /* silent */ }
+          replaceHistory(localId, { ...serverItem, product });
+        } catch { /* silent — 로컬 항목 유지 */ }
       }
 
       if (cancelledRef.current) return;

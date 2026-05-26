@@ -24,6 +24,14 @@ export const useScanStore = create<ScanStore>(set => ({
     set(state => ({ history: [item, ...state.history], historyDirty: true }));
   },
 
+  replaceHistory: (localId: string, item: ScanHistory) => {
+    // store-first 흐름에서 saveScanHistory 성공 후 local id → server id 정합화.
+    // 다음 fetch 의 setHistory dedup(id 기준) 이 같은 항목을 중복 표시하지 않게 한다.
+    set(state => ({
+      history: state.history.map(h => (h.id === localId ? item : h)),
+    }));
+  },
+
   clearHistory: () => {
     // 프로필 변경 등으로 캐시 무효화 → 재조회 필요
     set({ history: [], historyDirty: true });

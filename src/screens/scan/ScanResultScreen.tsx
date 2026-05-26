@@ -51,6 +51,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
   const sheetY      = useRef(new Animated.Value(320)).current;
 
   const addHistory              = useScanStore(s => s.addHistory);
+  const replaceHistory          = useScanStore(s => s.replaceHistory);
   const addFavoriteToStore      = useListStore(s => s.addFavorite);
   const setFavoritesInStore     = useListStore(s => s.setFavorites);
   const profileVersion          = useUserStore(s => s.profileVersion);
@@ -94,16 +95,30 @@ export default function ScanResultScreen({ navigation, route }: Props) {
         ...(additionalAllergenIds.length > 0 && { additionalAllergenIds }),
       });
 
-      // 대체 제품 조회(danger/caution 전용) + 스캔 이력 저장을 병렬 실행해 대기 최소화.
+      // store-first: 로컬에 먼저 추가 → BE 죽어도 History 탭 표시. server item 으로 후속 replace.
       // 프로필 변경 후 재실행(skipHistorySave=true) 시엔 이력 중복 저장 안 함.
+      let localHistoryId: string | null = null;
+      if (!fromHistory && !skipHistorySave) {
+        localHistoryId = `local-${Date.now()}`;
+        addHistory({
+          id: localHistoryId,
+          productId: prod.id,
+          userId: '',
+          scannedAt: new Date(),
+          result: result.verdict,
+          product: prod,
+        });
+      }
+
+      // 대체 제품 조회(danger/caution 전용) + 스캔 이력 저장(BE 동기화)을 병렬 실행해 대기 최소화.
       const [alts] = await Promise.all([
         result.verdict !== 'safe'
           ? getAlternatives(prod.id).catch((): Product[] => [])
           : Promise.resolve([] as Product[]),
-        !fromHistory && !skipHistorySave
+        localHistoryId
           ? saveScanHistory({ productId: prod.id, result: result.verdict })
-              .then(item => addHistory(item))
-              .catch(() => {})
+              .then(item => replaceHistory(localHistoryId!, { ...item, product: prod }))
+              .catch(() => { /* silent — 로컬 항목 유지 */ })
           : Promise.resolve(),
       ]);
 
