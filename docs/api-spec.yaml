@@ -302,7 +302,9 @@ paths:
       tags: [Users]
       summary: 계정 및 전체 데이터 삭제 (GDPR Art. 17)
       description: |
-        계정 + 이력 + 즐겨찾기 + 교정 + 저장된 이미지를 30일 내 영구 삭제합니다.
+        계정 + 이력 + 즐겨찾기 + 교정 + Q&A 글/답변 + 저장된 이미지를 영구 삭제합니다.
+        Supabase Storage 의 `health-reports` 및 `qna-images` 버킷도 함께 정리됩니다
+        (auth.users 삭제 *이전에* Storage cleanup 수행 — FK cascade 후엔 path 회수 불가).
         호출 직후 세션은 무효화되며, 이후 모든 보호된 엔드포인트가 UNAUTHORIZED를 반환합니다.
       responses:
         '202':
@@ -2180,6 +2182,14 @@ paths:
       description: |
         Q&A 게시글을 검색·정렬·페이지네이션해 반환합니다. answerCount 는
         qna_posts.answer_count(트리거 비정규화 값) 조회. search 는 title/content ILIKE.
+
+        `category` 의미:
+          미지정 또는 'all' → 필터 없음 (전체)
+          product/allergy/vegetarian → 해당 카테고리 + 'all' 행 합집합
+        ('all' 글은 유니버설로 모든 특정 필터에 매칭됨.)
+
+        items[].images 는 비용 절감을 위해 목록에서 항상 빈 배열.
+        signed URL 이 필요하면 GET /qna/{id} 호출.
       security: [{ BearerAuth: [] }]
       parameters:
         - in: query
@@ -2189,6 +2199,14 @@ paths:
             enum: [latest, oldest, mostAnswered]
             default: latest
           description: 정렬 기준
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum: [all, product, allergy, vegetarian]
+          description: |
+            카테고리 필터. 미지정/'all' = 전체.
+            특정 카테고리 = 해당 + 'all' 합집합.
         - in: query
           name: search
           schema: { type: string }
@@ -2226,18 +2244,38 @@ paths:
 
     post:
       tags: [Community]
-      summary: Q&A 게시글 등록
+      summary: Q&A 게시글 등록 (multipart)
       description: |
-        알레르기 관련 질문을 등록합니다. relatedProductId 제공 시 FK 검증
-        (없는 상품이면 23503 → 404 PRODUCT_NOT_FOUND).
+        알레르기·식이 관련 질문을 등록합니다.
+
+        **요청 형식: multipart/form-data** (이미지 0장이어도 multipart 사용).
+
+        필드:
+          - title    (required, ≤100자)
+          - content  (required, ≤2000자)
+          - category (required, enum: all/product/allergy/vegetarian)
+          - relatedProductId (optional, products.id)
+          - images   (optional, 동일 필드명 반복 전송, ≤4장)
+
+        이미지 제약:
+          - MIME: image/jpeg, image/png, image/webp
+          - 파일당 ≤5MB
+          - 게시글당 ≤4장
+          - Supabase Storage `qna-images` 버킷에 `{userId}/{postId}/{order}-{uuid}.{ext}` 로 저장
+
+        응답의 images 필드는 목록 절감 정책에 따라 항상 빈 배열.
+        signed URL 이 필요하면 후속 GET /qna/{id} 호출.
+
+        관련 상품(relatedProductId) FK 위반: 23503 → 404 PRODUCT_NOT_FOUND.
+        이미지 업로드 실패 시 보상 트랜잭션으로 글 row 도 롤백되어 503 STORAGE_UNAVAILABLE 반환.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required: [title, content]
+              required: [title, content, category]
               properties:
                 title:
                   type: string
@@ -2247,14 +2285,31 @@ paths:
                   type: string
                   maxLength: 2000
                   example: 성분표에 땅콩 가공시설 사용이라고 나와있는데 먹어도 괜찮은지 궁금합니다.
+                category:
+                  type: string
+                  enum: [all, product, allergy, vegetarian]
+                  description: |
+                    Q&A 글 분류.
+                      all        — 4가지 분류 어디에서나 노출되는 일반 글
+                      product    — 특정 상품 문의 (relatedProductId 권장)
+                      allergy    — 알러지 관련 질문
+                      vegetarian — 채식·식이 관련 질문
+                  example: all
                 relatedProductId:
                   type: string
                   nullable: true
                   description: 관련 상품 ID (products.id). 선택.
                   example: prod-001
+                images:
+                  type: array
+                  maxItems: 4
+                  items: { type: string, format: binary }
+                  description: |
+                    첨부 이미지 (필드명 'images' 를 반복 전송).
+                    jpg/png/webp, 파일당 5MB, 최대 4장.
       responses:
         '201':
-          description: 등록 성공
+          description: 등록 성공 (images 는 빈 배열)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/QnaPostSummary' }
@@ -2268,10 +2323,20 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
               example: { error: PRODUCT_NOT_FOUND, message: 해당 제품을 찾을 수 없습니다. }
+        '413':
+          description: 이미지 파일 용량 초과 (5MB)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: IMAGE_TOO_LARGE, message: 이미지는 5MB 이하만 업로드 가능합니다. }
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '503':
-          $ref: '#/components/responses/ServiceUnavailable'
+          description: Storage 또는 DB 일시 사용 불가
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: STORAGE_UNAVAILABLE, message: 이미지 업로드에 실패했습니다. 잠시 후 다시 시도해 주세요. }
 
   /qna/{id}:
     get:
@@ -3224,9 +3289,28 @@ components:
           example: 129
         isLiked: { type: boolean }
 
+    QnaImage:
+      type: object
+      required: [storagePath, url, expiresAt]
+      description: |
+        Q&A 첨부 이미지 — Supabase Storage `qna-images` 버킷의 signed URL (TTL 5분).
+        URL 만료 직전엔 클라이언트가 GET /qna/{id} 재호출로 새 URL 회수.
+      properties:
+        storagePath:
+          type: string
+          description: 버킷 내 상대 경로 `{userId}/{postId}/{order}-{uuid}.{ext}`
+          example: 'a1b2c3.../post-uuid/0-img-uuid.jpg'
+        url:
+          type: string
+          description: TTL 5분 signed URL
+        expiresAt:
+          type: string
+          format: date-time
+          description: 서버 발급 시각 + 300초
+
     QnaPostSummary:
       type: object
-      required: [id, userId, title, content, answerCount, isResolved, createdAt]
+      required: [id, userId, title, content, category, answerCount, isResolved, createdAt, images]
       properties:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid }
@@ -3236,6 +3320,17 @@ components:
           example: 알레르기맘
         title: { type: string, maxLength: 100 }
         content: { type: string, maxLength: 2000 }
+        category:
+          type: string
+          enum: [all, product, allergy, vegetarian]
+          description: |
+            Q&A 글 분류.
+              all        — 4가지 분류 어디에서나 노출되는 일반 글 (유니버설)
+              product    — 특정 상품 문의 (relatedProductId 권장)
+              allergy    — 알러지 관련 질문
+              vegetarian — 채식·식이 관련 질문
+            ※ category='all' 행은 product/allergy/vegetarian 필터 어디에서도 매칭됨.
+          example: all
         answerCount:
           type: integer
           description: qna_posts.answer_count(트리거 비정규화 값) 조회
@@ -3245,6 +3340,13 @@ components:
           type: string
           nullable: true
           example: prod-001
+        images:
+          type: array
+          maxItems: 4
+          items: { $ref: '#/components/schemas/QnaImage' }
+          description: |
+            첨부 이미지 signed URL 묶음. **목록(GET /qna)에서는 비용 절감을 위해 항상 빈 배열**.
+            **상세(GET /qna/{id})에서만** TTL 5분 signed URL 로 채워짐.
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
