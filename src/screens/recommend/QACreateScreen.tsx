@@ -21,7 +21,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '../../constants/colors';
 import { createQAQuestion } from '../../services/recommend.service';
 import { getProductSuggestions } from '../../services/search.service';
-import { clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
 import { QnaCategory, RecommendStackParamList } from '../../types';
 
@@ -111,6 +111,38 @@ export default function QACreateScreen({ navigation }: Props) {
     setPhotos(prev => prev.filter((_, i) => i !== index));
   }
 
+  /**
+   * createQAQuestion 의 BE 에러 코드 → 한국어 메시지.
+   * 매핑되지 않은 코드는 ApiError.message 그대로 (BE 가 한국어 메시지를 포함).
+   */
+  function formatCreateError(err: unknown): string {
+    if (!(err instanceof ApiError)) {
+      return err instanceof Error ? err.message : '글 등록에 실패했습니다.';
+    }
+    switch (err.code) {
+      case 'IMAGE_TOO_LARGE':
+        return '이미지는 5MB 이하만 업로드 가능합니다.';
+      case 'INVALID_FILE_TYPE':
+        return 'jpg/png/webp 이미지만 업로드할 수 있습니다.';
+      case 'PRODUCT_NOT_FOUND':
+        return '선택한 제품 정보를 찾을 수 없습니다. 제품을 다시 선택해 주세요.';
+      case 'INVALID_INPUT':
+        return '제목·내용·카테고리를 확인해 주세요.';
+      case 'TOO_MANY_REQUESTS':
+        return '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+      case 'STORAGE_UNAVAILABLE':
+      case 'DB_UNAVAILABLE':
+      case 'SERVICE_DISABLED':
+        return '서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+      case 'NETWORK':
+        return '네트워크에 연결할 수 없습니다.';
+      case 'TIMEOUT':
+        return '요청 시간이 초과되었습니다. 다시 시도해 주세요.';
+      default:
+        return err.message || '글 등록에 실패했습니다.';
+    }
+  }
+
   async function handleSubmit() {
     if (!canSubmit) return;
     setIsSubmitting(true);
@@ -134,8 +166,7 @@ export default function QACreateScreen({ navigation }: Props) {
         useUserStore.getState().logout();
         return;
       }
-      const message = err instanceof Error ? err.message : 'Failed to post question.';
-      Alert.alert('Error', message);
+      Alert.alert('알림', formatCreateError(err));
     } finally {
       setIsSubmitting(false);
     }
