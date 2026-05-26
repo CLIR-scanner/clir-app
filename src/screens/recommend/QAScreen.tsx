@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Keyboard,
   ScrollView,
@@ -118,35 +119,73 @@ function QuestionRow({ item, onPress }: { item: QAQuestion; onPress: () => void 
   );
 }
 
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 300;
+
 export default function QAScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [questions, setQuestions] = useState<QAQuestion[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<QnaCategory>('all');
+  const loadingMoreRef = useRef(false);
 
-  // 카테고리 변경 시 서버사이드 재조회 (BE 가 'all' 합집합 처리).
-  // 검색은 클라이언트 측에서 즉시 필터링 (debounce 미적용 — 후속 PR).
+  // 검색 debounce — 300ms 이내 추가 타이핑 시 refetch 취소.
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [query]);
+
+  // 카테고리·검색어 변경 시 reset + 1페이지 서버 조회.
+  // BE 가 'all' 합집합 + ?search= ILIKE 처리. is_notice 정렬 prefix 로 공지 최상단 고정.
   useEffect(() => {
     let cancelled = false;
-    getQAQuestions({ category: selectedCategory }).then(({ questions: next }) => {
-      if (!cancelled) setQuestions(next);
-    });
+    setIsLoading(true);
+    getQAQuestions({
+      category: selectedCategory,
+      search:   debouncedQuery || undefined,
+      limit:    PAGE_SIZE,
+      offset:   0,
+    })
+      .then(({ questions: next, hasMore: more }) => {
+        if (cancelled) return;
+        setQuestions(next);
+        setHasMore(more);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
     return () => { cancelled = true; };
-  }, [selectedCategory]);
+  }, [selectedCategory, debouncedQuery]);
 
-  const featuredQuestions = questions.slice(0, 2);
-  const listQuestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const source = questions.filter(item => !item.isNotice);
-    if (!q) return source;
-    return source.filter(item =>
-      item.title.toLowerCase().includes(q) ||
-      item.body.toLowerCase().includes(q) ||
-      item.label.toLowerCase().includes(q),
-    );
-  }, [query, questions]);
+  async function loadMore() {
+    if (loadingMoreRef.current || !hasMore || isLoading) return;
+    loadingMoreRef.current = true;
+    try {
+      const { questions: next, hasMore: more } = await getQAQuestions({
+        category: selectedCategory,
+        search:   debouncedQuery || undefined,
+        limit:    PAGE_SIZE,
+        offset:   questions.length,
+      });
+      setQuestions(prev => [...prev, ...next]);
+      setHasMore(more);
+    } catch {
+      // silent — 다음 스크롤 시 재시도. 사용자 흐름 비차단.
+    } finally {
+      loadingMoreRef.current = false;
+    }
+  }
+
+  const featuredQuestions = useMemo(() => questions.slice(0, 2), [questions]);
+  const listQuestions = useMemo(
+    () => questions.filter(item => !item.isNotice),
+    [questions],
+  );
 
   function handleClearSearch() {
     setQuery('');
@@ -245,6 +284,22 @@ export default function QAScreen({ navigation }: Props) {
         renderItem={({ item }) => (
           <QuestionRow item={item} onPress={() => openQuestion(item.id)} />
         )}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          hasMore ? (
+            <View style={styles.loadMoreFooter}>
+              <ActivityIndicator size="small" color={C.mid} />
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          !isLoading ? (
+            <Text style={styles.emptyText}>
+              {debouncedQuery ? 'No matching questions.' : 'No questions yet.'}
+            </Text>
+          ) : null
+        }
       />
 
       <TouchableOpacity
@@ -469,6 +524,17 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: Colors.white,
     fontFamily: 'Pretendard-Bold',
+  },
+  loadMoreFooter: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: C.mid,
+    fontSize: 13,
+    fontFamily: 'Pretendard-Regular',
+    textAlign: 'center',
+    paddingVertical: 28,
   },
   fab: {
     position: 'absolute',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '../../constants/colors';
 import { createQAQuestion } from '../../services/recommend.service';
+import { getProductSuggestions } from '../../services/search.service';
 import { clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
 import { QnaCategory, RecommendStackParamList } from '../../types';
@@ -41,6 +42,9 @@ const CATEGORIES: ReadonlyArray<{ id: QnaCategory; label: string }> = [
 ];
 
 const MAX_PHOTOS = 4;
+const PRODUCT_SEARCH_DEBOUNCE_MS = 300;
+
+type ProductSuggestion = { productId: string; name: string; brand: string };
 
 export default function QACreateScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -49,6 +53,38 @@ export default function QACreateScreen({ navigation }: Props) {
   const [content, setContent] = useState('');
   const [photos, setPhotos]   = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // relatedProductId picker — category === 'product' 일 때만 활성.
+  const [productQuery,       setProductQuery]       = useState('');
+  const [productSelected,    setProductSelected]    = useState<ProductSuggestion | null>(null);
+  const [productSuggestions, setProductSuggestions] = useState<ProductSuggestion[]>([]);
+
+  // 검색 debounce — 300ms 후 /search/suggestions 호출.
+  useEffect(() => {
+    if (selectedCategory !== 'product') {
+      setProductSuggestions([]);
+      return;
+    }
+    // 이미 선택된 항목 그대로면 noise 호출 방지.
+    if (productSelected && productQuery === productSelected.name) {
+      setProductSuggestions([]);
+      return;
+    }
+    const handle = setTimeout(async () => {
+      const items = await getProductSuggestions(productQuery).catch(() => []);
+      setProductSuggestions(items);
+    }, PRODUCT_SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [productQuery, selectedCategory, productSelected]);
+
+  // 카테고리가 product 가 아니게 되면 picker 상태 초기화.
+  useEffect(() => {
+    if (selectedCategory !== 'product') {
+      setProductQuery('');
+      setProductSelected(null);
+      setProductSuggestions([]);
+    }
+  }, [selectedCategory]);
 
   const canSubmit = title.trim().length > 0 && content.trim().length > 0 && !isSubmitting;
 
@@ -78,6 +114,10 @@ export default function QACreateScreen({ navigation }: Props) {
         content: content.trim(),
         category: selectedCategory,
         photos,
+        relatedProductId:
+          selectedCategory === 'product' && productSelected
+            ? productSelected.productId
+            : undefined,
       });
       navigation.goBack();
     } catch (err: unknown) {
@@ -146,6 +186,62 @@ export default function QACreateScreen({ navigation }: Props) {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* ── Related Product (category === 'product' 일 때만) ── */}
+        {selectedCategory === 'product' && (
+          <View style={styles.productPickerWrap}>
+            <Text style={[styles.sectionLabel, { marginTop: 40 }]}>Related Product</Text>
+            <View style={styles.productInputBox}>
+              <TextInput
+                style={styles.productInput}
+                placeholder="Search product by name"
+                placeholderTextColor={C.muted}
+                value={productQuery}
+                onChangeText={text => {
+                  setProductQuery(text);
+                  // 사용자가 다시 입력하면 이전 선택 무효화 (검색 재개).
+                  if (productSelected && text !== productSelected.name) setProductSelected(null);
+                }}
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+              {productSelected && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setProductSelected(null);
+                    setProductQuery('');
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.productClear}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {!productSelected && productSuggestions.length > 0 && (
+              <View style={styles.productSuggestList}>
+                {productSuggestions.map(s => (
+                  <TouchableOpacity
+                    key={s.productId}
+                    style={styles.productSuggestRow}
+                    onPress={() => {
+                      setProductSelected(s);
+                      setProductQuery(s.name);
+                      setProductSuggestions([]);
+                      Keyboard.dismiss();
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.productSuggestName} numberOfLines={1}>{s.name}</Text>
+                    {!!s.brand && (
+                      <Text style={styles.productSuggestBrand} numberOfLines={1}>{s.brand}</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* ── Post ── */}
         <Text style={[styles.sectionLabel, { marginTop: 40 }]}>Post</Text>
@@ -290,6 +386,55 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Bold',
   },
 
+  productPickerWrap: {
+    marginHorizontal: 28,
+  },
+  productInputBox: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.mid,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  productInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Pretendard-Regular',
+    color: C.dark,
+    padding: 0,
+  },
+  productClear: {
+    fontSize: 14,
+    color: C.muted,
+  },
+  productSuggestList: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  productSuggestRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: C.line,
+  },
+  productSuggestName: {
+    fontSize: 14,
+    fontFamily: 'Pretendard-SemiBold',
+    color: C.dark,
+  },
+  productSuggestBrand: {
+    marginTop: 2,
+    fontSize: 12,
+    fontFamily: 'Pretendard-Regular',
+    color: C.mid,
+  },
   titleInput: {
     marginTop: 20,
     marginHorizontal: 28,

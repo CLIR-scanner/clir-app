@@ -181,3 +181,30 @@ export async function getSearchSuggestions(query: string): Promise<string[]> {
   const res = await apiFetch<SearchSuggestionsResponse>(`/search/suggestions?${params.toString()}`);
   return res.suggestions.map(s => s.name);
 }
+
+/**
+ * 자동완성 제안 — productId + name + brand 풀 정보.
+ * Q&A 작성 화면의 relatedProductId picker 등 productId 가 필요한 경우 사용.
+ */
+export async function getProductSuggestions(
+  query: string,
+): Promise<{ productId: string; name: string; brand: string }[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  if (USE_PREVIEW_MOCK) {
+    return PREVIEW_PRODUCTS
+      .filter(p => p.name.toLowerCase().includes(q.toLowerCase()))
+      .map(p => ({ productId: p.id, name: p.name, brand: p.brand }));
+  }
+
+  const params = new URLSearchParams({ q, limit: '6' });
+  const res = await apiFetch<SearchSuggestionsResponse>(
+    `/search/suggestions?${params.toString()}`,
+  );
+  return res.suggestions.map(s => ({
+    productId: s.productId,
+    name: s.name,
+    brand: s.brand,
+  }));
+}

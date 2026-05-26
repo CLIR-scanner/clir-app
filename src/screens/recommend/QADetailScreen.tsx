@@ -2,8 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -68,6 +72,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const currentUserName = useUserStore(s => s.currentUser.name);
 
   useEffect(() => {
@@ -140,6 +145,26 @@ export default function QADetailScreen({ navigation, route }: Props) {
                 <Text style={styles.questionTitle}>{question.title}</Text>
                 <Text style={styles.questionAuthor}>by {question.author}</Text>
                 <Text style={styles.questionBody}>{question.body}</Text>
+
+                {/* 첨부 이미지 — TTL 5분 signed URL. 만료 시 화면 재진입(QADetail 재호출) 로 갱신. */}
+                {(question.images?.length ?? 0) > 0 && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.imageList}
+                    style={styles.imageScroll}
+                  >
+                    {question.images!.map((uri, i) => (
+                      <Pressable
+                        key={uri}
+                        style={styles.imageThumb}
+                        onPress={() => setViewerIndex(i)}
+                      >
+                        <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                )}
               </View>
 
               {question.isNotice && (
@@ -178,6 +203,24 @@ export default function QADetailScreen({ navigation, route }: Props) {
           }
         />
       )}
+
+      {/* 첨부 이미지 풀스크린 뷰어 모달 */}
+      <Modal
+        visible={viewerIndex !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerIndex(null)}
+      >
+        <Pressable style={styles.viewerBackdrop} onPress={() => setViewerIndex(null)}>
+          {viewerIndex !== null && question?.images?.[viewerIndex] && (
+            <Image
+              source={{ uri: question.images[viewerIndex] }}
+              style={styles.viewerImage}
+              resizeMode="contain"
+            />
+          )}
+        </Pressable>
+      </Modal>
 
       {!question?.isNotice && (
         <View style={[styles.replyBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -283,6 +326,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Pretendard-Regular',
     lineHeight: 21,
+  },
+  imageScroll: {
+    marginTop: 16,
+  },
+  imageList: {
+    gap: 8,
+  },
+  imageThumb: {
+    width: 96,
+    height: 96,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#F0F0F0',
+  },
+  viewerBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  viewerImage: {
+    width: '100%',
+    height: '100%',
   },
   guidelineBox: {
     borderWidth: 1,

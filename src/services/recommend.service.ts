@@ -120,6 +120,10 @@ type QnaPostSummaryApi = {
   content: string;
   category: QnaCategory;
   answerCount: number;
+  /** qna_posts.view_count — BE 가 GET /qna/:id 마다 +1 (PR #44 이후). */
+  viewCount: number;
+  /** 관리자 핀 (PATCH /admin/qna/:id/notice) — 모든 정렬에서 최상단 고정. */
+  isNotice: boolean;
   isResolved: boolean;
   relatedProductId?: string | null;
   createdAt: string;
@@ -158,8 +162,9 @@ function mapQnaToQuestion(post: QnaPostSummaryApi): QAQuestion {
     title: post.title,
     body: post.content,
     author: post.userNickname ?? '익명',
-    viewCount: 0,                      // BE 미지원 — 후속 PR
+    viewCount: post.viewCount,
     answerCount: post.answerCount,
+    isNotice: post.isNotice,
     category: post.category,
     images: post.images.map(i => i.url),
   };
