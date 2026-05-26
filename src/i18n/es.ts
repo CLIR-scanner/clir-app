@@ -16,6 +16,14 @@ const es = {
     termsPrefix: 'Al pulsar "Continuar" aceptas nuestros ', termsService: 'Términos de servicio', termsAnd: ' y ', termsPrivacy: 'Política de privacidad',
     signIn: 'Iniciar sesión', createAccount: 'Crear nueva cuenta',
     signOut: 'Cerrar sesión', signOutConfirm: '¿Seguro que quieres cerrar sesión?',
+    deleteAccount: 'Eliminar cuenta',
+    deleteAccountTitle: '¿Eliminar tu cuenta?',
+    deleteAccountWarning: 'Esto eliminará permanentemente tu cuenta, historial de escaneos, elementos guardados y perfiles de miembros. Esta acción no se puede deshacer.',
+    deleteAccountPrompt: 'Para confirmar, escribe la frase de abajo exactamente:',
+    deleteAccountPhrase: 'eliminar mi cuenta',
+    deleteAccountPlaceholder: 'Escribe la frase aquí',
+    deleteAccountConfirm: 'Eliminar',
+    deleteAccountFailed: 'No se pudo eliminar la cuenta. Inténtalo de nuevo.',
     email: 'Correo', password: 'Contraseña', name: 'Nombre',
     termsAgreement: {
       title:                        'Por favor, acepta los\ntérminos de servicio de Clir.',
@@ -40,6 +48,7 @@ const es = {
     menuDietary: 'Restricciones alimentarias', menuSensitivity: 'Configuración de sensibilidad',
     menuPersonalization: 'Personalización', menuFamily: 'Perfiles familiares',
     menuLanguage: 'Idioma', menuSettings: 'Ajustes',
+    menuTermsPrivacy: 'Términos y privacidad',
   },
   sensitivity: {
     title: 'Configuración de sensibilidad',

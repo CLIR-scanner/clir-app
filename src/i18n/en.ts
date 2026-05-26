@@ -61,6 +61,14 @@ const en = {
     },
     signOut:              'Sign out',
     signOutConfirm:       'Are you sure you want to sign out?',
+    deleteAccount:        'Delete account',
+    deleteAccountTitle:   'Delete your account?',
+    deleteAccountWarning: 'This will permanently delete your account, scan history, saved items, and any member profiles. This action cannot be undone.',
+    deleteAccountPrompt:  'To confirm, type the phrase below exactly:',
+    deleteAccountPhrase:  'delete my account',
+    deleteAccountPlaceholder: 'Type the phrase here',
+    deleteAccountConfirm: 'Delete',
+    deleteAccountFailed:  'Failed to delete account. Please try again.',
   },
 
   // ── Profile ───────────────────────────────────────────────────────────────
@@ -77,6 +85,7 @@ const en = {
     menuFamily:       'Family Profiles',
     menuLanguage:     'Language',
     menuSettings:     'Settings',
+    menuTermsPrivacy: 'Terms & Privacy',
   },
 
   // ── Sensitivity ───────────────────────────────────────────────────────────
