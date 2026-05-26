@@ -142,6 +142,7 @@ const es = {
     scanLabel: 'Escanear etiqueta', recognitionFailed: 'Reconocimiento fallido', analysisFailed: 'Análisis fallido',
     clearerPhoto: 'Toma una foto más clara y luminosa de la etiqueta.', analyzeFailed: 'No pudimos analizar esta etiqueta. Inténtalo de nuevo.',
     good: 'Bueno', poor: 'Precaución', bad: 'Riesgo', goodBang: 'Bueno!', poorBang: 'Precaución!', badBang: 'Riesgo!',
+    medicalDisclaimer: 'Solo de referencia. No es un consejo ni diagnóstico médico.',
   },
   favoriteUi: { add: 'Añadir a favoritos', favorited: 'Favorito' },
   profileUi: {

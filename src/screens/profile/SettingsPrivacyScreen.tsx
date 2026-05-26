@@ -71,6 +71,9 @@ export default function SettingsPrivacyScreen() {
           <Text style={styles.footerLine}>
             Questions? <Text style={styles.contactEmail}>{CONTACT_EMAIL}</Text>
           </Text>
+          <Text style={styles.footerLine}>
+            Product data powered by Open Food Facts (ODbL).
+          </Text>
         </View>
       </View>
     </View>

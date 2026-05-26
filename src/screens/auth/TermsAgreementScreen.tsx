@@ -144,12 +144,6 @@ export default function TermsAgreementScreen() {
     setLoading(true);
     try {
       await termsStorage.write(TERMS_VERSION);
-      // ─── DEV ONLY ─── (BE 복구 후 이 if 블록 삭제 — grep "DEV ONLY")
-      if (useUserStore.getState().currentUser.id === 'dev-user-id') {
-        navigation.replace('SurveyLanding', {});
-        return;
-      }
-      // ─── /DEV ONLY ───
       navigation.replace('AuthHome');
     } finally {
       setLoading(false);
