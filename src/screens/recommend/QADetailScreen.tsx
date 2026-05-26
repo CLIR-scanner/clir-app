@@ -4,7 +4,6 @@ import {
   FlatList,
   Image,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -21,6 +20,7 @@ import { Colors } from '../../constants/colors';
 import { addQAAnswer, getQAQuestionDetail } from '../../services/recommend.service';
 import { QAAnswer, QAQuestion, RecommendStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
+import QnaImageViewer from '../../components/QnaImageViewer';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'QADetail'>;
 
@@ -204,23 +204,13 @@ export default function QADetailScreen({ navigation, route }: Props) {
         />
       )}
 
-      {/* 첨부 이미지 풀스크린 뷰어 모달 */}
-      <Modal
+      {/* 첨부 이미지 풀스크린 뷰어 — 스와이프·줌·인덱서 */}
+      <QnaImageViewer
         visible={viewerIndex !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setViewerIndex(null)}
-      >
-        <Pressable style={styles.viewerBackdrop} onPress={() => setViewerIndex(null)}>
-          {viewerIndex !== null && question?.images?.[viewerIndex] && (
-            <Image
-              source={{ uri: question.images[viewerIndex] }}
-              style={styles.viewerImage}
-              resizeMode="contain"
-            />
-          )}
-        </Pressable>
-      </Modal>
+        images={question?.images ?? []}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
+      />
 
       {!question?.isNotice && (
         <View style={[styles.replyBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
