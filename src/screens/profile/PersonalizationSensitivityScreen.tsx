@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
@@ -10,9 +10,10 @@ export default function PersonalizationSensitivityScreen() {
   const navigation = useNavigation();
   const { t } = useTranslation();
   const sensitivityLevel    = useUserStore(s => s.activeProfile.sensitivityLevel);
-  const updateActiveProfile = useUserStore(s => s.updateActiveProfile);
+  const syncActiveProfile   = useUserStore(s => s.syncActiveProfile);
 
   const [selected, setSelected] = useState<SensitivityLevel>(sensitivityLevel);
+  const [isSaving, setIsSaving] = useState(false);
   const isDirty = selected !== sensitivityLevel;
 
   const OPTIONS: {
@@ -41,9 +42,22 @@ export default function PersonalizationSensitivityScreen() {
     },
   ];
 
-  function handleSave() {
-    updateActiveProfile({ sensitivityLevel: selected });
-    navigation.goBack();
+  async function handleSave() {
+    if (isSaving || !isDirty) {
+      navigation.goBack();
+      return;
+    }
+    setIsSaving(true);
+    try {
+      // 메인 프로필이면 BE POST /auth/survey 동기화 + history/favorites 자동 무효화.
+      // 멤버 프로필 활성 중이면 local store 만 갱신 (BE 멤버 프로필 sensitivity 동기화는 별 경로).
+      await syncActiveProfile({ sensitivityLevel: selected });
+      navigation.goBack();
+    } catch {
+      Alert.alert(t('common.error'), t('profileUi.saveFailed'));
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
