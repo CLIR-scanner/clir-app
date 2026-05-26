@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
   },
   ingredientBox: {
     borderWidth: 1,
-    borderColor: '#A9B6A8',
+    borderColor: DARK_GREEN,
     borderRadius: 22,
     paddingTop: PILL_H + 16,
     paddingBottom: 24,
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   ingredientItem: {
     fontSize: 13,
     fontFamily: 'Pretendard-Regular',
-    color: MID_GREEN,
+    color: DARK_GREEN,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 4,
@@ -548,6 +548,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginBottom: 28,
     marginTop: PILL_H,
+    marginHorizontal: 12,
   },
   riskBoxOuter: {
     borderWidth: 1,

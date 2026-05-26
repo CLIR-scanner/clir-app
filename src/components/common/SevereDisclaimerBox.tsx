@@ -33,8 +33,8 @@ const styles = StyleSheet.create({
   },
   text: {
     color: RED,
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 17,
+    fontSize: 11,
+    fontFamily: 'Pretendard-Regular',
+    lineHeight: 14,
   },
 });
