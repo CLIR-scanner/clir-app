@@ -1318,6 +1318,61 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /admin/qna/{id}/notice:
+    patch:
+      tags: [Admin]
+      summary: Q&A 글 공지(isNotice) 토글
+      description: |
+        관리자가 Q&A 글의 `is_notice` 플래그를 켜고 끕니다. true 면 모든 정렬에서
+        `is_notice DESC` prefix 로 최상단 고정.
+        ADMIN_TOKEN 필요. 응답은 ack — 전체 상세가 필요하면 GET /qna/{id} 호출.
+      security:
+        - AdminToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isNotice]
+              properties:
+                isNotice: { type: boolean }
+      responses:
+        '200':
+          description: 토글 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, isNotice]
+                properties:
+                  id:       { type: string, format: uuid }
+                  isNotice: { type: boolean }
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '403':
+          description: 관리자 권한 없음
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: FORBIDDEN, message: 관리자 권한이 필요합니다. }
+        '404':
+          description: 존재하지 않는 Q&A ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { error: QNA_NOT_FOUND, message: Q&A 게시글을 찾을 수 없습니다. }
+        '503':
+          description: ADMIN_TOKEN 미설정 또는 DB 사용 불가
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
 # ─────────────────────────────────────
 # Phase 2 — 멀티 프로필
 # ─────────────────────────────────────
@@ -2188,6 +2243,9 @@ paths:
           product/allergy/vegetarian → 해당 카테고리 + 'all' 행 합집합
         ('all' 글은 유니버설로 모든 특정 필터에 매칭됨.)
 
+        **공지(isNotice=true)** 글은 모든 정렬에서 `is_notice DESC` prefix 로
+        최상단 고정. 카테고리·search·정렬 옵션 어디에서도 상단 노출.
+
         items[].images 는 비용 절감을 위해 목록에서 항상 빈 배열.
         signed URL 이 필요하면 GET /qna/{id} 호출.
       security: [{ BearerAuth: [] }]
@@ -2345,6 +2403,10 @@ paths:
       description: |
         게시글 상세 + 답변 목록(작성순) + relatedProduct(있으면 products 조인)을
         함께 반환합니다.
+
+        **viewCount 자동 증분**: 호출 시 `qna_posts.view_count` 가 +1 (RPC
+        `increment_qna_view_count`, race-free). 응답의 viewCount 는 +1 후 값.
+        증분 실패 시에도 상세 응답은 정상 (best-effort, 응답 200 보장).
       security: [{ BearerAuth: [] }]
       parameters:
         - in: path
@@ -3310,7 +3372,7 @@ components:
 
     QnaPostSummary:
       type: object
-      required: [id, userId, title, content, category, answerCount, isResolved, createdAt, images]
+      required: [id, userId, title, content, category, answerCount, viewCount, isNotice, isResolved, createdAt, images]
       properties:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid }
@@ -3335,6 +3397,18 @@ components:
           type: integer
           description: qna_posts.answer_count(트리거 비정규화 값) 조회
           example: 3
+        viewCount:
+          type: integer
+          description: |
+            qna_posts.view_count. GET /qna/{id} 호출마다 +1 (route-level 원자 RPC `increment_qna_view_count`).
+            목록(GET /qna) 응답은 마지막 상세 호출 시점 값 — 실시간 정합 보장 안 함.
+          example: 42
+        isNotice:
+          type: boolean
+          description: |
+            관리자가 PATCH /admin/qna/{id}/notice 로 토글한 핀(공지). true 면 모든 정렬에서 최상단 고정.
+            FE 는 별도 카드 스타일(공지 배너)로 노출 권장.
+          example: false
         isResolved: { type: boolean, example: false }
         relatedProductId:
           type: string
