@@ -255,6 +255,8 @@ export interface QAQuestion {
   title: string;
   body: string;
   author: string;
+  /** 작성자 user id — 본인 글 판별 (isMine = userId === currentUser.id). */
+  userId: string;
   viewCount: number;
   answerCount: number;
   isNotice?: boolean;
@@ -267,6 +269,8 @@ export interface QAQuestion {
 export interface QAAnswer {
   id: string;
   questionId: string;
+  /** 작성자 user id — 본인 답변 판별. */
+  userId: string;
   author: string;
   body: string;
   createdAt: string;
@@ -344,6 +348,12 @@ export interface CommunityFeedItem {
   scanCount?: number | null;
   brand?: string | null;
   image?: string | null;
+}
+
+/** GET /community/feed 응답 — 두 큐레이션 리스트 동시 반환 (페이지네이션 없음). */
+export interface CommunityFeedResponse {
+  weeklyTrending: CommunityFeedItem[];
+  similarUsersPicks: CommunityFeedItem[];
 }
 
 export interface MagazineItem {
