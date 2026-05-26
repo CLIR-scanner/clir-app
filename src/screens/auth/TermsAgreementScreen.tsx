@@ -203,7 +203,7 @@ export default function TermsAgreementScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={false}
+          scrollEnabled
         >
           <Text style={styles.title}>{t('auth.termsAgreement.title')}</Text>
 

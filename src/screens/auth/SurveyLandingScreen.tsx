@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Alert,
   ScrollView,
   KeyboardAvoidingView,
+  Modal,
+  Pressable,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +16,6 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
-import i18n from '../../i18n';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
@@ -110,12 +111,21 @@ export default function SurveyLandingScreen() {
   const multiProfileMode   = useUserStore(s => s.multiProfileMode);
   const setMultiProfileMode = useUserStore(s => s.setMultiProfileMode);
   const [loading, setLoading] = React.useState(false);
+  const [langModalVisible, setLangModalVisible] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const langButtonRef = useRef<View>(null);
 
   const params: SurveyParams = route.params ?? {};
   const isDevMode = String(route.name) === 'DevSurveyLanding';
 
-  // 언어 섹션은 기본 collapsed — 명시적으로 변경하고 싶을 때만 열림.
-  const [languageOpen, setLanguageOpen] = React.useState(false);
+  const currentLangLabel = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'EN';
+
+  function openLangDropdown() {
+    langButtonRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
+      setDropdownPos({ top: pageY + height + 4, left: pageX, width });
+      setLangModalVisible(true);
+    });
+  }
 
   function handleContinue() {
     navigation.navigate('Survey', params);
@@ -160,19 +170,45 @@ export default function SurveyLandingScreen() {
     }
   }
 
-  function handleSelectLanguage(code: string) {
-    setLanguage(code);
-    i18n.changeLanguage(code);
-  }
-
-  const currentLanguageLabel =
-    SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'English';
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <Modal
+        visible={langModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={() => setLangModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setLangModalVisible(false)}>
+          <View style={[styles.modalCard, { position: 'absolute', top: dropdownPos.top, left: dropdownPos.left, width: 135 }]}>
+            {SUPPORTED_LANGUAGES.map((lang, idx) => {
+              const isSelected = currentLanguage === lang.code;
+              return (
+                <React.Fragment key={lang.code}>
+                  {idx > 0 && <View style={styles.modalDivider} />}
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => { setLanguage(lang.code); setLangModalVisible(false); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.modalItemText, isSelected && styles.modalItemTextSelected]}>
+                      {lang.native}
+                    </Text>
+                    {isSelected && (
+                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                        <Path d="M20 6L9 17L4 12" stroke={C.primary} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
+                    )}
+                  </TouchableOpacity>
+                </React.Fragment>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
+
       <View style={[styles.inner, { paddingTop: insets.top }]}>
         <ScrollView
           style={styles.scroll}
@@ -180,40 +216,28 @@ export default function SurveyLandingScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>{t('survey.landingTitle')}</Text>
-
           {!multiProfileMode && (
-            <ExpandableSection
-              title={t('survey.languageTitle')}
-              subtitle={t('survey.languageSubtitle')}
-              open={languageOpen}
-              onToggle={() => setLanguageOpen(o => !o)}
-              badge={
-                <Text style={styles.languageCurrentBadge}>{currentLanguageLabel}</Text>
-              }
+            <TouchableOpacity
+              ref={langButtonRef}
+              style={styles.langButton}
+              onPress={openLangDropdown}
+              activeOpacity={0.7}
+              accessibilityRole="button"
             >
-              <View style={styles.languageOptions}>
-                {SUPPORTED_LANGUAGES.map(language => {
-                  const isSelected = currentLanguage === language.code;
-                  return (
-                    <TouchableOpacity
-                      key={language.code}
-                      style={[styles.languageOption, isSelected && styles.languageOptionSelected]}
-                      onPress={() => handleSelectLanguage(language.code)}
-                      activeOpacity={0.8}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      accessibilityLabel={language.native}
-                    >
-                      <Text style={[styles.languageText, isSelected && styles.languageTextSelected]}>
-                        {language.native}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ExpandableSection>
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 0c-2.5 2.5-4 6-4 10s1.5 7.5 4 10m0-20c2.5 2.5 4 6 4 10s-1.5 7.5-4 10M2 12h20"
+                  stroke={C.primary}
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+              <Text style={styles.langButtonText}>{currentLangLabel}</Text>
+            </TouchableOpacity>
           )}
+
+          <Text style={styles.title}>{t('survey.landingTitle')}</Text>
 
           <View style={styles.notices}>
             <Text style={styles.noticeBody}>{t('survey.noticeNutrition')}</Text>
@@ -416,6 +440,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Pretendard-Bold',
     color: C.primaryText,
+  },
+
+  // ── Language button & dropdown ─────────────────────────────────────────────
+  langButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.primary,
+    marginBottom: 20,
+  },
+  langButtonText: {
+    color: C.primary,
+    fontSize: 13,
+    fontFamily: 'Pretendard-Regular',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalCard: {
+    backgroundColor: C.bg,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  modalDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.cardBorder,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  modalItemText: {
+    fontSize: 15,
+    fontFamily: 'Pretendard-Regular',
+    color: C.textBody,
+  },
+  modalItemTextSelected: {
+    fontFamily: 'Pretendard-Bold',
+    color: C.primary,
   },
 
   // ── Shared opacity ─────────────────────────────────────────────────────────
