@@ -455,13 +455,13 @@ const styles = StyleSheet.create({
   },
   verdictImg:  { width: 17, height: 17 },
   productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%' },
-  brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 44, letterSpacing: -0.23 },
+  brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset
   ingredientSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H, marginHorizontal: 12 },
   ingredientBox: {
     borderWidth: 1,
-    borderColor: '#A9B6A8',
+    borderColor: DARK_GREEN,
     borderRadius: 22,
     paddingTop: PILL_H + 16,
     paddingBottom: 24,
@@ -480,12 +480,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ingredientLabelText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.3 },
-  ingredientItem:      { fontSize: 13, fontFamily: 'Pretendard-Regular', color: MID_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
+  ingredientItem:      { fontSize: 13, fontFamily: 'Pretendard-Regular', color: DARK_GREEN, textAlign: 'center', lineHeight: 20, marginBottom: 4 },
 
   // ── Disclaimer
 
   // ── Risk box (fieldset)
-  riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
+  riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H, marginHorizontal: 12 },
   riskBoxOuter: {
     borderWidth: 1,
     borderRadius: 16,

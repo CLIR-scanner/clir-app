@@ -117,7 +117,7 @@ const es = {
     alternativeProducts: 'Productos alternativos', image: 'Imagen', seeMoreDetail: 'ver más detalles', scannedProduct: 'Producto escaneado',
     ingredientsToAvoid: 'Ingredientes a evitar', suspectedAllergens: 'Alérgenos sospechosos',
     riskWarning: '** Este producto contiene ingredientes que pueden no ser adecuados para ti.',
-    severeDisclaimer: '** Para alergias graves,\n      verifica todos los ingredientes antes de consumir.',
+    severeDisclaimer: '** Para alergias graves, verifica todos los ingredientes\n     antes de consumir.',
   },
   scanUi: {
     title: 'Escanear', history: 'Historial', historyPill: 'Tu historial de escaneos',
