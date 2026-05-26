@@ -12,7 +12,7 @@ import { Colors } from '../../constants/colors';
 // 운영 연락처 — Privacy/Terms 와 동일 (PDF 공식).
 const FEEDBACK_EMAIL = 'clir.pbl2026@gmail.com';
 // app.json:expo.version 과 일치 유지. 버전 bump 시 동기 변경 의무.
-const APP_VERSION = '1.0.0-beta.1';
+const APP_VERSION = '1.0.0';
 
 function buildMailtoUrl(): string {
   const subject = 'CLIR Beta Feedback';

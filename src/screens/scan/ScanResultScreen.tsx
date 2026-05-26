@@ -319,6 +319,9 @@ export default function ScanResultScreen({ navigation, route }: Props) {
             <Text style={styles.sheetCloseText}>✕</Text>
           </TouchableOpacity>
 
+          {/* Medical disclaimer (App Store Guideline 1.4.1) */}
+          <Text style={styles.disclaimer}>{t('scanUi.medicalDisclaimer')}</Text>
+
           {/* Product row */}
           <View style={styles.productRow}>
             {/* Image placeholder */}
@@ -509,6 +512,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sheetCloseText: { color: Colors.white, fontSize: 12, lineHeight: 14 },
+
+  disclaimer: {
+    fontSize: 11,
+    color: Colors.gray500,
+    marginBottom: 12,
+    paddingRight: 28,
+    lineHeight: 15,
+  },
 
   // Product row
   productRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 14, paddingRight: 36 },

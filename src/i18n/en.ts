@@ -282,6 +282,7 @@ const en = {
     goodBang:           'Good!',
     poorBang:           'Poor!',
     badBang:            'Bad!',
+    medicalDisclaimer:  'For reference only. Not medical advice or a diagnosis.',
   },
   favoriteUi: {
     add:       'Add to Favorites',

@@ -287,6 +287,7 @@ const ko = {
     goodBang:           '좋음!',
     poorBang:           '주의!',
     badBang:            '위험!',
+    medicalDisclaimer:  '분석 결과는 참고용이며 의학적 진단이나 조언이 아닙니다.',
   },
   favoriteUi: {
     add:       '즐겨찾기 추가',

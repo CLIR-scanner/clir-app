@@ -31,6 +31,11 @@ import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { QAAnswer, QAQuestion, RecommendStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import QnaImageViewer from '../../components/QnaImageViewer';
+import {
+  reportQAQuestion,
+  reportQAAnswer,
+  blockUser,
+} from '../../services/moderation.service';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'QADetail'>;
 
@@ -100,6 +105,8 @@ interface AnswerRowProps {
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onDelete: () => void;
+  onReport: () => void;
+  onBlock: () => void;
   isSavingEdit: boolean;
 }
 
@@ -113,6 +120,8 @@ function AnswerRow({
   onSaveEdit,
   onCancelEdit,
   onDelete,
+  onReport,
+  onBlock,
   isSavingEdit,
 }: AnswerRowProps) {
   return (
@@ -124,19 +133,26 @@ function AnswerRow({
         <View style={styles.answerHeader}>
           <Text style={styles.answerAuthor} numberOfLines={1}>{item.author}</Text>
           <Text style={styles.answerDate}>{formatDate(item.createdAt)}</Text>
-          {isMine && !isEditing && (
+          {!isEditing && (
             <TouchableOpacity
               style={styles.moreButton}
               onPress={() => {
-                Alert.alert('답변 관리', undefined, [
-                  { text: '수정', onPress: onStartEdit },
-                  { text: '삭제', onPress: onDelete, style: 'destructive' },
-                  { text: '취소', style: 'cancel' },
-                ]);
+                const buttons = isMine
+                  ? [
+                      { text: '수정', onPress: onStartEdit },
+                      { text: '삭제', onPress: onDelete, style: 'destructive' as const },
+                      { text: '취소', style: 'cancel' as const },
+                    ]
+                  : [
+                      { text: '신고', onPress: onReport, style: 'destructive' as const },
+                      { text: '사용자 차단', onPress: onBlock, style: 'destructive' as const },
+                      { text: '취소', style: 'cancel' as const },
+                    ];
+                Alert.alert(isMine ? '답변 관리' : '답변 신고', undefined, buttons);
               }}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="답변 관리"
+              accessibilityLabel={isMine ? '답변 관리' : '답변 신고'}
             >
               <Text style={styles.moreButtonText}>···</Text>
             </TouchableOpacity>
@@ -274,24 +290,127 @@ export default function QADetailScreen({ navigation, route }: Props) {
   // ── 질문 관리 ───────────────────────────────────────────────────────────
   function openQuestionMenu() {
     if (!question) return;
-    Alert.alert(
-      '게시글 관리',
-      undefined,
+    if (isMyQuestion) {
+      Alert.alert(
+        '게시글 관리',
+        undefined,
+        [
+          {
+            text: '수정',
+            onPress: () => {
+              setEditQuestionTitle(question.title);
+              setEditQuestionContent(question.body);
+              setEditQuestionOpen(true);
+            },
+          },
+          {
+            text: '삭제',
+            style: 'destructive',
+            onPress: confirmDeleteQuestion,
+          },
+          { text: '취소', style: 'cancel' },
+        ],
+      );
+    } else {
+      Alert.alert(
+        '게시글 신고',
+        undefined,
+        [
+          { text: '신고', style: 'destructive', onPress: () => promptReportQuestion(question) },
+          { text: '사용자 차단', style: 'destructive', onPress: () => confirmBlockUser(question.userId) },
+          { text: '취소', style: 'cancel' },
+        ],
+      );
+    }
+  }
+
+  function promptReportQuestion(q: QAQuestion) {
+    Alert.prompt?.(
+      '게시글 신고',
+      '신고 사유를 간단히 입력해 주세요. 24시간 내 검토됩니다.',
       [
+        { text: '취소', style: 'cancel' },
         {
-          text: '수정',
-          onPress: () => {
-            setEditQuestionTitle(question.title);
-            setEditQuestionContent(question.body);
-            setEditQuestionOpen(true);
+          text: '신고',
+          style: 'destructive',
+          onPress: async (text?: string) => {
+            const reason = (text ?? '').trim();
+            if (!reason) {
+              Alert.alert('알림', '신고 사유를 입력해 주세요.');
+              return;
+            }
+            try {
+              await reportQAQuestion(q.id, reason);
+              Alert.alert('알림', '신고가 접수되었습니다. 24시간 내 검토됩니다.');
+            } catch (err: unknown) {
+              if (handleUnauthorized(err)) return;
+              if (err instanceof ApiError && err.code === 'ALREADY_REPORTED') {
+                Alert.alert('알림', '이미 신고하신 항목입니다.');
+                return;
+              }
+              Alert.alert('알림', formatApiError(err, '신고를 접수하지 못했습니다.'));
+            }
           },
         },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: confirmDeleteQuestion,
-        },
+      ],
+      'plain-text',
+    );
+  }
+
+  function promptReportAnswer(ans: QAAnswer) {
+    Alert.prompt?.(
+      '답변 신고',
+      '신고 사유를 간단히 입력해 주세요. 24시간 내 검토됩니다.',
+      [
         { text: '취소', style: 'cancel' },
+        {
+          text: '신고',
+          style: 'destructive',
+          onPress: async (text?: string) => {
+            const reason = (text ?? '').trim();
+            if (!reason) {
+              Alert.alert('알림', '신고 사유를 입력해 주세요.');
+              return;
+            }
+            try {
+              await reportQAAnswer(ans.id, reason);
+              Alert.alert('알림', '신고가 접수되었습니다. 24시간 내 검토됩니다.');
+            } catch (err: unknown) {
+              if (handleUnauthorized(err)) return;
+              if (err instanceof ApiError && err.code === 'ALREADY_REPORTED') {
+                Alert.alert('알림', '이미 신고하신 항목입니다.');
+                return;
+              }
+              Alert.alert('알림', formatApiError(err, '신고를 접수하지 못했습니다.'));
+            }
+          },
+        },
+      ],
+      'plain-text',
+    );
+  }
+
+  function confirmBlockUser(targetUserId: string) {
+    Alert.alert(
+      '사용자 차단',
+      '이 사용자의 게시글과 답변이 더 이상 보이지 않습니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '차단',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await blockUser(targetUserId);
+              Alert.alert('알림', '사용자를 차단했습니다.', [
+                { text: '확인', onPress: () => navigation.goBack() },
+              ]);
+            } catch (err: unknown) {
+              if (handleUnauthorized(err)) return;
+              Alert.alert('알림', formatApiError(err, '차단에 실패했습니다.'));
+            }
+          },
+        },
       ],
     );
   }
@@ -462,14 +581,14 @@ export default function QADetailScreen({ navigation, route }: Props) {
               <View style={[styles.questionCard, question.isNotice && styles.noticeCard]}>
                 <View style={styles.questionTopRow}>
                   <Text style={styles.questionLabel}>{question.label}</Text>
-                  {/* 본인 글에만 더보기 버튼. 공지글(isNotice)은 BE 가 관리자만 수정 가능하므로 노출 안 함. */}
-                  {isMyQuestion && !question.isNotice && (
+                  {/* 공지글은 메뉴 미노출. 본인 글이면 수정/삭제, 타인 글이면 신고/차단. */}
+                  {!question.isNotice && (
                     <TouchableOpacity
                       style={styles.moreButton}
                       onPress={openQuestionMenu}
                       hitSlop={8}
                       accessibilityRole="button"
-                      accessibilityLabel="게시글 관리"
+                      accessibilityLabel={isMyQuestion ? '게시글 관리' : '게시글 신고'}
                     >
                       <Text style={styles.moreButtonText}>···</Text>
                     </TouchableOpacity>
@@ -543,6 +662,8 @@ export default function QADetailScreen({ navigation, route }: Props) {
                 onSaveEdit={saveEditAnswer}
                 onCancelEdit={cancelEditAnswer}
                 onDelete={() => confirmDeleteAnswer(item)}
+                onReport={() => promptReportAnswer(item)}
+                onBlock={() => confirmBlockUser(item.userId)}
                 isSavingEdit={isSavingAnswer && editingAnswerId === item.id}
               />
             );
