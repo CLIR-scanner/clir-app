@@ -18,8 +18,7 @@ import SurveyVegetarianIngredientsScreen from '../screens/auth/SurveyVegetarianI
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
-// ─── DEV ONLY ───
-export default function DevSurveyNavigator() {
+export default function SurveyNavigator() {
   const surveyProgress = useSharedValue(0);
   return (
     <SurveyProgressContext.Provider value={surveyProgress}>
@@ -41,4 +40,3 @@ export default function DevSurveyNavigator() {
     </SurveyProgressContext.Provider>
   );
 }
-// ─── DEV ONLY ───

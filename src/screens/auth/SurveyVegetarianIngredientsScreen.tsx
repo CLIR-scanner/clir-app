@@ -123,26 +123,13 @@ export default function SurveyVegetarianIngredientsScreen() {
 
     setLoading(true);
     try {
-      // ─── DEV ONLY ─── (BE 복구 후 if 블록 삭제, else 본문만 남기기)
-      const devUser = __DEV__ ? useUserStore.getState().currentUser : null;
-      if (devUser && devUser.id === 'dev-user-id') {
-        setUser({
-          ...devUser,
-          allergyProfile,
-          dietaryRestrictions,
-          sensitivityLevel,
-          hasCompletedSurvey: true,
-        });
-      } else {
-        // ─── /DEV ONLY ───
-        await AuthService.submitSurvey({
-          allergyProfile,
-          dietaryRestrictions,
-          sensitivityLevel,
-        });
-        const { user } = await AuthService.fetchMe();
-        setUser({ ...user, language: currentLanguage });
-      }
+      await AuthService.submitSurvey({
+        allergyProfile,
+        dietaryRestrictions,
+        sensitivityLevel,
+      });
+      const { user } = await AuthService.fetchMe();
+      setUser({ ...user, language: currentLanguage });
     } catch (e) {
       Alert.alert(t('common.error'), (e as Error).message);
     } finally {

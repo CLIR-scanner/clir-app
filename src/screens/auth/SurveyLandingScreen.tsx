@@ -112,7 +112,6 @@ export default function SurveyLandingScreen() {
   const [loading, setLoading] = React.useState(false);
 
   const params: SurveyParams = route.params ?? {};
-  const isDevMode = String(route.name) === 'DevSurveyLanding';
 
   // 언어 섹션은 기본 collapsed — 명시적으로 변경하고 싶을 때만 열림.
   const [languageOpen, setLanguageOpen] = React.useState(false);
@@ -127,31 +126,16 @@ export default function SurveyLandingScreen() {
     if (multiProfileMode) {
       setMultiProfileMode(false);
       navigation.getParent()?.goBack();
-    } else if (isDevMode) {
-      navigation.goBack();
     } else {
       setLoading(true);
       try {
-        // ─── DEV ONLY ─── (BE 복구 후 if 블록 삭제, else 본문만 남기기)
-        const devUser = __DEV__ ? useUserStore.getState().currentUser : null;
-        if (devUser && devUser.id === 'dev-user-id') {
-          setUser({
-            ...devUser,
-            allergyProfile: [],
-            dietaryRestrictions: [],
-            sensitivityLevel: 'normal',
-            hasCompletedSurvey: true,
-          });
-        } else {
-          // ─── /DEV ONLY ───
-          await AuthService.submitSurvey({
-            allergyProfile: [],
-            dietaryRestrictions: [],
-            sensitivityLevel: 'normal',
-          });
-          const { user } = await AuthService.fetchMe();
-          setUser({ ...user, language: currentLanguage, hasCompletedSurvey: true });
-        }
+        await AuthService.submitSurvey({
+          allergyProfile: [],
+          dietaryRestrictions: [],
+          sensitivityLevel: 'normal',
+        });
+        const { user } = await AuthService.fetchMe();
+        setUser({ ...user, language: currentLanguage, hasCompletedSurvey: true });
       } catch (e) {
         Alert.alert(t('common.error'), (e as Error).message);
       } finally {
