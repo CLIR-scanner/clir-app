@@ -676,7 +676,6 @@ export type RecommendStackParamList = {
   SimilarUsersFavorites: undefined;
   QAScreen: undefined;
   QADetail: { questionId: string };
-  QACreate: undefined;
   MagazineScreen: undefined;
   MagazineDetail: { articleId: string };
   RecommendProductDetail: { product: Product };
