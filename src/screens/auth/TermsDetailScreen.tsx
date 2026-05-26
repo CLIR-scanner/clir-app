@@ -9,10 +9,17 @@ import {
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types';
+import { AuthStackParamList, TermsSectionKey } from '../../types';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
-import { LEGAL_SECTIONS } from '../../constants/legal-content';
-import { Strings } from '../../constants/strings';
+import { getLegalSections } from '../../constants/legal-content';
+
+let _pendingAgreedSection: TermsSectionKey | null = null;
+export function consumePendingAgreedSection(): TermsSectionKey | null {
+  const s = _pendingAgreedSection;
+  _pendingAgreedSection = null;
+  return s;
+}
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'TermsDetail'>;
 type Route = RouteProp<AuthStackParamList, 'TermsDetail'>;
@@ -28,13 +35,16 @@ const S = {
 export default function TermsDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const section = LEGAL_SECTIONS[route.params.section];
+  const { t, i18n } = useTranslation();
+  const sections = getLegalSections(i18n.language);
+  const section = sections[route.params.section];
   const [agreed, setAgreed] = React.useState(route.params.agreed ?? false);
 
   function handleAgree() {
     setAgreed(true);
+    _pendingAgreedSection = section.id;
     setTimeout(() => {
-      navigation.navigate('TermsAgreement', { agreedSection: section.id });
+      navigation.goBack();
     }, 160);
   }
 
@@ -64,7 +74,7 @@ export default function TermsDetailScreen() {
           <Text style={styles.title}>{section.title}</Text>
           <View style={styles.metaRow}>
             <Text style={styles.badge}>
-              {section.required ? Strings.termsAgreement.required : Strings.termsAgreement.optional}
+              {section.required ? t('auth.termsAgreement.required') : t('auth.termsAgreement.optional')}
             </Text>
             <Text style={styles.updated}>Last Updated: {section.lastUpdated}</Text>
           </View>
@@ -78,7 +88,7 @@ export default function TermsDetailScreen() {
             onPress={handleAgree}
             activeOpacity={0.82}
           >
-            <Text style={styles.agreeButtonText}>{Strings.termsAgreement.agreeButton}</Text>
+            <Text style={styles.agreeButtonText}>{t('auth.termsAgreement.agreeButton')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
