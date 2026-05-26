@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { ApiError } from '../../lib/api';
+import { makeLocalId } from '../../lib/localId';
 import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, getFavorites } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
@@ -99,7 +100,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       // 프로필 변경 후 재실행(skipHistorySave=true) 시엔 이력 중복 저장 안 함.
       let localHistoryId: string | null = null;
       if (!fromHistory && !skipHistorySave) {
-        localHistoryId = `local-${Date.now()}`;
+        localHistoryId = makeLocalId('local');
         addHistory({
           id: localHistoryId,
           productId: prod.id,
@@ -168,7 +169,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
       // OCR 로컬 fallback 제품은 BE 호출 스킵 (어차피 404).
       if (isLocalOcrProductId(product.id)) {
         addFavoriteToStore({
-          id: `fav-local-${Date.now()}`,
+          id: makeLocalId('fav-local'),
           productId: product.id,
           userId: '',
           addedAt: new Date(),

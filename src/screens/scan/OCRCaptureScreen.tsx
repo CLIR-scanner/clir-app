@@ -13,6 +13,7 @@ import ScannerCamera, { ScannerCameraHandle } from '../../components/ScannerCame
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import { recognizeIngredients, analyzeProduct, saveScanHistory } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
+import { makeLocalId } from '../../lib/localId';
 import { ScanHeader } from './ScanScreen';
 import { useListStore } from '../../store/list.store';
 import { useScanStore } from '../../store/scan.store';
@@ -185,7 +186,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         });
         // 우선순위: BE-known(ocr-{phash}) → barcode → 로컬 fallback('ocr-local-').
         // 'ocr-local-' 접두사로 fallback 을 명시 분리 — server-side 저장 시도 스킵 판단용.
-        const resolvedProductId = beProductId ?? barcode ?? `ocr-local-${Date.now()}`;
+        const resolvedProductId = beProductId ?? barcode ?? makeLocalId('ocr-local');
         product = {
           id: resolvedProductId,
           name: t('product.scannedProduct'),
@@ -205,7 +206,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
       }
 
       // store-first: BE 응답과 무관하게 로컬에 먼저 추가 → BE 죽음·OCR fallback 도 History 탭 표시.
-      const localId = `local-${Date.now()}`;
+      const localId = makeLocalId('local');
       addHistory({
         id: localId,
         productId: product.id,

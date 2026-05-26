@@ -1,6 +1,7 @@
 // 즐겨찾기 / 쇼핑 BE 호출 레이어. 실 API 만 사용 (mock dead-code 제거됨).
 import { FavoriteItem, Ingredient, RiskLevel, ShoppingItem } from '../types';
 import { apiFetch } from '../lib/api';
+import { makeLocalId } from '../lib/localId';
 import { makeRiskIngredient, makeMayContainIngredient } from './allergen.service';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
@@ -98,7 +99,7 @@ function toFavoriteItem(raw: FavoriteApiItem): FavoriteItem | null {
 function normalizeFavoritePostResponse(raw: FavoritePostWire, fallbackProductId: string): FavoritePostResponse {
   const source = raw.favorite ?? raw;
   return {
-    id: source.id ?? `fav-local-${Date.now()}`,
+    id: source.id ?? makeLocalId('fav-local'),
     productId: source.productId ?? source.product_id ?? fallbackProductId,
     addedAt: source.addedAt ?? source.added_at ?? new Date().toISOString(),
   };
