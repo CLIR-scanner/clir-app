@@ -20,6 +20,7 @@ import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
+import { makeLocalId } from '../../lib/localId';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
@@ -174,7 +175,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
         if (isLocalProduct) {
           // store-only — BE 호출 스킵
           addFavoriteToStore({
-            id: `fav-local-${Date.now()}`,
+            id: makeLocalId('fav-local'),
             productId: product.id,
             userId: '',
             addedAt: new Date(),

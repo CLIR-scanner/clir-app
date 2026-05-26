@@ -29,6 +29,7 @@ import {
   getScanHistory,
 } from '../../services/scan.service';
 import { ApiError } from '../../lib/api';
+import { makeLocalId } from '../../lib/localId';
 import {
   addFavorite as apiAddFavorite,
   removeFavorite as apiRemoveFavorite,
@@ -348,7 +349,7 @@ export default function ScanScreen({ navigation }: Props) {
 
   function makeLocalFavorite(product: Product): FavoriteItem {
     return {
-      id: `fav-local-${Date.now()}`,
+      id: makeLocalId('fav-local'),
       productId: product.id,
       userId: '',
       memo: '',
@@ -440,7 +441,7 @@ export default function ScanScreen({ navigation }: Props) {
         riskIngredients:       analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
         mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
       };
-      const localId = `local-${Date.now()}`;
+      const localId = makeLocalId('local');
       addHistory({
         id: localId,
         productId: product.id,
@@ -521,7 +522,7 @@ export default function ScanScreen({ navigation }: Props) {
       // BE 가 productId 를 못 만든 경우(upsert 실패) 만 로컬 fallback. 'ocr-local-'
       // 접두사로 분리해 server-side 저장 시도를 명시적으로 스킵.
       const product: Product = {
-        id: beProductId ?? `ocr-local-${Date.now()}`,
+        id: beProductId ?? makeLocalId('ocr-local'),
         name: t('product.scannedProduct'),
         brand: '',
         image: imageUri,
@@ -542,7 +543,7 @@ export default function ScanScreen({ navigation }: Props) {
       };
 
       // store-first: 로컬에 먼저 추가 → BE 죽음·'ocr-local-' fallback 도 History 탭 표시.
-      const localId = `local-${Date.now()}`;
+      const localId = makeLocalId('local');
       addHistory({
         id: localId,
         productId: product.id,
