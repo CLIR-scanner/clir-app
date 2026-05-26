@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -21,11 +20,15 @@ import { useTranslation } from 'react-i18next';
 import { MagazineItem, Product, Profile, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import { getMagazineItems, getQAQuestions, getSimilarUsersFavorites, getWeekendPopular } from '../../services/recommend.service';
+import { getCommunityFeed, getMagazineItems, getQAQuestions } from '../../services/recommend.service';
+import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
 import { useUserStore } from '../../store/user.store';
 import { getAllergenDisplayName } from '../../lib/display-names';
 import { DIET_LABELS } from '../../constants/dietary';
+
+/** 검색바 활성화 토글. 향후 검색 기능 도입 시 true 로 전환. */
+const SEARCH_ENABLED = false;
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
@@ -359,7 +362,6 @@ export default function CommunityScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const activeProfile = useUserStore(state => state.activeProfile);
   const language = useUserStore(state => state.currentUser.language);
-  const [searchQuery,  setSearchQuery]  = useState('');
   const [activeTab,    setActiveTab]    = useState<Tab>('Week Trends');
   const [trendingProducts,  setTrendingProducts]  = useState<ProductPreview[]>([]);
   const [similarProducts,   setSimilarProducts]   = useState<Product[]>([]);
@@ -403,21 +405,33 @@ export default function CommunityScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getWeekendPopular(), getSimilarUsersFavorites(), getQAQuestions(), getMagazineItems()])
-      .then(([products, similar, qa, magazines]) => {
+    // GET /community/feed 한 번에 weekly + similar 두 리스트 회수 (네트워크 절약).
+    Promise.all([getCommunityFeed(50), getQAQuestions(), getMagazineItems()])
+      .then(([feed, qa, magazines]) => {
         if (cancelled) return;
-        setTrendingProducts(products.map(toPreviewProduct));
-        setSimilarProducts(similar);
+        setTrendingProducts(feed.weeklyTrending.map(toPreviewProduct));
+        setSimilarProducts(feed.similarUsersPicks);
         setQaPreview(qa.questions.filter(question => !question.isNotice).slice(0, 3));
         setMagazinePreview(magazines.slice(0, 3));
       })
-      .catch(() => {
-        if (!cancelled) {
-          setTrendingProducts([]);
-          setSimilarProducts([]);
-          setQaPreview([]);
-          setMagazinePreview([]);
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        // 401 → 인증 만료. 로그아웃 + Auth 스택 복귀는 RootNavigator 의 user.id 분기가 처리.
+        if (err instanceof UnauthorizedError) {
+          clearAuthToken();
+          useUserStore.getState().logout();
+          return;
         }
+        // 그 외 (DB_UNAVAILABLE / NETWORK / TIMEOUT 등) — 빈 상태로 폴백.
+        // Alert 띄우지 않음: 커뮤니티 홈은 secondary 콘텐츠라 silent fallback 우선.
+        if (__DEV__) {
+          const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
+          console.warn('[CommunityScreen] feed load failed:', msg);
+        }
+        setTrendingProducts([]);
+        setSimilarProducts([]);
+        setQaPreview([]);
+        setMagazinePreview([]);
       });
     return () => { cancelled = true; };
   }, []);
@@ -611,21 +625,14 @@ export default function CommunityScreen({ navigation }: Props) {
         <Text style={styles.headerTitle}>{t('recommendUi.community')}</Text>
       </View>
 
-      {/* ── Search bar ─────────────────────────────────────────────────── */}
-      <View style={styles.searchRow}>
-        <View style={styles.searchInputWrap}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('search.placeholder')}
-            placeholderTextColor={C.muted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            autoCorrect={false}
-            autoCapitalize="none"
-          />
+      {/* ── Search bar — 향후 PR 에서 활성화. 현재는 미연결 UI 노출 방지. ── */}
+      {SEARCH_ENABLED && (
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputWrap}>
+            {/* TODO: 검색 기능 도입 시 TextInput + onSubmitEditing 연결 */}
+          </View>
         </View>
-      </View>
+      )}
 
       {/* ── Tab bar ────────────────────────────────────────────────────── */}
       <ScrollView

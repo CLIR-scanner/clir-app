@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
-import { clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getAllergenDisplayName } from '../../lib/display-names';
 import { getSimilarUsersFavorites } from '../../services/recommend.service';
 import { useUserStore } from '../../store/user.store';
@@ -43,6 +43,13 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
 };
 
 const CATEGORY_IDS = ['all', ...INITIAL_FILTER_CATEGORIES.map(cat => cat.id)];
+
+/**
+ * 리뷰 시스템 (작성·좋아요·댓글 카운트) UI 노출 토글.
+ * BE /reviews / /products/{id}/likes 연결 PR 완료 시 true.
+ * 현재 false: writeReview CTA + ReviewCard 의 like/comment actionRow 가림.
+ */
+const REVIEW_FEATURES_ENABLED = false;
 
 const REVIEW_COPY = [
   {
@@ -272,16 +279,18 @@ function ReviewCard({
             <Text style={styles.tagText} numberOfLines={1}>{review.tag}</Text>
           </View>
           <Text style={styles.reviewText}>{review.body}</Text>
-          <View style={styles.actionRow}>
-            <View style={styles.actionItem}>
-              <ViewIcon />
-              <Text style={styles.actionText}>{review.likeCount}</Text>
+          {REVIEW_FEATURES_ENABLED && (
+            <View style={styles.actionRow}>
+              <View style={styles.actionItem}>
+                <ViewIcon />
+                <Text style={styles.actionText}>{review.likeCount}</Text>
+              </View>
+              <View style={styles.actionItem}>
+                <CommentIcon />
+                <Text style={styles.actionText}>{review.commentCount}</Text>
+              </View>
             </View>
-            <View style={styles.actionItem}>
-              <CommentIcon />
-              <Text style={styles.actionText}>{review.commentCount}</Text>
-            </View>
-          </View>
+          )}
         </View>
       )}
     </View>
@@ -317,6 +326,10 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
           clearAuthToken();
           useUserStore.getState().logout();
           return;
+        }
+        if (__DEV__) {
+          const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
+          console.warn('[SimilarUsersFavorites] feed load failed:', msg);
         }
         setError(t('common.error'));
       })
@@ -399,14 +412,16 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
               </View>
             </View>
 
-            <View style={styles.shareBanner}>
-              <Text style={styles.shareIcon}>💬</Text>
-              <Text style={styles.shareText}>{t('recommendUi.shareStory')}</Text>
-              <TouchableOpacity style={styles.writeButton} activeOpacity={0.8}>
-                <Text style={styles.writeButtonText}>{t('recommendUi.writeReview')}</Text>
-                <Text style={styles.writeIcon}>↗</Text>
-              </TouchableOpacity>
-            </View>
+            {REVIEW_FEATURES_ENABLED && (
+              <View style={styles.shareBanner}>
+                <Text style={styles.shareIcon}>💬</Text>
+                <Text style={styles.shareText}>{t('recommendUi.shareStory')}</Text>
+                <TouchableOpacity style={styles.writeButton} activeOpacity={0.8}>
+                  <Text style={styles.writeButtonText}>{t('recommendUi.writeReview')}</Text>
+                  <Text style={styles.writeIcon}>↗</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             <View style={styles.titleWrap}>
               <Text style={styles.sectionTitle}>{t('recommendUi.similarReviews')}</Text>
