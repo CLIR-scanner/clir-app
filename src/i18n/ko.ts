@@ -63,6 +63,14 @@ const ko = {
     createAccount:      '새 계정 만들기',
     signOut:            '로그아웃',
     signOutConfirm:     '정말 로그아웃 하시겠어요?',
+    deleteAccount:        '계정 삭제',
+    deleteAccountTitle:   '계정을 삭제하시겠어요?',
+    deleteAccountWarning: '계정·스캔 이력·즐겨찾기·멤버 프로필이 모두 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+    deleteAccountPrompt:  '확인을 위해 아래 문구를 그대로 입력해 주세요:',
+    deleteAccountPhrase:  '계정을 삭제합니다',
+    deleteAccountPlaceholder: '확인 문구를 입력해 주세요',
+    deleteAccountConfirm: '삭제',
+    deleteAccountFailed:  '계정 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.',
     email:              '이메일',
     password:           '비밀번호',
     name:               '이름',
@@ -82,6 +90,7 @@ const ko = {
     menuFamily:       '가족 프로필',
     menuLanguage:     '언어',
     menuSettings:     '설정',
+    menuTermsPrivacy: '약관 및 개인정보',
   },
 
   // ── Sensitivity ───────────────────────────────────────────────────────────

@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, Modal, TouchableWithoutFeedback,
+  ActivityIndicator,
   Animated, Easing,
+  Alert, KeyboardAvoidingView, Modal, Platform,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity,
+  TouchableWithoutFeedback, View,
 } from 'react-native';
 import i18n from '../../i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
+import { ApiError, apiFetch, UnauthorizedError } from '../../lib/api';
 import { Colors } from '../../constants/colors';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import { DIET_AVOIDED_CATEGORIES } from '../../constants/dietary';
@@ -105,6 +108,46 @@ function handleLogout() {
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('auth.signOut'), style: 'destructive', onPress: logout },
     ]);
+  }
+
+  // ── 계정 삭제 (typing confirmation) ──────────────────────────────────────
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteInput,     setDeleteInput]     = useState('');
+  const [deleting,        setDeleting]        = useState(false);
+
+  // 모달 닫을 때마다 입력 초기화 — 다음 열림 시 빈 상태로 시작.
+  useEffect(() => {
+    if (!showDeleteModal) setDeleteInput('');
+  }, [showDeleteModal]);
+
+  // 사용자가 따라써야 하는 확인 문구 (i18n locale 별로 달라짐).
+  // 비교는 case-insensitive + trim — 한국어/영어 모두 직관적 입력 허용.
+  const expectedPhrase = t('auth.deleteAccountPhrase');
+  const canDelete = deleteInput.trim().toLowerCase() === expectedPhrase.trim().toLowerCase();
+
+  async function handleDeleteAccount() {
+    if (!canDelete || deleting) return;
+    setDeleting(true);
+    try {
+      // SettingsDeleteScreen 과 동일 — BE DELETE /users/me (GDPR Art. 17).
+      // 성공 시 logout() 가 RootNavigator 의 isLoggedIn 분기 → Auth 자동 전환.
+      await apiFetch<void>('/users/me', { method: 'DELETE' });
+      setShowDeleteModal(false);
+      logout();
+    } catch (err: unknown) {
+      // 401 은 이미 토큰 만료 — 화면 폐기 후 로그아웃 동일 처리.
+      if (err instanceof UnauthorizedError) {
+        logout();
+        return;
+      }
+      const fallback = t('auth.deleteAccountFailed');
+      const message  = err instanceof ApiError
+        ? (err.message || fallback)
+        : fallback;
+      Alert.alert(t('common.error'), message);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -298,11 +341,11 @@ function handleLogout() {
         <View style={styles.cardDivider} />
 
         <TouchableOpacity
-          style={[styles.menuRow, { opacity: 0.4 }]}
-          disabled
-          activeOpacity={1}
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('SettingsPrivacy')}
+          activeOpacity={0.7}
         >
-          <Text style={styles.menuLabel}>{t('profile.menuSettings')}</Text>
+          <Text style={styles.menuLabel}>{t('profile.menuTermsPrivacy')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -311,7 +354,81 @@ function handleLogout() {
         <Text style={styles.logoutText}>{t('auth.signOut')}</Text>
       </TouchableOpacity>
 
+      {/* ── Delete Account (로그아웃과 동일한 모양) ─────────────────────── */}
+      <TouchableOpacity
+        style={styles.logoutBtn}
+        onPress={() => setShowDeleteModal(true)}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={t('auth.deleteAccount')}
+      >
+        <Text style={styles.logoutText}>{t('auth.deleteAccount')}</Text>
+      </TouchableOpacity>
+
     </ScrollView>
+
+    {/* ── Delete Account 확인 Modal (typing confirmation) ───────────────── */}
+    <Modal
+      visible={showDeleteModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => { if (!deleting) setShowDeleteModal(false); }}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.deleteBackdrop}
+      >
+        <TouchableWithoutFeedback onPress={() => { if (!deleting) setShowDeleteModal(false); }}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
+
+        <View style={styles.deleteCard}>
+          <Text style={styles.deleteTitle}>{t('auth.deleteAccountTitle')}</Text>
+          <Text style={styles.deleteWarning}>{t('auth.deleteAccountWarning')}</Text>
+
+          <Text style={styles.deletePrompt}>{t('auth.deleteAccountPrompt')}</Text>
+          <View style={styles.deletePhraseBox}>
+            <Text style={styles.deletePhraseText}>{expectedPhrase}</Text>
+          </View>
+
+          <TextInput
+            style={styles.deleteInput}
+            value={deleteInput}
+            onChangeText={setDeleteInput}
+            placeholder={t('auth.deleteAccountPlaceholder')}
+            placeholderTextColor={BORDER}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!deleting}
+            maxLength={expectedPhrase.length + 8}
+          />
+
+          <View style={styles.deleteActions}>
+            <TouchableOpacity
+              style={styles.deleteCancelBtn}
+              onPress={() => setShowDeleteModal(false)}
+              disabled={deleting}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.deleteCancelText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.deleteConfirmBtn,
+                (!canDelete || deleting) && styles.deleteConfirmBtnDisabled,
+              ]}
+              onPress={handleDeleteAccount}
+              disabled={!canDelete || deleting}
+              activeOpacity={0.75}
+            >
+              {deleting
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Text style={styles.deleteConfirmText}>{t('auth.deleteAccountConfirm')}</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
 
     {/* ── Language picker bottom sheet ──────────────────────────────────── */}
     <Modal
@@ -610,7 +727,7 @@ const styles = StyleSheet.create({
     color: Colors.profileText,
   },
 
-  // ── Logout
+  // ── Logout (+ Delete Account 동일 모양)
   logoutBtn: {
     borderRadius: 100,
     paddingVertical: 16,
@@ -624,5 +741,98 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Pretendard-SemiBold',
     color: STRICT_CLR,
+  },
+
+  // ── Delete Account 확인 Modal
+  deleteBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  deleteCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 22,
+  },
+  deleteTitle: {
+    fontSize: 18,
+    fontFamily: 'Pretendard-ExtraBold',
+    color: STRICT_CLR,
+    marginBottom: 10,
+  },
+  deleteWarning: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: Colors.profileText,
+    fontFamily: 'Pretendard-Regular',
+    marginBottom: 16,
+  },
+  deletePrompt: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: DARK_GREEN,
+    fontFamily: 'Pretendard-SemiBold',
+    marginBottom: 8,
+  },
+  deletePhraseBox: {
+    backgroundColor: CARD_FILL,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+    alignSelf: 'flex-start',
+  },
+  deletePhraseText: {
+    fontSize: 14,
+    fontFamily: 'Pretendard-Bold',
+    color: DARK_GREEN,
+    letterSpacing: -0.2,
+  },
+  deleteInput: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: Colors.profileText,
+    fontFamily: 'Pretendard-Regular',
+    backgroundColor: Colors.white,
+  },
+  deleteActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 16,
+  },
+  deleteCancelBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  deleteCancelText: {
+    color: MID_GREEN,
+    fontSize: 13,
+    fontFamily: 'Pretendard-SemiBold',
+  },
+  deleteConfirmBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: STRICT_CLR,
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteConfirmBtnDisabled: {
+    opacity: 0.4,
+  },
+  deleteConfirmText: {
+    color: Colors.white,
+    fontSize: 13,
+    fontFamily: 'Pretendard-ExtraBold',
   },
 });
