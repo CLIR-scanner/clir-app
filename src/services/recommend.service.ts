@@ -158,6 +158,7 @@ const CATEGORY_LABEL: Record<QnaCategory, string> = {
 function mapQnaToQuestion(post: QnaPostSummaryApi): QAQuestion {
   return {
     id: post.id,
+    userId: post.userId,
     label: CATEGORY_LABEL[post.category],
     title: post.title,
     body: post.content,
@@ -174,32 +175,90 @@ function mapQnaAnswer(ans: QnaAnswerApi): QAAnswer {
   return {
     id: ans.id,
     questionId: ans.qnaId,
+    userId: ans.userId,
     author: ans.userNickname ?? '익명',
     body: ans.content,
     createdAt: ans.createdAt,
   };
 }
 
+// ─── Community Feed API 내부 타입 (BE CommunityFeedItem 1:1) ────────────────
+
+type CommunityFeedItemApi = {
+  productId: string;
+  name: string;
+  brand?: string | null;
+  image?: string | null;
+  isSafe: boolean;
+  riskLevel: RiskLevel;
+  likeCount: number;
+  /** weeklyTrending 만 채움, similarUsersPicks 는 null. */
+  scanCount?: number | null;
+};
+
+type CommunityFeedResponseApi = {
+  weeklyTrending:    CommunityFeedItemApi[];
+  similarUsersPicks: CommunityFeedItemApi[];
+};
+
 /**
- * /recommend/weekend — 주말 인기 제품 목록을 반환한다.
+ * CommunityFeedItem (BE) → RankedProduct (FE Product 호환).
+ * 화면이 기대하는 ingredients/riskIngredients 등은 모두 빈 배열로 채운다.
+ * favoriteCount 슬롯엔 likeCount 를 매핑 (정렬·표시 호환).
  */
-export async function getWeekendPopular(): Promise<Product[]> {
-  return [...WEEKEND_POPULAR_PRODUCTS, ...EXTRA_WEEKEND_POPULAR_PRODUCTS]
-    .sort((a, b) => b.favoriteCount - a.favoriteCount);
+function mapFeedItemToProduct(item: CommunityFeedItemApi): RankedProduct {
+  return {
+    id: item.productId,
+    name: item.name,
+    brand: item.brand ?? '',
+    image: item.image ?? '',
+    ingredients: [],
+    isSafe: item.isSafe,
+    riskLevel: item.riskLevel,
+    riskIngredients: [],
+    mayContainIngredients: [],
+    alternatives: [],
+    favoriteCount: item.likeCount,
+    rating: 0,
+  };
 }
 
 /**
- * /recommend/similar-users — 유사 프로필 사용자들의 이번 주 즐겨찾기를 반환한다.
+ * GET /community/feed — 주간 인기(weeklyTrending) + 유사 사용자 추천(similarUsersPicks).
+ * 페이지네이션 없음. 두 큐레이션 리스트를 한 번에 반환.
+ *  - limit: 각 리스트별 최대 항목 수 (BE default 20, max 50)
+ */
+export async function getCommunityFeed(limit?: number): Promise<{
+  weeklyTrending:    Product[];
+  similarUsersPicks: Product[];
+}> {
+  const params = new URLSearchParams();
+  if (limit !== undefined) params.set('limit', String(limit));
+  const qs = params.toString();
+  const data = await apiFetch<CommunityFeedResponseApi>(
+    qs ? `/community/feed?${qs}` : '/community/feed',
+  );
+  return {
+    weeklyTrending:    data.weeklyTrending.map(mapFeedItemToProduct),
+    similarUsersPicks: data.similarUsersPicks.map(mapFeedItemToProduct),
+  };
+}
+
+/**
+ * 주말 인기 제품 (GET /community/feed.weeklyTrending). 화면 단일 호출용.
+ * CommunityScreen 처럼 두 리스트를 모두 쓰는 곳은 getCommunityFeed 직접 호출 권장.
+ */
+export async function getWeekendPopular(): Promise<Product[]> {
+  const feed = await getCommunityFeed(50);
+  return feed.weeklyTrending;
+}
+
+/**
+ * 유사 프로필 사용자 좋아요 (GET /community/feed.similarUsersPicks). 화면 단일 호출용.
  */
 export async function getSimilarUsersFavorites(): Promise<Product[]> {
-  return [
-    makeProduct({ id: 'similar-yogurt', name: 'Coconut Yogurt', brand: 'So Delicious', image: PRODUCT_IMAGES.yogurt, category: 'dairy', riskLevel: 'danger', favoriteCount: 2391, rating: 4.60 }),
-    makeProduct({ id: 'similar-lemonade', name: 'Organic Lemonade', brand: 'Santa Cruz', image: PRODUCT_IMAGES.lemonade, category: 'beverages', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
-    makeProduct({ id: 'similar-water', name: 'Mineral Water', brand: 'Evian', image: PRODUCT_IMAGES.sparkling, category: 'beverages', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
-    makeProduct({ id: 'similar-cereal', name: 'Blueberry Cereal', brand: 'Nature Path', image: PRODUCT_IMAGES.cereal, category: 'cereals', riskLevel: 'caution', favoriteCount: 2391, rating: 4.60 }),
-    makeProduct({ id: 'similar-chips', name: 'Sea Salt Chips', brand: 'Kettle Brand', image: PRODUCT_IMAGES.chips, category: 'snacks', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
-    makeProduct({ id: 'similar-crackers', name: 'Seed Crackers', brand: 'Simple Mills', image: PRODUCT_IMAGES.crackers, category: 'cookies', riskLevel: 'safe', favoriteCount: 2391, rating: 4.60 }),
-  ];
+  const feed = await getCommunityFeed(20);
+  return feed.similarUsersPicks;
 }
 
 /**
@@ -265,6 +324,62 @@ export async function addQAAnswer(params: {
     { method: 'POST', body: JSON.stringify({ content: params.body }) },
   );
   return mapQnaAnswer(data);
+}
+
+/**
+ * PATCH /qna/:id — Q&A 게시글 수정 (본인만 — 403 FORBIDDEN_QNA / 404 QNA_NOT_FOUND).
+ * 변경 가능 필드: title / content / isResolved. category, image_paths 는 immutable.
+ */
+export async function updateQAQuestion(params: {
+  id: string;
+  title?: string;
+  content?: string;
+  isResolved?: boolean;
+}): Promise<QAQuestion> {
+  const { id, ...patch } = params;
+  const data = await apiFetch<QnaPostSummaryApi>(
+    `/qna/${encodeURIComponent(id)}`,
+    { method: 'PATCH', body: JSON.stringify(patch) },
+  );
+  return mapQnaToQuestion(data);
+}
+
+/**
+ * DELETE /qna/:id — 본인 게시글 삭제. qna_answers 는 FK CASCADE 로 동시 삭제.
+ *  - 403 FORBIDDEN_QNA: 타인 글
+ *  - 404 QNA_NOT_FOUND: 이미 삭제 / 미존재
+ */
+export async function deleteQAQuestion(id: string): Promise<void> {
+  await apiFetch<{ message: string }>(
+    `/qna/${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+  );
+}
+
+/**
+ * PATCH /answers/:id — 본인 답변 수정 (content 필수).
+ *  - 403 FORBIDDEN_ANSWER / 404 ANSWER_NOT_FOUND
+ */
+export async function updateQAAnswer(params: {
+  id: string;
+  content: string;
+}): Promise<QAAnswer> {
+  const data = await apiFetch<QnaAnswerApi>(
+    `/answers/${encodeURIComponent(params.id)}`,
+    { method: 'PATCH', body: JSON.stringify({ content: params.content }) },
+  );
+  return mapQnaAnswer(data);
+}
+
+/**
+ * DELETE /answers/:id — 본인 답변 삭제.
+ *  - 403 FORBIDDEN_ANSWER / 404 ANSWER_NOT_FOUND
+ */
+export async function deleteQAAnswer(id: string): Promise<void> {
+  await apiFetch<{ message: string }>(
+    `/answers/${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+  );
 }
 
 /**

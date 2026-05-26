@@ -16,6 +16,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { getQAQuestions } from '../../services/recommend.service';
+import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { useUserStore } from '../../store/user.store';
 import { QAQuestion, QnaCategory, RecommendStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'QAScreen'>;
@@ -206,6 +208,22 @@ export default function QAScreen({ navigation }: Props) {
         setQuestions(next);
         setHasMore(more);
       })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (err instanceof UnauthorizedError) {
+          clearAuthToken();
+          useUserStore.getState().logout();
+          return;
+        }
+        // 그 외 (DB_UNAVAILABLE / 400 INVALID_QUERY / NETWORK / TIMEOUT) → 빈 목록.
+        // 사용자 흐름 막지 않음: 카테고리·검색어 변경으로 자연스럽게 재시도.
+        if (__DEV__) {
+          const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
+          console.warn('[QAScreen] list fetch failed:', msg);
+        }
+        setQuestions([]);
+        setHasMore(false);
+      })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
@@ -224,8 +242,13 @@ export default function QAScreen({ navigation }: Props) {
       });
       setQuestions(prev => [...prev, ...next]);
       setHasMore(more);
-    } catch {
-      // silent — 다음 스크롤 시 재시도. 사용자 흐름 비차단.
+    } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+        return;
+      }
+      // 그 외 silent — 다음 스크롤 시 재시도. 사용자 흐름 비차단.
     } finally {
       loadingMoreRef.current = false;
     }

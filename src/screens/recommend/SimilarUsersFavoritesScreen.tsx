@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
-import { clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getAllergenDisplayName } from '../../lib/display-names';
 import { getSimilarUsersFavorites } from '../../services/recommend.service';
 import { useUserStore } from '../../store/user.store';
@@ -43,6 +43,13 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
 };
 
 const CATEGORY_IDS = ['all', ...INITIAL_FILTER_CATEGORIES.map(cat => cat.id)];
+
+/**
+ * 리뷰 시스템 (작성·좋아요·댓글 카운트) UI 노출 토글.
+ * BE /reviews / /products/{id}/likes 연결 PR 완료 시 true.
+ * 현재 false: writeReview CTA + ReviewCard 의 like/comment actionRow 가림.
+ */
+const REVIEW_FEATURES_ENABLED = false;
 
 const REVIEW_COPY = [
   {
@@ -196,15 +203,18 @@ function ProductSummary({
           </View>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.chevronButton}
-        onPress={onToggle}
-        accessibilityRole="button"
-        accessibilityLabel={expanded ? 'Hide review' : 'Show review'}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.chevron, !expanded && { transform: [{ scaleY: -1 }] }]}>⌃</Text>
-      </TouchableOpacity>
+      {/* 리뷰 본문 expand 토글 — 리뷰 시스템 미구현 동안 가림. */}
+      {REVIEW_FEATURES_ENABLED && (
+        <TouchableOpacity
+          style={styles.chevronButton}
+          onPress={onToggle}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? 'Hide review' : 'Show review'}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.chevron, !expanded && { transform: [{ scaleY: -1 }] }]}>⌃</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -251,15 +261,19 @@ function ReviewCard({
   onToggle: () => void;
   onProductPress: () => void;
 }) {
+  // 리뷰 시스템 미구현 동안 expand 비활성 → 항상 카드 closed 상태.
+  const effectiveExpanded = REVIEW_FEATURES_ENABLED && expanded;
   return (
     <View style={styles.reviewWrap}>
       <ProductSummary
         product={review.product}
-        expanded={expanded}
+        expanded={effectiveExpanded}
         onToggle={onToggle}
         onProductPress={onProductPress}
       />
-      {expanded && (
+      {/* 리뷰 본문(작성자·태그·리뷰 텍스트·좋아요/댓글) — 리뷰 시스템 미구현 동안 가림.
+          향후 BE /reviews 연결 시 REVIEW_FEATURES_ENABLED=true 로 부활. */}
+      {effectiveExpanded && (
         <View style={styles.reviewBody}>
           <View style={styles.reviewerRow}>
             <View style={styles.avatar} />
@@ -318,6 +332,10 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
           useUserStore.getState().logout();
           return;
         }
+        if (__DEV__) {
+          const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
+          console.warn('[SimilarUsersFavorites] feed load failed:', msg);
+        }
         setError(t('common.error'));
       })
       .finally(() => {
@@ -360,7 +378,9 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
         >
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('recommendUi.reviewsTitle')}</Text>
+        {/* 리뷰 시스템 미구현 동안 화면 타이틀은 'Similar Users\' Picks' (similarPicks 키).
+            BE /reviews 연결 시 'reviewsTitle' 로 복귀. */}
+        <Text style={styles.headerTitle}>{t('recommendUi.similarPicks')}</Text>
       </View>
 
       <FlatList
@@ -399,18 +419,23 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
               </View>
             </View>
 
-            <View style={styles.shareBanner}>
-              <Text style={styles.shareIcon}>💬</Text>
-              <Text style={styles.shareText}>{t('recommendUi.shareStory')}</Text>
-              <TouchableOpacity style={styles.writeButton} activeOpacity={0.8}>
-                <Text style={styles.writeButtonText}>{t('recommendUi.writeReview')}</Text>
-                <Text style={styles.writeIcon}>↗</Text>
-              </TouchableOpacity>
-            </View>
+            {REVIEW_FEATURES_ENABLED && (
+              <View style={styles.shareBanner}>
+                <Text style={styles.shareIcon}>💬</Text>
+                <Text style={styles.shareText}>{t('recommendUi.shareStory')}</Text>
+                <TouchableOpacity style={styles.writeButton} activeOpacity={0.8}>
+                  <Text style={styles.writeButtonText}>{t('recommendUi.writeReview')}</Text>
+                  <Text style={styles.writeIcon}>↗</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
-            <View style={styles.titleWrap}>
-              <Text style={styles.sectionTitle}>{t('recommendUi.similarReviews')}</Text>
-            </View>
+            {/* 'similarReviews' 섹션 타이틀 — 리뷰 시스템 미구현 동안 가림 (헤더 타이틀과 중복도 회피). */}
+            {REVIEW_FEATURES_ENABLED && (
+              <View style={styles.titleWrap}>
+                <Text style={styles.sectionTitle}>{t('recommendUi.similarReviews')}</Text>
+              </View>
+            )}
 
             <View style={styles.categoryWrap}>
               <FlatList

@@ -21,7 +21,7 @@ import {
   INITIAL_FILTERS,
 } from '../../components/common/FilterBottomSheet';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import { clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getWeekendPopular } from '../../services/recommend.service';
 import { useUserStore } from '../../store/user.store';
 import { Product, RecommendStackParamList, RiskLevel } from '../../types';
@@ -176,6 +176,12 @@ export default function WeekendPopularScreen({ navigation }: Props) {
           clearAuthToken();
           useUserStore.getState().logout();
           return;
+        }
+        // 503 DB_UNAVAILABLE / NETWORK / TIMEOUT 등은 모두 inline error 로 안내.
+        // (오프라인·일시 장애에 사용자가 자연스럽게 재진입할 수 있게 silent error.)
+        if (__DEV__) {
+          const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
+          console.warn('[WeekendPopular] feed load failed:', msg);
         }
         setError(t('common.error'));
       })
