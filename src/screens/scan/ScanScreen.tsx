@@ -156,6 +156,7 @@ export default function ScanScreen({ navigation }: Props) {
   const toggleSlide = useRef(new Animated.Value(0)).current;
 
   const addHistory         = useScanStore(s => s.addHistory);
+  const replaceHistory     = useScanStore(s => s.replaceHistory);
   const setHistory         = useScanStore(s => s.setHistory);
   const history            = useScanStore(s => s.history);
   const addFavoriteToStore = useListStore(s => s.addFavorite);
@@ -426,23 +427,32 @@ export default function ScanScreen({ navigation }: Props) {
       const analysis       = await analyzeProduct({ productId: product.id, ingredientIds });
       if (runId !== scanRunIdRef.current) return; // 화면 이탈/취소 → 결과 폐기
 
-      // Save history silently — analysis 결과를 반영한 enrichedProduct로 저장
-      // riskIngredients / mayContainIngredients 가 history 상세에서도 표시되도록
+      // store-first: 로컬에 먼저 추가 → BE 죽음·OCR fallback 도 History 탭 표시. server item 으로 후속 replace.
+      // analysis 결과를 반영한 enrichedProduct 로 저장 — riskIngredients / mayContainIngredients 가 history 상세에서도 표시되도록.
+      const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
+        id: t.id, name: t.name, nameKo: t.nameKo,
+        description: '', riskLevel: t.riskLevel, sources: [] as [],
+      });
+      const enrichedProduct = {
+        ...product,
+        isSafe:                analysis.isSafe,
+        riskLevel:             analysis.verdict,
+        riskIngredients:       analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
+        mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
+      };
+      const localId = `local-${Date.now()}`;
+      addHistory({
+        id: localId,
+        productId: product.id,
+        userId: '',
+        scannedAt: new Date(),
+        result: analysis.verdict,
+        product: enrichedProduct,
+      });
       try {
-        const toIngredient = (t: (typeof analysis.triggeredBy)[number]) => ({
-          id: t.id, name: t.name, nameKo: t.nameKo,
-          description: '', riskLevel: t.riskLevel, sources: [] as [],
-        });
-        const enrichedProduct = {
-          ...product,
-          isSafe:                analysis.isSafe,
-          riskLevel:             analysis.verdict,
-          riskIngredients:       analysis.triggeredBy.filter(t => t.riskLevel === 'danger').map(toIngredient),
-          mayContainIngredients: analysis.triggeredBy.filter(t => t.riskLevel === 'caution').map(toIngredient),
-        };
-        const historyItem = await saveScanHistory({ productId: product.id, result: analysis.verdict });
-        addHistory({ ...historyItem, product: enrichedProduct });
-      } catch { /* silent */ }
+        const serverItem = await saveScanHistory({ productId: product.id, result: analysis.verdict });
+        replaceHistory(localId, { ...serverItem, product: enrichedProduct });
+      } catch { /* silent — 로컬 항목 유지 */ }
 
       if (runId !== scanRunIdRef.current) return; // 저장 후에도 이탈했으면 결과 폐기
       setProcessing(false);
@@ -531,12 +541,22 @@ export default function ScanScreen({ navigation }: Props) {
         dataCompleteness: 'partial',
       };
 
-      // BE-known productId 일 때만 server-side 이력 저장. 로컬 fallback 은 스킵.
+      // store-first: 로컬에 먼저 추가 → BE 죽음·'ocr-local-' fallback 도 History 탭 표시.
+      const localId = `local-${Date.now()}`;
+      addHistory({
+        id: localId,
+        productId: product.id,
+        userId: '',
+        scannedAt: new Date(),
+        result: product.riskLevel,
+        product,
+      });
+      // BE 동기화 — BE-known productId 일 때만 (로컬 fallback 은 FK 제약 스킵).
       if (beProductId) {
         try {
-          const historyItem = await saveScanHistory({ productId: beProductId, result: product.riskLevel });
-          addHistory({ ...historyItem, product });
-        } catch { /* silent */ }
+          const serverItem = await saveScanHistory({ productId: beProductId, result: product.riskLevel });
+          replaceHistory(localId, { ...serverItem, product });
+        } catch { /* silent — 로컬 항목 유지 */ }
       }
 
       if (runId !== scanRunIdRef.current) return; // 저장 후에도 이탈했으면 결과 폐기
