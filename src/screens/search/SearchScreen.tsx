@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -145,6 +145,11 @@ export default function SearchScreen({ navigation }: Props) {
 const favorites             = useListStore(s => s.favorites);
   const addFavoriteToStore    = useListStore(s => s.addFavorite);
   const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
+
+  const displayItems = useMemo(
+    () => [...items].sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0)),
+    [items],
+  );
 
   const activeCount =
     activeFilters.categories.filter(c => c.selected).length +
@@ -414,7 +419,7 @@ async function handleFavoriteToggle(product: Product) {
         <PullToRefreshList
           key="list"
           onRefresh={refresh}
-          data={items}
+          data={displayItems}
           keyExtractor={item => item.id}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 32 }]}
           showsVerticalScrollIndicator={false}
@@ -435,7 +440,7 @@ async function handleFavoriteToggle(product: Product) {
         <PullToRefreshList
           key="grid"
           onRefresh={refresh}
-          data={items}
+          data={displayItems}
           keyExtractor={item => item.id}
           numColumns={2}
           extraData={favorites}

@@ -90,8 +90,9 @@ export default function SearchResultScreen({ route, navigation }: Props) {
     (activeFilters.safeOnly ? 1 : 0);
 
   const visibleResults = useMemo(() => {
-    if (!isAlphabeticalSort) return results;
-    return [...results].sort((a, b) =>
+    const sorted = [...results].sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0));
+    if (!isAlphabeticalSort) return sorted;
+    return sorted.sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
     );
   }, [results, isAlphabeticalSort]);
