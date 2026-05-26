@@ -30,6 +30,13 @@ import { DIET_LABELS } from '../../constants/dietary';
 /** 검색바 활성화 토글. 향후 검색 기능 도입 시 true 로 전환. */
 const SEARCH_ENABLED = false;
 
+/**
+ * 리뷰 시스템 UI 노출 토글. BE /reviews 미구현 → 현재 false.
+ * Similar Trends 섹션의 mock review 텍스트(reviewTag/featuredReview)를 가린다.
+ * 향후 리뷰 PR 머지 시 true 로 전환.
+ */
+const REVIEW_FEATURES_ENABLED = false;
+
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -206,7 +213,8 @@ function SimilarList({ items }: { items: SimilarPreview[] }) {
           <View style={styles.simCardTop}>
             <ProductRow item={item} showChevron />
           </View>
-          {i === activeIdx && (
+          {/* 리뷰 시스템 (BE /reviews) 미구현 — mock review 텍스트 노출 차단. */}
+          {REVIEW_FEATURES_ENABLED && i === activeIdx && (
             <Animated.View style={[styles.reviewBox, { opacity }]}>
               <Text style={styles.reviewTag}>{item.similarityTag}</Text>
               <Text style={styles.reviewText}>{item.featuredReview}</Text>

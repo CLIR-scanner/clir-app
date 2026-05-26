@@ -203,15 +203,18 @@ function ProductSummary({
           </View>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.chevronButton}
-        onPress={onToggle}
-        accessibilityRole="button"
-        accessibilityLabel={expanded ? 'Hide review' : 'Show review'}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.chevron, !expanded && { transform: [{ scaleY: -1 }] }]}>⌃</Text>
-      </TouchableOpacity>
+      {/* 리뷰 본문 expand 토글 — 리뷰 시스템 미구현 동안 가림. */}
+      {REVIEW_FEATURES_ENABLED && (
+        <TouchableOpacity
+          style={styles.chevronButton}
+          onPress={onToggle}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? 'Hide review' : 'Show review'}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.chevron, !expanded && { transform: [{ scaleY: -1 }] }]}>⌃</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -258,15 +261,19 @@ function ReviewCard({
   onToggle: () => void;
   onProductPress: () => void;
 }) {
+  // 리뷰 시스템 미구현 동안 expand 비활성 → 항상 카드 closed 상태.
+  const effectiveExpanded = REVIEW_FEATURES_ENABLED && expanded;
   return (
     <View style={styles.reviewWrap}>
       <ProductSummary
         product={review.product}
-        expanded={expanded}
+        expanded={effectiveExpanded}
         onToggle={onToggle}
         onProductPress={onProductPress}
       />
-      {expanded && (
+      {/* 리뷰 본문(작성자·태그·리뷰 텍스트·좋아요/댓글) — 리뷰 시스템 미구현 동안 가림.
+          향후 BE /reviews 연결 시 REVIEW_FEATURES_ENABLED=true 로 부활. */}
+      {effectiveExpanded && (
         <View style={styles.reviewBody}>
           <View style={styles.reviewerRow}>
             <View style={styles.avatar} />
@@ -279,18 +286,16 @@ function ReviewCard({
             <Text style={styles.tagText} numberOfLines={1}>{review.tag}</Text>
           </View>
           <Text style={styles.reviewText}>{review.body}</Text>
-          {REVIEW_FEATURES_ENABLED && (
-            <View style={styles.actionRow}>
-              <View style={styles.actionItem}>
-                <ViewIcon />
-                <Text style={styles.actionText}>{review.likeCount}</Text>
-              </View>
-              <View style={styles.actionItem}>
-                <CommentIcon />
-                <Text style={styles.actionText}>{review.commentCount}</Text>
-              </View>
+          <View style={styles.actionRow}>
+            <View style={styles.actionItem}>
+              <ViewIcon />
+              <Text style={styles.actionText}>{review.likeCount}</Text>
             </View>
-          )}
+            <View style={styles.actionItem}>
+              <CommentIcon />
+              <Text style={styles.actionText}>{review.commentCount}</Text>
+            </View>
+          </View>
         </View>
       )}
     </View>
@@ -373,7 +378,9 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
         >
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('recommendUi.reviewsTitle')}</Text>
+        {/* 리뷰 시스템 미구현 동안 화면 타이틀은 'Similar Users\' Picks' (similarPicks 키).
+            BE /reviews 연결 시 'reviewsTitle' 로 복귀. */}
+        <Text style={styles.headerTitle}>{t('recommendUi.similarPicks')}</Text>
       </View>
 
       <FlatList
@@ -423,9 +430,12 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
               </View>
             )}
 
-            <View style={styles.titleWrap}>
-              <Text style={styles.sectionTitle}>{t('recommendUi.similarReviews')}</Text>
-            </View>
+            {/* 'similarReviews' 섹션 타이틀 — 리뷰 시스템 미구현 동안 가림 (헤더 타이틀과 중복도 회피). */}
+            {REVIEW_FEATURES_ENABLED && (
+              <View style={styles.titleWrap}>
+                <Text style={styles.sectionTitle}>{t('recommendUi.similarReviews')}</Text>
+              </View>
+            )}
 
             <View style={styles.categoryWrap}>
               <FlatList
