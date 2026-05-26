@@ -71,7 +71,9 @@ export default function ScanHistoryScreen({ navigation }: Props) {
 
   // 매 진입 fetch 방지 — dirty(스캔 완료·프로필 변경) / 최초 미동기화 /
   // TTL(5분) 경과 / 프로필 버전 변화 중 하나라도면 재조회, 아니면 캐시 사용.
-  const profileVersion = useUserStore(s => s.profileVersion);
+  const profileVersion   = useUserStore(s => s.profileVersion);
+  const allergyProfile   = useUserStore(s => s.currentUser.allergyProfile);
+  const sensitivityLevel = useUserStore(s => s.currentUser.sensitivityLevel);
   const syncedProfileRef = useRef<number | null>(null);
   useFocusEffect(
     useCallback(() => {
@@ -99,9 +101,20 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     navigation.navigate('HistoryProductDetail', { product: item.product });
   }
 
+  function reEvaluate(item: ScanHistory): RiskLevel {
+    if (!item.productId) return item.result;
+    const allergySet = new Set(allergyProfile);
+    if (item.product.riskIngredients?.some(ing => allergySet.has(ing.id))) return 'danger';
+    if (sensitivityLevel === 'strict' && item.product.mayContainIngredients?.some(ing =>
+      allergySet.has(ing.id.replace('ing-may-', 'ing-'))
+    )) return 'caution';
+    return 'safe';
+  }
+
   function renderItem({ item, index }: { item: ScanHistory; index: number }) {
-    const badgeColor = BADGE_COLOR[item.result];
-    const badgeLabel = t(`scanUi.${item.result === 'safe' ? 'good' : item.result === 'caution' ? 'poor' : 'bad'}`);
+    const verdict    = reEvaluate(item);
+    const badgeColor = BADGE_COLOR[verdict];
+    const badgeLabel = t(`scanUi.${verdict === 'safe' ? 'good' : verdict === 'caution' ? 'poor' : 'bad'}`);
     const isLast = index === sorted.length - 1;
 
     return (
@@ -132,7 +145,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
             </Text>
             {/* Risk badge */}
             <View style={[styles.badge, { borderColor: badgeColor }]}>
-              <RiskBadgeIcon level={item.result} size={16} style={styles.badgeIcon} />
+              <RiskBadgeIcon level={verdict} size={16} style={styles.badgeIcon} />
               <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeLabel}</Text>
             </View>
           </View>
