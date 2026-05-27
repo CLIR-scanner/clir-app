@@ -16,6 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import Skeleton from '../../components/common/Skeleton';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { getQAQuestions } from '../../services/recommend.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
@@ -287,6 +288,28 @@ export default function QAScreen({ navigation }: Props) {
     }
   }
 
+  // 풀-투-리프레시 — 현재 카테고리·검색 조건으로 1페이지부터 재조회.
+  // skeleton 토글 없이 ring 만 노출.
+  async function refresh() {
+    try {
+      const { questions: next, hasMore: more } = await getQAQuestions({
+        category: selectedCategory,
+        search:   debouncedQuery || undefined,
+        limit:    PAGE_SIZE,
+        offset:   0,
+      });
+      setQuestions(next);
+      setHasMore(more);
+    } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+        return;
+      }
+      // 그 외 silent — 기존 데이터 유지.
+    }
+  }
+
   const featuredQuestions = useMemo(() => questions.slice(0, 2), [questions]);
   const listQuestions = useMemo(
     () => questions.filter(item => !item.isNotice),
@@ -344,7 +367,8 @@ export default function QAScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <FlatList
+      <PullToRefreshList
+        onRefresh={refresh}
         data={listQuestions}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}

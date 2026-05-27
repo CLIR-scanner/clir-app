@@ -17,6 +17,7 @@ import { Colors } from '../../constants/colors';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getAllergenDisplayName } from '../../lib/display-names';
 import Skeleton from '../../components/common/Skeleton';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { getSimilarUsersFavorites } from '../../services/recommend.service';
 import { useUserStore } from '../../store/user.store';
 import { Product, Profile, RecommendStackParamList, RiskLevel, SimilarUserReview } from '../../types';
@@ -385,6 +386,22 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
     });
   }
 
+  // 풀-투-리프레시 — skeleton 토글 없이 ring 만. 실패 시 inline error.
+  async function refresh() {
+    setError(null);
+    try {
+      const next = await getSimilarUsersFavorites();
+      setProducts(next);
+    } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+        return;
+      }
+      setError(t('common.error'));
+    }
+  }
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -402,7 +419,8 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
         <Text style={styles.headerTitle}>{t('recommendUi.similarPicks')}</Text>
       </View>
 
-      <FlatList
+      <PullToRefreshList
+        onRefresh={refresh}
         data={reviews}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}

@@ -22,6 +22,7 @@ import {
 } from '../../components/common/FilterBottomSheet';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import Skeleton from '../../components/common/Skeleton';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getWeekendPopular } from '../../services/recommend.service';
 import { useUserStore } from '../../store/user.store';
@@ -240,6 +241,22 @@ export default function WeekendPopularScreen({ navigation }: Props) {
     requestAnimationFrame(() => setIsLoadingMore(false));
   }
 
+  // 풀-투-리프레시용 — 전체 skeleton 없이 ring 만 노출. 실패 시 inline error.
+  async function refresh() {
+    setError(null);
+    try {
+      const next = await getWeekendPopular();
+      setProducts(next);
+    } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+        return;
+      }
+      setError(t('common.error'));
+    }
+  }
+
   function handleClearSearch() {
     setQuery('');
     Keyboard.dismiss();
@@ -329,7 +346,8 @@ export default function WeekendPopularScreen({ navigation }: Props) {
           ))}
         </View>
       ) : (
-        <FlatList
+        <PullToRefreshList
+          onRefresh={refresh}
           data={visibleProducts}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
