@@ -18,6 +18,7 @@ import { getScanHistory } from '../../services/scan.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { Colors } from '../../constants/colors';
+import { useResponsive } from '../../lib/responsive';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanHistory'>;
 
@@ -35,6 +36,7 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
 export default function ScanHistoryScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const insets     = useSafeAreaInsets();
+  const { pad }    = useResponsive();
   const history    = useScanStore(s => s.history);
   const setHistory = useScanStore(s => s.setHistory);
   // store에 데이터가 있으면 초기 로딩 스피너 생략
@@ -122,7 +124,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     return (
       <View>
         <TouchableOpacity
-          style={styles.row}
+          style={[styles.row, { gap: pad.rowGap }]}
           onPress={() => handleItemPress(item)}
           activeOpacity={0.7}
         >
@@ -166,7 +168,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: pad.pageH }]}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
@@ -199,7 +201,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
         renderItem={renderItem}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + 24 },
+          { paddingHorizontal: pad.pageH, paddingBottom: insets.bottom + 24 },
         ]}
         ListHeaderComponent={
           <View style={styles.pillWrap}>
@@ -228,12 +230,11 @@ const styles = StyleSheet.create({
   },
 
 
-  // Header
+  // Header (paddingHorizontal 은 런타임에 pad.pageH 로 주입)
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
     paddingVertical: 14,
   },
   backBtn: {
@@ -243,9 +244,8 @@ const styles = StyleSheet.create({
   backArrow: { fontSize: 22, color: TITLE_COLOR },
   title:     { fontSize: 20, fontFamily: 'Pretendard-Bold', color: TITLE_COLOR },
 
-  // List
+  // List (paddingHorizontal 은 런타임에 pad.pageH 로 주입)
   listContent: {
-    paddingHorizontal: 26,
     paddingTop: 4,
   },
 
@@ -268,12 +268,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
-  // Row
+  // Row (gap 은 런타임에 pad.rowGap 로 override. paddingVertical 은 터치 타겟 고정 14)
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    gap: 16,
   },
 
   // Product thumbnail

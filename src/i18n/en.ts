@@ -245,7 +245,7 @@ const en = {
     ingredientsToAvoid:  'Ingredients to avoid',
     suspectedAllergens:  'Suspected Allergens',
     riskWarning:         '** This product contains ingredients that may not be suitable for you.',
-    severeDisclaimer:    '** For severe allergies, please double-check all ingredients\n     before consuming.',
+    severeDisclaimer:    '** For severe allergies, please double-check all ingredients before consuming.',
   },
 
   scanUi: {

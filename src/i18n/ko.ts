@@ -250,7 +250,7 @@ const ko = {
     ingredientsToAvoid:  '피해야 할 성분',
     suspectedAllergens:  '의심 알러겐',
     riskWarning:         '** 이 제품에는 사용자에게 적합하지 않을 수 있는 성분이 포함되어 있습니다.',
-    severeDisclaimer:    '** 중증 알러지가 있는 경우, 섭취 전 모든 성분을\n     다시 확인해주세요.',
+    severeDisclaimer:    '** 중증 알러지가 있는 경우, 섭취 전 모든 성분을 다시 확인해주세요.',
   },
 
   scanUi: {

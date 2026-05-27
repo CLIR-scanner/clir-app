@@ -19,6 +19,7 @@ import { getFavorites, removeFavorite } from '../../services/list.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { Colors } from '../../constants/colors';
+import { useResponsive } from '../../lib/responsive';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'Favorites'>;
 
@@ -36,6 +37,7 @@ const BADGE_COLOR: Record<RiskLevel, string> = {
 export default function FavoritesScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const insets                  = useSafeAreaInsets();
+  const { pad }                 = useResponsive();
   const favorites               = useListStore(s => s.favorites);
   const setFavorites            = useListStore(s => s.setFavorites);
   const removeFavoriteFromStore = useListStore(s => s.removeFavorite);
@@ -138,7 +140,7 @@ export default function FavoritesScreen({ navigation }: Props) {
     return (
       <View>
         <TouchableOpacity
-          style={styles.row}
+          style={[styles.row, { gap: pad.rowGap }]}
           onPress={() => handleItemPress(item)}
           activeOpacity={0.7}
         >
@@ -202,7 +204,7 @@ export default function FavoritesScreen({ navigation }: Props) {
           data={sorted}
           keyExtractor={item => item.id}
           renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: pad.pageH }]}
           ListHeaderComponent={
             <View style={styles.pillWrap}>
               <View style={styles.pill}>
@@ -237,8 +239,8 @@ const styles = StyleSheet.create({
     marginBottom: 35,
   },
 
-  // List
-  listContent: { paddingHorizontal: 26, paddingTop: 4 },
+  // List (paddingHorizontal 은 런타임에 pad.pageH 로 주입)
+  listContent: { paddingTop: 4 },
 
   // "My Favorite Products" pill
   pillWrap: { marginBottom: 12 },
@@ -254,12 +256,11 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.3 },
 
-  // Row
+  // Row (gap 은 런타임에 pad.rowGap 로 override. paddingVertical 은 터치 타겟 고정 14)
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    gap: 16,
   },
 
   // Product thumbnail
