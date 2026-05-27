@@ -11,6 +11,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
+import { PRODUCT_CATEGORIES } from '../../constants/categories';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,21 +24,10 @@ export interface FilterState {
   maxPrice: string;
 }
 
-// id는 BE products.category 컬럼 값과 정확히 일치해야 함 (OFF 내부 카테고리 기준).
-// BE lib/offCategoryMap.ts 참고.
-export const INITIAL_FILTER_CATEGORIES: FilterCategory[] = [
-  { id: 'beverages',  label: 'Beverages',           selected: false },
-  { id: 'snacks',     label: 'Snacks & Chips',       selected: false },
-  { id: 'bakery',     label: 'Bakery & Bread',       selected: false },
-  { id: 'dairy',      label: 'Dairy Products',       selected: false },
-  { id: 'cereals',    label: 'Cereals & Grains',     selected: false },
-  { id: 'cookies',    label: 'Cookies & Crackers',   selected: false },
-  { id: 'chocolates', label: 'Chocolates & Candy',   selected: false },
-  { id: 'spreads',    label: 'Spreads & Jams',       selected: false },
-  { id: 'meat',       label: 'Meat & Poultry',       selected: false },
-  { id: 'seafood',    label: 'Seafood',              selected: false },
-  { id: 'condiments', label: 'Sauces & Condiments',  selected: false },
-];
+// 카테고리 정의는 SSOT (src/constants/categories.ts) 에서 derive.
+// id 변경·추가는 SSOT 와 BE lib/categories.ts 양쪽에서 동시에 진행할 것.
+export const INITIAL_FILTER_CATEGORIES: FilterCategory[] =
+  PRODUCT_CATEGORIES.map(c => ({ id: c.id, label: c.label, selected: false }));
 
 export const INITIAL_FILTERS: FilterState = {
   categories: INITIAL_FILTER_CATEGORIES,
