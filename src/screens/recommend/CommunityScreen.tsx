@@ -37,14 +37,25 @@ const SEARCH_ENABLED = false;
  */
 const REVIEW_FEATURES_ENABLED = false;
 
+/**
+ * Similar User's Picks 섹션 임시 비활성화 토글.
+ * 클로즈드 베타 초반 유사 사용자 모수 부족으로 사실상 global fallback 만 노출됨 → UI 숨김.
+ * 데이터 수집(getCommunityFeed.similarUsersPicks) 자체는 유지. 향후 활성화 시 true 로 전환.
+ */
+const SIMILAR_PICKS_ENABLED = false;
+
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-const TABS = ['Week Trends', 'Similar Trends', 'Q&A', 'Magazine'] as const;
-type Tab = typeof TABS[number];
+const ALL_TABS = ['Week Trends', 'Similar Trends', 'Q&A', 'Magazine'] as const;
+type Tab = typeof ALL_TABS[number];
+// 런타임 필터링 — Tab 타입은 보존해 case 분기·SECTION_LABEL_KEY 영향 없음.
+const TABS: readonly Tab[] = ALL_TABS.filter(
+  t => SIMILAR_PICKS_ENABLED || t !== 'Similar Trends',
+);
 
 const SECTION_LABEL_KEY: Record<Tab, string> = {
   'Week Trends':    'recommendUi.trendingTab',
@@ -371,7 +382,9 @@ export default function CommunityScreen({ navigation }: Props) {
   const activeProfile = useUserStore(state => state.activeProfile);
   const language = useUserStore(state => state.currentUser.language);
   const [activeTab,    setActiveTab]    = useState<Tab>('Week Trends');
-  const [trendingProducts,  setTrendingProducts]  = useState<ProductPreview[]>([]);
+  // trending 은 Product 그대로 보관 — RecommendProductDetail 네비게이션에 전체 Product 필요.
+  // ProductRow 렌더 시점에서만 toPreviewProduct 변환.
+  const [trendingProducts,  setTrendingProducts]  = useState<Product[]>([]);
   const [similarProducts,   setSimilarProducts]   = useState<Product[]>([]);
   const [trendingCategory,  setTrendingCategory]  = useState('all');
   const [qaPreview,         setQaPreview]         = useState<QAQuestion[]>([]);
@@ -417,7 +430,7 @@ export default function CommunityScreen({ navigation }: Props) {
     Promise.all([getCommunityFeed(50), getQAQuestions(), getMagazineItems()])
       .then(([feed, qa, magazines]) => {
         if (cancelled) return;
-        setTrendingProducts(feed.weeklyTrending.map(toPreviewProduct));
+        setTrendingProducts(feed.weeklyTrending);
         setSimilarProducts(feed.similarUsersPicks);
         setQaPreview(qa.questions.filter(question => !question.isNotice).slice(0, 3));
         setMagazinePreview(magazines.slice(0, 3));
@@ -527,7 +540,12 @@ export default function CommunityScreen({ navigation }: Props) {
                     <View key={colIdx} style={styles.trendCard}>
                       {colItems.map((item, idx) => (
                         <View key={item.id}>
-                          <ProductRow item={item} />
+                          <TouchableOpacity
+                            onPress={() => navigation.navigate('RecommendProductDetail', { product: item })}
+                            activeOpacity={0.7}
+                          >
+                            <ProductRow item={toPreviewProduct(item)} />
+                          </TouchableOpacity>
                           {idx < colItems.length - 1 && <View style={styles.rowDivider} />}
                         </View>
                       ))}
