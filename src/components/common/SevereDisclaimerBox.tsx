@@ -43,7 +43,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Pretendard-Regular',
     lineHeight: 16,
-    // 다른 박스(ingredientBox / riskBox) 와 일관. 단말 폭 따라 자연 줄바꿈 시 균형 유지.
-    textAlign: 'center',
+    textAlign: 'left',
   },
 });

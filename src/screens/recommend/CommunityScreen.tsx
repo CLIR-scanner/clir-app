@@ -443,13 +443,6 @@ export default function CommunityScreen({ navigation }: Props) {
                   );
                 })}
               </ScrollView>
-              <LinearGradient
-                colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.trendFade}
-                pointerEvents="none"
-              />
             </View>
           </View>
         );
@@ -789,21 +782,11 @@ const styles = StyleSheet.create({
   productRating:{ fontSize: 10, color: C.mid, letterSpacing: -0.19 },
   rowChevron:   { fontSize: 18, color: C.dark, marginLeft: 4 },
 
-  // Trending list
+  // Trending list (trendFade 우측 gradient 는 시각 좌우 비대칭 유발해 제거됨)
   trendScrollWrap: { position: 'relative' },
-  trendFade: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    // 60→24 — 우측 fade gradient 가 카드 콘텐츠를 과도하게 가려 시각적 좌우 비대칭 유발하던 문제 해소.
-    // "더 있음" 시그널은 유지하면서 콘텐츠 가림은 최소화.
-    width: 24,
-  },
   trendList: { gap: 10, paddingVertical: 4 },
   trendCard: {
     width: SCREEN_W - 130,
-    // paddingLeft / paddingRight 명시 — 좌우 대칭 보장.
     paddingLeft: 12,
     paddingRight: 12,
     paddingVertical: 8,
