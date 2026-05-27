@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
+import Skeleton from '../../components/common/Skeleton';
 import { getMagazineItem, toggleMagazineBookmark } from '../../services/recommend.service';
 import { MagazineItem, RecommendStackParamList } from '../../types';
 import { BookmarkIcon, relativeTime } from './MagazineScreen';
@@ -104,11 +105,41 @@ export default function MagazineDetailScreen({ navigation, route }: Props) {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('recommendUi.magazineTitle')}</Text>
         </View>
-        <View style={styles.loadingWrap}>
-          <View style={styles.loadingBar} />
-          <View style={[styles.loadingBar, { width: '75%', marginTop: 10 }]} />
-        </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 48 }]}
+        >
+          {/* heroWrap 와 동일한 height / marginHorizontal / borderRadius 유지. */}
+          <View style={styles.heroSkeleton}>
+            <Skeleton width="100%" height={240} borderRadius={16} />
+          </View>
+          <View style={styles.articleBody}>
+            {/* CategoryBadge: alignSelf flex-start, 28 height */}
+            <Skeleton
+              width={92}
+              height={26}
+              borderRadius={50}
+              style={{ marginBottom: 10 }}
+            />
+            {/* articleTitle: 22px ExtraBold, lineHeight 30 — 2 lines */}
+            <Skeleton width="92%" height={24} borderRadius={4} style={{ marginBottom: 8 }} />
+            <Skeleton width="70%" height={24} borderRadius={4} style={{ marginBottom: 10 }} />
+            {/* articleTime: 11px */}
+            <Skeleton width={90} height={12} borderRadius={4} style={{ marginBottom: 20 }} />
+            <View style={styles.divider} />
+            {/* Body paragraphs — 15px Regular, lineHeight 24 */}
+            {[0, 1, 2].map(p => (
+              <View key={p} style={{ marginBottom: 18 }}>
+                <Skeleton width="100%" height={14} borderRadius={4} style={{ marginBottom: 6 }} />
+                <Skeleton width="95%" height={14} borderRadius={4} style={{ marginBottom: 6 }} />
+                <Skeleton width="98%" height={14} borderRadius={4} style={{ marginBottom: 6 }} />
+                <Skeleton width="62%" height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -310,7 +341,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.247,
   },
 
-  // Loading skeleton
-  loadingWrap: { paddingHorizontal: 24, paddingTop: 24 },
-  loadingBar:  { height: 16, borderRadius: 8, backgroundColor: C.line, width: '100%' },
+  // Loading skeleton — heroWrap layout 과 동일하게 marginHorizontal 만 적용.
+  heroSkeleton: {
+    marginHorizontal: 20,
+  },
 });

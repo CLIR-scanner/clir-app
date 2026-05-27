@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
@@ -17,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getAllergenDisplayName } from '../../lib/display-names';
+import Skeleton from '../../components/common/Skeleton';
 import { getSimilarUsersFavorites } from '../../services/recommend.service';
 import { useUserStore } from '../../store/user.store';
 import { Product, Profile, RecommendStackParamList, RiskLevel, SimilarUserReview } from '../../types';
@@ -250,6 +250,25 @@ function CommentIcon() {
   );
 }
 
+// reviewWrap(border + radius 20) + productHeader(104 min height, padding 12) 와
+// 동일한 외곽 사이즈. 데이터 로드 후 layout 이 그대로 유지된다.
+function ReviewCardSkeleton() {
+  return (
+    <View style={styles.reviewWrap}>
+      <View style={[styles.productHeader, styles.productHeaderClosed]}>
+        <View style={styles.productTapArea}>
+          <Skeleton width={82} height={82} borderRadius={9} />
+          <View style={styles.productInfo}>
+            <Skeleton width="78%" height={18} borderRadius={4} style={{ marginBottom: 6 }} />
+            <Skeleton width="50%" height={14} borderRadius={4} style={{ marginBottom: 12 }} />
+            <Skeleton width={72} height={24} borderRadius={28} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function ReviewCard({
   review,
   expanded,
@@ -463,13 +482,19 @@ export default function SimilarUsersFavoritesScreen({ navigation }: Props) {
           </View>
         }
         ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color={C.dark} />
-            ) : (
+          isLoading ? (
+            <View>
+              {[0, 1, 2, 3, 4].map(idx => (
+                <View key={idx} style={styles.reviewItem}>
+                  <ReviewCardSkeleton />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyBox}>
               <Text style={styles.emptyText}>{error ?? t('search.empty')}</Text>
-            )}
-          </View>
+            </View>
+          )
         }
       />
     </View>

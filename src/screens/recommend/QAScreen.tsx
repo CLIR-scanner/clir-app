@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
+import Skeleton from '../../components/common/Skeleton';
 import { getQAQuestions } from '../../services/recommend.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
@@ -142,6 +143,36 @@ function HighlightedText({
   );
 }
 
+// featuredCard 사이즈(183×183)와 동일. 안쪽 padding 역시 동일하게 맞춤.
+function FeaturedQuestionCardSkeleton() {
+  return (
+    <View style={[styles.featuredCard, styles.askingCard]}>
+      <Skeleton width={90} height={18} borderRadius={4} />
+      <Skeleton width="80%" height={20} borderRadius={4} style={{ marginTop: 14 }} />
+      <Skeleton width="55%" height={20} borderRadius={4} style={{ marginTop: 6 }} />
+      <View style={styles.featuredSkeletonFooter}>
+        <Skeleton width={80} height={14} borderRadius={4} />
+      </View>
+    </View>
+  );
+}
+
+// questionRow 의 paddingHorizontal/Vertical 그대로 사용.
+function QuestionRowSkeleton() {
+  return (
+    <View style={styles.questionRow}>
+      <Skeleton width={70} height={14} borderRadius={4} style={{ marginBottom: 9 }} />
+      <Skeleton width="86%" height={18} borderRadius={4} style={{ marginBottom: 8 }} />
+      <Skeleton width="95%" height={14} borderRadius={4} style={{ marginBottom: 4 }} />
+      <Skeleton width="65%" height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+      <View style={styles.metaRow}>
+        <Skeleton width={40} height={14} borderRadius={4} />
+        <Skeleton width={40} height={14} borderRadius={4} />
+      </View>
+    </View>
+  );
+}
+
 function QuestionRow({
   item, onPress, query,
 }: {
@@ -182,7 +213,9 @@ export default function QAScreen({ navigation }: Props) {
   const [isFocused, setIsFocused] = useState(false);
   const [questions, setQuestions] = useState<QAQuestion[]>([]);
   const [hasMore, setHasMore] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // 초기 마운트 시점부터 skeleton 노출 — 카테고리/검색 변경 시에도 useEffect 가
+  // 진입과 동시에 true 로 다시 세팅한다.
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<QnaCategory>('all');
   const loadingMoreRef = useRef(false);
 
@@ -323,14 +356,17 @@ export default function QAScreen({ navigation }: Props) {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.featuredList}
+              scrollEnabled={!isLoading}
             >
-              {featuredQuestions.map(item => (
-                <FeaturedQuestionCard
-                  key={item.id}
-                  item={item}
-                  onPress={() => openQuestion(item.id)}
-                />
-              ))}
+              {isLoading
+                ? [0, 1].map(idx => <FeaturedQuestionCardSkeleton key={`fc-${idx}`} />)
+                : featuredQuestions.map(item => (
+                  <FeaturedQuestionCard
+                    key={item.id}
+                    item={item}
+                    onPress={() => openQuestion(item.id)}
+                  />
+                ))}
             </ScrollView>
             <ScrollView
               horizontal
@@ -367,11 +403,21 @@ export default function QAScreen({ navigation }: Props) {
           ) : null
         }
         ListEmptyComponent={
-          !isLoading ? (
+          isLoading ? (
+            // 데이터가 비어있을 때만 skeleton 으로 채운다. Featured 와 동일한 페이지 사이즈(5).
+            <View>
+              {[0, 1, 2, 3, 4].map(idx => (
+                <View key={idx}>
+                  <QuestionRowSkeleton />
+                  {idx < 4 && <View style={styles.divider} />}
+                </View>
+              ))}
+            </View>
+          ) : (
             <Text style={styles.emptyText}>
               {debouncedQuery ? 'No matching questions.' : 'No questions yet.'}
             </Text>
-          ) : null
+          )
         }
       />
 
@@ -475,6 +521,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 20,
     paddingTop: 23,
+  },
+  featuredSkeletonFooter: {
+    position: 'absolute',
+    left: 22,
+    bottom: 19,
   },
   noticeCard: {
     backgroundColor: C.dark,

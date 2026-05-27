@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -19,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
+import Skeleton from '../../components/common/Skeleton';
 import {
   addQAAnswer,
   deleteQAAnswer,
@@ -197,6 +197,37 @@ function AnswerRow({
         ) : (
           <Text style={styles.answerText}>{item.body}</Text>
         )}
+      </View>
+    </View>
+  );
+}
+
+function QuestionCardSkeleton() {
+  return (
+    <View style={styles.questionCard}>
+      <Skeleton width={70} height={14} borderRadius={4} style={{ marginBottom: 12 }} />
+      <Skeleton width="92%" height={22} borderRadius={4} style={{ marginBottom: 6 }} />
+      <Skeleton width="68%" height={22} borderRadius={4} style={{ marginBottom: 12 }} />
+      <Skeleton width={90} height={14} borderRadius={4} style={{ marginBottom: 18 }} />
+      <Skeleton width="100%" height={14} borderRadius={4} style={{ marginBottom: 4 }} />
+      <Skeleton width="95%" height={14} borderRadius={4} style={{ marginBottom: 4 }} />
+      <Skeleton width="78%" height={14} borderRadius={4} />
+    </View>
+  );
+}
+
+function AnswerRowSkeleton() {
+  return (
+    <View style={styles.answerRow}>
+      <Skeleton width={34} height={34} borderRadius={17} />
+      <View style={styles.answerBody}>
+        <View style={[styles.answerHeader, { marginBottom: 8 }]}>
+          <Skeleton width={80} height={14} borderRadius={4} />
+          <Skeleton width={56} height={11} borderRadius={4} />
+        </View>
+        <Skeleton width="100%" height={13} borderRadius={4} style={{ marginBottom: 4 }} />
+        <Skeleton width="88%" height={13} borderRadius={4} style={{ marginBottom: 4 }} />
+        <Skeleton width="60%" height={13} borderRadius={4} />
       </View>
     </View>
   );
@@ -566,9 +597,24 @@ export default function QADetailScreen({ navigation, route }: Props) {
             <Text style={styles.errorText}>{loadError}</Text>
           </View>
         ) : (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="small" color={C.dark} />
-          </View>
+          // 실제 데이터 layout 과 동일한 paddingHorizontal/paddingTop 으로 감싸
+          // 로드 완료 시 layout shift 가 없도록 한다.
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 120 }]}
+          >
+            <QuestionCardSkeleton />
+            <View style={[styles.answerTitleRow, { marginTop: 4 }]}>
+              <Skeleton width={70} height={18} borderRadius={4} />
+              <Skeleton width={20} height={14} borderRadius={4} />
+            </View>
+            {[0, 1, 2].map(idx => (
+              <View key={idx}>
+                <AnswerRowSkeleton />
+                {idx < 2 && <View style={styles.divider} />}
+              </View>
+            ))}
+          </ScrollView>
         )
       ) : (
         <FlatList

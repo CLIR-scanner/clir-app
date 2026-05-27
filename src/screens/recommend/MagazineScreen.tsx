@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
+import Skeleton from '../../components/common/Skeleton';
 import { getMagazineItems, toggleMagazineBookmark } from '../../services/recommend.service';
 import { MagazineItem, RecommendStackParamList } from '../../types';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
@@ -90,6 +91,27 @@ const pillSt = StyleSheet.create({
   textActive: { color: Colors.white, fontFamily: 'Pretendard-Bold' },
 });
 
+// ── MagazineCardSkeleton ──────────────────────────────────────────────────────
+// 실제 MagazineCard 의 wrap/imgBox/body 와 같은 width/height/marginBottom 사용.
+function MagazineCardSkeleton() {
+  return (
+    <View style={cardSt.wrap}>
+      <Skeleton width="100%" height={243} borderRadius={15} style={{ marginBottom: 12 }} />
+      <View style={cardSt.body}>
+        <Skeleton width="92%" height={20} borderRadius={4} style={{ marginBottom: 6 }} />
+        <Skeleton width="68%" height={20} borderRadius={4} style={{ marginBottom: 10 }} />
+        <Skeleton width="100%" height={13} borderRadius={4} style={{ marginBottom: 4 }} />
+        <Skeleton width="95%" height={13} borderRadius={4} style={{ marginBottom: 4 }} />
+        <Skeleton width="78%" height={13} borderRadius={4} style={{ marginBottom: 12 }} />
+        <View style={cardSt.footer}>
+          <Skeleton width={90} height={14} borderRadius={4} />
+          <Skeleton width={28} height={28} borderRadius={6} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 // ── MagazineCard ──────────────────────────────────────────────────────────────
 
 function MagazineCard({
@@ -152,16 +174,22 @@ export default function MagazineScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
-  const [items,    setItems]    = useState<MagazineItem[]>([]);
-  const [query,    setQuery]    = useState('');
-  const [focused,  setFocused]  = useState(false);
-  const [category, setCategory] = useState('all');
+  const [items,     setItems]     = useState<MagazineItem[]>([]);
+  const [query,     setQuery]     = useState('');
+  const [focused,   setFocused]   = useState(false);
+  const [category,  setCategory]  = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    getMagazineItems().then(data => {
-      if (!cancelled) setItems(data);
-    });
+    setIsLoading(true);
+    getMagazineItems()
+      .then(data => {
+        if (!cancelled) setItems(data);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -233,7 +261,15 @@ export default function MagazineScreen({ navigation }: Props) {
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 48 }]}
         ListHeaderComponent={
           <View>
-            {featured && (
+            {isLoading ? (
+              // heroWrap 와 같은 height / borderRadius / marginBottom 유지.
+              <Skeleton
+                width="100%"
+                height={190}
+                borderRadius={9}
+                style={{ marginBottom: 32 }}
+              />
+            ) : featured && (
               <TouchableOpacity
                 style={styles.heroWrap}
                 onPress={() => navigation.navigate('MagazineDetail', { articleId: featured.id })}
@@ -269,6 +305,15 @@ export default function MagazineScreen({ navigation }: Props) {
             onBookmark={handleBookmark}
           />
         )}
+        ListEmptyComponent={
+          isLoading ? (
+            <View>
+              {[0, 1, 2].map(idx => (
+                <MagazineCardSkeleton key={idx} />
+              ))}
+            </View>
+          ) : null
+        }
       />
     </View>
   );
