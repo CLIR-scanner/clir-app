@@ -1,11 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import {
   Dimensions,
   FlatList,
   Image,
   LayoutChangeEvent,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +18,7 @@ import { MagazineItem, Product, QAQuestion, RecommendStackParamList, RiskLevel }
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import Skeleton from '../../components/common/Skeleton';
+import PullToRefreshList, { PullToRefreshScrollMetrics } from '../../components/common/PullToRefreshList';
 import { getCommunityFeed, getMagazineItems, getQAQuestions } from '../../services/recommend.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
@@ -394,7 +393,9 @@ export default function CommunityScreen({ navigation }: Props) {
   // Promise.all 로 묶여있어 세 fetch 가 모두 끝날 때까지 skeleton 유지.
   const [isLoading,         setIsLoading]         = useState(true);
 
-  const mainScrollRef    = useRef<ScrollView>(null);
+  // FlatList 의 wrapping View 도 measure() 를 가지므로 viewportRef 로 그대로 측정 가능.
+  const mainScrollRef    = useRef<FlatList<unknown>>(null);
+  const viewportRef      = useRef<View>(null);
   const sectionY         = useRef<Partial<Record<Tab, number>>>({});
   const sectionViewRefs  = useRef<Partial<Record<Tab, View | null>>>({});
   const scrollOffset     = useRef(0);
@@ -406,27 +407,26 @@ export default function CommunityScreen({ navigation }: Props) {
     return (e: LayoutChangeEvent) => { sectionY.current[tab] = e.nativeEvent.layout.y; };
   }
 
-  // 섹션 Y 위치를 화면 측정으로 정밀 보정 (onLayout 오차 보완)
-  function remeasureSections() {
-    const scroll = mainScrollRef.current;
-    if (!scroll) return;
-    (scroll as unknown as { measure: (cb: (...n: number[]) => void) => void })
-      .measure((...sv: number[]) => {
-        const vPageY = sv[5] ?? 0;
-        TABS.forEach(tab => {
-          const view = sectionViewRefs.current[tab];
-          if (!view) return;
-          view.measure((_x: number, _y: number, _w: number, _h: number, _px: number, sPageY: number) => {
-            sectionY.current[tab] = sPageY - vPageY + scrollOffset.current;
-          });
+  // 섹션 Y 위치를 화면 측정으로 정밀 보정 (onLayout 오차 보완).
+  // viewportRef = FlatList 를 감싼 wrapping View (스크롤 컨테이너).
+  const remeasureSections = useCallback(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    viewport.measure((_x, _y, _w, _h, _px, vPageY) => {
+      TABS.forEach(tab => {
+        const view = sectionViewRefs.current[tab];
+        if (!view) return;
+        view.measure((_x2: number, _y2: number, _w2: number, _h2: number, _px2: number, sPageY: number) => {
+          sectionY.current[tab] = sPageY - vPageY + scrollOffset.current;
         });
       });
-  }
+    });
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(remeasureSections, 600);
     return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [remeasureSections]);
 
   useEffect(() => {
     let cancelled = false;
@@ -478,45 +478,72 @@ export default function CommunityScreen({ navigation }: Props) {
     }, 900);
 
     const sectionView = sectionViewRefs.current[tab];
-    const scrollView  = mainScrollRef.current;
+    const viewport    = viewportRef.current;
+    const list        = mainScrollRef.current;
 
-    if (sectionView && scrollView) {
+    if (sectionView && viewport && list) {
+      // 화면 측정으로 정밀 위치 산출 후 scrollToOffset.
       sectionView.measure((_x: number, _y: number, _w: number, _h: number, _px: number, sPageY: number) => {
-        (scrollView as unknown as { measure: (cb: (...n: number[]) => void) => void })
-          .measure((...n: number[]) => {
-            const vPageY = n[5] ?? 0;
-            const targetY = Math.max(0, sPageY - vPageY + scrollOffset.current);
-            scrollView.scrollTo({ y: targetY, animated: true });
-          });
+        viewport.measure((_vx, _vy, _vw, _vh, _vpx, vPageY) => {
+          const targetY = Math.max(0, sPageY - vPageY + scrollOffset.current);
+          list.scrollToOffset({ offset: targetY, animated: true });
+        });
       });
       return;
     }
-    scrollView?.scrollTo({ y: sectionY.current[tab] ?? 0, animated: true });
+    list?.scrollToOffset({ offset: sectionY.current[tab] ?? 0, animated: true });
   }
 
-  function handleScrollEnd() {
+  // PullToRefreshList 의 onMomentumScrollEnd / onScrollEndDrag 가 호출.
+  const handleScrollEnd = useCallback(() => {
     isProgrammatic.current = false;
     if (programmaticTimer.current) { clearTimeout(programmaticTimer.current); programmaticTimer.current = null; }
-  }
+  }, []);
 
-  function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    scrollOffset.current = e.nativeEvent.contentOffset.y;
+  // PullToRefreshList 의 worklet 이 runOnJS 로 호출. 매 스크롤 프레임마다
+  // 섹션 자동 활성화(top tab bar 인디케이터)를 갱신한다.
+  const handleScrollJS = useCallback((metrics: PullToRefreshScrollMetrics) => {
+    scrollOffset.current = metrics.contentOffsetY;
     if (isProgrammatic.current) return;
-    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
     const order = TABS;
 
-    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 50) {
+    if (metrics.contentOffsetY + metrics.layoutMeasurementHeight >= metrics.contentSizeHeight - 50) {
       const last = order[order.length - 1];
       if (last !== activeTabRef.current) { activeTabRef.current = last; setActiveTab(last); }
       return;
     }
-    const scrollY = contentOffset.y + layoutMeasurement.height * 0.25;
+    const scrollY = metrics.contentOffsetY + metrics.layoutMeasurementHeight * 0.25;
     let current: Tab = order[0];
     for (const tab of order) {
       const offset = sectionY.current[tab];
       if (offset !== undefined && scrollY >= offset) current = tab;
     }
     if (current !== activeTabRef.current) { activeTabRef.current = current; setActiveTab(current); }
+  }, []);
+
+  // 풀-투-리프레시용 — 전체 skeleton 대신 ring 만 노출. 실패해도 기존 데이터 유지.
+  async function refresh() {
+    try {
+      const [feed, qa, magazines] = await Promise.all([
+        getCommunityFeed(50),
+        getQAQuestions(),
+        getMagazineItems(),
+      ]);
+      setTrendingProducts(feed.weeklyTrending);
+      setQaPreview(qa.questions.filter(question => !question.isNotice).slice(0, 3));
+      setMagazinePreview(magazines.slice(0, 3));
+    } catch (err: unknown) {
+      if (err instanceof UnauthorizedError) {
+        clearAuthToken();
+        useUserStore.getState().logout();
+        return;
+      }
+      if (__DEV__) {
+        const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
+        console.warn('[CommunityScreen] refresh failed:', msg);
+      }
+      // 기존 데이터 유지 — refresh 실패는 silent.
+    }
   }
 
   function renderSection(tab: Tab) {
@@ -687,37 +714,46 @@ export default function CommunityScreen({ navigation }: Props) {
         })}
       </ScrollView>
 
-      {/* ── Main scroll ────────────────────────────────────────────────── */}
-      <ScrollView
-        ref={mainScrollRef}
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={handleScroll}
-        onMomentumScrollEnd={handleScrollEnd}
-        onScrollEndDrag={handleScrollEnd}
-        onContentSizeChange={remeasureSections}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 18 }}
-      >
-        {/* ── Promotional banner ─────────────────────────────────────── */}
-        <View style={styles.bannerWrap}>
-          <BannerAd />
-        </View>
+      {/* ── Main scroll (PullToRefreshList wrap) ──────────────────────── */}
+      {/* 단일 FlatList 로 ListHeaderComponent 에 모든 콘텐츠를 담아 pull-to-refresh
+          링 + hold 제스처를 그대로 활용. viewportRef 는 measure() 용 외곽 컨테이너. */}
+      <View ref={viewportRef} style={styles.scroll} collapsable={false}>
+        <PullToRefreshList
+          onRefresh={refresh}
+          listRef={mainScrollRef}
+          onScrollJS={handleScrollJS}
+          data={[]}
+          keyExtractor={() => 'empty'}
+          renderItem={() => null}
+          showsVerticalScrollIndicator={false}
+          onMomentumScrollEnd={handleScrollEnd}
+          onScrollEndDrag={handleScrollEnd}
+          onContentSizeChange={remeasureSections}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 18 }}
+          ListHeaderComponent={
+            <View>
+              {/* ── Promotional banner ─────────────────────────────── */}
+              <View style={styles.bannerWrap}>
+                <BannerAd />
+              </View>
 
-        {/* ── Sections ──────────────────────────────────────────────── */}
-        {TABS.map((tab, i) => (
-          <View
-            key={tab}
-            ref={r => { sectionViewRefs.current[tab] = r; }}
-            onLayout={onSectionLayout(tab)}
-          >
-            {renderSection(tab)}
-            {i < TABS.length - 1 && (
-              <View style={[styles.sectionGap, tab === 'Q&A' && styles.sectionGapLarge]} />
-            )}
-          </View>
-        ))}
-      </ScrollView>
+              {/* ── Sections ──────────────────────────────────────── */}
+              {TABS.map((tab, i) => (
+                <View
+                  key={tab}
+                  ref={r => { sectionViewRefs.current[tab] = r; }}
+                  onLayout={onSectionLayout(tab)}
+                >
+                  {renderSection(tab)}
+                  {i < TABS.length - 1 && (
+                    <View style={[styles.sectionGap, tab === 'Q&A' && styles.sectionGapLarge]} />
+                  )}
+                </View>
+              ))}
+            </View>
+          }
+        />
+      </View>
     </View>
   );
 }

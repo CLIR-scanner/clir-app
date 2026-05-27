@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Platform,
   RefreshControl,
+  FlatList,
   FlatListProps,
 } from 'react-native';
 import Animated, {
@@ -42,11 +43,27 @@ const TRACK_COLOR = Colors.searchBorder;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+/**
+ * useAnimatedScrollHandler 의 worklet 이 onScroll 을 점유하기 때문에
+ * JS 측에서 추가로 스크롤 위치를 알아야 하는 화면(예: CommunityScreen 의
+ * 섹션-탭 자동 활성화)은 이 콜백을 받는다. 16ms throttling 으로 매 프레임
+ * runOnJS 가 호출된다.
+ */
+export type PullToRefreshScrollMetrics = {
+  contentOffsetY: number;
+  contentSizeHeight: number;
+  layoutMeasurementHeight: number;
+};
+
 type Props<T> = FlatListProps<T> & {
   /** 임계점 초과 후 손 뗐을 때 호출. 완료(resolve)까지 진행바·홀드 유지. */
   onRefresh: () => Promise<unknown>;
   ringColor?: string;
   trackColor?: string;
+  /** 워클릿에서 runOnJS 로 호출. 탭 트래킹/무한 스크롤 트리거 등에 사용. */
+  onScrollJS?: (metrics: PullToRefreshScrollMetrics) => void;
+  /** 내부 FlatList ref. scrollToOffset / measure 등 명령형 호출에 필요. */
+  listRef?: React.MutableRefObject<FlatList<T> | null>;
 };
 
 export default function PullToRefreshList<T>({
@@ -54,6 +71,8 @@ export default function PullToRefreshList<T>({
   ringColor = RING_COLOR,
   trackColor = TRACK_COLOR,
   contentContainerStyle,
+  onScrollJS,
+  listRef,
   ...listProps
 }: Props<T>) {
   const progress = useSharedValue(0); // 0..1 (당김 비례)
@@ -101,6 +120,14 @@ export default function PullToRefreshList<T>({
       const y = e.contentOffset.y;
       const p = y < 0 ? -y : 0;          // iOS 상단 바운스만 양수
       pull.value = p;
+      // JS 측 콜백 전달 (탭 트래킹·무한 스크롤). throttle=16ms 로 매 프레임.
+      if (onScrollJS) {
+        runOnJS(onScrollJS)({
+          contentOffsetY: y,
+          contentSizeHeight: e.contentSize.height,
+          layoutMeasurementHeight: e.layoutMeasurement.height,
+        });
+      }
       if (busy.value === 1) return;       // 새로고침 중엔 진행바 고정(1)
       progress.value = Math.min(1, p / THRESHOLD);
       if (progress.value >= 1 && armed.value === 0) {
@@ -149,7 +176,7 @@ export default function PullToRefreshList<T>({
 
   // reanimated FlatList 의 제네릭 타입 마찰 회피 — 항목 타입은 listProps 가 보장.
   const AnimatedFlatList = Animated.FlatList as unknown as React.ComponentType<
-    FlatListProps<T> & { onScroll?: unknown }
+    FlatListProps<T> & { onScroll?: unknown; ref?: React.Ref<unknown> }
   >;
 
   return (
@@ -178,6 +205,7 @@ export default function PullToRefreshList<T>({
       <Animated.View style={[styles.listWrap, listWrapStyle]}>
         <AnimatedFlatList
           {...listProps}
+          ref={listRef as unknown as React.Ref<unknown>}
           contentContainerStyle={contentContainerStyle}
           onScroll={scrollHandler}
           scrollEventThrottle={16}

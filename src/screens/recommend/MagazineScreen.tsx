@@ -16,6 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import Skeleton from '../../components/common/Skeleton';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import { getMagazineItems, toggleMagazineBookmark } from '../../services/recommend.service';
 import { MagazineItem, RecommendStackParamList } from '../../types';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
@@ -210,6 +211,16 @@ export default function MagazineScreen({ navigation }: Props) {
     });
   }
 
+  // 풀-투-리프레시 — skeleton 토글 없이 ring 만. silent fallback.
+  async function refresh() {
+    try {
+      const data = await getMagazineItems();
+      setItems(data);
+    } catch {
+      // 기존 데이터 유지.
+    }
+  }
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
@@ -254,7 +265,8 @@ export default function MagazineScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <FlatList
+      <PullToRefreshList
+        onRefresh={refresh}
         data={filtered}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}

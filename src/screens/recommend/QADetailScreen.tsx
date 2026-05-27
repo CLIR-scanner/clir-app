@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  FlatList,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -19,6 +18,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import Skeleton from '../../components/common/Skeleton';
+import PullToRefreshList from '../../components/common/PullToRefreshList';
 import {
   addQAAnswer,
   deleteQAAnswer,
@@ -296,6 +296,24 @@ export default function QADetailScreen({ navigation, route }: Props) {
 
   const answerCount = useMemo(() => answers.length, [answers.length]);
   const isMyQuestion = !!question && !!currentUserId && question.userId === currentUserId;
+
+  // 풀-투-리프레시 — 이미지 signed URL(5분 TTL) 도 함께 갱신. silent fallback.
+  async function refresh() {
+    try {
+      const result = await getQAQuestionDetail(questionId);
+      setQuestion(result.question);
+      setAnswers(result.answers);
+    } catch (err: unknown) {
+      if (handleUnauthorized(err)) return;
+      // 404 → 글이 삭제됨. refresh 중이라 silent + 이전화면 복귀.
+      if (err instanceof ApiError && err.code === 'QNA_NOT_FOUND') {
+        Alert.alert('알림', '게시글이 이미 삭제되었거나 존재하지 않습니다.', [
+          { text: '확인', onPress: () => navigation.goBack() },
+        ]);
+      }
+      // 그 외 silent — 기존 데이터 유지.
+    }
+  }
 
   async function handleSubmit() {
     const body = draft.trim();
@@ -617,7 +635,8 @@ export default function QADetailScreen({ navigation, route }: Props) {
           </ScrollView>
         )
       ) : (
-        <FlatList
+        <PullToRefreshList
+          onRefresh={refresh}
           data={answers}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
