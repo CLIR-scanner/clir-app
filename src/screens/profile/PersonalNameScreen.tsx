@@ -101,26 +101,21 @@ export default function PersonalNameScreen() {
       </View>
 
       {/* ── Avatar ─────────────────────────────────────────────────────── */}
+      {/* 프로필 사진 수정 기능 임시 비활성화 — 복원 시 TouchableOpacity 로 다시 감싸고
+          cameraBadge + opacity 0.5 / disabled 토글을 되돌릴 것. handlePickImage 는 보존. */}
       <View style={styles.avatarSection}>
-        <TouchableOpacity onPress={handlePickImage} activeOpacity={1} disabled>
-          <View style={[styles.avatarWrap, { opacity: 0.5 }]}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.avatarImg} />
-            ) : (
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{initial}</Text>
-              </View>
-            )}
-            <View style={styles.cameraBadge}>
-              <CameraIcon />
+        <View style={styles.avatarWrap}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.avatarImg} />
+          ) : (
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarText}>{initial}</Text>
             </View>
-          </View>
-        </TouchableOpacity>
+          )}
+        </View>
 
         <Text style={styles.displayName}>{currentUser.name || '—'}</Text>
       </View>
-
-      <View style={styles.sectionDivider} />
 
       <View style={[styles.fieldsBlock, styles.nameFieldsBlock]}>
         <FieldRow label={t('personalName.firstName')} value={firstName} />
