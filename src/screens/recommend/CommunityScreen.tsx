@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  Animated,
   Dimensions,
   FlatList,
   Image,
@@ -17,32 +16,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { MagazineItem, Product, Profile, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
+import { MagazineItem, Product, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import { getCommunityFeed, getMagazineItems, getQAQuestions } from '../../services/recommend.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
 import { useUserStore } from '../../store/user.store';
-import { getAllergenDisplayName } from '../../lib/display-names';
-import { DIET_LABELS } from '../../constants/dietary';
 
 /** 검색바 활성화 토글. 향후 검색 기능 도입 시 true 로 전환. */
 const SEARCH_ENABLED = false;
-
-/**
- * 리뷰 시스템 UI 노출 토글. BE /reviews 미구현 → 현재 false.
- * Similar Trends 섹션의 mock review 텍스트(reviewTag/featuredReview)를 가린다.
- * 향후 리뷰 PR 머지 시 true 로 전환.
- */
-const REVIEW_FEATURES_ENABLED = false;
-
-/**
- * Similar User's Picks 섹션 임시 비활성화 토글.
- * 클로즈드 베타 초반 유사 사용자 모수 부족으로 사실상 global fallback 만 노출됨 → UI 숨김.
- * 데이터 수집(getCommunityFeed.similarUsersPicks) 자체는 유지. 향후 활성화 시 true 로 전환.
- */
-const SIMILAR_PICKS_ENABLED = false;
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
@@ -50,16 +33,11 @@ type Props = NativeStackScreenProps<RecommendStackParamList, 'Recommend'>;
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-const ALL_TABS = ['Week Trends', 'Similar Trends', 'Q&A', 'Magazine'] as const;
-type Tab = typeof ALL_TABS[number];
-// 런타임 필터링 — Tab 타입은 보존해 case 분기·SECTION_LABEL_KEY 영향 없음.
-const TABS: readonly Tab[] = ALL_TABS.filter(
-  t => SIMILAR_PICKS_ENABLED || t !== 'Similar Trends',
-);
+const TABS = ['Week Trends', 'Q&A', 'Magazine'] as const;
+type Tab = typeof TABS[number];
 
 const SECTION_LABEL_KEY: Record<Tab, string> = {
   'Week Trends':    'recommendUi.trendingTab',
-  'Similar Trends': 'recommendUi.similarPicksTab',
   'Q&A':            'recommendUi.qa',
   'Magazine':       'recommendUi.magazineTab',
 };
@@ -93,10 +71,6 @@ type DummyProduct = {
 };
 
 type ProductPreview = DummyProduct;
-type SimilarPreview = ProductPreview & {
-  similarityTag: string;
-  featuredReview: string;
-};
 
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -122,44 +96,6 @@ function toPreviewProduct(product: Product): ProductPreview {
     reviewCount: getNumberMeta(product, 'favoriteCount'),
     image: product.image ?? '',
     category: product.category,
-  };
-}
-
-function makeSimilarityReasons(profile: Profile, language: string): string[] {
-  const reasons: string[] = [];
-  const isKorean = language.startsWith('ko');
-
-  profile.dietaryRestrictions.forEach(dietId => {
-    const dietLabel = DIET_LABELS[dietId] ?? dietId.replace(/_/g, ' ');
-    reasons.push(isKorean ? `나와 같은 ${dietLabel} 선호` : `Same ${dietLabel} preference`);
-  });
-
-  profile.allergyProfile.forEach(allergenId => {
-    const allergenLabel = getAllergenDisplayName(allergenId, language);
-    reasons.push(isKorean ? `나와 같은 ${allergenLabel} 알러지` : `Same ${allergenLabel} allergy`);
-  });
-
-  if (profile.sensitivityLevel === 'strict') {
-    reasons.push(isKorean ? '나와 같은 strict 민감도' : 'Same strict sensitivity');
-  }
-
-  return reasons.length > 0
-    ? reasons
-    : [isKorean ? '나와 비슷한 식품 안전 프로필' : 'Similar food safety profile'];
-}
-
-function toSimilarPreview(product: Product, index: number, profile: Profile, language: string): SimilarPreview {
-  const reasons = makeSimilarityReasons(profile, language);
-  const reason = reasons[index % reasons.length];
-  const isKorean = language.startsWith('ko');
-  const intro = isKorean
-    ? `${reason}을 가진 사용자가 남긴 리뷰예요.`
-    : `Review from a user with ${reason.toLowerCase()}.`;
-
-  return {
-    ...toPreviewProduct(product),
-    similarityTag: reason,
-    featuredReview: `"${intro} The ingredient list felt clear, and this matched the same profile settings I check before buying."`,
   };
 }
 
@@ -195,44 +131,6 @@ function ProductRow({
         </View>
       </View>
       {showChevron && <Text style={styles.rowChevron}>›</Text>}
-    </View>
-  );
-}
-
-// 각 카드 리뷰가 순서대로 1개씩 표시
-function SimilarList({ items }: { items: SimilarPreview[] }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const opacity = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (items.length === 0) return undefined;
-    const t = setInterval(() => {
-      Animated.timing(opacity, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-        setActiveIdx(prev => (prev + 1) % items.length);
-        Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
-      });
-    }, 3500);
-    return () => clearInterval(t);
-  }, [items.length, opacity]);
-
-  if (items.length === 0) return null;
-
-  return (
-    <View style={styles.cardList}>
-      {items.map((item, i) => (
-        <View key={item.id} style={styles.simCard}>
-          <View style={styles.simCardTop}>
-            <ProductRow item={item} showChevron />
-          </View>
-          {/* 리뷰 시스템 (BE /reviews) 미구현 — mock review 텍스트 노출 차단. */}
-          {REVIEW_FEATURES_ENABLED && i === activeIdx && (
-            <Animated.View style={[styles.reviewBox, { opacity }]}>
-              <Text style={styles.reviewTag}>{item.similarityTag}</Text>
-              <Text style={styles.reviewText}>{item.featuredReview}</Text>
-            </Animated.View>
-          )}
-        </View>
-      ))}
     </View>
   );
 }
@@ -379,13 +277,10 @@ function CategoryPreviewList({
 export default function CommunityScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const activeProfile = useUserStore(state => state.activeProfile);
-  const language = useUserStore(state => state.currentUser.language);
   const [activeTab,    setActiveTab]    = useState<Tab>('Week Trends');
   // trending 은 Product 그대로 보관 — RecommendProductDetail 네비게이션에 전체 Product 필요.
   // ProductRow 렌더 시점에서만 toPreviewProduct 변환.
   const [trendingProducts,  setTrendingProducts]  = useState<Product[]>([]);
-  const [similarProducts,   setSimilarProducts]   = useState<Product[]>([]);
   const [trendingCategory,  setTrendingCategory]  = useState('all');
   const [qaPreview,         setQaPreview]         = useState<QAQuestion[]>([]);
   const [magazinePreview,   setMagazinePreview]   = useState<MagazineItem[]>([]);
@@ -426,12 +321,11 @@ export default function CommunityScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    // GET /community/feed 한 번에 weekly + similar 두 리스트 회수 (네트워크 절약).
+    // GET /community/feed 의 weeklyTrending 만 사용 (similarUsersPicks 섹션 제거됨).
     Promise.all([getCommunityFeed(50), getQAQuestions(), getMagazineItems()])
       .then(([feed, qa, magazines]) => {
         if (cancelled) return;
         setTrendingProducts(feed.weeklyTrending);
-        setSimilarProducts(feed.similarUsersPicks);
         setQaPreview(qa.questions.filter(question => !question.isNotice).slice(0, 3));
         setMagazinePreview(magazines.slice(0, 3));
       })
@@ -450,7 +344,6 @@ export default function CommunityScreen({ navigation }: Props) {
           console.warn('[CommunityScreen] feed load failed:', msg);
         }
         setTrendingProducts([]);
-        setSimilarProducts([]);
         setQaPreview([]);
         setMagazinePreview([]);
       });
@@ -460,9 +353,6 @@ export default function CommunityScreen({ navigation }: Props) {
   const trendingPreview = trendingProducts
     .filter(product => trendingCategory === 'all' || product.category === trendingCategory)
     .slice(0, 9);
-  const similarPreview = similarProducts
-    .slice(0, 3)
-    .map((product, index) => toSimilarPreview(product, index, activeProfile, language));
 
   function handleTabPress(tab: Tab) {
     isProgrammatic.current = true;
@@ -561,19 +451,6 @@ export default function CommunityScreen({ navigation }: Props) {
                 pointerEvents="none"
               />
             </View>
-          </View>
-        );
-
-      case 'Similar Trends':
-        return (
-          <View style={styles.section}>
-            <SectionHeader title={t('recommendUi.similarPicks')} onPress={() => navigation.navigate('SimilarUsersFavorites')} showChevron={false} />
-            <CategoryPreviewList
-              selectedCategory="all"
-              onSelect={() => {}}
-              onMorePress={() => navigation.navigate('SimilarUsersFavorites')}
-            />
-            <SimilarList items={similarPreview} />
           </View>
         );
 
@@ -711,7 +588,7 @@ export default function CommunityScreen({ navigation }: Props) {
           >
             {renderSection(tab)}
             {i < TABS.length - 1 && (
-              <View style={[styles.sectionGap, (tab === 'Similar Trends' || tab === 'Q&A') && styles.sectionGapLarge]} />
+              <View style={[styles.sectionGap, tab === 'Q&A' && styles.sectionGapLarge]} />
             )}
           </View>
         ))}
@@ -895,8 +772,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Bold',
   },
 
-  // Product row (shared for Trending + Similar inner)
-  productRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 8 },
+  // Product row — paddingHorizontal 좌우 대칭 명시. trendCard 의 paddingHorizontal 과 합쳐 시각 균형.
+  productRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 8, paddingHorizontal: 0 },
   productThumb: {
     width: 86,
     height: 86,
@@ -919,50 +796,19 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    width: 60,
+    // 60→24 — 우측 fade gradient 가 카드 콘텐츠를 과도하게 가려 시각적 좌우 비대칭 유발하던 문제 해소.
+    // "더 있음" 시그널은 유지하면서 콘텐츠 가림은 최소화.
+    width: 24,
   },
   trendList: { gap: 10, paddingVertical: 4 },
   trendCard: {
     width: SCREEN_W - 130,
-    paddingHorizontal: 12,
+    // paddingLeft / paddingRight 명시 — 좌우 대칭 보장.
+    paddingLeft: 12,
+    paddingRight: 12,
     paddingVertical: 8,
   },
   rowDivider:{ height: 1, backgroundColor: C.line, marginVertical: 6 },
-
-  // Similar cards
-  cardList: { gap: 12 },
-  simCard: {
-    borderWidth: 1,
-    borderColor: C.muted,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  simCardTop: { padding: 14 },
-  reviewBox: {
-    backgroundColor: C.reviewBg,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-  },
-  reviewTag: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: C.muted,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginBottom: 8,
-    color: C.mid,
-    fontSize: 11,
-    fontFamily: 'Pretendard-SemiBold',
-    letterSpacing: -0.2,
-  },
-  reviewText: {
-    fontSize: 14,
-    fontFamily: 'Pretendard-Regular',
-    color: C.mid,
-    letterSpacing: -0.285,
-    lineHeight: 21,
-  },
 
   // Q&A
   qaRow:   { paddingVertical: 12, paddingRight: 30 },
