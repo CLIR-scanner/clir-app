@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { MagazineItem, Product, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import Skeleton from '../../components/common/Skeleton';
 import { getCommunityFeed, getMagazineItems, getQAQuestions } from '../../services/recommend.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
@@ -272,6 +273,112 @@ function CategoryPreviewList({
   );
 }
 
+// ── Skeleton sub-components ───────────────────────────────────────────────────
+// 각 placeholder 사이즈는 데이터 로드 후 실제 노출되는 UI 의 width/height/margin
+// 과 1:1 로 일치시킨다. layout shift 가 발생하지 않도록 height 는 명시 값 또는
+// 실제 lineHeight 와 동일한 픽셀 값을 사용.
+
+function SkeletonProductRow() {
+  return (
+    <View style={styles.productRow}>
+      <Skeleton width={86} height={86} borderRadius={9} />
+      <View style={styles.productInfo}>
+        <Skeleton width="80%" height={18} borderRadius={4} style={{ marginTop: 6 }} />
+        <Skeleton width="55%" height={14} borderRadius={4} />
+        <Skeleton width={72} height={26} borderRadius={28} style={{ marginTop: 8 }} />
+      </View>
+    </View>
+  );
+}
+
+function TrendingSkeleton() {
+  return (
+    <View style={styles.trendScrollWrap}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.trendList}
+        scrollEnabled={false}
+      >
+        {[0, 1, 2].map(colIdx => (
+          <View key={colIdx} style={styles.trendCard}>
+            {[0, 1, 2].map(rowIdx => (
+              <View key={rowIdx}>
+                <SkeletonProductRow />
+                {rowIdx < 2 && <View style={styles.rowDivider} />}
+              </View>
+            ))}
+          </View>
+        ))}
+      </ScrollView>
+      <LinearGradient
+        colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.trendFade}
+        pointerEvents="none"
+      />
+    </View>
+  );
+}
+
+function QASkeleton() {
+  return (
+    <>
+      {[0, 1, 2].map(idx => (
+        <View key={idx}>
+          <View style={styles.qaRow}>
+            <Skeleton width="75%" height={18} borderRadius={4} style={{ marginBottom: 5 }} />
+            <Skeleton width="95%" height={14} borderRadius={4} style={{ marginBottom: 4 }} />
+            <Skeleton width="60%" height={14} borderRadius={4} style={{ marginBottom: 8 }} />
+            <Skeleton width={70} height={12} borderRadius={4} />
+          </View>
+          {idx < 2 && <View style={styles.rowDivider} />}
+        </View>
+      ))}
+    </>
+  );
+}
+
+function MagazineSkeleton() {
+  return (
+    <View style={styles.magScrollWrap}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.magList}
+        scrollEnabled={false}
+      >
+        {[0, 1, 2].map(idx => (
+          <View key={idx} style={[styles.magCard, styles.magCardSkeleton]}>
+            <Skeleton
+              width={162}
+              height={232}
+              borderRadius={8}
+              style={{ margin: 9, marginRight: 14 }}
+            />
+            <View style={styles.magContent}>
+              <Skeleton width="92%" height={18} borderRadius={4} style={{ marginBottom: 6 }} />
+              <Skeleton width="65%" height={18} borderRadius={4} style={{ marginBottom: 14 }} />
+              <Skeleton width="100%" height={12} borderRadius={4} style={{ marginBottom: 4 }} />
+              <Skeleton width="95%" height={12} borderRadius={4} style={{ marginBottom: 4 }} />
+              <Skeleton width="90%" height={12} borderRadius={4} style={{ marginBottom: 4 }} />
+              <Skeleton width="78%" height={12} borderRadius={4} />
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+      <LinearGradient
+        colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.magFade}
+        pointerEvents="none"
+      />
+    </View>
+  );
+}
+
 // ── CommunityScreen ───────────────────────────────────────────────────────────
 
 export default function CommunityScreen({ navigation }: Props) {
@@ -284,6 +391,8 @@ export default function CommunityScreen({ navigation }: Props) {
   const [trendingCategory,  setTrendingCategory]  = useState('all');
   const [qaPreview,         setQaPreview]         = useState<QAQuestion[]>([]);
   const [magazinePreview,   setMagazinePreview]   = useState<MagazineItem[]>([]);
+  // Promise.all 로 묶여있어 세 fetch 가 모두 끝날 때까지 skeleton 유지.
+  const [isLoading,         setIsLoading]         = useState(true);
 
   const mainScrollRef    = useRef<ScrollView>(null);
   const sectionY         = useRef<Partial<Record<Tab, number>>>({});
@@ -321,6 +430,7 @@ export default function CommunityScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    setIsLoading(true);
     // GET /community/feed 의 weeklyTrending 만 사용 (similarUsersPicks 섹션 제거됨).
     Promise.all([getCommunityFeed(50), getQAQuestions(), getMagazineItems()])
       .then(([feed, qa, magazines]) => {
@@ -346,6 +456,9 @@ export default function CommunityScreen({ navigation }: Props) {
         setTrendingProducts([]);
         setQaPreview([]);
         setMagazinePreview([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
       });
     return () => { cancelled = true; };
   }, []);
@@ -417,40 +530,44 @@ export default function CommunityScreen({ navigation }: Props) {
               onSelect={setTrendingCategory}
               onMorePress={() => navigation.navigate('WeekendPopular')}
             />
-            <View style={styles.trendScrollWrap}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.trendList}
-              >
-                {[0, 1, 2].map(colIdx => {
-                  const colItems = trendingPreview.slice(colIdx * 3, colIdx * 3 + 3);
-                  if (colItems.length === 0) return null;
-                  return (
-                    <View key={colIdx} style={styles.trendCard}>
-                      {colItems.map((item, idx) => (
-                        <View key={item.id}>
-                          <TouchableOpacity
-                            onPress={() => navigation.navigate('RecommendProductDetail', { product: item })}
-                            activeOpacity={0.7}
-                          >
-                            <ProductRow item={toPreviewProduct(item)} />
-                          </TouchableOpacity>
-                          {idx < colItems.length - 1 && <View style={styles.rowDivider} />}
-                        </View>
-                      ))}
-                    </View>
-                  );
-                })}
-              </ScrollView>
-              <LinearGradient
-                colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.trendFade}
-                pointerEvents="none"
-              />
-            </View>
+            {isLoading ? (
+              <TrendingSkeleton />
+            ) : (
+              <View style={styles.trendScrollWrap}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.trendList}
+                >
+                  {[0, 1, 2].map(colIdx => {
+                    const colItems = trendingPreview.slice(colIdx * 3, colIdx * 3 + 3);
+                    if (colItems.length === 0) return null;
+                    return (
+                      <View key={colIdx} style={styles.trendCard}>
+                        {colItems.map((item, idx) => (
+                          <View key={item.id}>
+                            <TouchableOpacity
+                              onPress={() => navigation.navigate('RecommendProductDetail', { product: item })}
+                              activeOpacity={0.7}
+                            >
+                              <ProductRow item={toPreviewProduct(item)} />
+                            </TouchableOpacity>
+                            {idx < colItems.length - 1 && <View style={styles.rowDivider} />}
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+                <LinearGradient
+                  colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.trendFade}
+                  pointerEvents="none"
+                />
+              </View>
+            )}
           </View>
         );
 
@@ -458,22 +575,26 @@ export default function CommunityScreen({ navigation }: Props) {
         return (
           <View style={[styles.section, styles.qaSection]}>
             <SectionHeader title={t('recommendUi.qa')} onPress={() => navigation.navigate('QAScreen')} />
-            {qaPreview.map((item, idx) => (
-              <View key={item.id}>
-                <TouchableOpacity
-                  style={styles.qaRow}
-                  onPress={() => navigation.navigate('QADetail', { questionId: item.id })}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.qaTitle}>{item.title}</Text>
-                  <Text style={styles.qaBody} numberOfLines={2}>{item.body}</Text>
-                  <View style={styles.qaMeta}>
-                    <Text style={styles.qaUser}>{item.author}</Text>
-                  </View>
-                </TouchableOpacity>
-                {idx < qaPreview.length - 1 && <View style={styles.rowDivider} />}
-              </View>
-            ))}
+            {isLoading ? (
+              <QASkeleton />
+            ) : (
+              qaPreview.map((item, idx) => (
+                <View key={item.id}>
+                  <TouchableOpacity
+                    style={styles.qaRow}
+                    onPress={() => navigation.navigate('QADetail', { questionId: item.id })}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.qaTitle}>{item.title}</Text>
+                    <Text style={styles.qaBody} numberOfLines={2}>{item.body}</Text>
+                    <View style={styles.qaMeta}>
+                      <Text style={styles.qaUser}>{item.author}</Text>
+                    </View>
+                  </TouchableOpacity>
+                  {idx < qaPreview.length - 1 && <View style={styles.rowDivider} />}
+                </View>
+              ))
+            )}
           </View>
         );
 
@@ -481,38 +602,42 @@ export default function CommunityScreen({ navigation }: Props) {
         return (
           <View style={[styles.section, styles.magazineSection]}>
             <SectionHeader title={t('recommendUi.magazine')} onPress={() => navigation.navigate('MagazineScreen')} />
-            <View style={styles.magScrollWrap}>
-              <FlatList
-                data={magazinePreview}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.magList}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.magCard}
-                    activeOpacity={0.85}
-                    onPress={() => navigation.navigate('MagazineDetail', { articleId: item.id })}
-                  >
-                    <View style={styles.magImgBox}>
-                      <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                    </View>
-                    <View style={styles.magContent}>
-                      <Text style={styles.magTitle} numberOfLines={2}>{item.title}</Text>
-                      <Text style={styles.magDesc}  numberOfLines={4}>{item.body}</Text>
-                      <Text style={styles.magSeeMore}>{t('recommendUi.seeMore')}</Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-              <LinearGradient
-                colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.magFade}
-                pointerEvents="none"
-              />
-            </View>
+            {isLoading ? (
+              <MagazineSkeleton />
+            ) : (
+              <View style={styles.magScrollWrap}>
+                <FlatList
+                  data={magazinePreview}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={item => item.id}
+                  contentContainerStyle={styles.magList}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.magCard}
+                      activeOpacity={0.85}
+                      onPress={() => navigation.navigate('MagazineDetail', { articleId: item.id })}
+                    >
+                      <View style={styles.magImgBox}>
+                        <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      </View>
+                      <View style={styles.magContent}>
+                        <Text style={styles.magTitle} numberOfLines={2}>{item.title}</Text>
+                        <Text style={styles.magDesc}  numberOfLines={4}>{item.body}</Text>
+                        <Text style={styles.magSeeMore}>{t('recommendUi.seeMore')}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                />
+                <LinearGradient
+                  colors={['rgba(253,255,253,0)', 'rgba(253,255,253,0.6)', 'rgba(253,255,253,1)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.magFade}
+                  pointerEvents="none"
+                />
+              </View>
+            )}
           </View>
         );
 
@@ -868,6 +993,12 @@ const styles = StyleSheet.create({
     backgroundColor: C.reviewBg,
     flexDirection: 'row',
     overflow: 'hidden',
+  },
+  // skeleton variant: 동일 외곽 크기를 유지하되 dark 보더 대신 light divider 톤으로
+  // 로딩 상태가 시각적으로 덜 무겁게 보이게 한다.
+  magCardSkeleton: {
+    borderColor: C.line,
+    backgroundColor: C.bg,
   },
   magImgBox: {
     width: 162,

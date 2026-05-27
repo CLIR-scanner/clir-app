@@ -21,6 +21,7 @@ import {
   INITIAL_FILTERS,
 } from '../../components/common/FilterBottomSheet';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import Skeleton from '../../components/common/Skeleton';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { getWeekendPopular } from '../../services/recommend.service';
 import { useUserStore } from '../../store/user.store';
@@ -105,6 +106,23 @@ function toggleFilterCategory(filters: FilterState, id: string): FilterState {
       cat.id === id ? { ...cat, selected: !cat.selected } : cat,
     ),
   };
+}
+
+function TrendingRowSkeleton() {
+  // rankRow 의 layout(thumb 86 + info)과 일치. 순위 번호 자리는 작은 bar 로 표현.
+  return (
+    <View style={styles.rankRow}>
+      <Skeleton width={24} height={26} borderRadius={4} style={{ marginRight: 12 }} />
+      <View style={styles.productBlock}>
+        <Skeleton width={86} height={86} borderRadius={9} />
+        <View style={styles.productInfo}>
+          <Skeleton width="78%" height={18} borderRadius={4} style={{ marginTop: -3 }} />
+          <Skeleton width="55%" height={14} borderRadius={4} style={{ marginTop: 4 }} />
+          <Skeleton width={72} height={24} borderRadius={28} style={{ marginTop: 8 }} />
+        </View>
+      </View>
+    </View>
+  );
 }
 
 function TrendingRow({
@@ -301,40 +319,47 @@ export default function WeekendPopularScreen({ navigation }: Props) {
         />
       </View>
 
-      <FlatList
-        data={visibleProducts}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: insets.bottom + 126 },
-          filteredProducts.length === 0 && styles.emptyContent,
-        ]}
-        ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.2}
-        renderItem={({ item, index }) => (
-          <TrendingRow
-            product={item}
-            index={index}
-            onPress={() => handleProductPress(item)}
-          />
-        )}
-        ListFooterComponent={
-          isLoadingMore ? (
-            <ActivityIndicator size="small" color={C.dark} style={styles.footerSpinner} />
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color={C.dark} />
-            ) : (
+      {isLoading ? (
+        <View style={styles.skeletonList}>
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <View key={idx}>
+              <TrendingRowSkeleton />
+              {idx < 7 && <View style={styles.rowDivider} />}
+            </View>
+          ))}
+        </View>
+      ) : (
+        <FlatList
+          data={visibleProducts}
+          keyExtractor={item => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: insets.bottom + 126 },
+            filteredProducts.length === 0 && styles.emptyContent,
+          ]}
+          ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.2}
+          renderItem={({ item, index }) => (
+            <TrendingRow
+              product={item}
+              index={index}
+              onPress={() => handleProductPress(item)}
+            />
+          )}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <ActivityIndicator size="small" color={C.dark} style={styles.footerSpinner} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
               <Text style={styles.emptyText}>{error ?? t('search.empty')}</Text>
-            )}
-          </View>
-        }
-      />
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
@@ -413,6 +438,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.38,
   },
   listContent: {
+    paddingTop: 8,
+  },
+  skeletonList: {
     paddingTop: 8,
   },
   emptyContent: {

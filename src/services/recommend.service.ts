@@ -460,10 +460,18 @@ const MAGAZINE_ITEMS: MagazineItem[] = [
   },
 ];
 
+// Mock 응답이라 즉시 resolve 되면 skeleton UI 가 보이지 않는다.
+// BE 연동 후엔 자연 latency 가 생기므로 이 헬퍼는 제거 대상.
+const MOCK_FETCH_DELAY_MS = 700;
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * /recommend/magazine — 매거진 아티클 목록을 반환한다.
  */
 export async function getMagazineItems(category?: string): Promise<MagazineItem[]> {
+  await delay(MOCK_FETCH_DELAY_MS);
   if (!category || category === 'all') return MAGAZINE_ITEMS;
   return MAGAZINE_ITEMS.filter(item => item.category === category);
 }
@@ -472,6 +480,7 @@ export async function getMagazineItems(category?: string): Promise<MagazineItem[
  * /recommend/magazine/:id — 매거진 아티클 단건 조회
  */
 export async function getMagazineItem(id: string): Promise<MagazineItem | null> {
+  await delay(MOCK_FETCH_DELAY_MS);
   return MAGAZINE_ITEMS.find(m => m.id === id) ?? null;
 }
 
