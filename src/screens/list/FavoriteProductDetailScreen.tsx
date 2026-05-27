@@ -22,6 +22,7 @@ import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
 import { makeLocalId } from '../../lib/localId';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import { useResponsive } from '../../lib/responsive';
 
 type Props = NativeStackScreenProps<ListStackParamList, 'FavoriteProductDetail'>;
 
@@ -61,7 +62,8 @@ const VERDICT_BORDER: Record<RiskLevel, string> = {
 export default function FavoriteProductDetailScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
   const { product: initialProduct, hideTitle = false } = route.params;
-  const insets = useSafeAreaInsets();
+  const insets  = useSafeAreaInsets();
+  const { pad } = useResponsive();
 
   const [product, setProduct] = useState<Product>(initialProduct ?? DUMMY_GOOD_PRODUCT);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -222,7 +224,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
     <View style={[styles.root, { paddingTop: insets.top }]}>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: pad.pageH }]}>
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={() => navigation.goBack()}
@@ -253,7 +255,10 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 
       {/* ── Scrollable content ──────────────────────────────────────────────── */}
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 4, flexGrow: 1 }]}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingHorizontal: pad.pageH, paddingBottom: insets.bottom + 4, flexGrow: 1 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
 
@@ -288,8 +293,8 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 
         {/* 3-A. All Ingredients (Good only) */}
         {!showRisk && allIngredients.length > 0 && (
-          <View style={styles.ingredientSection}>
-            <View style={styles.ingredientBox}>
+          <View style={[styles.ingredientSection, { marginHorizontal: pad.boxOuterH }]}>
+            <View style={[styles.ingredientBox, { paddingHorizontal: pad.boxH }]}>
               {allIngredients.map((name, idx) => (
                 <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
               ))}
@@ -304,8 +309,8 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 
         {/* 3-B. Risk box (Bad / Poor) — fieldset style */}
         {showRisk && (
-          <View style={styles.riskSection}>
-            <View style={[styles.riskBoxOuter, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder }]}>
+          <View style={[styles.riskSection, { marginHorizontal: pad.boxOuterH }]}>
+            <View style={[styles.riskBoxOuter, { backgroundColor: riskBoxBg, borderColor: riskBoxBorder, paddingHorizontal: pad.boxH }]}>
               <Text
                 style={styles.riskWarning}
                 numberOfLines={1}
@@ -339,8 +344,8 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
 
         {/* 5. All Ingredients (Bad / Poor — bottom) */}
         {showRisk && allIngredients.length > 0 && (
-          <View style={styles.ingredientSection}>
-            <View style={styles.ingredientBox}>
+          <View style={[styles.ingredientSection, { marginHorizontal: pad.boxOuterH }]}>
+            <View style={[styles.ingredientBox, { paddingHorizontal: pad.boxH }]}>
               {allIngredients.map((name, idx) => (
                 <Text key={`${idx}-${name}`} style={styles.ingredientItem}>{name}</Text>
               ))}
@@ -358,7 +363,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
       {/* ── Ingredient detail modal ───────────────────────────────────────── */}
       <Modal visible={modalOpen} transparent animationType="slide" onRequestClose={closeModal}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeModal}>
-          <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
+          <TouchableOpacity activeOpacity={1} style={[styles.modalSheet, { paddingHorizontal: pad.pageH }]}>
             <View style={styles.modalHandle} />
 
             {detailLoading ? (
@@ -408,12 +413,11 @@ const PILL_H = 18;
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
-  // ── Header
+  // ── Header (paddingHorizontal 은 런타임에 pad.pageH 로 주입)
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
     paddingVertical: 12,
   },
   iconBtn:     { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
@@ -422,8 +426,8 @@ const styles = StyleSheet.create({
   heartActive: { color: '#FF3B3B' },
   headerTitle: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, lineHeight: 32 },
 
-  // ── Scroll
-  scroll: { paddingHorizontal: 24, paddingTop: 40 },
+  // ── Scroll (paddingHorizontal 은 런타임에 pad.pageH 로 주입)
+  scroll: { paddingTop: 40 },
 
   // ── Product image
   imgWrap: { alignItems: 'center', marginBottom: 20 },
@@ -458,14 +462,14 @@ const styles = StyleSheet.create({
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset
-  ingredientSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H, marginHorizontal: 12 },
+  // marginHorizontal / paddingHorizontal 은 런타임에 pad.boxOuterH / pad.boxH 로 주입
+  ingredientSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
   ingredientBox: {
     borderWidth: 1,
     borderColor: DARK_GREEN,
     borderRadius: 22,
-    paddingTop: PILL_H + 16,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
+    paddingTop: PILL_H + 12,
+    paddingBottom: 18,
     alignItems: 'center',
   },
   ingredientLabelWrap: { position: 'absolute', top: -PILL_H, left: 0, right: 0, alignItems: 'center' },
@@ -484,14 +488,13 @@ const styles = StyleSheet.create({
 
   // ── Disclaimer
 
-  // ── Risk box (fieldset)
-  riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H, marginHorizontal: 12 },
+  // ── Risk box (fieldset. marginHorizontal / paddingHorizontal 은 런타임 주입)
+  riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
   riskBoxOuter: {
     borderWidth: 1,
     borderRadius: 16,
-    paddingTop: PILL_H + 14,
-    paddingBottom: 18,
-    paddingHorizontal: 12,
+    paddingTop: PILL_H + 10,
+    paddingBottom: 14,
     alignItems: 'center',
   },
   riskLabelWrap: { position: 'absolute', top: -PILL_H, left: 0, right: 0, alignItems: 'center' },
@@ -530,7 +533,8 @@ const styles = StyleSheet.create({
 
   // ── Ingredient detail modal
   modalOverlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet:       { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingBottom: 40, paddingTop: 12, minHeight: 200 },
+  // modalSheet.paddingHorizontal 은 런타임에 pad.pageH 로 주입
+  modalSheet:       { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40, paddingTop: 12, minHeight: 200 },
   modalHandle:      { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#D0D0D0', marginBottom: 16 },
   modalLoadingWrap: { paddingVertical: 40, alignItems: 'center' },
   modalHeader:      { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
