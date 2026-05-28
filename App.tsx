@@ -12,7 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
 import i18n from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
-import { useUserStore } from './src/store/user.store';
+import { useUserStore, selectIsLoggedIn } from './src/store/user.store';
 import { useScanStore } from './src/store/scan.store';
 import SplashOverlay from './src/components/common/SplashOverlay';
 import ErrorBoundaryFallback from './src/components/common/ErrorBoundaryFallback';
@@ -32,6 +32,9 @@ function App() {
   const isInitialized = useUserStore(s => s.isInitialized);
   const initialize    = useUserStore(s => s.initialize);
   const language      = useUserStore(s => s.currentUser.language);
+  // 바텀 네비(스캔 버튼)로 향하는 경로일 때만 스플래시 로고가 스캔버튼으로 tuck.
+  // 미인증/약관 미동의 → Auth 플로우(바텀 네비 없음) → tuck 생략하고 페이드아웃.
+  const tuckToScanButton = useUserStore(s => selectIsLoggedIn(s.currentUser));
 
   // 스플래시 오버레이가 전 과정(인트로→hold→C 수축→스캔버튼 tuck→앱 노출)을
   // 끝낼 때까지 위에 떠 있는다. 로딩이 아무리 빨라도 모션이 잘리지 않는다.
@@ -86,7 +89,11 @@ function App() {
           </Sentry.ErrorBoundary>
           {/* 스플래시 전 과정 종료 전까지 최상단 유지 */}
           {!splashFinished && (
-            <SplashOverlay ready={appReady} onFinished={() => setSplashFinished(true)} />
+            <SplashOverlay
+              ready={appReady}
+              tuckToScanButton={tuckToScanButton}
+              onFinished={() => setSplashFinished(true)}
+            />
           )}
         </View>
       </SafeAreaProvider>
