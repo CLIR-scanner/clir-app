@@ -600,8 +600,9 @@ export default function QADetailScreen({ navigation, route }: Props) {
           // 실제 데이터 layout 과 동일한 paddingHorizontal/paddingTop 으로 감싸
           // 로드 완료 시 layout shift 가 없도록 한다.
           <ScrollView
+            style={styles.list}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 120 }]}
+            contentContainerStyle={[styles.listContent, { paddingBottom: 24 }]}
           >
             <QuestionCardSkeleton />
             <View style={[styles.answerTitleRow, { marginTop: 4 }]}>
@@ -620,8 +621,9 @@ export default function QADetailScreen({ navigation, route }: Props) {
         <FlatList
           data={answers}
           keyExtractor={item => item.id}
+          style={styles.list}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 120 }]}
+          contentContainerStyle={[styles.listContent, { paddingBottom: 24 }]}
           ListHeaderComponent={
             <View>
               <View style={[styles.questionCard, question.isNotice && styles.noticeCard]}>
@@ -823,6 +825,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: C.bg,
+  },
+  // 헤더와 입력 바 사이 공간을 채우는 리스트 영역 — in-flow 입력 바 레이아웃에 필요.
+  list: {
+    flex: 1,
   },
   header: {
     height: 82,
@@ -1117,11 +1123,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 28,
   },
+  // 입력 바는 흐름(in-flow)에 두어 KeyboardAvoidingView(iOS) / adjustResize(Android)
+  // 가 키보드 높이만큼 위로 밀어올릴 수 있게 한다. (position:absolute 면 키보드에 가려짐)
   replyBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
