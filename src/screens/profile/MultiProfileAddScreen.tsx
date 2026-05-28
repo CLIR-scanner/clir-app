@@ -594,7 +594,12 @@ export default function MultiProfileAddScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <TouchableOpacity onPress={goBack}>
+        <TouchableOpacity
+          onPress={goBack}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Text style={s.backText}>{'←'}</Text>
         </TouchableOpacity>
         <View style={s.progressBar}>

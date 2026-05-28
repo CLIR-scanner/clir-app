@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  Image,
   Dimensions,
   Keyboard,
   ActivityIndicator,
@@ -14,10 +13,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/colors';
 import { SearchStackParamList, Product, RiskLevel } from '../../types';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import PullToRefreshList from '../../components/common/PullToRefreshList';
+import Skeleton from '../../components/common/Skeleton';
+import FadeInImage from '../../components/common/FadeInImage';
 import FilterBottomSheet, { FilterState, INITIAL_FILTERS } from '../../components/common/FilterBottomSheet';
 import FilterTuneIcon from '../../components/common/FilterTuneIcon';
 import { getSearchSuggestions, getAllProducts, searchProducts } from '../../services/search.service';
@@ -58,7 +60,7 @@ function ProductCard({ item, onPress, favorited, onFavorite }: {
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       <View style={[styles.cardImg, { height: CARD_IMG_H }]}>
         {item.image ? (
-          <Image
+          <FadeInImage
             source={{ uri: item.image }}
             style={StyleSheet.absoluteFill}
             resizeMode="contain"
@@ -71,7 +73,9 @@ function ProductCard({ item, onPress, favorited, onFavorite }: {
         <TouchableOpacity
           style={styles.bookmarkBtn}
           onPress={onFavorite}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel={favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')}
         >
           <Text style={[styles.bookmarkIcon, favorited && styles.bookmarkIconActive]}>
             {favorited ? '♥' : '♡'}
@@ -105,7 +109,7 @@ function ProductRow({ item, onPress }: { item: Product; onPress: () => void }) {
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.rowThumb}>
         {item.image
-          ? <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+          ? <FadeInImage source={{ uri: item.image }} style={StyleSheet.absoluteFill} resizeMode="contain" />
           : <View style={styles.rowThumbPlaceholder} />
         }
       </View>
@@ -121,6 +125,45 @@ function ProductRow({ item, onPress }: { item: Product; onPress: () => void }) {
 
       <Text style={styles.rowChevron}>›</Text>
     </TouchableOpacity>
+  );
+}
+
+// ── Loading skeletons ────────────────────────────────────────────────────────
+// 실제 row/card 레이아웃과 동일한 placeholder — spinner 대신 노출해 데이터 도착 시
+// layout shift 없이 매끄럽게 전환된다.
+
+function SearchRowSkeleton() {
+  return (
+    <View style={styles.skeletonListWrap}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <View key={`skr-${i}`}>
+          <View style={styles.row}>
+            <Skeleton width={THUMB_SIZE} height={THUMB_SIZE} borderRadius={11} />
+            <View style={styles.rowInfo}>
+              <Skeleton width="70%" height={16} borderRadius={4} />
+              <Skeleton width="40%" height={12} borderRadius={4} />
+              <Skeleton width={74} height={26} borderRadius={28} />
+            </View>
+          </View>
+          {i < 5 && <View style={styles.listDivider} />}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function SearchGridSkeleton() {
+  return (
+    <View style={styles.skeletonGridWrap}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <View key={`skc-${i}`} style={styles.skeletonCard}>
+          <Skeleton width="100%" height={CARD_IMG_H} borderRadius={15} />
+          <Skeleton width={74} height={26} borderRadius={28} style={{ marginTop: 8 }} />
+          <Skeleton width="85%" height={15} borderRadius={4} style={{ marginTop: 8 }} />
+          <Skeleton width="55%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -293,6 +336,7 @@ const favorites             = useListStore(s => s.favorites);
 async function handleFavoriteToggle(product: Product) {
     if (favInFlightRef.current.has(product.id)) return; // 연타 중복 호출 차단
     favInFlightRef.current.add(product.id);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // 즐겨찾기 토글 촉각 피드백
     const existing = favorites.find(f => f.productId === product.id);
     try {
       if (existing) {
@@ -409,11 +453,7 @@ async function handleFavoriteToggle(product: Product) {
 
       {/* ── 검색 결과 / 전체 그리드 ──────────────────────────────── */}
       {isLoading ? (
-        <ActivityIndicator
-          size="small"
-          color={Colors.searchDarkGreen}
-          style={styles.searchSpinner}
-        />
+        query.trim() ? <SearchRowSkeleton /> : <SearchGridSkeleton />
       ) : query.trim() ? (
         /* 검색어 있음 → SearchResultScreen 스타일 리스트 */
         <PullToRefreshList
@@ -578,6 +618,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignSelf: 'center',
     marginTop: 40,
+  },
+  skeletonListWrap: {
+    paddingHorizontal: 22,
+    paddingTop: 4,
+  },
+  skeletonGridWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: GRID_PAD,
+    paddingTop: 4,
+  },
+  skeletonCard: {
+    width: CARD_W,
+    marginBottom: 28,
   },
   footerSpinner: {
     paddingVertical: 16,

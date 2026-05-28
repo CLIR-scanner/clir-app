@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +16,8 @@ import { useUserStore } from '../../store/user.store';
 import { getFavorites, removeFavorite } from '../../services/list.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import PullToRefreshList from '../../components/common/PullToRefreshList';
+import Skeleton from '../../components/common/Skeleton';
+import FadeInImage from '../../components/common/FadeInImage';
 import { Colors } from '../../constants/colors';
 import { useResponsive } from '../../lib/responsive';
 
@@ -131,6 +131,24 @@ export default function FavoritesScreen({ navigation }: Props) {
     navigation.navigate('FavoriteProductDetail', { product: item.product });
   }
 
+  // 로딩 중 실제 row 레이아웃과 동일한 placeholder — spinner 대신 노출해
+  // 데이터 도착 시 layout shift(높이 점프) 없이 매끄럽게 채워진다.
+  function renderSkeletonRow(_: unknown, index: number) {
+    return (
+      <View key={`sk-${index}`}>
+        <View style={[styles.row, { gap: pad.rowGap }]}>
+          <Skeleton width={80} height={80} borderRadius={11} />
+          <View style={styles.info}>
+            <Skeleton width="70%" height={16} borderRadius={4} />
+            <Skeleton width="40%" height={12} borderRadius={4} style={{ marginTop: -4 }} />
+            <Skeleton width={92} height={26} borderRadius={28} />
+          </View>
+        </View>
+        {index < 5 && <View style={styles.divider} />}
+      </View>
+    );
+  }
+
   function renderItem({ item, index }: { item: FavoriteItem; index: number }) {
     const riskLevel = item.product.riskLevel ?? 'safe';
     const badgeColor = BADGE_COLOR[riskLevel];
@@ -147,7 +165,7 @@ export default function FavoritesScreen({ navigation }: Props) {
           {/* Product thumbnail */}
           <View style={styles.thumb}>
             {item.product.image ? (
-              <Image
+              <FadeInImage
                 source={{ uri: item.product.image }}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
@@ -188,8 +206,11 @@ export default function FavoritesScreen({ navigation }: Props) {
 
       {/* ── List / Loading / Error ──────────────────────────────────────────── */}
       {isLoading ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={DARK_GREEN} />
+        <View style={[styles.listContent, { paddingHorizontal: pad.pageH }]}>
+          <View style={styles.pillWrap}>
+            <Skeleton width={150} height={32} borderRadius={50} />
+          </View>
+          {Array.from({ length: 6 }).map((_, i) => renderSkeletonRow(_, i))}
         </View>
       ) : isError ? (
         <View style={styles.empty}>

@@ -34,7 +34,9 @@ export default function AuthNavigator() {
       <Stack.Screen name="TermsDetail" component={TermsDetailScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
       <Stack.Screen name="SurveyLanding" component={SurveyLandingScreen} />
-      <Stack.Group screenOptions={{ animation: 'none' }}>
+      {/* 설문 단계 전환: cross-fade — 진행바(SurveyHeader) 연속성 유지를 위해 slide 대신 fade.
+          상세 사유는 SurveyNavigator.tsx 참고. */}
+      <Stack.Group screenOptions={{ animation: 'fade', animationDuration: 220 }}>
         <Stack.Screen name="Survey" component={SurveyScreen} />
         <Stack.Screen name="SurveyAllergyEditList" component={SurveyAllergyEditListScreen} />
         <Stack.Screen name="SurveyAllergySelect" component={SurveyAllergySelectScreen} />

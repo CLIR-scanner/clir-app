@@ -8,6 +8,12 @@ const es = {
     continue: 'Continuar', done: 'Listo', edit: 'Editar', editList: 'Editar lista', add: 'Añadir',
     clearAll: 'Borrar todo', selected_one: '{{count}} seleccionado', selected_other: '{{count}} seleccionados',
     currentlyActive: 'Activo actualmente', tapToSelect: 'Toca para seleccionar',
+    errorTitle: 'Algo salió mal', errorMessage: 'Se produjo un error inesperado. Inténtalo de nuevo.',
+  },
+  a11y: {
+    back: 'Volver', close: 'Cerrar', clearSearch: 'Borrar búsqueda',
+    addFavorite: 'Añadir a favoritos', removeFavorite: 'Quitar de favoritos',
+    scanGuide: 'Mostrar guía de escaneo', remove: 'Quitar',
   },
   auth: {
     tagline: 'Worry less, eat clir',

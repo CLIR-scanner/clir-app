@@ -30,6 +30,19 @@ const ko = {
     selected_other: '{{count}}개 선택됨',
     currentlyActive:'현재 적용 중',
     tapToSelect:    '탭하여 선택',
+    errorTitle:     '문제가 발생했습니다',
+    errorMessage:   '예기치 않은 오류가 발생했습니다. 다시 시도해 주세요.',
+  },
+
+  // ── Accessibility (아이콘 전용 컨트롤의 VoiceOver 라벨) ──────────────────────
+  a11y: {
+    back:           '뒤로 가기',
+    close:          '닫기',
+    clearSearch:    '검색어 지우기',
+    addFavorite:    '즐겨찾기에 추가',
+    removeFavorite: '즐겨찾기에서 제거',
+    scanGuide:      '스캔 가이드 보기',
+    remove:         '제거',
   },
 
   // ── Auth ──────────────────────────────────────────────────────────────────

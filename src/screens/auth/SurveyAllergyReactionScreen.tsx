@@ -7,6 +7,7 @@ import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyReaction'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyReaction'>;
@@ -63,13 +64,13 @@ export default function SurveyAllergyReactionScreen() {
       </View>
 
       {/* 하단 버튼 */}
-      <TouchableOpacity
+      <PressableScale
         style={[styles.continueButton, !selected && styles.continueDisabled]}
         onPress={handleContinue}
         disabled={!selected}
       >
         <Text style={styles.continueText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }

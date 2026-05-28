@@ -162,7 +162,13 @@ export default function MyProfileEditScreen() {
     <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+        >
           <Text style={styles.backBtn}>{'←'}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('profile.myProfile')}</Text>

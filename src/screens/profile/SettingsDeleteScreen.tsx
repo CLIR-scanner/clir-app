@@ -7,11 +7,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { apiFetch } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
 
 export default function SettingsDeleteScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const logout = useUserStore(s => s.logout);
@@ -47,7 +49,13 @@ export default function SettingsDeleteScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+        >
           <Text style={styles.backBtn}>{'←'}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Delete Account</Text>

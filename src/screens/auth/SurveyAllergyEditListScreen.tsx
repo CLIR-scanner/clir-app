@@ -13,6 +13,7 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { AuthStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyEditList'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyEditList'>;
@@ -81,7 +82,12 @@ export default function SurveyAllergyEditListScreen() {
     <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+        >
           <Text style={styles.backText}>{'←'}</Text>
         </TouchableOpacity>
         <View style={styles.progressBar}>
@@ -103,6 +109,8 @@ export default function SurveyAllergyEditListScreen() {
                   style={styles.chip}
                   onLongPress={() => handleRemoveItem(group.category, item)}
                   onPress={() => handleRemoveItem(group.category, item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('a11y.remove')} ${item}`}
                 >
                   <Text style={styles.chipText}>{item}</Text>
                   <Text style={styles.chipRemove}>  ×</Text>
@@ -172,9 +180,9 @@ export default function SurveyAllergyEditListScreen() {
       </ScrollView>
 
       {/* 하단 버튼 */}
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+      <PressableScale style={styles.continueButton} onPress={handleContinue}>
         <Text style={styles.continueText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }

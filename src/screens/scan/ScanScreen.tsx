@@ -911,6 +911,8 @@ export default function ScanScreen({ navigation }: Props) {
               onPress={() => (isOCRMode ? startOcrGuidePreview() : startBarcodeGuidePreview())}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.scanGuide')}
             >
               <Text style={styles.guideHelpText}>?</Text>
             </TouchableOpacity>
@@ -976,6 +978,8 @@ export default function ScanScreen({ navigation }: Props) {
                   onPress={handleFavorite}
                   disabled={favLoading}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')}
                 >
                   {favLoading ? (
                     <ActivityIndicator size="small" color={Colors.danger} />
@@ -1002,6 +1006,8 @@ export default function ScanScreen({ navigation }: Props) {
             style={isSafe ? styles.goodCardClose : styles.riskCardClose}
             onPress={dismissOverlay}
             hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.close')}
           >
             <Text style={styles.sheetCloseText}>✕</Text>
           </TouchableOpacity>

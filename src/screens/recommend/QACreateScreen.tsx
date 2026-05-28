@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '../../constants/colors';
@@ -49,6 +50,7 @@ const PRODUCT_SEARCH_DEBOUNCE_MS = 300;
 type ProductSuggestion = { productId: string; name: string; brand: string };
 
 export default function QACreateScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<QnaCategory>('all');
   const [title, setTitle]     = useState('');
@@ -182,7 +184,14 @@ export default function QACreateScreen({ navigation }: Props) {
 
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+        >
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Ask Question</Text>
@@ -268,6 +277,8 @@ export default function QACreateScreen({ navigation }: Props) {
                   }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('a11y.remove')}
                 >
                   <Text style={styles.productClear}>✕</Text>
                 </TouchableOpacity>
@@ -338,7 +349,14 @@ export default function QACreateScreen({ navigation }: Props) {
           style={styles.photoScrollRow}
         >
           {photos.map((uri, index) => (
-            <TouchableOpacity key={uri} style={styles.photoThumb} onPress={() => handleRemovePhoto(index)} activeOpacity={0.8}>
+            <TouchableOpacity
+              key={uri}
+              style={styles.photoThumb}
+              onPress={() => handleRemovePhoto(index)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('a11y.remove')} ${index + 1}`}
+            >
               <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
               <View style={styles.photoRemove}>
                 <Text style={styles.photoRemoveText}>✕</Text>

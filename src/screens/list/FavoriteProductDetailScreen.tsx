@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
   Modal,
   ActivityIndicator,
   Linking,
@@ -17,6 +16,7 @@ import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types'
 import { getIngredient, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
+import FadeInImage from '../../components/common/FadeInImage';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
@@ -229,6 +229,8 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
           style={styles.iconBtn}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
         >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
@@ -243,6 +245,8 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
           onPress={handleFavorite}
           disabled={favLoading}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')}
         >
           {favLoading
             ? <ActivityIndicator size="small" color="#FF3B3B" />
@@ -272,7 +276,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
         <View style={styles.imgWrap}>
           <View style={styles.imgBox}>
             {product.image ? (
-              <Image source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              <FadeInImage source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : null}
           </View>
         </View>

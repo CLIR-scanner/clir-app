@@ -10,6 +10,7 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import SurveyHeader from '../../components/common/SurveyHeader';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Survey'>;
 type Route = RouteProp<AuthStackParamList, 'Survey'>;
@@ -71,13 +72,13 @@ export default function SurveyScreen() {
       </View>
 
       {/* 하단 버튼 */}
-      <TouchableOpacity
+      <PressableScale
         style={[styles.continueButton, !selected && styles.continueDisabled]}
         onPress={handleContinue}
         disabled={!selected}
       >
         <Text style={styles.continueText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }

@@ -81,26 +81,43 @@ export default function ProfileScreen() {
   const currentLanguage = useUserStore(s => s.currentUser.language);
   const setLanguage     = useUserStore(s => s.setLanguage);
   const [showLangPicker, setShowLangPicker] = useState(false);
-  // 배경(backdrop)은 fade, 시트만 아래에서 슬라이드 — slide 애니가 전체화면
-  // backdrop 까지 끌어올려 검은 사각형이 따라오던 현상 제거.
+  // 시트는 아래에서 슬라이드, backdrop 은 opacity 페이드 — 두 모션을 같은
+  // 300ms cubic 으로 parallel 실행해 정확히 동기화한다. (Modal animationType="none"
+  // 으로 두고 직접 제어 → 시트가 fade+slide 로 뭉개지던 현상 제거 + 닫힘 애니 확보.)
   const sheetTY = useRef(new Animated.Value(800)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!showLangPicker) return;
     sheetTY.setValue(800);
-    Animated.timing(sheetTY, {
-      toValue: 0,
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [showLangPicker, sheetTY]);
+    backdropOpacity.setValue(0);
+    Animated.parallel([
+      Animated.timing(sheetTY, {
+        toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      }),
+    ]).start();
+  }, [showLangPicker, sheetTY, backdropOpacity]);
+
+  // 닫힘: 시트 슬라이드 다운 + backdrop 페이드아웃 동기 실행 후 unmount.
+  function closeLangPicker() {
+    Animated.parallel([
+      Animated.timing(sheetTY, {
+        toValue: 800, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true,
+      }),
+    ]).start(() => setShowLangPicker(false));
+  }
 
   const currentLangLabel = SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.native ?? 'English';
 
   function handleSelectLanguage(code: string) {
     setLanguage(code);
     i18n.changeLanguage(code);
-    setShowLangPicker(false);
+    closeLangPicker();
   }
 
 function handleLogout() {
@@ -434,11 +451,11 @@ function handleLogout() {
     <Modal
       visible={showLangPicker}
       transparent
-      animationType="fade"
-      onRequestClose={() => setShowLangPicker(false)}
+      animationType="none"
+      onRequestClose={closeLangPicker}
     >
-      <TouchableWithoutFeedback onPress={() => setShowLangPicker(false)}>
-        <View style={styles.langBackdrop} />
+      <TouchableWithoutFeedback onPress={closeLangPicker}>
+        <Animated.View style={[styles.langBackdrop, { opacity: backdropOpacity }]} />
       </TouchableWithoutFeedback>
 
       <Animated.View

@@ -9,6 +9,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import { openLegal } from '../../lib/legal-urls';
 import { TERMS_VERSION } from '../../constants/legal-version';
@@ -17,13 +18,20 @@ import { TERMS_VERSION } from '../../constants/legal-version';
 const CONTACT_EMAIL = 'clir.pbl2026@gmail.com';
 
 export default function SettingsPrivacyScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+        >
           <Text style={styles.backBtn}>{'←'}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Privacy & Terms</Text>
@@ -62,6 +70,22 @@ export default function SettingsPrivacyScreen() {
           <View style={styles.linkText}>
             <Text style={styles.linkTitle}>Terms of Service</Text>
             <Text style={styles.linkSub}>Rules for using the app and disclaimers</Text>
+          </View>
+          <Text style={styles.chevron}>{'›'}</Text>
+        </TouchableOpacity>
+
+        <View style={styles.divider} />
+
+        <TouchableOpacity
+          style={styles.linkRow}
+          onPress={() => openLegal('cookies')}
+          activeOpacity={0.7}
+          accessibilityRole="link"
+          accessibilityLabel="Open Cookie Policy in browser"
+        >
+          <View style={styles.linkText}>
+            <Text style={styles.linkTitle}>Cookie Policy</Text>
+            <Text style={styles.linkSub}>How we use cookies and tracking technologies</Text>
           </View>
           <Text style={styles.chevron}>{'›'}</Text>
         </TouchableOpacity>

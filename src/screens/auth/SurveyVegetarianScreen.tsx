@@ -11,6 +11,7 @@ import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 import { DIET_TYPE_DESCRIPTIONS } from '../../constants/dietary';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarian'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyVegetarian'>;
@@ -119,13 +120,13 @@ export default function SurveyVegetarianScreen() {
       </Modal>
 
       {/* 하단 고정 버튼 */}
-      <TouchableOpacity
+      <PressableScale
         style={[styles.continueButton, !selected && styles.continueDisabled]}
         onPress={handleContinue}
         disabled={!selected}
       >
         <Text style={styles.continueText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }

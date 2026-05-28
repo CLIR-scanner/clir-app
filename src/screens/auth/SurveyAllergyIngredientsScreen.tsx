@@ -15,6 +15,7 @@ import { getCatalogLanguage } from '../../constants/languages';
 import { fetchAllergenCatalog, AllergenCatalog } from '../../services/allergen.service';
 import { useUserStore } from '../../store/user.store';
 import { getCatalogCategoryDisplayName, getIngredientDisplayName } from '../../lib/display-names';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyIngredients'>;
@@ -132,9 +133,9 @@ export default function SurveyAllergyIngredientsScreen() {
       </ScrollView>
 
       {/* 하단 버튼 */}
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+      <PressableScale style={styles.continueButton} onPress={handleContinue}>
         <Text style={styles.continueText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       {/* 항목 선택 모달 */}
       <Modal
