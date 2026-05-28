@@ -10,6 +10,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '../../constants/colors';
 import { PRODUCT_CATEGORIES } from '../../constants/categories';
 
@@ -66,6 +67,7 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
   }
 
   function toggleCategory(index: number) {
+    void Haptics.selectionAsync(); // 카테고리 선택 촉각 피드백
     updateFilters({
       ...filters,
       categories: filters.categories.map((cat, i) =>
@@ -75,6 +77,7 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
   }
 
   function toggleSafeOnly(next: boolean) {
+    void Haptics.selectionAsync(); // 토글 스위치 촉각 피드백
     updateFilters({ ...filters, safeOnly: next });
   }
 

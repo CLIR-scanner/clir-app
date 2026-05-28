@@ -15,6 +15,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { useUserStore } from './src/store/user.store';
 import { useScanStore } from './src/store/scan.store';
 import SplashOverlay from './src/components/common/SplashOverlay';
+import ErrorBoundaryFallback from './src/components/common/ErrorBoundaryFallback';
 
 // 크래시 / unhandled error 리포팅. DSN 미설정 시 SDK 가 no-op (안전).
 // release / dist 는 native build 정보(CFBundleVersion / versionName) 에서 자동 감지 —
@@ -75,8 +76,14 @@ function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <View style={{ flex: 1, backgroundColor: '#F9FFF3' }}>
-          {/* 앱은 오버레이 아래에 미리 mount — 배경 페이드 시 즉시 드러난다 */}
-          {appReady && <RootNavigator />}
+          {/* 렌더 트리 unhandled 에러 시 흰 화면 크래시 대신 복구 가능한 fallback 노출 +
+              Sentry 자동 캡처. fallback 의 resetError 로 트리 재마운트 시도. */}
+          <Sentry.ErrorBoundary
+            fallback={({ resetError }) => <ErrorBoundaryFallback resetError={resetError} />}
+          >
+            {/* 앱은 오버레이 아래에 미리 mount — 배경 페이드 시 즉시 드러난다 */}
+            {appReady && <RootNavigator />}
+          </Sentry.ErrorBoundary>
           {/* 스플래시 전 과정 종료 전까지 최상단 유지 */}
           {!splashFinished && (
             <SplashOverlay ready={appReady} onFinished={() => setSplashFinished(true)} />

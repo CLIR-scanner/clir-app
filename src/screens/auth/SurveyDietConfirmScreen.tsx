@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
+import PressableScale from '../../components/common/PressableScale';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import VegetarianDietConfirmCircle from '../../components/common/VegetarianDietConfirmCircle';
@@ -42,9 +43,9 @@ export default function SurveyDietConfirmScreen() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+      <PressableScale style={styles.continueButton} onPress={handleContinue}>
         <Text style={styles.continueText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }

@@ -22,6 +22,7 @@ import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription } from '../../lib/display-names';
 import { makeLocalId } from '../../lib/localId';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
+import FadeInImage from '../../components/common/FadeInImage';
 import { useResponsive } from '../../lib/responsive';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'HistoryProductDetail'>;
@@ -248,6 +249,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           style={styles.iconBtn}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
         >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
@@ -262,6 +265,8 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
           onPress={handleFavorite}
           disabled={favLoading}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')}
         >
           {favLoading
             ? <ActivityIndicator size="small" color="#FF3B3B" />
@@ -368,7 +373,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
                   <TouchableOpacity style={[styles.altRow, { gap: pad.rowGap }]} onPress={() => handleAltPress(alt)} activeOpacity={0.7}>
                     <View style={styles.altThumb}>
                       {alt.image ? (
-                        <Image source={{ uri: alt.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                        <FadeInImage source={{ uri: alt.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                       ) : null}
                     </View>
                     <View style={styles.altInfo}>

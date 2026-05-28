@@ -20,6 +20,7 @@ import { AuthStackParamList, SurveyParams } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { SUPPORTED_LANGUAGES } from '../../constants/languages';
 import * as AuthService from '../../services/auth.service';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyLanding'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyLanding'>;
@@ -243,15 +244,14 @@ export default function SurveyLandingScreen() {
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={styles.continueButton}
             onPress={handleContinue}
-            activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={t('common.continue')}
           >
             <Text style={styles.continueText}>{t('common.continue')}</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </View>
     </KeyboardAvoidingView>

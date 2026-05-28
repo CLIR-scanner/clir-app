@@ -24,7 +24,10 @@ export default function SurveyNavigator() {
     <SurveyProgressContext.Provider value={surveyProgress}>
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FDFFFD' } }} initialRouteName="SurveyLanding">
       <Stack.Screen name="SurveyLanding"             component={SurveyLandingScreen}             />
-      <Stack.Group screenOptions={{ animation: 'none' }}>
+      {/* 설문 단계 전환: cross-fade. 각 화면이 자체 SurveyHeader(진행바)를 렌더하므로
+          slide 계열을 쓰면 진행바가 가로로 끌려나가 연속 채움 애니메이션이 깨진다.
+          fade 는 헤더를 제자리에 둔 채 콘텐츠만 부드럽게 디졸브 → 진행바 연속성 유지. */}
+      <Stack.Group screenOptions={{ animation: 'fade', animationDuration: 220 }}>
         <Stack.Screen name="Survey"                    component={SurveyScreen}                    />
         <Stack.Screen name="SurveyAllergyEditList"     component={SurveyAllergyEditListScreen}     />
         <Stack.Screen name="SurveyAllergySelect"       component={SurveyAllergySelectScreen}       />

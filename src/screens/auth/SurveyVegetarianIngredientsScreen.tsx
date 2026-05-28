@@ -13,6 +13,7 @@ import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
 import * as AuthService from '../../services/auth.service';
 import { DIET_AVOIDED_CATEGORIES, DIET_CATEGORY_DESCRIPTIONS, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } from '../../constants/dietary';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarianIngredients'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyVegetarianIngredients'>;
@@ -177,13 +178,13 @@ export default function SurveyVegetarianIngredientsScreen() {
 
       {/* 하단 버튼 */}
       <View style={styles.buttons}>
-        <TouchableOpacity
+        <PressableScale
           style={[styles.continueButton, loading && styles.continueDisabled]}
           onPress={handleContinue}
           disabled={loading}
         >
           <Text style={styles.continueText}>{loading ? t('common.loading') : t('survey.complete')}</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       {/* 카테고리 설명 모달 */}

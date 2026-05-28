@@ -21,6 +21,7 @@ import { addFavorite, getFavorites } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
+import FadeInImage from '../../components/common/FadeInImage';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanResult'>;
 
@@ -260,6 +261,8 @@ export default function ScanResultScreen({ navigation, route }: Props) {
         style={[styles.backBtn, { top: insets.top + 14 }]}
         onPress={() => navigation.goBack()}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel={t('a11y.back')}
       >
         <Text style={styles.backBtnText}>←</Text>
       </TouchableOpacity>
@@ -321,7 +324,13 @@ export default function ScanResultScreen({ navigation, route }: Props) {
           ]}
         >
           {/* Close */}
-          <TouchableOpacity style={styles.sheetClose} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.sheetClose}
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.close')}
+          >
             <Text style={styles.sheetCloseText}>✕</Text>
           </TouchableOpacity>
 
@@ -333,7 +342,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
             {/* Image placeholder */}
             <View style={styles.productImg}>
               {product!.image ? (
-                <Image
+                <FadeInImage
                   source={{ uri: product!.image }}
                   style={StyleSheet.absoluteFill}
                   resizeMode="cover"
@@ -350,6 +359,8 @@ export default function ScanResultScreen({ navigation, route }: Props) {
                   style={[styles.favBtn, favorited && styles.favBtnActive]}
                   onPress={handleFavorite}
                   disabled={favLoading || favorited}
+                  accessibilityRole="button"
+                  accessibilityLabel={favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')}
                 >
                   {favLoading ? (
                     <ActivityIndicator size="small" color={Colors.danger} />

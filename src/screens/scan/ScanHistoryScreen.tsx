@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -17,6 +15,8 @@ import { useUserStore } from '../../store/user.store';
 import { getScanHistory } from '../../services/scan.service';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import PullToRefreshList from '../../components/common/PullToRefreshList';
+import Skeleton from '../../components/common/Skeleton';
+import FadeInImage from '../../components/common/FadeInImage';
 import { Colors } from '../../constants/colors';
 import { useResponsive } from '../../lib/responsive';
 
@@ -109,6 +109,23 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     navigation.navigate('HistoryProductDetail', { product: item.product });
   }
 
+  // 로딩 중 실제 row 와 동일한 placeholder — spinner 대신 노출해 layout shift 방지.
+  function renderSkeletonRow(index: number) {
+    return (
+      <View key={`sk-${index}`}>
+        <View style={[styles.row, { gap: pad.rowGap }]}>
+          <Skeleton width={80} height={80} borderRadius={11} />
+          <View style={styles.info}>
+            <Skeleton width="70%" height={16} borderRadius={4} />
+            <Skeleton width="40%" height={12} borderRadius={4} style={{ marginTop: -4 }} />
+            <Skeleton width={92} height={26} borderRadius={28} />
+          </View>
+        </View>
+        {index < 5 && <View style={styles.divider} />}
+      </View>
+    );
+  }
+
   function reEvaluate(item: ScanHistory): RiskLevel {
     if (!item.productId) return item.result;
     const allergySet = new Set(allergyProfile);
@@ -135,7 +152,7 @@ export default function ScanHistoryScreen({ navigation }: Props) {
           {/* Product image */}
           <View style={styles.thumb}>
             {item.product.image ? (
-              <Image
+              <FadeInImage
                 source={{ uri: item.product.image }}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
@@ -177,6 +194,8 @@ export default function ScanHistoryScreen({ navigation }: Props) {
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
         >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
@@ -187,8 +206,11 @@ export default function ScanHistoryScreen({ navigation }: Props) {
 
       {/* ── List / Loading / Error ──────────────────────────────────────────── */}
       {isLoading ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={TITLE_COLOR} />
+        <View style={[styles.listContent, { paddingHorizontal: pad.pageH }]}>
+          <View style={styles.pillWrap}>
+            <Skeleton width={150} height={32} borderRadius={50} />
+          </View>
+          {Array.from({ length: 6 }).map((_, i) => renderSkeletonRow(i))}
         </View>
       ) : isError ? (
         <View style={styles.empty}>

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
+import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyAllergyDoc'>;
 type Route = RouteProp<AuthStackParamList, 'SurveyAllergyDoc'>;
@@ -67,9 +68,9 @@ export default function SurveyAllergyDocScreen() {
         <Text style={styles.disclaimer}>
           {t('survey.docDisclaimer')}
         </Text>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+        <PressableScale style={styles.continueButton} onPress={handleContinue}>
           <Text style={styles.continueText}>{t('common.continue')}</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </View>
   );
