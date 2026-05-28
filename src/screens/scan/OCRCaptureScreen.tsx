@@ -122,6 +122,7 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
   const favorites     = useListStore(s => s.favorites);
   const addHistory     = useScanStore(s => s.addHistory);
   const replaceHistory = useScanStore(s => s.replaceHistory);
+  const enqueueRetry   = useScanStore(s => s.enqueueRetry);
 
   const [state, setState]             = useState<ScreenState>(initialPhotoUri ? 'analyzing' : 'idle');
   const [capturedUri, setCapturedUri] = useState<string | null>(initialPhotoUri ?? null);
@@ -215,15 +216,33 @@ export default function OCRCaptureScreen({ navigation, route }: Props) {
         result: product.riskLevel,
         product,
       });
-      // BE 동기화 — 'ocr-local-' fallback 은 FK 제약으로 BE 거부 → 호출 스킵. 그 외는 시도하고 실패 silent.
-      if (!product.id.startsWith('ocr-local-')) {
+      // BE 동기화 분기:
+      //   1) 'ocr-local-' = BE upsertProductFromOCR 실패 → FK 위반 확정. 호출 스킵.
+      //      → zustand persist 로 영구화돼있어 앱 재시작에도 살아남지만 BE 와는 영영 sync 안 됨.
+      //      DEV 빌드는 콘솔에 경고 — Sentry 통합 시 알람으로 승급.
+      //   2) 그 외 = saveScanHistory 시도. 실패하면 retryQueue 에 enqueue →
+      //      processRetryQueue(앱 foreground / pull-to-refresh) 가 자동 재시도.
+      if (product.id.startsWith('ocr-local-')) {
+        if (__DEV__) {
+          console.warn(
+            '[OCRCapture] BE upsertProductFromOCR 실패 — productId 없음. ' +
+            'scan_history 영구 저장 불가 (zustand local-only). ' +
+            'BE 로그 확인: railway logs | grep ocr-upsert',
+          );
+        }
+      } else {
         try {
           const serverItem = await saveScanHistory({
             productId: product.id,
             result: product.riskLevel,
           });
           replaceHistory(localId, { ...serverItem, product });
-        } catch { /* silent — 로컬 항목 유지 */ }
+        } catch (err) {
+          if (__DEV__) {
+            console.warn('[OCRCapture] saveScanHistory 실패 — retryQueue 에 enqueue:', err);
+          }
+          enqueueRetry({ localId, productId: product.id, result: product.riskLevel });
+        }
       }
 
       if (cancelledRef.current) return;

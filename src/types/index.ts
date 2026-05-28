@@ -529,11 +529,33 @@ export interface UserStore {
   setMultiProfileMode: (active: boolean, name?: string) => void;
 }
 
+/**
+ * BE 동기화 실패한 스캔 큐. AsyncStorage 로 영구화되어 앱 재시작·네트워크
+ * 회복 후 자동 재시도(processRetryQueue) 대상이 된다.
+ *
+ * 'ocr-local-' 접두사(BE upsert 실패 — productId 없음) 항목은 BE 가 어차피
+ * FK 위반으로 받지 못하므로 큐에 넣지 않는다. saveScanHistory 호출이 실패한
+ * 경우(network / 500 / TIMEOUT 등) 만 enqueue.
+ */
+export interface RetryScanItem {
+  /** 큐 식별자 — 로컬 store 의 ScanHistory.id 와 동일 (replaceHistory 키) */
+  localId: string;
+  /** BE 가 알고 있는 productId — 'ocr-{phash}' 또는 바코드 */
+  productId: string;
+  result: RiskLevel;
+  /** 재시도 횟수 (상한 5회) */
+  tries: number;
+  /** 첫 enqueue 시각(ms) — 24h 이후 폐기 */
+  firstAttemptAt: number;
+}
+
 export interface ScanStore {
   history: ScanHistory[];
   // 캐시 무효화 메타 — 매 화면 진입 fetch 방지(stale 시에만 재조회)
   historyDirty: boolean;          // true = 다음 진입 시 재조회 필요
   historySyncedAt: number | null; // 마지막 서버 동기화 시각(ms) — TTL 판정용
+  // BE 동기화 실패 항목 — AsyncStorage 영구화 + 네트워크 회복 시 재시도
+  retryQueue: RetryScanItem[];
   setHistory: (items: ScanHistory[]) => void;
   addHistory: (item: ScanHistory) => void;
   /** store-first 흐름: local id 로 추가된 항목을 BE 응답의 server id 로 교체. */
@@ -541,6 +563,13 @@ export interface ScanStore {
   clearHistory: () => void;
   markHistoryDirty: () => void;
   markHistorySynced: () => void;
+  /** saveScanHistory 실패 시 호출. localId 는 history 의 임시 ID. */
+  enqueueRetry: (item: Omit<RetryScanItem, 'tries' | 'firstAttemptAt'>) => void;
+  /**
+   * 큐 처리 (성공·만료 항목 제거). 반환: { synced, dropped, remaining } 통계.
+   * App foreground 진입 / ScanHistoryScreen pull-to-refresh 시 호출.
+   */
+  processRetryQueue: () => Promise<{ synced: number; dropped: number; remaining: number }>;
 }
 
 export interface ListStore {

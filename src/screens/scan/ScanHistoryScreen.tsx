@@ -59,11 +59,15 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     return () => { cancelled = true; };
   }
 
-  // 풀-투-리프레시용 — 전체 스피너 없이 진행바만, 완료까지 Promise 유지
+  // 풀-투-리프레시용 — 전체 스피너 없이 진행바만, 완료까지 Promise 유지.
+  // BE 동기화 실패로 누락된 항목이 있으면 먼저 retry 큐를 비우고(병렬) 그 다음 fetch.
   async function refresh() {
     setIsError(false);
     try {
-      setHistory(await getScanHistory());
+      await Promise.all([
+        useScanStore.getState().processRetryQueue(),
+        getScanHistory().then(setHistory),
+      ]);
       useScanStore.getState().markHistorySynced();
       syncedProfileRef.current = profileVersion;
     } catch {

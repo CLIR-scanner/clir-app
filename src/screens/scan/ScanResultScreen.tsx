@@ -53,6 +53,7 @@ export default function ScanResultScreen({ navigation, route }: Props) {
 
   const addHistory              = useScanStore(s => s.addHistory);
   const replaceHistory          = useScanStore(s => s.replaceHistory);
+  const enqueueRetry            = useScanStore(s => s.enqueueRetry);
   const addFavoriteToStore      = useListStore(s => s.addFavorite);
   const setFavoritesInStore     = useListStore(s => s.setFavorites);
   const profileVersion          = useUserStore(s => s.profileVersion);
@@ -119,7 +120,12 @@ export default function ScanResultScreen({ navigation, route }: Props) {
         localHistoryId
           ? saveScanHistory({ productId: prod.id, result: result.verdict })
               .then(item => replaceHistory(localHistoryId!, { ...item, product: prod }))
-              .catch(() => { /* silent — 로컬 항목 유지 */ })
+              .catch((err) => {
+                // BE 동기화 실패 → retryQueue 에 enqueue. 앱 foreground / pull-to-refresh
+                // 시 processRetryQueue 가 자동 재시도. 로컬 항목은 그대로 유지.
+                if (__DEV__) console.warn('[ScanResult] saveScanHistory 실패 — retryQueue:', err);
+                enqueueRetry({ localId: localHistoryId!, productId: prod.id, result: result.verdict });
+              })
           : Promise.resolve(),
       ]);
 
