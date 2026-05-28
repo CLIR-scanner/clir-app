@@ -24,6 +24,15 @@ const EMPTY_USER: User = {
   consentFlags: { imageRetention: false, corrections: false },
 };
 
+/**
+ * MainNavigator(바텀 네비게이션) 노출 조건 = 로그인 완료 + 설문 완료.
+ * RootNavigator 의 Main/Auth 분기와 스플래시의 tuck(로고→스캔버튼) 진행 여부가
+ * 항상 동일 기준을 쓰도록 단일화. false 면 Auth 플로우(약관·로그인)라 바텀 네비가 없음.
+ */
+export function selectIsLoggedIn(currentUser: User): boolean {
+  return currentUser.id !== '' && currentUser.hasCompletedSurvey !== false;
+}
+
 export const useUserStore = create<UserStore>((set, get) => ({
   currentUser: EMPTY_USER,
   activeProfile: EMPTY_PROFILE,

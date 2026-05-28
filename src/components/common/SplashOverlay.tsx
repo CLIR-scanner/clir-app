@@ -72,9 +72,13 @@ const REDUCED_HOLD = 1200;
 
 export default function SplashOverlay({
   ready,
+  tuckToScanButton = true,
   onFinished,
 }: {
   ready: boolean;
+  /** 인트로 후 로고를 스캔버튼으로 tuck 할지 여부. 바텀 네비가 있는 경로(메인 탭)에서만 true.
+   *  false(미인증/약관 미동의 → Auth 플로우)면 tuck 없이 페이드아웃으로 종료. */
+  tuckToScanButton?: boolean;
   onFinished: () => void;
 }) {
   const { width: SW, height: SH } = useWindowDimensions();
@@ -152,6 +156,17 @@ export default function SplashOverlay({
     if (!introDone || !ready || outroStarted.current) return;
     outroStarted.current = true;
 
+    // 바텀 네비(스캔 버튼)가 없는 경로(미인증/약관 미동의 → Auth 플로우):
+    // 로고를 스캔버튼으로 보내는 collapse/tuck 을 생략하고, 완성된 로고와 배경을
+    // 부드럽게 페이드아웃해 그 아래 Auth/약관 화면을 드러낸다.
+    if (!tuckToScanButton) {
+      Animated.parallel([
+        Animated.timing(logoOpacity, { toValue: 0, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(bgOpacity,   { toValue: 0, duration: 440, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      ]).start(() => finish());
+      return;
+    }
+
     const anchor = getScanButtonAnchor();
     let scaleTarget: number;
     let tuckTX: number;
@@ -208,7 +223,7 @@ export default function SplashOverlay({
       Animated.timing(logoOpacity, { toValue: 0, duration: LOGO_FADE, easing: Easing.linear, useNativeDriver: true })
         .start(() => finish());
     });
-  }, [introDone, ready, SW, SH, insets.bottom, bgOpacity, groupScale, groupTX, groupTY, logoOpacity, markOpacity, scanOpacity, wordOpacity, wordTX]);
+  }, [introDone, ready, tuckToScanButton, SW, SH, insets.bottom, bgOpacity, groupScale, groupTX, groupTY, logoOpacity, markOpacity, scanOpacity, wordOpacity, wordTX]);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">

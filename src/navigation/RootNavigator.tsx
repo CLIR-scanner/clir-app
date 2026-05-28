@@ -2,15 +2,14 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { useUserStore } from '../store/user.store';
+import { useUserStore, selectIsLoggedIn } from '../store/user.store';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const currentUser = useUserStore(s => s.currentUser);
-  const isLoggedIn = currentUser.id !== '' && currentUser.hasCompletedSurvey !== false;
+  const isLoggedIn = useUserStore(s => selectIsLoggedIn(s.currentUser));
 
   return (
     <NavigationContainer>
