@@ -351,6 +351,7 @@ const ko = {
     seeMore:          '더 보기',
     trending:         '이번 주 인기',
     trendingTab:      'Week Trends',
+    trendingEmptyCategory: '이번 주에는 이 카테고리의 인기 제품이 아직 없어요.',
     similarPicks:     '비슷한 사용자 선택',
     similarPicksTab:  'Similar Trends',
     reviewsTitle:     '리뷰',

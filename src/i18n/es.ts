@@ -165,7 +165,7 @@ const es = {
     community: 'Comunidad', featured: 'DESTACADO', featuredSubtitle: 'Escanea cualquier producto para revisar ingredientes al instante',
     bannerTitle: 'Come inteligente,\nvive sin alergias',
     allCategories: 'Todas las categorías', reorderSections: 'Reordenar secciones', dragToReorder: 'Arrastra para reordenar secciones',
-    seeMore: 'Ver más', trending: 'Tendencias de la semana', trendingTab: 'Week Trends', similarPicks: 'Favoritos de usuarios similares', similarPicksTab: 'Similar Trends', reviewsTitle: 'Reseñas', similarReviews: 'Reseñas de usuarios similares', shareStory: 'Comparte tu historia', writeReview: 'Escribir reseña', qa: 'Preguntas', magazine: 'Revista Clir', magazineTab: 'Magazine',
+    seeMore: 'Ver más', trending: 'Tendencias de la semana', trendingTab: 'Week Trends', trendingEmptyCategory: 'No hay productos en tendencia en esta categoría esta semana.', similarPicks: 'Favoritos de usuarios similares', similarPicksTab: 'Similar Trends', reviewsTitle: 'Reseñas', similarReviews: 'Reseñas de usuarios similares', shareStory: 'Comparte tu historia', writeReview: 'Escribir reseña', qa: 'Preguntas', magazine: 'Revista Clir', magazineTab: 'Magazine',
   },
   survey: {
     landingTitle: 'Responde unas\npreguntas rápidas\npara ayudarte a\nconfigurarlo todo.',
