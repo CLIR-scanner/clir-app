@@ -638,11 +638,12 @@ export interface LegalSectionContent {
 
 export type AuthStackParamList = {
   Splash: undefined;
-  /** 사전 약관 동의 — 디바이스 단위 1회성 (TERMS_VERSION mismatch 시 재노출) */
-  TermsAgreement: { agreedSection?: TermsSectionKey } | undefined;
+  /** 사전 약관 동의 — 로그인 버튼 진입 시점에 노출. 동의 완료 후 pendingProvider 로 OAuth 이어가기. */
+  TermsAgreement: { agreedSection?: TermsSectionKey; pendingProvider?: 'google' | 'apple' } | undefined;
   /** 약관 항목별 원문 상세 — TermsAgreement 에서 chevron 클릭 시 진입 */
   TermsDetail: { section: TermsSectionKey; agreed?: boolean };
-  AuthHome: undefined;
+  /** pendingProvider 가 있으면 약관 동의 직후 해당 provider 로그인 자동 진행 */
+  AuthHome: { pendingProvider?: 'google' | 'apple' } | undefined;
   /** Survey 0: 설문 시작 랜딩 (Skip 가능) */
   SurveyLanding: SurveyParams;
   /** Survey 1: 식이 유형 선택 */

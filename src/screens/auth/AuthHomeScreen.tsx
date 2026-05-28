@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, ActivityIndicator, Platform } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
 import { AuthStackParamList } from '../../types';
 import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
 import { TERMS_VERSION } from '../../constants/legal-version';
+import { termsStorage } from '../../lib/storage';
 import { openLegal } from '../../lib/legal-urls';
 
 function ClirLogo({ width = 105, height = 62, color = '#1C3A19' }: { width?: number; height?: number; color?: string }) {
@@ -57,6 +58,7 @@ const S = { bg: '#FDFFFD', primary: '#044733', textLight: '#F9FFF3', muted: '#9E
 
 export default function AuthHomeScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<RouteProp<AuthStackParamList, 'AuthHome'>>();
   const { t } = useTranslation();
   const setUser = useUserStore(s => s.setUser);
   const [loading, setLoading] = useState(false);
@@ -93,8 +95,30 @@ export default function AuthHomeScreen() {
     }
   }
 
-  function handleGoogle() { void runSocialSignIn('google'); }
-  function handleApple() { void runSocialSignIn('apple'); }
+  // 로그인 버튼 진입점 — 약관 미동의 시 먼저 약관 화면으로 보낸 뒤,
+  // 동의가 끝나면 pendingProvider 로 돌아와 자동으로 OAuth 를 이어간다.
+  async function startSignIn(provider: 'google' | 'apple') {
+    if (loading) return;
+    const accepted = await termsStorage.read();
+    if (accepted !== TERMS_VERSION) {
+      navigation.navigate('TermsAgreement', { pendingProvider: provider });
+      return;
+    }
+    void runSocialSignIn(provider);
+  }
+
+  // 약관 동의 완료 후 TermsAgreement 가 pendingProvider 와 함께 복귀시키면
+  // 곧바로 해당 provider 로그인 창으로 연결. (1회성 — 처리 후 파라미터 소거)
+  const pendingProvider = route.params?.pendingProvider;
+  useEffect(() => {
+    if (!pendingProvider) return;
+    navigation.setParams({ pendingProvider: undefined });
+    void runSocialSignIn(pendingProvider);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingProvider]);
+
+  function handleGoogle() { void startSignIn('google'); }
+  function handleApple() { void startSignIn('apple'); }
 
   return (
     <View style={styles.container}>

@@ -138,13 +138,15 @@ export default function TermsAgreementScreen() {
   }
 
   // 동의 기록은 디바이스 단위 — AsyncStorage 에 TERMS_VERSION 저장. OAuth 호출 없음.
-  // BE 측 audit trail (acceptTerms) 은 AuthHomeScreen.handleGoogle 의 OAuth 직후 별도로 기록.
+  // BE 측 audit trail (acceptTerms) 은 AuthHomeScreen 의 OAuth 직후 별도로 기록.
+  // 동의 완료 시 진입했던 로그인 버튼(pendingProvider)과 함께 AuthHome 으로 복귀 →
+  // AuthHome 이 곧바로 해당 provider 로그인 창으로 연결한다.
   async function handleAgree() {
     if (!allRequiredChecked || loading) return;
     setLoading(true);
     try {
       await termsStorage.write(TERMS_VERSION);
-      navigation.replace('AuthHome');
+      navigation.navigate('AuthHome', { pendingProvider: route.params?.pendingProvider });
     } finally {
       setLoading(false);
     }
