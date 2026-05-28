@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import './src/i18n';           // i18n 초기화 (최상단 임포트)
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { AppState, View, Text, TextInput } from 'react-native';
 
 // fontFamily 미지정 Text / TextInput 의 기본 폰트를 Pretendard-Regular 로 설정
 (Text as any).defaultProps = { ...(Text as any).defaultProps, style: { fontFamily: 'Pretendard-Regular' } };
@@ -13,6 +13,7 @@ import * as Sentry from '@sentry/react-native';
 import i18n from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useUserStore } from './src/store/user.store';
+import { useScanStore } from './src/store/scan.store';
 import SplashOverlay from './src/components/common/SplashOverlay';
 
 // 크래시 / unhandled error 리포팅. DSN 미설정 시 SDK 가 no-op (안전).
@@ -53,6 +54,20 @@ function App() {
       i18n.changeLanguage(language);
     }
   }, [language]);
+
+  // App foreground 진입 시 scan history retry queue 비우기.
+  // background 중 네트워크 회복 / 토큰 갱신 후 BE 누락분을 자동 동기화한다.
+  // 초기 mount 시점에도 1회 실행 — 직전 세션에서 영구화된 retryQueue 처리.
+  useEffect(() => {
+    const process = () => {
+      void useScanStore.getState().processRetryQueue();
+    };
+    process(); // 부팅 시 1회
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') process();
+    });
+    return () => sub.remove();
+  }, []);
 
   const appReady = isInitialized && fontsLoaded;
 
