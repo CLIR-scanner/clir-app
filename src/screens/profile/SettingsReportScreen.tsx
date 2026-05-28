@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 
 // 운영 연락처 — Privacy/Terms 와 동일 (PDF 공식).
@@ -27,6 +28,7 @@ function buildMailtoUrl(): string {
 }
 
 export default function SettingsReportScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
@@ -53,7 +55,13 @@ export default function SettingsReportScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+        >
           <Text style={styles.backBtn}>{'←'}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Send Feedback</Text>

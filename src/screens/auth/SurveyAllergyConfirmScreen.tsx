@@ -257,7 +257,12 @@ export default function SurveyAllergyConfirmScreen() {
                   {t('survey.selectCategorySubtitle', { category: modalCategory ? getCategoryLabel(modalCategory) : '' })}
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => setModalCategory(null)}>
+              <TouchableOpacity
+                onPress={() => setModalCategory(null)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('a11y.close')}
+              >
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>
@@ -294,7 +299,12 @@ export default function SurveyAllergyConfirmScreen() {
                 <Text style={styles.modalTitle}>{t('survey.addCategoryModalTitle')}</Text>
                 <Text style={styles.modalSubtitle}>{t('survey.addCategoryModalSubtitle')}</Text>
               </View>
-              <TouchableOpacity onPress={() => setShowCatModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCatModal(false)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('a11y.close')}
+              >
                 <Text style={styles.modalClose}>✕</Text>
               </TouchableOpacity>
             </View>

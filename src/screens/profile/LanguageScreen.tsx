@@ -53,7 +53,13 @@ export default function LanguageScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.back')}
+        >
           <Text style={styles.backText}>{'‹'}</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{t('language.title')}</Text>

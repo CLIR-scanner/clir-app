@@ -463,6 +463,8 @@ export default function PersonalizationAllergyScreen() {
             onPress={() => navigation.goBack()}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.back')}
           >
             <Text style={styles.backBtn}>{'‹'}</Text>
           </TouchableOpacity>

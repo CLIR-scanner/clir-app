@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { updateDisplayName } from '../../services/user.service';
@@ -24,6 +25,7 @@ type Nav = NativeStackNavigationProp<ProfileStackParamList, 'PersonalNickname'>;
 const MAX_LENGTH = 30;
 
 export default function PersonalNicknameScreen() {
+  const { t }                = useTranslation();
   const navigation           = useNavigation<Nav>();
   const insets               = useSafeAreaInsets();
   const currentUser          = useUserStore(s => s.currentUser);
@@ -83,6 +85,8 @@ export default function PersonalNicknameScreen() {
             onPress={() => navigation.goBack()}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.back')}
           >
             <Text style={styles.backBtn}>{'‹'}</Text>
           </TouchableOpacity>

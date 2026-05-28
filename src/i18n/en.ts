@@ -30,6 +30,19 @@ const en = {
     selected_other: '{{count}} selected',
     currentlyActive:'Currently active',
     tapToSelect:    'Tap to select',
+    errorTitle:     'Something went wrong',
+    errorMessage:   'An unexpected error occurred. Please try again.',
+  },
+
+  // ── Accessibility (VoiceOver labels for icon-only controls) ─────────────────
+  a11y: {
+    back:           'Go back',
+    close:          'Close',
+    clearSearch:    'Clear search',
+    addFavorite:    'Add to favorites',
+    removeFavorite: 'Remove from favorites',
+    scanGuide:      'Show scanning guide',
+    remove:         'Remove',
   },
 
   // ── Auth ──────────────────────────────────────────────────────────────────

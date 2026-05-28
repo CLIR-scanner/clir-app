@@ -284,6 +284,8 @@ export default function WeekendPopularScreen({ navigation }: Props) {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={styles.clearButton}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.clearSearch')}
             >
               <Text style={styles.clearButtonText}>✕</Text>
             </TouchableOpacity>
