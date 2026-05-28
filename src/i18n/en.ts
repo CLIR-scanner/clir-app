@@ -346,6 +346,7 @@ const en = {
     seeMore:          'See more',
     trending:         'Trending This Week',
     trendingTab:      'Week Trends',
+    trendingEmptyCategory: 'No trending products in this category this week.',
     similarPicks:     "Similar Users' Picks",
     similarPicksTab:  'Similar Trends',
     reviewsTitle:     'Reviews',

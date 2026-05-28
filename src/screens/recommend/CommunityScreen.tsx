@@ -532,6 +532,12 @@ export default function CommunityScreen({ navigation }: Props) {
             />
             {isLoading ? (
               <TrendingSkeleton />
+            ) : trendingPreview.length === 0 ? (
+              <View style={styles.trendEmpty}>
+                <Text style={styles.trendEmptyText}>
+                  {t('recommendUi.trendingEmptyCategory')}
+                </Text>
+              </View>
             ) : (
               <View style={styles.trendScrollWrap}>
                 <ScrollView
@@ -931,6 +937,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   rowDivider:{ height: 1, backgroundColor: C.line, marginVertical: 6 },
+
+  // Trending 빈 상태 (선택 카테고리에 매칭 product 0)
+  trendEmpty: {
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trendEmptyText: {
+    fontSize: 13,
+    color: C.mid,
+    fontFamily: 'Pretendard-Regular',
+    textAlign: 'center',
+    letterSpacing: -0.2,
+  },
 
   // Q&A
   qaRow:   { paddingVertical: 12, paddingRight: 30 },
