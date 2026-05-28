@@ -20,7 +20,7 @@ import ScanGlyph, { SCAN_GLYPH_C_H, SCAN_GLYPH_VIEWBOX } from './ScanGlyph';
 // 5) 종료. 마지막 글리프가 실제 탭 버튼과 동일 path/viewBox/크기/위치 → 끊김 없음.
 // (스캔 탭 아이콘 자체는 변경하지 않음 — 스플래시가 탭의 글리프에 맞춰 들어간다)
 const DARK = '#1C3A19';
-const BG   = '#F9FFF3';
+const BG   = '#FDFFFD';
 // 스캔 탭/촬영 글리프 색(= MainNavigator SCAN_COLOR = profileDarkGreen). 핸드오프 색 일치.
 const SCAN_COLOR = '#1C3A19';
 
