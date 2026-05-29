@@ -28,6 +28,7 @@ import {
   updateQAQuestion,
 } from '../../services/recommend.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
+import { qaFeed } from '../../lib/qaFeedSignal';
 import { QAAnswer, QAQuestion, RecommendStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import QnaImageViewer from '../../components/QnaImageViewer';
@@ -459,11 +460,13 @@ export default function QADetailScreen({ navigation, route }: Props) {
             if (!question) return;
             try {
               await deleteQAQuestion(question.id);
+              qaFeed.bump();   // 목록·커뮤니티 미리보기에서 삭제 반영
               navigation.goBack();
             } catch (err: unknown) {
               if (handleUnauthorized(err)) return;
               // 404 = 누가 이미 삭제 → goBack 으로 동일 처리
               if (err instanceof ApiError && err.code === 'QNA_NOT_FOUND') {
+                qaFeed.bump();
                 navigation.goBack();
                 return;
               }
@@ -492,6 +495,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
       const updated = await updateQAQuestion({ id: question.id, title, content });
       // BE 응답 (QnaPostSummary) 의 images 는 빈 배열 — 기존 signed URL 유지.
       setQuestion({ ...updated, images: question.images });
+      qaFeed.bump();   // 목록·커뮤니티 미리보기에 수정 반영
       setEditQuestionOpen(false);
     } catch (err: unknown) {
       if (handleUnauthorized(err)) return;
