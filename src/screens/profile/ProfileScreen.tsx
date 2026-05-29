@@ -179,7 +179,7 @@ function handleLogout() {
       {/* ── User card ────────────────────────────────────────────────────── */}
       <TouchableOpacity
         style={styles.userCard}
-        onPress={() => navigation.navigate('PersonalName')}
+        onPress={() => navigation.navigate('Personal')}
         activeOpacity={0.75}
       >
         <View style={styles.avatar}>
