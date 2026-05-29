@@ -37,15 +37,6 @@ function PencilIcon({ color }: { color: string }) {
   );
 }
 
-function CameraIcon({ color }: { color: string }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 7h3l2-2.5h8L18 7h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-      <Circle cx={12} cy={13} r={3.4} stroke={color} strokeWidth={1.8} />
-    </Svg>
-  );
-}
-
 function CheckIcon({ color }: { color: string }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
@@ -124,14 +115,10 @@ export default function PersonalScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* 아바타 + 카메라 배지 */}
+        {/* 아바타*/}
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initial}</Text>
-          </View>
-          {/* 사진 변경 자리 — 데이터 모델에 아바타 없음, 현재 구성(배치)만 표시 */}
-          <View style={styles.cameraBadge} pointerEvents="none">
-            <CameraIcon color={Colors.profileDarkGreen} />
           </View>
         </View>
 
@@ -234,9 +221,9 @@ const styles = StyleSheet.create({
   nameText: { fontSize: 24, fontFamily: 'Pretendard-Bold', color: Colors.black, letterSpacing: -0.4, flexShrink: 1 },
 
   // 표시명 인라인 편집 행
-  nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 28, alignSelf: 'stretch' },
+  nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 28, alignSelf: 'center' },
   nameInput: {
-    flex: 1,
+    width: AVATAR,
     fontSize: 20, fontFamily: 'Pretendard-Bold', color: Colors.black,
     textAlign: 'center',
     borderBottomWidth: 1.5, borderBottomColor: Colors.profileDarkGreen,
@@ -255,7 +242,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 22, gap: 16,
   },
-  fieldLabel: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: Colors.profileMutedGreen },
-  fieldValue: { flexShrink: 1, fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: Colors.profileDarkGreen, textAlign: 'right' },
+  fieldLabel: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: Colors.gray300 },
+  fieldValue: { flexShrink: 1, fontSize: 16, fontFamily: 'Pretendard-SemiBold', color: Colors.gray300, textAlign: 'right' },
   fieldDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.profileBorder },
 });
