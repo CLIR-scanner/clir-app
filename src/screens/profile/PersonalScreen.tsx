@@ -12,7 +12,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
-import { Strings } from '../../constants/strings';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Personal'>;
 
@@ -71,28 +70,28 @@ export default function PersonalScreen() {
             <Text style={styles.backBtn}>{'‹'}</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.headerTitle}>개인정보 설정</Text>
+        <Text style={styles.headerTitle}>{t('personal.title')}</Text>
         <View style={styles.headerSide} />
       </View>
 
       {/* ── Section pill ──────────────────────────────────────────────── */}
       <View style={styles.sectionPill}>
-        <Text style={styles.sectionPillText}>개인정보</Text>
+        <Text style={styles.sectionPillText}>{t('personal.section')}</Text>
       </View>
 
       {/* ── Menu items ────────────────────────────────────────────────── */}
       <View style={styles.menuBlock}>
         <MenuRow
-          label={Strings.name}
+          label={t('personal.name')}
           onPress={() => navigation.navigate('PersonalName')}
         />
         <MenuRow
-          label={Strings.personalNickname.menuLabel}
-          description={Strings.personalNickname.menuDescription}
+          label={t('personal.nickname.menuLabel')}
+          description={t('personal.nickname.menuDescription')}
           onPress={() => navigation.navigate('PersonalNickname')}
         />
         <MenuRow
-          label={Strings.email}
+          label={t('personal.email')}
           onPress={() => navigation.navigate('PersonalEmail')}
           noDivider
         />

@@ -15,6 +15,19 @@ const es = {
     addFavorite: 'Añadir a favoritos', removeFavorite: 'Quitar de favoritos',
     scanGuide: 'Mostrar guía de escaneo', remove: 'Quitar',
   },
+  personal: {
+    title: 'Información personal', section: 'Información personal',
+    name: 'Nombre', email: 'Correo electrónico',
+    nickname: {
+      menuLabel: 'Nombre en la comunidad',
+      menuDescription: 'Configura el apodo que usarás en la comunidad.',
+      screenTitle: 'Nombre en la comunidad', sectionLabel: 'Nombre en la comunidad',
+      fieldLabel: 'Nombre visible', placeholder: 'Introduce un nombre visible (máx. 30)',
+      emptyHint: "Si lo dejas vacío, aparecerás como 'Anónimo' en la comunidad.",
+      saveButton: 'Guardar', savingButton: 'Guardando...',
+      successMessage: 'Tu nombre en la comunidad se ha guardado.', errorTitle: 'Error al guardar',
+    },
+  },
   auth: {
     tagline: 'Worry less, eat clir',
     continueWithGoogle: 'Continuar con Google', continueWithApple: 'Continuar con Apple',
@@ -171,7 +184,7 @@ const es = {
     community: 'Comunidad', featured: 'DESTACADO', featuredSubtitle: 'Escanea cualquier producto para revisar ingredientes al instante',
     bannerTitle: 'Come inteligente,\nvive sin alergias',
     allCategories: 'Todas las categorías', reorderSections: 'Reordenar secciones', dragToReorder: 'Arrastra para reordenar secciones',
-    seeMore: 'Ver más', trending: 'Tendencias de la semana', trendingTab: 'Week Trends', trendingEmptyCategory: 'No hay productos en tendencia en esta categoría esta semana.', similarPicks: 'Favoritos de usuarios similares', similarPicksTab: 'Similar Trends', reviewsTitle: 'Reseñas', similarReviews: 'Reseñas de usuarios similares', shareStory: 'Comparte tu historia', writeReview: 'Escribir reseña', qa: 'Preguntas', magazine: 'Revista Clir', magazineTab: 'Magazine',
+    seeMore: 'Ver más', trending: 'Tendencias de la semana', trendingTab: 'Week Trends', trendingEmptyCategory: 'No hay productos en tendencia en esta categoría esta semana.', similarPicks: 'Favoritos de usuarios similares', similarPicksTab: 'Similar Trends', reviewsTitle: 'Reseñas', similarReviews: 'Reseñas de usuarios similares', shareStory: 'Comparte tu historia', writeReview: 'Escribir reseña', qa: 'Preguntas', anonymous: 'Anónimo', magazine: 'Revista Clir', magazineTab: 'Magazine',
   },
   survey: {
     landingTitle: 'Responde unas\npreguntas rápidas\npara ayudarte a\nconfigurarlo todo.',

@@ -45,6 +45,27 @@ const ko = {
     remove:         '제거',
   },
 
+  // ── 개인정보 (Profile → 개인정보) ────────────────────────────────────────────
+  personal: {
+    title:   '개인정보 설정',
+    section: '개인정보',
+    name:    '이름',
+    email:   '이메일',
+    nickname: {
+      menuLabel:       '커뮤니티 표시명',
+      menuDescription: '커뮤니티에서 사용할 닉네임을 설정합니다.',
+      screenTitle:     '커뮤니티 표시명',
+      sectionLabel:    '커뮤니티 표시명',
+      fieldLabel:      '표시명',
+      placeholder:     '표시명을 입력하세요 (최대 30자)',
+      emptyHint:       "비워두면 커뮤니티에서 '익명'으로 표시됩니다.",
+      saveButton:      '저장',
+      savingButton:    '저장 중...',
+      successMessage:  '커뮤니티 표시명이 저장되었습니다.',
+      errorTitle:      '저장 실패',
+    },
+  },
+
   // ── Auth ──────────────────────────────────────────────────────────────────
   auth: {
     tagline:            'Worry less, eat clir',
@@ -372,6 +393,7 @@ const ko = {
     shareStory:       '내 경험을 공유해보세요!',
     writeReview:      '리뷰 쓰기',
     qa:               'Q&A',
+    anonymous:        '익명',
     magazine:         'Clir 매거진',
     magazineTab:      'Magazine',
     magazineTitle:    '매거진',
