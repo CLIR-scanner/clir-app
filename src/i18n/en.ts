@@ -45,6 +45,27 @@ const en = {
     remove:         'Remove',
   },
 
+  // ── Personal info (Profile → 개인정보) ───────────────────────────────────────
+  personal: {
+    title:   'Personal info',
+    section: 'Personal info',
+    name:    'Name',
+    email:   'Email',
+    nickname: {
+      menuLabel:       'Community display name',
+      menuDescription: 'Set the nickname used in the community.',
+      screenTitle:     'Community display name',
+      sectionLabel:    'Community display name',
+      fieldLabel:      'Display name',
+      placeholder:     'Enter a display name (max 30)',
+      emptyHint:       "If left blank, you'll appear as 'Anonymous' in the community.",
+      saveButton:      'Save',
+      savingButton:    'Saving...',
+      successMessage:  'Your community display name has been saved.',
+      errorTitle:      'Save failed',
+    },
+  },
+
   // ── Auth ──────────────────────────────────────────────────────────────────
   auth: {
     tagline:              'Worry less, eat clir',
@@ -367,6 +388,7 @@ const en = {
     shareStory:       'Share your story !',
     writeReview:      'Write a review',
     qa:               'Q&A',
+    anonymous:        'Anonymous',
     magazine:         'Clir Magazine',
     magazineTab:      'Magazine',
     magazineTitle:    'Magazine',

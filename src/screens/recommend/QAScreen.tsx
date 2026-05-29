@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,10 +13,12 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/colors';
 import Skeleton from '../../components/common/Skeleton';
 import { getQAQuestions } from '../../services/recommend.service';
+import { qaFeed } from '../../lib/qaFeedSignal';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
 import { QAQuestion, QnaCategory, RecommendStackParamList } from '../../types';
@@ -218,6 +220,17 @@ export default function QAScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<QnaCategory>('all');
   const loadingMoreRef = useRef(false);
+  // Q&A 글 작성/수정/삭제 후 재진입 시 새 글을 반영하기 위한 재조회 트리거.
+  const [reloadToken, setReloadToken] = useState(0);
+  const qaVersionRef = useRef(qaFeed.getVersion());
+  useFocusEffect(
+    useCallback(() => {
+      if (qaFeed.getVersion() !== qaVersionRef.current) {
+        qaVersionRef.current = qaFeed.getVersion();
+        setReloadToken(v => v + 1);   // fetch useEffect dep 변화 → 재조회
+      }
+    }, []),
+  );
 
   // 검색 debounce — 300ms 이내 추가 타이핑 시 refetch 취소.
   useEffect(() => {
@@ -261,7 +274,7 @@ export default function QAScreen({ navigation }: Props) {
         if (!cancelled) setIsLoading(false);
       });
     return () => { cancelled = true; };
-  }, [selectedCategory, debouncedQuery]);
+  }, [selectedCategory, debouncedQuery, reloadToken]);
 
   async function loadMore() {
     if (loadingMoreRef.current || !hasMore || isLoading) return;

@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '../../constants/colors';
 import { createQAQuestion } from '../../services/recommend.service';
+import { qaFeed } from '../../lib/qaFeedSignal';
 import { getProductSuggestions } from '../../services/search.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
@@ -159,6 +160,8 @@ export default function QACreateScreen({ navigation }: Props) {
             ? productSelected.productId
             : undefined,
       });
+      // Q&A 목록을 보여주는 화면들이 다음 focus 때 새 글을 재조회하도록 신호.
+      qaFeed.bump();
       navigation.goBack();
     } catch (err: unknown) {
       // CLIR/CLAUDE.md 의 401 처리 패턴 (WeekendPopularScreen 답습).

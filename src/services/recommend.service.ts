@@ -1,6 +1,7 @@
 // TODO: Real API 연동 시 이 파일의 구현부만 교체
 import { MagazineItem, Product, QAAnswer, QAQuestion, QnaCategory, RiskLevel } from '../types';
 import { apiFetch, apiFormFetch } from '../lib/api';
+import i18n from '../i18n';
 
 type RankedProduct = Product & {
   favoriteCount: number;
@@ -162,7 +163,8 @@ function mapQnaToQuestion(post: QnaPostSummaryApi): QAQuestion {
     label: CATEGORY_LABEL[post.category],
     title: post.title,
     body: post.content,
-    author: post.userNickname ?? '익명',
+    // 닉네임 미설정 → 현재 언어의 '익명' 라벨 (하드코딩 '익명' 제거).
+    author: post.userNickname ?? i18n.t('recommendUi.anonymous'),
     viewCount: post.viewCount,
     answerCount: post.answerCount,
     isNotice: post.isNotice,
@@ -176,7 +178,7 @@ function mapQnaAnswer(ans: QnaAnswerApi): QAAnswer {
     id: ans.id,
     questionId: ans.qnaId,
     userId: ans.userId,
-    author: ans.userNickname ?? '익명',
+    author: ans.userNickname ?? i18n.t('recommendUi.anonymous'),
     body: ans.content,
     createdAt: ans.createdAt,
   };

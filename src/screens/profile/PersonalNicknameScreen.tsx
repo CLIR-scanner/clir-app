@@ -16,7 +16,6 @@ import { useTranslation } from 'react-i18next';
 import { ProfileStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import { updateDisplayName } from '../../services/user.service';
-import { Strings } from '../../constants/strings';
 import { Colors } from '../../constants/colors';
 import { UnauthorizedError, clearAuthToken } from '../../lib/api';
 
@@ -37,8 +36,6 @@ export default function PersonalNicknameScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error,   setError]   = useState<string | null>(null);
 
-  const S = Strings.personalNickname;
-
   async function handleSave() {
     if (loading) return;
     setError(null);
@@ -47,8 +44,8 @@ export default function PersonalNicknameScreen() {
       await updateDisplayName(value.trim());
       // 저장 성공 → store 갱신 (빈문자열=익명 복귀 → null 저장)
       updateUserDisplayName(value.trim() === '' ? null : value.trim());
-      Alert.alert('', S.successMessage, [
-        { text: Strings.confirm, onPress: () => navigation.goBack() },
+      Alert.alert('', t('personal.nickname.successMessage'), [
+        { text: t('common.confirm'), onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
@@ -57,9 +54,9 @@ export default function PersonalNicknameScreen() {
         navigation.reset({ index: 0, routes: [{ name: 'Profile' }] });
         return;
       }
-      const message = err instanceof Error ? err.message : Strings.error;
+      const message = err instanceof Error ? err.message : t('common.error');
       setError(message);
-      Alert.alert(S.errorTitle, message);
+      Alert.alert(t('personal.nickname.errorTitle'), message);
     } finally {
       setLoading(false);
     }
@@ -91,18 +88,18 @@ export default function PersonalNicknameScreen() {
             <Text style={styles.backBtn}>{'‹'}</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.headerTitle}>{S.screenTitle}</Text>
+        <Text style={styles.headerTitle}>{t('personal.nickname.screenTitle')}</Text>
         <View style={styles.headerSide} />
       </View>
 
       {/* ── Section pill ───────────────────────────────────────────────── */}
       <View style={styles.sectionPill}>
-        <Text style={styles.sectionPillText}>{S.sectionLabel}</Text>
+        <Text style={styles.sectionPillText}>{t('personal.nickname.sectionLabel')}</Text>
       </View>
 
       {/* ── Input block ────────────────────────────────────────────────── */}
       <View style={styles.fieldsBlock}>
-        <Text style={styles.fieldLabel}>{S.fieldLabel}</Text>
+        <Text style={styles.fieldLabel}>{t('personal.nickname.fieldLabel')}</Text>
         <TextInput
           style={[styles.input, isOverLimit && styles.inputError]}
           value={value}
@@ -110,7 +107,7 @@ export default function PersonalNicknameScreen() {
             setError(null);
             setValue(text);
           }}
-          placeholder={S.placeholder}
+          placeholder={t('personal.nickname.placeholder')}
           placeholderTextColor={Colors.gray300}
           maxLength={MAX_LENGTH + 1} // +1 so user can see they're over; we block save
           autoCapitalize="none"
@@ -120,9 +117,9 @@ export default function PersonalNicknameScreen() {
         />
         {/* char count + hint row */}
         <View style={styles.inputMeta}>
-          <Text style={styles.emptyHint}>{S.emptyHint}</Text>
+          <Text style={styles.emptyHint}>{t('personal.nickname.emptyHint')}</Text>
           <Text style={[styles.charCount, isOverLimit && styles.charCountError]}>
-            {S.charCountFormat(charCount, MAX_LENGTH)}
+            {`${charCount}/${MAX_LENGTH}`}
           </Text>
         </View>
         <View style={styles.fieldDivider} />
@@ -143,7 +140,7 @@ export default function PersonalNicknameScreen() {
         {loading ? (
           <ActivityIndicator size="small" color={Colors.white} />
         ) : (
-          <Text style={styles.saveBtnText}>{loading ? S.savingButton : S.saveButton}</Text>
+          <Text style={styles.saveBtnText}>{loading ? t('personal.nickname.savingButton') : t('personal.nickname.saveButton')}</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
