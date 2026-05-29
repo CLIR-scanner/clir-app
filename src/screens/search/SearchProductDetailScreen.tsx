@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { SearchStackParamList, Product, RiskLevel, Ingredient } from '../../types';
+import { SearchStackParamList, Product, Ingredient } from '../../types';
 import { getIngredient, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
@@ -29,12 +29,6 @@ type Props = NativeStackScreenProps<SearchStackParamList, 'SearchProductDetail'>
 const BG         = '#FDFFFD';
 const DARK_GREEN = '#044733';
 const MID_GREEN  = '#556C53';
-
-const VERDICT_BORDER: Record<RiskLevel, string> = {
-  safe:    '#25FF81',
-  caution: '#FF9D00',
-  danger:  '#FF3434',
-};
 
 export default function SearchProductDetailScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
@@ -386,24 +380,6 @@ const styles = StyleSheet.create({
   // 판정(good/poor/bad) 마크 — 이미지 우측 아래
   imgBadge: { position: 'absolute', right: 8, bottom: 8 },
 
-  // ── Name row
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  verdictCircle: {
-    width: 30, height: 30,
-    borderRadius: 15,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  verdictImg:  { width: 17, height: 17 },
   productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, textAlign: 'center', marginBottom: 6 },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
