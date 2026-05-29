@@ -493,7 +493,8 @@ const styles = StyleSheet.create({
   // ── Disclaimer
 
   // ── Risk box (fieldset. marginHorizontal / paddingHorizontal 은 런타임 주입)
-  riskSection: { position: 'relative', marginBottom: 28, marginTop: PILL_H },
+  // marginBottom 20 = 경고문구 박스↔위험 박스 간격과 동일하게 통일 (위험 박스↔전체성분 박스).
+  riskSection: { position: 'relative', marginBottom: 20, marginTop: PILL_H },
   riskBoxOuter: {
     borderWidth: 1,
     borderRadius: 16,

@@ -14,6 +14,11 @@ import { useResponsive } from '../../lib/responsive';
 export default function SevereDisclaimerBox({ style }: { style?: StyleProp<ViewStyle> }) {
   const { t } = useTranslation();
   const { pad } = useResponsive();
+  const raw = t('product.severeDisclaimer');
+  // "** <문구>" → "**" 마커와 본문을 분리해 행잉 인덴트(hanging indent) 구성.
+  // 본문을 flex 컬럼에 넣으면 줄바꿈 시 둘째 줄부터 본문 첫 글자('For' 등)에 맞춰 정렬된다.
+  const hasMarker = raw.startsWith('** ');
+  const body = hasMarker ? raw.slice(3) : raw;
   return (
     <View
       style={[
@@ -22,7 +27,14 @@ export default function SevereDisclaimerBox({ style }: { style?: StyleProp<ViewS
         style,
       ]}
     >
-      <Text style={styles.text}>{t('product.severeDisclaimer')}</Text>
+      {hasMarker ? (
+        <View style={styles.row}>
+          <Text style={[styles.text, styles.marker]}>**</Text>
+          <Text style={[styles.text, styles.body]}>{body}</Text>
+        </View>
+      ) : (
+        <Text style={styles.text}>{raw}</Text>
+      )}
     </View>
   );
 }
@@ -37,6 +49,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingVertical: 10,
     marginBottom: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  marker: {
+    marginRight: 3,   // "** 본문" 의 한 칸 간격 근사 — 본문 첫 글자가 정렬 기준
+  },
+  body: {
+    flex: 1,          // 줄바꿈 시 둘째 줄부터 본문 좌측(첫 글자)에 정렬
   },
   text: {
     color: RED,

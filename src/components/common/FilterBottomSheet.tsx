@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -104,6 +105,8 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
 
         <View style={styles.topDivider} />
 
+        {/* 카테고리 수가 많아도 시트 높이를 넘으면 스크롤되도록 본문을 ScrollView 로 감싼다. */}
+        <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
         <View style={styles.categoryHeader}>
           <Text style={styles.sectionTitle}>{t('search.categories')}</Text>
         </View>
@@ -140,6 +143,7 @@ export default function FilterBottomSheet({ visible, onClose, filters, onApply }
           <Text style={styles.safeLabel}>{t('search.safeOnlyLabel')}</Text>
           <SafeSwitch value={filters.safeOnly} onChange={toggleSafeOnly} />
         </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -158,10 +162,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 630,
+    maxHeight: '90%',   // 작은 화면에서 시트가 화면을 넘지 않도록 — 본문은 내부 ScrollView 가 스크롤
     backgroundColor: Colors.searchBackground,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     overflow: 'hidden',
+  },
+  scrollBody: {
+    flex: 1,
   },
   header: {
     height: 57,
