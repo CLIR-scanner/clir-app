@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   verdictImg:  { width: 17, height: 17 },
-  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%' },
+  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%', textAlign: 'center' },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset
