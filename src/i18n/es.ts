@@ -4,7 +4,7 @@ const es = {
   },
   common: {
     save: 'Guardar', cancel: 'Cancelar', delete: 'Eliminar', confirm: 'Confirmar', back: 'Volver',
-    loading: 'Cargando...', saving: 'Guardando...', error: 'Ha ocurrido un error.', retry: 'Reintentar', empty: 'Sin elementos.',
+    loading: 'Cargando...', saving: 'Guardando...', error: 'Ha ocurrido un error.', copied: 'Copiado', retry: 'Reintentar', empty: 'Sin elementos.',
     continue: 'Continuar', done: 'Listo', edit: 'Editar', editList: 'Editar lista', add: 'Añadir',
     clearAll: 'Borrar todo', selected_one: '{{count}} seleccionado', selected_other: '{{count}} seleccionados',
     currentlyActive: 'Activo actualmente', tapToSelect: 'Toca para seleccionar',
@@ -63,7 +63,7 @@ const es = {
   },
   profile: {
     title: 'Perfil', myProfile: 'Mi perfil', sensitivity: 'Sensibilidad',
-    allergyProfile: 'Perfil de alergias', noAllergens: 'Ninguno', settingsSection: 'Configuración',
+    allergyProfile: 'Configuración de sensibilidad a alergias', noAllergens: 'Ninguno', settingsSection: 'Configuración',
     menuDietary: 'Restricciones alimentarias', menuSensitivity: 'Configuración de sensibilidad',
     menuPersonalization: 'Personalización', menuFamily: 'Perfiles familiares',
     menuLanguage: 'Idioma', menuSettings: 'Ajustes',
@@ -145,7 +145,7 @@ const es = {
     alternativeProducts: 'Productos alternativos', image: 'Imagen', seeMoreDetail: 'ver más detalles', scannedProduct: 'Producto escaneado',
     ingredientsToAvoid: 'Ingredientes a evitar', suspectedAllergens: 'Alérgenos sospechosos',
     riskWarning: '** Este producto contiene ingredientes que pueden no ser adecuados para ti.',
-    severeDisclaimer: '** Para alergias graves, verifica todos los ingredientes antes de consumir.',
+    severeDisclaimer: '** Para alergias graves, verifica todos los ingredientes antes de consumir.',
   },
   scanUi: {
     title: 'Escanear', history: 'Historial', historyPill: 'Tu historial de escaneos',
@@ -165,7 +165,7 @@ const es = {
   },
   favoriteUi: { add: 'Añadir a favoritos', favorited: 'Favorito' },
   profileUi: {
-    personalInformation: 'Información personal', allergyProfileTitle: 'Mi perfil de alergias', dietaryProfileTitle: 'Mi perfil dietético', healthProfileTitle: 'Mi perfil de salud', sensitivity: 'Sensibilidad',
+    personalInformation: 'Información personal', allergyProfileTitle: 'Configuración de sensibilidad a alergias', dietaryProfileTitle: 'Mi perfil dietético', healthProfileTitle: 'Mi perfil de salud', sensitivity: 'Sensibilidad',
     myAllergy: 'Mi alergia', preference: 'Preferencia', dietRestriction: 'Restricción alimentaria', dietPreference: 'Preferencia alimentaria',
     strictMode: 'Modo estricto', normalMode: 'Modo normal', strict: 'Estricto', normal: 'Normal',
     allergySensitivitySettings: 'Configuración de sensibilidad a alergias', vegetarianOption: 'Opción vegetariana',
@@ -184,7 +184,8 @@ const es = {
     community: 'Comunidad', featured: 'DESTACADO', featuredSubtitle: 'Escanea cualquier producto para revisar ingredientes al instante',
     bannerTitle: 'Come inteligente,\nvive sin alergias',
     allCategories: 'Todas las categorías', reorderSections: 'Reordenar secciones', dragToReorder: 'Arrastra para reordenar secciones',
-    seeMore: 'Ver más', trending: 'Tendencias de la semana', trendingTab: 'Week Trends', trendingEmptyCategory: 'No hay productos en tendencia en esta categoría esta semana.', similarPicks: 'Favoritos de usuarios similares', similarPicksTab: 'Similar Trends', reviewsTitle: 'Reseñas', similarReviews: 'Reseñas de usuarios similares', shareStory: 'Comparte tu historia', writeReview: 'Escribir reseña', qa: 'Preguntas', anonymous: 'Anónimo', byAuthor: 'por {{author}}', magazine: 'Revista Clir', magazineTab: 'Magazine',
+    seeMore: 'Ver más', trending: 'Tendencias de la semana', trendingTab: 'Tendencias semanales', trendingEmptyCategory: 'No hay productos en tendencia en esta categoría esta semana.', similarPicks: 'Favoritos de usuarios similares', similarPicksTab: 'Similar Trends', reviewsTitle: 'Reseñas', similarReviews: 'Reseñas de usuarios similares', shareStory: 'Comparte tu historia', writeReview: 'Escribir reseña', qa: 'Preguntas', anonymous: 'Anónimo', byAuthor: 'por {{author}}', magazine: 'Revista Clir', magazineTab: 'Revista',
+    qaCategoryAll: 'Todas las categorías', qaCategoryProduct: 'Consulta de producto', qaCategoryAllergy: 'Alergia', qaCategoryVegetarian: 'Dieta vegetariana', askQuestion: 'Hacer una pregunta', searchTitlePlaceholder: 'Buscar por título', searchProductPlaceholder: 'Buscar producto por nombre', qaTitlePlaceholder: 'Escribe un título (máx. 20 caracteres)', qaBodyPlaceholder: 'Escribe tu pregunta', replyPlaceholder: 'Escribe una respuesta', editTitlePlaceholder: 'Título', editBodyPlaceholder: 'Contenido', hoursAgo_one: 'hace {{count}} hora', hoursAgo_other: 'hace {{count}} horas', daysAgo_one: 'hace {{count}} día', daysAgo_other: 'hace {{count}} días',
   },
   survey: {
     landingTitle: 'Responde unas\npreguntas rápidas\npara ayudarte a\nconfigurarlo todo.',
@@ -196,7 +197,7 @@ const es = {
     yesDiagnosis: 'Sí, lo tengo.', noDiagnosis: 'No, no lo tengo.',
     severityTitle: '¿Qué tan grave es tu alergia?', severitySubtitle: 'Entender tu tipo de alergia nos ayuda a recomendar ingredientes más seguros.',
     mild: 'Leve', moderate: 'Moderada', severe: 'Grave',
-    reactionTitle: '¿Cuándo suele ocurrir tu reacción?', reactionSubtitle: 'Entender tu tipo de alergia nos ayuda a ajustar filtros más seguros.',
+    reactionTitle: '¿Cuándo suele ocurrir tu reacción alérgica?', reactionSubtitle: 'Entender tu tipo de alergia nos ayuda a ajustar filtros más seguros.',
     immediate: 'Inmediata', delayed: 'Retardada', notSure: 'No sé',
     ingredientsTitle: 'Selecciona ingredientes a evitar.', ingredientsSubtitle: 'Elige los ingredientes relacionados con tu alergia para personalizar los filtros.',
     add: '+ Añadir', itemInputPlaceholder: 'Escribe y confirma', categoryNamePlaceholder: 'Nombre de categoría',
@@ -214,8 +215,8 @@ const es = {
     veganStrictTitle: '¿Qué tan estricta es\ntu dieta vegana?', veganStrictSubtitle: 'Elige la opción que mejor coincida con lo que evitas.',
     strictVegan: 'Vegano estricto', strictVeganDesc: 'Sin lecitina / lactosa / miel / vitamina D3 / Omega-3',
     flexibleVegan: 'Vegano flexible', flexibleVeganDesc: 'Intenta evitar lecitina / lactosa / miel / vitamina D3 / Omega-3',
-    dietConfirmTitle: 'Tu preferencia alimentaria es...', dietConfirmSubtitle: 'La preferencia seleccionada se aplicará\na tus recomendaciones.',
-    vegetarianAvoidTitle: 'Como {{diet}},\nevitas', vegetarianAvoidSubtitle: 'Según tu preferencia alimentaria, estos ingredientes se\nexcluirán de tus recomendaciones.',
+    dietConfirmTitle: 'Tu preferencia alimentaria es', dietConfirmSubtitle: 'La preferencia seleccionada se aplicará\na tus opciones de filtrado.',
+    vegetarianAvoidTitle: 'Como {{diet}},\nevitas', vegetarianAvoidSubtitle: 'Según tu preferencia, estos ingredientes\nse filtrarán.',
     addToListTitle: 'Añadir a tu lista', addToListSubtitle: 'Elige categorías adicionales a evitar.', allCategoriesAdded: 'Todas las categorías ya están añadidas.',
     vegetarianTypes: {
       fruitarian: 'Frugívoro', vegan: 'Vegano', lacto_vegetarian: 'Lacto-vegetariano', ovo_vegetarian: 'Ovo-vegetariano',

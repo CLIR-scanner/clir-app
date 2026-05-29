@@ -91,7 +91,7 @@ function makeSimilarityReasons(profile: Profile, language: string): string[] {
 
   profile.allergyProfile.forEach(allergenId => {
     const allergenLabel = getAllergenDisplayName(allergenId, language);
-    reasons.push(isKorean ? `나와 같은 ${allergenLabel} 알러지` : `Same ${allergenLabel} allergy`);
+    reasons.push(isKorean ? `나와 같은 ${allergenLabel} 알레르기` : `Same ${allergenLabel} allergy`);
   });
 
   if (profile.sensitivityLevel === 'strict') {

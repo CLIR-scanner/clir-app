@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: DARK_GREEN, letterSpacing: -0.3, textAlign: 'center' },
 
   // ── Section header
-  sectionHeader:   { gap: 4, marginTop: 12 },
+  sectionHeader:   { gap: 4, marginTop: 4 },
   sectionTitle:    { fontSize: 16, fontFamily: 'Pretendard-Bold', color: DARK_GREEN },
   sectionSubtitle: { fontSize: 12, color: DARK_GREEN, lineHeight: 18 },
 

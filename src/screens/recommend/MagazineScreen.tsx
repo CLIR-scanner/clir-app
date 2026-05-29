@@ -19,6 +19,7 @@ import Skeleton from '../../components/common/Skeleton';
 import { getMagazineItems, toggleMagazineBookmark } from '../../services/recommend.service';
 import { MagazineItem, RecommendStackParamList } from '../../types';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
+import i18n from '../../i18n';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'MagazineScreen'>;
 
@@ -36,8 +37,8 @@ const CATEGORY_IDS = ['all', ...INITIAL_FILTER_CATEGORIES.map(c => c.id)];
 export function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const hours  = Math.floor(diffMs / (1000 * 60 * 60));
-  if (hours < 24) return `${hours} hours ago`;
-  return `${Math.floor(hours / 24)} days ago`;
+  if (hours < 24) return i18n.t('recommendUi.hoursAgo', { count: hours });
+  return i18n.t('recommendUi.daysAgo', { count: Math.floor(hours / 24) });
 }
 
 // ── BookmarkIcon (SVG) ────────────────────────────────────────────────────────
@@ -232,7 +233,7 @@ export default function MagazineScreen({ navigation }: Props) {
         <View style={styles.searchBox}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search Title"
+            placeholder={t('recommendUi.searchTitlePlaceholder')}
             placeholderTextColor={C.muted}
             value={query}
             onChangeText={setQuery}

@@ -740,7 +740,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
             style={styles.replyInput}
             value={draft}
             onChangeText={setDraft}
-            placeholder="Write a reply"
+            placeholder={t('recommendUi.replyPlaceholder')}
             placeholderTextColor={C.muted}
             multiline
             maxLength={500}
@@ -779,7 +779,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
               value={editQuestionTitle}
               onChangeText={setEditQuestionTitle}
               maxLength={100}
-              placeholder="제목"
+              placeholder={t('recommendUi.editTitlePlaceholder')}
               placeholderTextColor={C.muted}
             />
 
@@ -790,7 +790,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
               onChangeText={setEditQuestionContent}
               multiline
               maxLength={2000}
-              placeholder="내용"
+              placeholder={t('recommendUi.editBodyPlaceholder')}
               placeholderTextColor={C.muted}
             />
 
