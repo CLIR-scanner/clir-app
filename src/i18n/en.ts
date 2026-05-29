@@ -389,6 +389,7 @@ const en = {
     writeReview:      'Write a review',
     qa:               'Q&A',
     anonymous:        'Anonymous',
+    byAuthor:         'by {{author}}',
     magazine:         'Clir Magazine',
     magazineTab:      'Magazine',
     magazineTitle:    'Magazine',

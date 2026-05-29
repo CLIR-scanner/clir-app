@@ -156,6 +156,19 @@ const CATEGORY_LABEL: Record<QnaCategory, string> = {
   vegetarian: 'Vegetarian Diet',
 };
 
+// BE 는 표시명(display_name) 미설정 사용자에게 userNickname 을 한국어 '익명' 으로
+// 채워 반환한다(PR-BE2 "BE 보장"). 따라서 null/빈값뿐 아니라 이 sentinel 도 현재 언어
+// 라벨로 정규화해야 영어/스페인어에서 '익명' 이 그대로 노출되지 않는다.
+const BE_ANONYMOUS_NICKNAME = '익명';
+
+function displayAuthor(userNickname?: string | null): string {
+  const name = userNickname?.trim();
+  if (!name || name === BE_ANONYMOUS_NICKNAME) {
+    return i18n.t('recommendUi.anonymous');
+  }
+  return name;
+}
+
 function mapQnaToQuestion(post: QnaPostSummaryApi): QAQuestion {
   return {
     id: post.id,
@@ -163,8 +176,8 @@ function mapQnaToQuestion(post: QnaPostSummaryApi): QAQuestion {
     label: CATEGORY_LABEL[post.category],
     title: post.title,
     body: post.content,
-    // 닉네임 미설정 → 현재 언어의 '익명' 라벨 (하드코딩 '익명' 제거).
-    author: post.userNickname ?? i18n.t('recommendUi.anonymous'),
+    // 닉네임 미설정/BE sentinel('익명') → 현재 언어의 익명 라벨로 정규화.
+    author: displayAuthor(post.userNickname),
     viewCount: post.viewCount,
     answerCount: post.answerCount,
     isNotice: post.isNotice,
@@ -178,7 +191,7 @@ function mapQnaAnswer(ans: QnaAnswerApi): QAAnswer {
     id: ans.id,
     questionId: ans.qnaId,
     userId: ans.userId,
-    author: ans.userNickname ?? i18n.t('recommendUi.anonymous'),
+    author: displayAuthor(ans.userNickname),
     body: ans.content,
     createdAt: ans.createdAt,
   };

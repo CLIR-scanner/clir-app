@@ -643,7 +643,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
                   )}
                 </View>
                 <Text style={styles.questionTitle}>{question.title}</Text>
-                <Text style={styles.questionAuthor}>by {question.author}</Text>
+                <Text style={styles.questionAuthor}>{t('recommendUi.byAuthor', { author: question.author })}</Text>
                 <Text style={styles.questionBody}>{question.body}</Text>
 
                 {/* 첨부 이미지 — TTL 5분 signed URL. 만료 시 화면 재진입(QADetail 재호출) 로 갱신. */}
