@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { ListStackParamList, Product, RiskLevel, Ingredient } from '../../types';
+import { ListStackParamList, Product, Ingredient } from '../../types';
 import { getIngredient, getProductById, isLocalOcrProductId } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
@@ -52,12 +52,6 @@ const DUMMY_GOOD_PRODUCT: Product = {
 const BG         = '#FDFFFD';
 const DARK_GREEN = '#044733';
 const MID_GREEN  = '#556C53';
-
-const VERDICT_BORDER: Record<RiskLevel, string> = {
-  safe:    '#25FF81',
-  caution: '#FF9D00',
-  danger:  '#FF3434',
-};
 
 export default function FavoriteProductDetailScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
@@ -278,16 +272,14 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
             {product.image ? (
               <FadeInImage source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : null}
+            <View style={styles.imgBadge} pointerEvents="none">
+              <RiskBadgeIcon level={riskLevel} size={52} />
+            </View>
           </View>
         </View>
 
-        {/* 2. Verdict icon + product name */}
-        <View style={styles.nameRow}>
-          <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
-            <RiskBadgeIcon level={riskLevel} size={17} style={styles.verdictImg} />
-          </View>
-          <Text style={styles.productName}>{product.name}</Text>
-        </View>
+        {/* 2. Product name — 디바이스 가운데 정렬 */}
+        <Text style={styles.productName}>{product.name}</Text>
 
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
@@ -443,26 +435,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: DARK_GREEN,
   },
+  // 판정(good/poor/bad) 마크 — 이미지 우측 아래
+  imgBadge: { position: 'absolute', right: 8, bottom: 8 },
 
-  // ── Name row
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  verdictCircle: {
-    width: 30, height: 30,
-    borderRadius: 15,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  verdictImg:  { width: 17, height: 17 },
-  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%', textAlign: 'center' },
+  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, textAlign: 'center', marginBottom: 6 },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset
