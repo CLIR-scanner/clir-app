@@ -278,16 +278,14 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
             {product.image ? (
               <FadeInImage source={{ uri: product.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : null}
+            <View style={styles.imgBadge} pointerEvents="none">
+              <RiskBadgeIcon level={riskLevel} size={52} />
+            </View>
           </View>
         </View>
 
-        {/* 2. Verdict icon + product name */}
-        <View style={styles.nameRow}>
-          <View style={[styles.verdictCircle, { borderColor: VERDICT_BORDER[riskLevel] }]}>
-            <RiskBadgeIcon level={riskLevel} size={17} style={styles.verdictImg} />
-          </View>
-          <Text style={styles.productName}>{product.name}</Text>
-        </View>
+        {/* 2. Product name — 디바이스 가운데 정렬 */}
+        <Text style={styles.productName}>{product.name}</Text>
 
         {/* Brand */}
         <Text style={styles.brandName}>{product.brand || '—'}</Text>
@@ -443,6 +441,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: DARK_GREEN,
   },
+  // 판정(good/poor/bad) 마크 — 이미지 우측 아래
+  imgBadge: { position: 'absolute', right: 8, bottom: 8 },
 
   // ── Name row
   nameRow: {
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   verdictImg:  { width: 17, height: 17 },
-  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, flexShrink: 1, maxWidth: '75%', textAlign: 'center' },
+  productName: { fontSize: 20, fontFamily: 'Pretendard-Bold', color: DARK_GREEN, letterSpacing: -0.38, textAlign: 'center', marginBottom: 6 },
   brandName:   { fontSize: 12, color: MID_GREEN, textAlign: 'center', marginBottom: 28, letterSpacing: -0.23 },
 
   // ── All Ingredients fieldset
