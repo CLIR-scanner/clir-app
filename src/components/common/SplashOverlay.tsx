@@ -19,7 +19,9 @@ import ScanGlyph, { SCAN_GLYPH_C_H, SCAN_GLYPH_VIEWBOX } from './ScanGlyph';
 // 4) 그 ScanGlyph 가 실측한 스캔 탭 버튼 위치/크기로 정확히 tuck + 배경 페이드아웃 →
 // 5) 종료. 마지막 글리프가 실제 탭 버튼과 동일 path/viewBox/크기/위치 → 끊김 없음.
 // (스캔 탭 아이콘 자체는 변경하지 않음 — 스플래시가 탭의 글리프에 맞춰 들어간다)
-const DARK = '#1C3A19';
+// 로고 색 = 로그인 화면(AuthHome)의 ClirLogo 색(S.primary) 과 일치 →
+// 인트로 종료 후 로고를 hold 한 채 AuthHome 으로 핸드오프해도 끊김 없음.
+const DARK = '#044733';
 const BG   = '#FDFFFD';
 // 스캔 탭/촬영 글리프 색(= MainNavigator SCAN_COLOR = profileDarkGreen). 핸드오프 색 일치.
 const SCAN_COLOR = '#1C3A19';
@@ -31,8 +33,12 @@ const I_PATH   = 'M65.9846 10.1141C66.858 9.22691 67.9239 8.7981 69.1822 8.7981C
 const R_PATH   = 'M89.9364 28.5675V33.9942H90.1585C90.9874 31.998 92.2013 30.4158 93.8297 29.2773C95.4581 28.1387 97.3381 27.562 99.4698 27.562C101.32 27.562 103.111 28.1091 104.858 29.2033L101.868 35.0588C100.802 34.1568 99.4698 33.6984 97.871 33.6984C96.1686 33.6984 94.7623 34.0385 93.652 34.7335C92.5418 35.4285 91.7276 36.4044 91.2095 37.6612C90.7062 38.9181 90.3657 40.1602 90.1881 41.3726C90.0104 42.5851 89.9364 43.9751 89.9364 45.5572V61.9851H83.3933V28.5527H89.9364V28.5675Z';
 
 // ── 튜닝 상수 (Fast Refresh 로 미세 조정) ───────────────────────────────────────
-const LOGO_W = 150 * 0.492; // 전체 로고 크기 0.492배 (= 이전 0.41 × 1.2). 파생 상수·tuck 수학 자동 스케일
+// 로그인 화면(AuthHome) ClirLogo(width 80)와 동일 크기 → 인트로 종료 후 hold 시 픽셀 일치.
+const LOGO_W = 80;
 const LOGO_H = (LOGO_W * 62) / 105;
+// 로고의 화면 중앙 기준 세로 오프셋(px). AuthHome logoArea 의 paddingBottom(40) 으로
+// 로고 중심이 화면 중앙보다 20px 위 → 동일하게 맞춰 hold 시 위치 일치.
+const LOGO_REST_TY = -20;
 const K = LOGO_W / 105;                              // px per viewBox unit
 // 워드마크 viewBox(105x62) 안 C+dot 의 실제 bbox
 const C_BBOX_CX_U = 40.6055 / 2;                     // C+dot 중심 x (units)
@@ -92,7 +98,8 @@ export default function SplashOverlay({
   const scanOpacity = useRef(new Animated.Value(0)).current;
   const groupScale  = useRef(new Animated.Value(1)).current;
   const groupTX     = useRef(new Animated.Value(0)).current;
-  const groupTY     = useRef(new Animated.Value(0)).current;
+  // 휴지 위치를 AuthHome 로고 위치(-20)에 맞춤. tuck 은 절대 toValue 로 덮어쓰므로 영향 없음.
+  const groupTY     = useRef(new Animated.Value(LOGO_REST_TY)).current;
   const bgOpacity   = useRef(new Animated.Value(1)).current;
   const logoOpacity = useRef(new Animated.Value(1)).current;
 
@@ -157,12 +164,14 @@ export default function SplashOverlay({
     outroStarted.current = true;
 
     // 바텀 네비(스캔 버튼)가 없는 경로(미인증/약관 미동의 → Auth 플로우):
-    // 로고를 스캔버튼으로 보내는 collapse/tuck 을 생략하고, 완성된 로고와 배경을
-    // 부드럽게 페이드아웃해 그 아래 Auth/약관 화면을 드러낸다.
+    // 로고는 AuthHome 로고와 동일(위치·크기·색)하므로 움직이지 않고 그대로 hold.
+    // 배경만 페이드아웃해 그 아래 AuthHome(동일 위치의 로고 + 로그인 버튼)을 드러내고,
+    // 마지막에 오버레이 로고를 짧게 페이드 — 아래 AuthHome 로고와 겹쳐 끊김 없는 핸드오프.
+    // (별도 스플래시 로딩 화면 없이, 로고는 가만히 있고 로그인 버튼만 나타난 것처럼 보인다.)
     if (!tuckToScanButton) {
-      Animated.parallel([
-        Animated.timing(logoOpacity, { toValue: 0, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(bgOpacity,   { toValue: 0, duration: 440, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(bgOpacity,   { toValue: 0, duration: BG_FADE, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(logoOpacity, { toValue: 0, duration: LOGO_FADE, easing: Easing.linear, useNativeDriver: true }),
       ]).start(() => finish());
       return;
     }
