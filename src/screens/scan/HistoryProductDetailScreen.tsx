@@ -19,7 +19,7 @@ import { addFavorite, removeFavorite, getFavorites } from '../../services/list.s
 import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
-import { getIngredientDescription } from '../../lib/display-names';
+import { getIngredientDescription, getIngredientDisplayName } from '../../lib/display-names';
 import { makeLocalId } from '../../lib/localId';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import FadeInImage from '../../components/common/FadeInImage';
@@ -426,8 +426,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
               <>
                 <View style={styles.modalHeader}>
                   <View style={styles.modalTitles}>
-                    <Text style={styles.modalName}>{detailIngredient.name}</Text>
-                    <Text style={styles.modalNameKo}>{detailIngredient.nameKo}</Text>
+                    <Text style={styles.modalName}>{getIngredientDisplayName(detailIngredient, currentLanguage)}</Text>
                   </View>
                   <TouchableOpacity onPress={closeModal} style={styles.modalCloseBtn}>
                     <Text style={styles.modalCloseText}>✕</Text>
