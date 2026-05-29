@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { ProfileStackParamList } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
@@ -208,13 +208,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { fontSize: 64, fontFamily: 'Pretendard-ExtraBold', color: Colors.white },
-  cameraBadge: {
-    position: 'absolute', right: 4, bottom: 8,
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: Colors.white,
-    borderWidth: 1, borderColor: Colors.profileBorder,
-    alignItems: 'center', justifyContent: 'center',
-  },
 
   // 표시명 행
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 28, maxWidth: '100%' },
