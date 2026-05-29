@@ -4,7 +4,6 @@ import { useSharedValue } from 'react-native-reanimated';
 import { SurveyProgressContext } from '../contexts/SurveyProgressContext';
 import { AuthStackParamList } from '../types';
 import { START_AT_SURVEY } from '../constants/dev';
-import SplashScreen from '../screens/auth/SplashScreen';
 import AuthHomeScreen from '../screens/auth/AuthHomeScreen';
 import TermsAgreementScreen from '../screens/auth/TermsAgreementScreen';
 import TermsDetailScreen from '../screens/auth/TermsDetailScreen';
@@ -27,9 +26,12 @@ export default function AuthNavigator() {
   return (
 
     <SurveyProgressContext.Provider value={surveyProgress}>
-    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FDFFFD' } }}>
-
-      <Stack.Screen name="Splash" component={SplashScreen} />
+    {/* 앱 실행 직후 화면은 App.tsx 의 SplashOverlay 가 담당 → 별도 Splash(progress) 화면 없이
+        곧바로 AuthHome(로그인). 오버레이 로고가 AuthHome 로고 위치/크기로 hold 후 핸드오프된다. */}
+    <Stack.Navigator
+      initialRouteName={START_AT_SURVEY ? 'SurveyLanding' : 'AuthHome'}
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FDFFFD' } }}
+    >
       <Stack.Screen name="TermsAgreement" component={TermsAgreementScreen} />
       <Stack.Screen name="TermsDetail" component={TermsDetailScreen} />
       <Stack.Screen name="AuthHome" component={AuthHomeScreen} />
