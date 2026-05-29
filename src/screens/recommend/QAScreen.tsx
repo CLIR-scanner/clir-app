@@ -99,7 +99,7 @@ function FeaturedQuestionCard({ item, onPress }: { item: QAQuestion; onPress: ()
       activeOpacity={0.8}
     >
       <Text style={[styles.featuredLabel, isNotice ? styles.noticeMutedText : styles.askingMutedText]}>
-        {item.label}
+        {item.category ? t(CAT_LABEL_KEY[item.category]) : item.label}
       </Text>
       <Text style={[styles.featuredTitle, isNotice ? styles.noticeTitle : styles.askingTitle]} numberOfLines={3}>
         {isNotice ? t('qaUi.noticeTitle') : item.title}
@@ -185,9 +185,10 @@ function QuestionRow({
   onPress: () => void;
   query: string;
 }) {
+  const { t } = useTranslation();
   return (
     <TouchableOpacity style={styles.questionRow} onPress={onPress} activeOpacity={0.75}>
-      <Text style={styles.questionLabel}>{item.label}</Text>
+      <Text style={styles.questionLabel}>{item.category ? t(CAT_LABEL_KEY[item.category]) : item.label}</Text>
       <HighlightedText
         text={item.title}
         query={query}

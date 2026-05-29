@@ -30,7 +30,7 @@ import {
 } from '../../services/recommend.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { qaFeed } from '../../lib/qaFeedSignal';
-import { QAAnswer, QAQuestion, RecommendStackParamList } from '../../types';
+import { QAAnswer, QAQuestion, QnaCategory, RecommendStackParamList } from '../../types';
 import { useUserStore } from '../../store/user.store';
 import QnaImageViewer from '../../components/QnaImageViewer';
 import {
@@ -48,6 +48,13 @@ const C = {
   muted: Colors.searchBorder,
   pale: Colors.profileCard,
   line: Colors.searchDivider,
+};
+
+const CAT_LABEL_KEY: Record<QnaCategory, string> = {
+  all:        'recommendUi.qaCategoryAll',
+  product:    'recommendUi.qaCategoryProduct',
+  allergy:    'recommendUi.qaCategoryAllergy',
+  vegetarian: 'recommendUi.qaCategoryVegetarian',
 };
 
 function formatDate(value: string): string {
@@ -634,7 +641,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
             <View>
               <View style={[styles.questionCard, question.isNotice && styles.noticeCard]}>
                 <View style={styles.questionTopRow}>
-                  <Text style={styles.questionLabel}>{question.label}</Text>
+                  <Text style={styles.questionLabel}>{question.category ? t(CAT_LABEL_KEY[question.category]) : question.label}</Text>
                   {/* 공지글은 메뉴 미노출. 본인 글이면 수정/삭제, 타인 글이면 신고/차단. */}
                   {!question.isNotice && (
                     <TouchableOpacity
