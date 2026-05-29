@@ -6,6 +6,7 @@ import {
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -442,40 +443,65 @@ export default function CommunityScreen({ navigation }: Props) {
     }, []),
   );
 
+  // 피드 조회 — 초기/재진입(reloadToken) 및 pull-to-refresh 공용. GET /community/feed 의
+  // weeklyTrending 만 사용 (similarUsersPicks 섹션 제거됨).
+  const fetchFeed = useCallback(async () => {
+    const [feed, qa, magazines] = await Promise.all([
+      getCommunityFeed(50), getQAQuestions(), getMagazineItems(),
+    ]);
+    return {
+      trending:  feed.weeklyTrending,
+      qa:        qa.questions.filter(question => !question.isNotice).slice(0, 3),
+      magazines: magazines.slice(0, 3),
+    };
+  }, []);
+
+  const applyFeed = useCallback(
+    (d: { trending: Product[]; qa: QAQuestion[]; magazines: MagazineItem[] }) => {
+      setTrendingProducts(d.trending);
+      setQaPreview(d.qa);
+      setMagazinePreview(d.magazines);
+    },
+    [],
+  );
+
+  const handleFeedError = useCallback((err: unknown) => {
+    // 401 → 인증 만료. 로그아웃 + Auth 스택 복귀는 RootNavigator 의 user.id 분기가 처리.
+    if (err instanceof UnauthorizedError) {
+      clearAuthToken();
+      useUserStore.getState().logout();
+      return;
+    }
+    // 그 외 (DB_UNAVAILABLE / NETWORK / TIMEOUT 등) — 빈 상태로 폴백.
+    // Alert 띄우지 않음: 커뮤니티 홈은 secondary 콘텐츠라 silent fallback 우선.
+    if (__DEV__) {
+      const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
+      console.warn('[CommunityScreen] feed load failed:', msg);
+    }
+    setTrendingProducts([]);
+    setQaPreview([]);
+    setMagazinePreview([]);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
-    // GET /community/feed 의 weeklyTrending 만 사용 (similarUsersPicks 섹션 제거됨).
-    Promise.all([getCommunityFeed(50), getQAQuestions(), getMagazineItems()])
-      .then(([feed, qa, magazines]) => {
-        if (cancelled) return;
-        setTrendingProducts(feed.weeklyTrending);
-        setQaPreview(qa.questions.filter(question => !question.isNotice).slice(0, 3));
-        setMagazinePreview(magazines.slice(0, 3));
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        // 401 → 인증 만료. 로그아웃 + Auth 스택 복귀는 RootNavigator 의 user.id 분기가 처리.
-        if (err instanceof UnauthorizedError) {
-          clearAuthToken();
-          useUserStore.getState().logout();
-          return;
-        }
-        // 그 외 (DB_UNAVAILABLE / NETWORK / TIMEOUT 등) — 빈 상태로 폴백.
-        // Alert 띄우지 않음: 커뮤니티 홈은 secondary 콘텐츠라 silent fallback 우선.
-        if (__DEV__) {
-          const msg = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
-          console.warn('[CommunityScreen] feed load failed:', msg);
-        }
-        setTrendingProducts([]);
-        setQaPreview([]);
-        setMagazinePreview([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+    fetchFeed()
+      .then(d => { if (!cancelled) applyFeed(d); })
+      .catch(err => { if (!cancelled) handleFeedError(err); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, [reloadToken]);
+  }, [reloadToken, fetchFeed, applyFeed, handleFeedError]);
+
+  // 당겨서 새로고침 — 스켈레톤 없이 RefreshControl 스피너만 노출.
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchFeed()
+      .then(applyFeed)
+      .catch(handleFeedError)
+      .finally(() => setRefreshing(false));
+  }, [fetchFeed, applyFeed, handleFeedError]);
 
   const trendingPreview = trendingProducts
     .filter(product => trendingCategory === 'all' || product.category === trendingCategory)
@@ -717,6 +743,14 @@ export default function CommunityScreen({ navigation }: Props) {
         onMomentumScrollEnd={handleScrollEnd}
         onScrollEndDrag={handleScrollEnd}
         onContentSizeChange={remeasureSections}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.searchDarkGreen}
+            colors={[Colors.searchDarkGreen]}
+          />
+        }
         contentContainerStyle={{ paddingBottom: insets.bottom + 18 }}
       >
         {/* ── Promotional banner ─────────────────────────────────────── */}
