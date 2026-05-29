@@ -394,6 +394,7 @@ const ko = {
     writeReview:      '리뷰 쓰기',
     qa:               'Q&A',
     anonymous:        '익명',
+    byAuthor:         '작성자 {{author}}',
     magazine:         'Clir 매거진',
     magazineTab:      'Magazine',
     magazineTitle:    '매거진',
