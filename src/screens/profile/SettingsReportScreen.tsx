@@ -3,8 +3,9 @@
 //
 // 베타 v1 영어 inline. v1.1 에서 i18n + Slack webhook 또는 Google Form 으로 업그레이드 검토.
 
-import React from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +32,16 @@ export default function SettingsReportScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+
+  const [emailCopied, setEmailCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+  const copyEmail = useCallback(async () => {
+    await Clipboard.setStringAsync(FEEDBACK_EMAIL);
+    setEmailCopied(true);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setEmailCopied(false), 1500);
+  }, []);
 
   async function handleSend() {
     const url = buildMailtoUrl();
@@ -89,8 +100,17 @@ export default function SettingsReportScreen() {
 
         <Text style={styles.contact}>
           Or reach us directly at{'\n'}
-          <Text style={styles.contactEmail}>{FEEDBACK_EMAIL}</Text>
+          <Text
+            style={styles.contactEmail}
+            onPress={copyEmail}
+            suppressHighlighting
+            accessibilityRole="button"
+            accessibilityLabel={FEEDBACK_EMAIL}
+          >
+            {FEEDBACK_EMAIL}
+          </Text>
         </Text>
+        {emailCopied && <Text style={styles.copiedHint}>{`✓ ${t('common.copied')}`}</Text>}
       </View>
     </View>
   );
@@ -135,5 +155,12 @@ const styles = StyleSheet.create({
   contactEmail: {
     fontFamily: 'Pretendard-SemiBold',
     color: '#1C3A19',
+  },
+  copiedHint: {
+    marginTop: 6,
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#1C3A19',
+    fontFamily: 'Pretendard-SemiBold',
   },
 });

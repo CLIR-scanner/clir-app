@@ -5,8 +5,9 @@
 //
 // 베타 v1 영어 inline. v1.1 에서 i18n 검토.
 
-import React from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,16 @@ export default function SettingsPrivacyScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+
+  const [emailCopied, setEmailCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+  const copyEmail = useCallback(async () => {
+    await Clipboard.setStringAsync(CONTACT_EMAIL);
+    setEmailCopied(true);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setEmailCopied(false), 1500);
+  }, []);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -93,8 +104,18 @@ export default function SettingsPrivacyScreen() {
         <View style={styles.footer}>
           <Text style={styles.footerLine}>Last updated: {TERMS_VERSION}</Text>
           <Text style={styles.footerLine}>
-            Questions? <Text style={styles.contactEmail}>{CONTACT_EMAIL}</Text>
+            Questions?{' '}
+            <Text
+              style={styles.contactEmail}
+              onPress={copyEmail}
+              suppressHighlighting
+              accessibilityRole="button"
+              accessibilityLabel={CONTACT_EMAIL}
+            >
+              {CONTACT_EMAIL}
+            </Text>
           </Text>
+          {emailCopied && <Text style={styles.copiedHint}>{`✓ ${t('common.copied')}`}</Text>}
           <Text style={styles.footerLine}>
             Product data powered by Open Food Facts (ODbL).
           </Text>
@@ -133,4 +154,5 @@ const styles = StyleSheet.create({
   footer: { marginTop: 36, gap: 6 },
   footerLine: { fontSize: 11, color: '#5A6B58', textAlign: 'center' },
   contactEmail: { fontFamily: 'Pretendard-SemiBold', color: '#1C3A19' },
+  copiedHint: { fontSize: 11, color: '#1C3A19', textAlign: 'center', fontFamily: 'Pretendard-SemiBold' },
 });

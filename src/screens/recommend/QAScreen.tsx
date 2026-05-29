@@ -26,12 +26,14 @@ import { QAQuestion, QnaCategory, RecommendStackParamList } from '../../types';
 type Props = NativeStackScreenProps<RecommendStackParamList, 'QAScreen'>;
 
 /** BE QnaCategory enum 과 1:1 매칭. 'all' 은 product/allergy/vegetarian 합집합. */
-const CATEGORIES: ReadonlyArray<{ id: QnaCategory; label: string }> = [
-  { id: 'all',        label: 'All Categories' },
-  { id: 'product',    label: 'Product Asking' },
-  { id: 'allergy',    label: 'Allergy' },
-  { id: 'vegetarian', label: 'Vegetarian Diet' },
-];
+const CATEGORIES: ReadonlyArray<QnaCategory> = ['all', 'product', 'allergy', 'vegetarian'];
+
+const CAT_LABEL_KEY: Record<QnaCategory, string> = {
+  all:        'recommendUi.qaCategoryAll',
+  product:    'recommendUi.qaCategoryProduct',
+  allergy:    'recommendUi.qaCategoryAllergy',
+  vegetarian: 'recommendUi.qaCategoryVegetarian',
+};
 
 const C = {
   bg: Colors.searchBackground,
@@ -334,7 +336,7 @@ export default function QAScreen({ navigation }: Props) {
         <View style={styles.searchBox}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search Title"
+            placeholder={t('recommendUi.searchTitlePlaceholder')}
             placeholderTextColor={C.muted}
             value={query}
             onChangeText={setQuery}
@@ -391,13 +393,13 @@ export default function QAScreen({ navigation }: Props) {
             >
               {CATEGORIES.map(cat => (
                 <TouchableOpacity
-                  key={cat.id}
-                  style={[styles.categoryChip, selectedCategory === cat.id && styles.categoryChipActive]}
-                  onPress={() => setSelectedCategory(cat.id)}
+                  key={cat}
+                  style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
+                  onPress={() => setSelectedCategory(cat)}
                   activeOpacity={0.75}
                 >
-                  <Text style={[styles.categoryText, selectedCategory === cat.id && styles.categoryTextActive]}>
-                    {cat.label}
+                  <Text style={[styles.categoryText, selectedCategory === cat && styles.categoryTextActive]}>
+                    {t(CAT_LABEL_KEY[cat])}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -444,7 +446,7 @@ export default function QAScreen({ navigation }: Props) {
         <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
           <Path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" />
         </Svg>
-        <Text style={styles.fabText}>Ask Questions</Text>
+        <Text style={styles.fabText}>{t('recommendUi.askQuestion')}</Text>
       </TouchableOpacity>
     </View>
   );

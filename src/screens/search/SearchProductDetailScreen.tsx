@@ -19,7 +19,7 @@ import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import FadeInImage from '../../components/common/FadeInImage';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
-import { getIngredientDescription } from '../../lib/display-names';
+import { getIngredientDescription, getIngredientDisplayName } from '../../lib/display-names';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import { useResponsive } from '../../lib/responsive';
 
@@ -310,8 +310,7 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
               <>
                 <View style={styles.modalHeader}>
                   <View style={styles.modalTitles}>
-                    <Text style={styles.modalName}>{detailIngredient.name}</Text>
-                    <Text style={styles.modalNameKo}>{detailIngredient.nameKo}</Text>
+                    <Text style={styles.modalName}>{getIngredientDisplayName(detailIngredient, currentLanguage)}</Text>
                   </View>
                   <TouchableOpacity onPress={closeModal} style={styles.modalCloseBtn}>
                     <Text style={styles.modalCloseText}>✕</Text>
@@ -462,9 +461,7 @@ const styles = StyleSheet.create({
   modalLoadingWrap: { paddingVertical: 40, alignItems: 'center' },
   modalHeader:      { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
   modalTitles:      { flex: 1 },
-  modalName:        { fontSize: 20, fontFamily: 'Pretendard-ExtraBold', color: '#1A1A1A' },
-  modalNameKo:      { fontSize: 14, color: '#666', marginTop: 2 },
-  modalCloseBtn:    { width: 28, height: 36, borderRadius: 14, backgroundColor: '#F0F0F0', alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
+  modalName:        { fontSize: 20, fontFamily: 'Pretendard-ExtraBold', color: '#1A1A1A' },  modalCloseBtn:    { width: 28, height: 36, borderRadius: 14, backgroundColor: '#F0F0F0', alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
   modalCloseText:   { fontSize: 12, color: '#666' },
   modalDesc:        { fontSize: 14, color: '#333', lineHeight: 22, marginBottom: 20 },
   modalSources:     { borderTopWidth: 1, borderTopColor: '#E8E8E8', paddingTop: 16 },

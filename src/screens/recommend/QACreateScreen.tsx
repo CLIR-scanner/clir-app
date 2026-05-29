@@ -38,12 +38,14 @@ const C = {
 };
 
 /** 4 카테고리 — `all` 은 product/allergy/vegetarian 필터 어디에서나 노출되는 유니버설 값. */
-const CATEGORIES: ReadonlyArray<{ id: QnaCategory; label: string }> = [
-  { id: 'all',        label: 'All' },
-  { id: 'product',    label: 'Product Asking' },
-  { id: 'allergy',    label: 'Allergy' },
-  { id: 'vegetarian', label: 'Vegetarian Diet' },
-];
+const CATEGORIES: ReadonlyArray<QnaCategory> = ['all', 'product', 'allergy', 'vegetarian'];
+
+const CAT_LABEL_KEY: Record<QnaCategory, string> = {
+  all:        'recommendUi.qaCategoryAll',
+  product:    'recommendUi.qaCategoryProduct',
+  allergy:    'recommendUi.qaCategoryAllergy',
+  vegetarian: 'recommendUi.qaCategoryVegetarian',
+};
 
 const MAX_PHOTOS = 4;
 const PRODUCT_SEARCH_DEBOUNCE_MS = 300;
@@ -229,13 +231,13 @@ export default function QACreateScreen({ navigation }: Props) {
         >
           {CATEGORIES.map(cat => (
             <TouchableOpacity
-              key={cat.id}
-              style={[styles.categoryChip, selectedCategory === cat.id && styles.categoryChipActive]}
-              onPress={() => setSelectedCategory(cat.id)}
+              key={cat}
+              style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
+              onPress={() => setSelectedCategory(cat)}
               activeOpacity={0.75}
             >
-              <Text style={[styles.categoryText, selectedCategory === cat.id && styles.categoryTextActive]}>
-                {cat.label}
+              <Text style={[styles.categoryText, selectedCategory === cat && styles.categoryTextActive]}>
+                {t(CAT_LABEL_KEY[cat])}
               </Text>
             </TouchableOpacity>
           ))}
@@ -251,7 +253,7 @@ export default function QACreateScreen({ navigation }: Props) {
             <View style={styles.productInputBox}>
               <TextInput
                 style={styles.productInput}
-                placeholder="Search product by name"
+                placeholder={t('recommendUi.searchProductPlaceholder')}
                 placeholderTextColor={C.muted}
                 value={productQuery}
                 onChangeText={text => {
@@ -317,7 +319,7 @@ export default function QACreateScreen({ navigation }: Props) {
 
         <TextInput
           style={styles.titleInput}
-          placeholder="Enter a title (max 20 characters)"
+          placeholder={t('recommendUi.qaTitlePlaceholder')}
           placeholderTextColor={C.muted}
           value={title}
           onChangeText={setTitle}
@@ -329,7 +331,7 @@ export default function QACreateScreen({ navigation }: Props) {
 
         <TextInput
           style={styles.contentInput}
-          placeholder="Write your question"
+          placeholder={t('recommendUi.qaBodyPlaceholder')}
           placeholderTextColor={C.muted}
           value={content}
           onChangeText={setContent}

@@ -22,7 +22,7 @@ import { useUserStore } from '../../store/user.store';
 import { Product, Profile, RecommendStackParamList, RiskLevel, SimilarUserReview } from '../../types';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
-import { DIET_LABELS } from '../../constants/dietary';
+import i18n from '../../i18n';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'SimilarUsersFavorites'>;
 
@@ -85,13 +85,13 @@ function makeSimilarityReasons(profile: Profile, language: string): string[] {
   const isKorean = language.startsWith('ko');
 
   profile.dietaryRestrictions.forEach(dietId => {
-    const dietLabel = DIET_LABELS[dietId] ?? dietId.replace(/_/g, ' ');
+    const dietLabel = i18n.t(`survey.dietTitles.${dietId}`, { defaultValue: dietId.replace(/_/g, ' ') });
     reasons.push(isKorean ? `나와 같은 ${dietLabel} 선호` : `Same ${dietLabel} preference`);
   });
 
   profile.allergyProfile.forEach(allergenId => {
     const allergenLabel = getAllergenDisplayName(allergenId, language);
-    reasons.push(isKorean ? `나와 같은 ${allergenLabel} 알러지` : `Same ${allergenLabel} allergy`);
+    reasons.push(isKorean ? `나와 같은 ${allergenLabel} 알레르기` : `Same ${allergenLabel} allergy`);
   });
 
   if (profile.sensitivityLevel === 'strict') {
