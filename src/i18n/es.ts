@@ -4,7 +4,7 @@ const es = {
   },
   common: {
     save: 'Guardar', cancel: 'Cancelar', delete: 'Eliminar', confirm: 'Confirmar', back: 'Volver',
-    loading: 'Cargando...', saving: 'Guardando...', error: 'Ha ocurrido un error.', copied: 'Copiado', retry: 'Reintentar', empty: 'Sin elementos.',
+    loading: 'Cargando...', saving: 'Guardando...', error: 'Ha ocurrido un error.', copied: 'Copiado', close: 'Cerrar', retry: 'Reintentar', empty: 'Sin elementos.',
     continue: 'Continuar', done: 'Listo', edit: 'Editar', editList: 'Editar lista', add: 'Añadir',
     clearAll: 'Borrar todo', selected_one: '{{count}} seleccionado', selected_other: '{{count}} seleccionados',
     currentlyActive: 'Activo actualmente', tapToSelect: 'Toca para seleccionar',
@@ -229,6 +229,25 @@ const es = {
     },
     dietCategories: {
       fruitsGrains: 'Frutas / Granos', vegetables: 'Verduras', dairy: 'Lácteos', eggs: 'Huevos', seafood: 'Mariscos', poultry: 'Aves', redMeat: 'Carne roja',
+    },
+    dietTypeDescriptions: {
+      fruitarian: '✓  Frutas, cereales, frutos secos\n✗  Verduras, carne, lácteos, huevos, mariscos',
+      vegan: '✓  Todos los alimentos vegetales\n✗  Carne, mariscos, lácteos, huevos, miel',
+      lacto_vegetarian: '✓  Verduras, lácteos\n✗  Carne, mariscos, huevos',
+      ovo_vegetarian: '✓  Verduras, huevos\n✗  Carne, mariscos, lácteos',
+      lacto_ovo_vegetarian: '✓  Verduras, lácteos, huevos\n✗  Carne, mariscos',
+      pesco_vegetarian: '✓  Verduras, pescado y mariscos\n✗  Carne, aves',
+      pollo_vegetarian: '✓  Verduras, pescado y mariscos, aves\n✗  Carne roja (res, cerdo, cordero)',
+      flexitarian: '✓  Mayormente vegetal\n✗  Sin restricción estricta — solo minimiza la carne',
+    },
+    dietCategoryDescriptions: {
+      fruitsGrains: 'Incluye frutas, cereales, pan, pasta, arroz y otros alimentos vegetales básicos.',
+      vegetables: 'Incluye todas las verduras: hojas verdes, tubérculos, legumbres y más.',
+      dairy: 'Incluye leche, queso, yogur, mantequilla y todos los derivados de la leche animal.',
+      eggs: 'Incluye huevos de gallina y cualquier producto que contenga huevo.',
+      seafood: 'Incluye peces, mariscos, crustáceos y demás animales acuáticos.',
+      poultry: 'Incluye pollo, pavo, pato y otras aves de corral.',
+      redMeat: 'Incluye res, cerdo, cordero y otras carnes rojas de mamíferos.',
     },
     // ── SurveyLanding beta invite + notices ──────────────────────────────────
     inviteTitle:        'Código de invitación beta',

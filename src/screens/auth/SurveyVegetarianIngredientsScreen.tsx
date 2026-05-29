@@ -12,7 +12,7 @@ import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
 import { useUserStore } from '../../store/user.store';
 import * as AuthService from '../../services/auth.service';
-import { DIET_AVOIDED_CATEGORIES, DIET_CATEGORY_DESCRIPTIONS, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } from '../../constants/dietary';
+import { DIET_AVOIDED_CATEGORIES, DIET_RESTRICTION_CATEGORIES, DIET_TITLES } from '../../constants/dietary';
 import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarianIngredients'>;
@@ -87,6 +87,11 @@ export default function SurveyVegetarianIngredientsScreen() {
   function getDietCategoryLabel(category: string): string {
     const key = DIET_CATEGORY_TRANSLATION_KEYS[category];
     return key ? t(key) : category;
+  }
+
+  function getDietCategoryDescription(category: string): string {
+    const key = DIET_CATEGORY_TRANSLATION_KEYS[category];
+    return key ? t(key.replace('dietCategories', 'dietCategoryDescriptions')) : '';
   }
 
   async function handleContinue() {
@@ -202,10 +207,10 @@ export default function SurveyVegetarianIngredientsScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>{infoCategory ? getDietCategoryLabel(infoCategory) : ''}</Text>
             <Text style={styles.infoBody}>
-              {infoCategory ? (DIET_CATEGORY_DESCRIPTIONS[infoCategory] ?? '') : ''}
+              {infoCategory ? getDietCategoryDescription(infoCategory) : ''}
             </Text>
             <TouchableOpacity style={styles.infoClose} onPress={() => setInfoCategory(null)}>
-              <Text style={styles.infoCloseText}>Close</Text>
+              <Text style={styles.infoCloseText}>{t('common.close')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>

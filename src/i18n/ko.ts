@@ -19,6 +19,7 @@ const ko = {
     saving:         '저장 중...',
     error:          '오류가 발생했습니다.',
     copied:         '복사됨',
+    close:          '닫기',
     retry:          '다시 시도',
     empty:          '항목이 없습니다.',
     continue:       '계속',
@@ -429,7 +430,7 @@ const ko = {
 
   // ── Survey ───────────────────────────────────────────────────────────────
   survey: {
-    landingTitle:       '빠른 질문 몇 가지에 답해주시면\n맞춤 설정을 도와드릴게요.',
+    landingTitle:       '빠른 질문 몇 가지에\n답해주시면\n맞춤 설정을 도와드릴게요.',
     languageTitle:      '앱 언어',
     languageSubtitle:   '설문과 앱 전체 언어가 함께 변경됩니다.',
     skip:               '이 과정 건너뛰기',
@@ -523,6 +524,25 @@ const ko = {
       seafood:      '해산물',
       poultry:      '가금류',
       redMeat:      '붉은 고기',
+    },
+    dietTypeDescriptions: {
+      fruitarian:           '✓  과일, 곡물, 견과류\n✗  채소, 고기, 유제품, 달걀, 해산물',
+      vegan:                '✓  모든 식물성 식품\n✗  고기, 해산물, 유제품, 달걀, 꿀',
+      lacto_vegetarian:     '✓  채소, 유제품\n✗  고기, 해산물, 달걀',
+      ovo_vegetarian:       '✓  채소, 달걀\n✗  고기, 해산물, 유제품',
+      lacto_ovo_vegetarian: '✓  채소, 유제품, 달걀\n✗  고기, 해산물',
+      pesco_vegetarian:     '✓  채소, 생선·해산물\n✗  고기, 가금류',
+      pollo_vegetarian:     '✓  채소, 생선·해산물, 가금류\n✗  붉은 고기(소고기, 돼지고기, 양고기)',
+      flexitarian:          '✓  대부분 식물성 위주\n✗  엄격한 제한 없음 — 고기를 최소화',
+    },
+    dietCategoryDescriptions: {
+      fruitsGrains: '과일, 곡물, 시리얼, 빵, 파스타, 쌀 등 식물성 주식을 포함합니다.',
+      vegetables:   '잎채소, 뿌리채소, 콩류 등 모든 채소를 포함합니다.',
+      dairy:        '우유, 치즈, 요거트, 버터 등 동물성 유제품을 모두 포함합니다.',
+      eggs:         '달걀 및 달걀이 들어간 모든 제품을 포함합니다.',
+      seafood:      '어류, 조개류, 갑각류 등 모든 수산물을 포함합니다.',
+      poultry:      '닭, 칠면조, 오리 등 식용 가금류를 포함합니다.',
+      redMeat:      '소고기, 돼지고기, 양고기 등 포유류의 붉은 고기를 포함합니다.',
     },
     // ── SurveyLanding 베타 invite + 안내 (F8 §5 / closed-beta) ───────────────
     inviteTitle:        '베타 초대 코드',

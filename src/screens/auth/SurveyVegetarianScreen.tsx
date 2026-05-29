@@ -10,7 +10,6 @@ import SurveyHeader from '../../components/common/SurveyHeader';
 import { getSurveyProgress } from '../../constants/surveySteps';
 import { AuthStackParamList, SurveyParams } from '../../types';
 import { Colors } from '../../constants/colors';
-import { DIET_TYPE_DESCRIPTIONS } from '../../constants/dietary';
 import PressableScale from '../../components/common/PressableScale';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SurveyVegetarian'>;
@@ -106,14 +105,14 @@ export default function SurveyVegetarianScreen() {
               {infoType ? t(`survey.vegetarianTypes.${infoType}`) : ''}
             </Text>
             <View style={styles.infoBodyWrapper}>
-              {infoType && (DIET_TYPE_DESCRIPTIONS[infoType] ?? '').split('\n').map((line, i) => (
+              {infoType && t(`survey.dietTypeDescriptions.${infoType}`).split('\n').map((line, i) => (
                 <Text key={i} style={[styles.infoBody, line.startsWith('✗') && styles.infoBodyDanger]}>
                   {line}
                 </Text>
               ))}
             </View>
             <TouchableOpacity style={styles.infoClose} onPress={() => setInfoType(null)}>
-              <Text style={styles.infoCloseText}>Close</Text>
+              <Text style={styles.infoCloseText}>{t('common.close')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
