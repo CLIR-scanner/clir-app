@@ -90,6 +90,7 @@ function Meta({ views, answers, color = C.dark }: { views: number; answers: numb
 }
 
 function FeaturedQuestionCard({ item, onPress }: { item: QAQuestion; onPress: () => void }) {
+  const { t } = useTranslation();
   const isNotice = item.isNotice === true;
   return (
     <TouchableOpacity
@@ -101,7 +102,7 @@ function FeaturedQuestionCard({ item, onPress }: { item: QAQuestion; onPress: ()
         {item.label}
       </Text>
       <Text style={[styles.featuredTitle, isNotice ? styles.noticeTitle : styles.askingTitle]} numberOfLines={3}>
-        {item.title}
+        {isNotice ? t('qaUi.noticeTitle') : item.title}
         {isNotice ? '\n...' : ''}
       </Text>
       {isNotice ? (
@@ -368,7 +369,7 @@ export default function QAScreen({ navigation }: Props) {
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 120 }]}
         ListHeaderComponent={
           <View>
-            <Text style={styles.sectionTitle}>Popular Questions</Text>
+            <Text style={styles.sectionTitle}>{t('qaUi.popularQuestions')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -432,7 +433,7 @@ export default function QAScreen({ navigation }: Props) {
             </View>
           ) : (
             <Text style={styles.emptyText}>
-              {debouncedQuery ? 'No matching questions.' : 'No questions yet.'}
+              {debouncedQuery ? t('qaUi.noMatchingQuestions') : t('qaUi.noQuestions')}
             </Text>
           )
         }

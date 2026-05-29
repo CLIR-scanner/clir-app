@@ -25,6 +25,7 @@ import { qaFeed } from '../../lib/qaFeedSignal';
 import { getProductSuggestions } from '../../services/search.service';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { useUserStore } from '../../store/user.store';
+import i18n from '../../i18n';
 import { QnaCategory, RecommendStackParamList } from '../../types';
 
 type Props = NativeStackScreenProps<RecommendStackParamList, 'QACreate'>;
@@ -122,29 +123,29 @@ export default function QACreateScreen({ navigation }: Props) {
    */
   function formatCreateError(err: unknown): string {
     if (!(err instanceof ApiError)) {
-      return err instanceof Error ? err.message : '글 등록에 실패했습니다.';
+      return err instanceof Error ? err.message : i18n.t('qaUi.errCreateFailed');
     }
     switch (err.code) {
       case 'IMAGE_TOO_LARGE':
-        return '이미지는 5MB 이하만 업로드 가능합니다.';
+        return i18n.t('qaUi.errImageTooLarge');
       case 'INVALID_FILE_TYPE':
-        return 'jpg/png/webp 이미지만 업로드할 수 있습니다.';
+        return i18n.t('qaUi.errInvalidFileType');
       case 'PRODUCT_NOT_FOUND':
-        return '선택한 제품 정보를 찾을 수 없습니다. 제품을 다시 선택해 주세요.';
+        return i18n.t('qaUi.errProductNotFound');
       case 'INVALID_INPUT':
-        return '제목·내용·카테고리를 확인해 주세요.';
+        return i18n.t('qaUi.errInvalidInputCreate');
       case 'TOO_MANY_REQUESTS':
-        return '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+        return i18n.t('qaUi.errTooManyRequests');
       case 'STORAGE_UNAVAILABLE':
       case 'DB_UNAVAILABLE':
       case 'SERVICE_DISABLED':
-        return '서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+        return i18n.t('qaUi.errServiceUnavailable');
       case 'NETWORK':
-        return '네트워크에 연결할 수 없습니다.';
+        return i18n.t('qaUi.errNetwork');
       case 'TIMEOUT':
-        return '요청 시간이 초과되었습니다. 다시 시도해 주세요.';
+        return i18n.t('qaUi.errTimeout');
       default:
-        return err.message || '글 등록에 실패했습니다.';
+        return err.message || i18n.t('qaUi.errCreateFailed');
     }
   }
 
@@ -173,7 +174,7 @@ export default function QACreateScreen({ navigation }: Props) {
         useUserStore.getState().logout();
         return;
       }
-      Alert.alert('알림', formatCreateError(err));
+      Alert.alert(t('qaUi.alertTitle'), formatCreateError(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -199,7 +200,7 @@ export default function QACreateScreen({ navigation }: Props) {
         >
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ask Question</Text>
+        <Text style={styles.headerTitle}>{t('qaUi.askTitle')}</Text>
         <TouchableOpacity
           style={[styles.postBtn, !canSubmit && styles.postBtnDisabled]}
           onPress={handleSubmit}
@@ -208,7 +209,7 @@ export default function QACreateScreen({ navigation }: Props) {
         >
           {isSubmitting
             ? <ActivityIndicator size="small" color={Colors.white} />
-            : <Text style={styles.postBtnText}>Post</Text>
+            : <Text style={styles.postBtnText}>{t('qaUi.submit')}</Text>
           }
         </TouchableOpacity>
       </View>
@@ -222,7 +223,7 @@ export default function QACreateScreen({ navigation }: Props) {
       >
 
         {/* ── Choose Categories ── */}
-        <Text style={styles.sectionLabel}>Choose Categories</Text>
+        <Text style={styles.sectionLabel}>{t('qaUi.chooseCategories')}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -249,7 +250,7 @@ export default function QACreateScreen({ navigation }: Props) {
             style={styles.productPickerWrap}
             onLayout={e => { productSectionY.current = e.nativeEvent.layout.y; }}
           >
-            <Text style={[styles.sectionLabel, { marginTop: 40 }]}>Related Product</Text>
+            <Text style={[styles.sectionLabel, { marginTop: 40 }]}>{t('qaUi.relatedProduct')}</Text>
             <View style={styles.productInputBox}>
               <TextInput
                 style={styles.productInput}
@@ -315,7 +316,7 @@ export default function QACreateScreen({ navigation }: Props) {
         )}
 
         {/* ── Post ── */}
-        <Text style={[styles.sectionLabel, { marginTop: 40 }]}>Post</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 40 }]}>{t('qaUi.contentSection')}</Text>
 
         <TextInput
           style={styles.titleInput}
@@ -344,7 +345,7 @@ export default function QACreateScreen({ navigation }: Props) {
         {/* ── Add Photos ── */}
         <View style={styles.photoDivider} />
         <View style={styles.photoHeader}>
-          <Text style={styles.sectionLabel}>Add Photos</Text>
+          <Text style={styles.sectionLabel}>{t('qaUi.addPhotos')}</Text>
           <Text style={styles.photoCount}>{photos.length}/{MAX_PHOTOS}</Text>
         </View>
         <ScrollView

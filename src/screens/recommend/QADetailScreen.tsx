@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { Colors } from '../../constants/colors';
 import Skeleton from '../../components/common/Skeleton';
 import {
@@ -64,23 +65,23 @@ function formatApiError(err: unknown, fallback: string): string {
   switch (err.code) {
     case 'FORBIDDEN_QNA':
     case 'FORBIDDEN_ANSWER':
-      return '본인이 작성한 글만 수정·삭제할 수 있습니다.';
+      return i18n.t('qaUi.errForbidden');
     case 'QNA_NOT_FOUND':
-      return '게시글이 이미 삭제되었거나 존재하지 않습니다.';
+      return i18n.t('qaUi.errPostNotFound');
     case 'ANSWER_NOT_FOUND':
-      return '답변이 이미 삭제되었거나 존재하지 않습니다.';
+      return i18n.t('qaUi.errAnswerNotFound');
     case 'INVALID_INPUT':
     case 'INVALID_QUERY':
-      return '요청 내용이 올바르지 않습니다.';
+      return i18n.t('qaUi.errInvalidInput');
     case 'TOO_MANY_REQUESTS':
-      return '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+      return i18n.t('qaUi.errTooManyRequests');
     case 'DB_UNAVAILABLE':
     case 'SERVICE_DISABLED':
-      return '서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+      return i18n.t('qaUi.errServiceUnavailable');
     case 'NETWORK':
-      return '네트워크에 연결할 수 없습니다.';
+      return i18n.t('qaUi.errNetwork');
     case 'TIMEOUT':
-      return '요청 시간이 초과되었습니다.';
+      return i18n.t('qaUi.errTimeout');
     default:
       return err.message || fallback;
   }
@@ -125,6 +126,7 @@ function AnswerRow({
   onBlock,
   isSavingEdit,
 }: AnswerRowProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.answerRow}>
       <View style={styles.answerAvatar}>
@@ -140,20 +142,20 @@ function AnswerRow({
               onPress={() => {
                 const buttons = isMine
                   ? [
-                      { text: '수정', onPress: onStartEdit },
-                      { text: '삭제', onPress: onDelete, style: 'destructive' as const },
-                      { text: '취소', style: 'cancel' as const },
+                      { text: t('qaUi.edit'), onPress: onStartEdit },
+                      { text: t('common.delete'), onPress: onDelete, style: 'destructive' as const },
+                      { text: t('common.cancel'), style: 'cancel' as const },
                     ]
                   : [
-                      { text: '신고', onPress: onReport, style: 'destructive' as const },
-                      { text: '사용자 차단', onPress: onBlock, style: 'destructive' as const },
-                      { text: '취소', style: 'cancel' as const },
+                      { text: t('qaUi.report'), onPress: onReport, style: 'destructive' as const },
+                      { text: t('qaUi.blockUser'), onPress: onBlock, style: 'destructive' as const },
+                      { text: t('common.cancel'), style: 'cancel' as const },
                     ];
-                Alert.alert(isMine ? '답변 관리' : '답변 신고', undefined, buttons);
+                Alert.alert(isMine ? t('qaUi.manageAnswer') : t('qaUi.reportAnswer'), undefined, buttons);
               }}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel={isMine ? '답변 관리' : '답변 신고'}
+              accessibilityLabel={isMine ? t('qaUi.manageAnswer') : t('qaUi.reportAnswer')}
             >
               <Text style={styles.moreButtonText}>···</Text>
             </TouchableOpacity>
@@ -177,7 +179,7 @@ function AnswerRow({
                 activeOpacity={0.75}
                 disabled={isSavingEdit}
               >
-                <Text style={styles.editActionCancelText}>취소</Text>
+                <Text style={styles.editActionCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -190,7 +192,7 @@ function AnswerRow({
                 disabled={!editDraft.trim() || isSavingEdit}
               >
                 <Text style={styles.editActionSaveText}>
-                  {isSavingEdit ? '저장 중...' : '저장'}
+                  {isSavingEdit ? t('common.saving') : t('common.save')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -282,12 +284,12 @@ export default function QADetailScreen({ navigation, route }: Props) {
         if (handleUnauthorized(err)) return;
         // 404 → 사용자가 이미 삭제된 글에 진입. 메시지 + 이전 화면 복귀.
         if (err instanceof ApiError && err.code === 'QNA_NOT_FOUND') {
-          Alert.alert('알림', '게시글이 이미 삭제되었거나 존재하지 않습니다.', [
-            { text: '확인', onPress: () => navigation.goBack() },
+          Alert.alert(t('qaUi.alertTitle'), t('qaUi.errPostNotFound'), [
+            { text: t('common.confirm'), onPress: () => navigation.goBack() },
           ]);
           return;
         }
-        setLoadError(formatApiError(err, '게시글을 불러올 수 없습니다.'));
+        setLoadError(formatApiError(err, t('qaUi.postLoadFailed')));
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -313,7 +315,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
       setDraft('');
     } catch (err: unknown) {
       if (handleUnauthorized(err)) return;
-      Alert.alert('알림', formatApiError(err, '답변을 등록할 수 없습니다.'));
+      Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.answerSubmitFailed')));
     } finally {
       setIsSubmitting(false);
     }
@@ -324,11 +326,11 @@ export default function QADetailScreen({ navigation, route }: Props) {
     if (!question) return;
     if (isMyQuestion) {
       Alert.alert(
-        '게시글 관리',
+        t('qaUi.managePost'),
         undefined,
         [
           {
-            text: '수정',
+            text: t('qaUi.edit'),
             onPress: () => {
               setEditQuestionTitle(question.title);
               setEditQuestionContent(question.body);
@@ -336,21 +338,21 @@ export default function QADetailScreen({ navigation, route }: Props) {
             },
           },
           {
-            text: '삭제',
+            text: t('common.delete'),
             style: 'destructive',
             onPress: confirmDeleteQuestion,
           },
-          { text: '취소', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
         ],
       );
     } else {
       Alert.alert(
-        '게시글 신고',
+        t('qaUi.reportPost'),
         undefined,
         [
-          { text: '신고', style: 'destructive', onPress: () => promptReportQuestion(question) },
-          { text: '사용자 차단', style: 'destructive', onPress: () => confirmBlockUser(question.userId) },
-          { text: '취소', style: 'cancel' },
+          { text: t('qaUi.report'), style: 'destructive', onPress: () => promptReportQuestion(question) },
+          { text: t('qaUi.blockUser'), style: 'destructive', onPress: () => confirmBlockUser(question.userId) },
+          { text: t('common.cancel'), style: 'cancel' },
         ],
       );
     }
@@ -358,29 +360,29 @@ export default function QADetailScreen({ navigation, route }: Props) {
 
   function promptReportQuestion(q: QAQuestion) {
     Alert.prompt?.(
-      '게시글 신고',
-      '신고 사유를 간단히 입력해 주세요. 24시간 내 검토됩니다.',
+      t('qaUi.reportPost'),
+      t('qaUi.reportReasonPrompt'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '신고',
+          text: t('qaUi.report'),
           style: 'destructive',
           onPress: async (text?: string) => {
             const reason = (text ?? '').trim();
             if (!reason) {
-              Alert.alert('알림', '신고 사유를 입력해 주세요.');
+              Alert.alert(t('qaUi.alertTitle'), t('qaUi.reportReasonRequired'));
               return;
             }
             try {
               await reportQAQuestion(q.id, reason);
-              Alert.alert('알림', '신고가 접수되었습니다. 24시간 내 검토됩니다.');
+              Alert.alert(t('qaUi.alertTitle'), t('qaUi.reportSubmitted'));
             } catch (err: unknown) {
               if (handleUnauthorized(err)) return;
               if (err instanceof ApiError && err.code === 'ALREADY_REPORTED') {
-                Alert.alert('알림', '이미 신고하신 항목입니다.');
+                Alert.alert(t('qaUi.alertTitle'), t('qaUi.alreadyReported'));
                 return;
               }
-              Alert.alert('알림', formatApiError(err, '신고를 접수하지 못했습니다.'));
+              Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.reportFailed')));
             }
           },
         },
@@ -391,29 +393,29 @@ export default function QADetailScreen({ navigation, route }: Props) {
 
   function promptReportAnswer(ans: QAAnswer) {
     Alert.prompt?.(
-      '답변 신고',
-      '신고 사유를 간단히 입력해 주세요. 24시간 내 검토됩니다.',
+      t('qaUi.reportAnswer'),
+      t('qaUi.reportReasonPrompt'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '신고',
+          text: t('qaUi.report'),
           style: 'destructive',
           onPress: async (text?: string) => {
             const reason = (text ?? '').trim();
             if (!reason) {
-              Alert.alert('알림', '신고 사유를 입력해 주세요.');
+              Alert.alert(t('qaUi.alertTitle'), t('qaUi.reportReasonRequired'));
               return;
             }
             try {
               await reportQAAnswer(ans.id, reason);
-              Alert.alert('알림', '신고가 접수되었습니다. 24시간 내 검토됩니다.');
+              Alert.alert(t('qaUi.alertTitle'), t('qaUi.reportSubmitted'));
             } catch (err: unknown) {
               if (handleUnauthorized(err)) return;
               if (err instanceof ApiError && err.code === 'ALREADY_REPORTED') {
-                Alert.alert('알림', '이미 신고하신 항목입니다.');
+                Alert.alert(t('qaUi.alertTitle'), t('qaUi.alreadyReported'));
                 return;
               }
-              Alert.alert('알림', formatApiError(err, '신고를 접수하지 못했습니다.'));
+              Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.reportFailed')));
             }
           },
         },
@@ -424,22 +426,22 @@ export default function QADetailScreen({ navigation, route }: Props) {
 
   function confirmBlockUser(targetUserId: string) {
     Alert.alert(
-      '사용자 차단',
-      '이 사용자의 게시글과 답변이 더 이상 보이지 않습니다.',
+      t('qaUi.blockUser'),
+      t('qaUi.blockUserMessage'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '차단',
+          text: t('qaUi.block'),
           style: 'destructive',
           onPress: async () => {
             try {
               await blockUser(targetUserId);
-              Alert.alert('알림', '사용자를 차단했습니다.', [
-                { text: '확인', onPress: () => navigation.goBack() },
+              Alert.alert(t('qaUi.alertTitle'), t('qaUi.userBlocked'), [
+                { text: t('common.confirm'), onPress: () => navigation.goBack() },
               ]);
             } catch (err: unknown) {
               if (handleUnauthorized(err)) return;
-              Alert.alert('알림', formatApiError(err, '차단에 실패했습니다.'));
+              Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.blockFailed')));
             }
           },
         },
@@ -449,12 +451,12 @@ export default function QADetailScreen({ navigation, route }: Props) {
 
   function confirmDeleteQuestion() {
     Alert.alert(
-      '게시글 삭제',
-      '삭제하면 답변도 함께 삭제되며 되돌릴 수 없습니다.',
+      t('qaUi.deletePostTitle'),
+      t('qaUi.deletePostMessage'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             if (!question) return;
@@ -470,7 +472,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
                 navigation.goBack();
                 return;
               }
-              Alert.alert('알림', formatApiError(err, '삭제에 실패했습니다.'));
+              Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.deleteFailed')));
             }
           },
         },
@@ -483,11 +485,11 @@ export default function QADetailScreen({ navigation, route }: Props) {
     const title   = editQuestionTitle.trim();
     const content = editQuestionContent.trim();
     if (!title || !content) {
-      Alert.alert('알림', '제목과 내용을 모두 입력해 주세요.');
+      Alert.alert(t('qaUi.alertTitle'), t('qaUi.titleBodyRequired'));
       return;
     }
     if (title.length > 100 || content.length > 2000) {
-      Alert.alert('알림', '제목은 100자, 내용은 2000자까지 입력할 수 있습니다.');
+      Alert.alert(t('qaUi.alertTitle'), t('qaUi.titleBodyLimit'));
       return;
     }
     setIsSavingQuestion(true);
@@ -502,12 +504,12 @@ export default function QADetailScreen({ navigation, route }: Props) {
       // 404 = 누가 이미 삭제 → goBack
       if (err instanceof ApiError && err.code === 'QNA_NOT_FOUND') {
         setEditQuestionOpen(false);
-        Alert.alert('알림', '게시글이 이미 삭제되었습니다.', [
-          { text: '확인', onPress: () => navigation.goBack() },
+        Alert.alert(t('qaUi.alertTitle'), t('qaUi.postAlreadyDeleted'), [
+          { text: t('common.confirm'), onPress: () => navigation.goBack() },
         ]);
         return;
       }
-      Alert.alert('알림', formatApiError(err, '수정에 실패했습니다.'));
+      Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.editFailed')));
     } finally {
       setIsSavingQuestion(false);
     }
@@ -527,7 +529,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
     const content = editAnswerDraft.trim();
     if (!content) return;
     if (content.length > 1000) {
-      Alert.alert('알림', '답변은 1000자까지 입력할 수 있습니다.');
+      Alert.alert(t('qaUi.alertTitle'), t('qaUi.answerLimit'));
       return;
     }
     setIsSavingAnswer(true);
@@ -541,22 +543,22 @@ export default function QADetailScreen({ navigation, route }: Props) {
       if (err instanceof ApiError && err.code === 'ANSWER_NOT_FOUND') {
         setAnswers(prev => prev.filter(a => a.id !== editingAnswerId));
         cancelEditAnswer();
-        Alert.alert('알림', '답변이 이미 삭제되었습니다.');
+        Alert.alert(t('qaUi.alertTitle'), t('qaUi.answerAlreadyDeleted'));
         return;
       }
-      Alert.alert('알림', formatApiError(err, '답변 수정에 실패했습니다.'));
+      Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.answerEditFailed')));
     } finally {
       setIsSavingAnswer(false);
     }
   }
   function confirmDeleteAnswer(ans: QAAnswer) {
     Alert.alert(
-      '답변 삭제',
-      '삭제한 답변은 되돌릴 수 없습니다.',
+      t('qaUi.deleteAnswerTitle'),
+      t('qaUi.deleteAnswerMessage'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -569,7 +571,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
                 setAnswers(prev => prev.filter(a => a.id !== ans.id));
                 return;
               }
-              Alert.alert('알림', formatApiError(err, '답변 삭제에 실패했습니다.'));
+              Alert.alert(t('qaUi.alertTitle'), formatApiError(err, t('qaUi.answerDeleteFailed')));
             }
           },
         },
@@ -640,13 +642,13 @@ export default function QADetailScreen({ navigation, route }: Props) {
                       onPress={openQuestionMenu}
                       hitSlop={8}
                       accessibilityRole="button"
-                      accessibilityLabel={isMyQuestion ? '게시글 관리' : '게시글 신고'}
+                      accessibilityLabel={isMyQuestion ? t('qaUi.managePost') : t('qaUi.reportPost')}
                     >
                       <Text style={styles.moreButtonText}>···</Text>
                     </TouchableOpacity>
                   )}
                 </View>
-                <Text style={styles.questionTitle}>{question.title}</Text>
+                <Text style={styles.questionTitle}>{question.isNotice ? t('qaUi.noticeTitle') : question.title}</Text>
                 <Text style={styles.questionAuthor}>{t('recommendUi.byAuthor', { author: question.author })}</Text>
                 <Text style={styles.questionBody}>{question.body}</Text>
 
@@ -673,7 +675,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
 
               {question.isNotice && (
                 <View style={styles.guidelineBox}>
-                  <Text style={styles.guidelineEyebrow}>NOTICE</Text>
+                  <Text style={styles.guidelineEyebrow}>{t('qaUi.notice')}</Text>
                   <Text style={styles.guidelineTitle}>{t('recommendUi.guidelineTitle')}</Text>
                   <Text style={styles.guidelineIntro}>
                     {t('recommendUi.guidelineIntro')}
@@ -694,7 +696,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
 
               {!question.isNotice && (
                 <View style={styles.answerTitleRow}>
-                  <Text style={styles.answerSectionTitle}>Answers</Text>
+                  <Text style={styles.answerSectionTitle}>{t('qaUi.answers')}</Text>
                   <Text style={styles.answerCount}>{answerCount}</Text>
                 </View>
               )}
@@ -721,7 +723,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
             );
           }}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No answers yet. Be the first to reply.</Text>
+            <Text style={styles.emptyText}>{t('qaUi.noAnswers')}</Text>
           }
         />
       )}
@@ -751,7 +753,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
             disabled={!draft.trim() || isSubmitting}
             activeOpacity={0.75}
           >
-            <Text style={styles.sendButtonText}>{isSubmitting ? '...' : 'Send'}</Text>
+            <Text style={styles.sendButtonText}>{isSubmitting ? '...' : t('qaUi.send')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -768,12 +770,12 @@ export default function QADetailScreen({ navigation, route }: Props) {
           style={styles.modalBackdrop}
         >
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>게시글 수정</Text>
+            <Text style={styles.modalTitle}>{t('qaUi.editPost')}</Text>
             <Text style={styles.modalCaption}>
-              카테고리·첨부 이미지는 변경할 수 없습니다.
+              {t('qaUi.editPostCaption')}
             </Text>
 
-            <Text style={styles.modalLabel}>제목</Text>
+            <Text style={styles.modalLabel}>{t('qaUi.fieldTitle')}</Text>
             <TextInput
               style={styles.modalInput}
               value={editQuestionTitle}
@@ -783,7 +785,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
               placeholderTextColor={C.muted}
             />
 
-            <Text style={styles.modalLabel}>내용</Text>
+            <Text style={styles.modalLabel}>{t('qaUi.fieldContent')}</Text>
             <TextInput
               style={[styles.modalInput, styles.modalInputMultiline]}
               value={editQuestionContent}
@@ -801,7 +803,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
                 disabled={isSavingQuestion}
                 activeOpacity={0.75}
               >
-                <Text style={styles.modalBtnGhostText}>취소</Text>
+                <Text style={styles.modalBtnGhostText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -814,7 +816,7 @@ export default function QADetailScreen({ navigation, route }: Props) {
                 activeOpacity={0.75}
               >
                 <Text style={styles.modalBtnPrimaryText}>
-                  {isSavingQuestion ? '저장 중...' : '저장'}
+                  {isSavingQuestion ? t('common.saving') : t('common.save')}
                 </Text>
               </TouchableOpacity>
             </View>
