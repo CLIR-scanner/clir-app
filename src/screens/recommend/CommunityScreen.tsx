@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -15,12 +15,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { MagazineItem, Product, QAQuestion, RecommendStackParamList, RiskLevel } from '../../types';
 import { Colors } from '../../constants/colors';
 import RiskBadgeIcon from '../../components/common/RiskBadgeIcon';
 import Skeleton from '../../components/common/Skeleton';
 import { getCommunityFeed, getMagazineItems, getQAQuestions } from '../../services/recommend.service';
+import { qaFeed } from '../../lib/qaFeedSignal';
 import { ApiError, clearAuthToken, UnauthorizedError } from '../../lib/api';
 import { INITIAL_FILTER_CATEGORIES } from '../../components/common/FilterBottomSheet';
 import { useUserStore } from '../../store/user.store';
@@ -428,6 +430,18 @@ export default function CommunityScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Q&A 글 작성/수정/삭제 후 재진입 시 미리보기를 갱신하기 위한 재조회 트리거.
+  const [reloadToken, setReloadToken] = useState(0);
+  const qaVersionRef = useRef(qaFeed.getVersion());
+  useFocusEffect(
+    useCallback(() => {
+      if (qaFeed.getVersion() !== qaVersionRef.current) {
+        qaVersionRef.current = qaFeed.getVersion();
+        setReloadToken(v => v + 1);
+      }
+    }, []),
+  );
+
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
@@ -461,7 +475,7 @@ export default function CommunityScreen({ navigation }: Props) {
         if (!cancelled) setIsLoading(false);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [reloadToken]);
 
   const trendingPreview = trendingProducts
     .filter(product => trendingCategory === 'all' || product.category === trendingCategory)
