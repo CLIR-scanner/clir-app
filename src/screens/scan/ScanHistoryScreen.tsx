@@ -77,11 +77,10 @@ export default function ScanHistoryScreen({ navigation }: Props) {
 
   // 매 진입 fetch 방지 — dirty(스캔 완료·프로필 변경) / 최초 미동기화 /
   // TTL(5분) 경과 / 프로필 버전 변화 중 하나라도면 재조회, 아니면 캐시 사용.
-  // activeProfile 기준으로 재판정 — 메인/멀티 프로필 활성 모두 정합.
-  // (currentUser 만 보면 멀티 프로필 활성 중 편집이 반영 안 됨.)
+  // 프로필(알러지·식이) 변경 시 profileVersion 증가 → 재조회.
+  // verdict 는 BE 가 현재 프로필 기준 재판정한 product.riskLevel 을 그대로 사용
+  // (상세 화면 getProductById 와 동일 소스 → 리스트↔상세 일치, 식이/채식 반영).
   const profileVersion   = useUserStore(s => s.profileVersion);
-  const allergyProfile   = useUserStore(s => s.activeProfile.allergyProfile);
-  const sensitivityLevel = useUserStore(s => s.activeProfile.sensitivityLevel);
   const syncedProfileRef = useRef<number | null>(null);
   useFocusEffect(
     useCallback(() => {
@@ -126,18 +125,9 @@ export default function ScanHistoryScreen({ navigation }: Props) {
     );
   }
 
-  function reEvaluate(item: ScanHistory): RiskLevel {
-    if (!item.productId) return item.result;
-    const allergySet = new Set(allergyProfile);
-    if (item.product.riskIngredients?.some(ing => allergySet.has(ing.id))) return 'danger';
-    if (sensitivityLevel === 'strict' && item.product.mayContainIngredients?.some(ing =>
-      allergySet.has(ing.id.replace('ing-may-', 'ing-'))
-    )) return 'caution';
-    return 'safe';
-  }
-
   function renderItem({ item, index }: { item: ScanHistory; index: number }) {
-    const verdict    = reEvaluate(item);
+    // BE 가 현재 프로필(알러지 + 식이) 기준으로 재판정한 verdict — 상세 화면과 동일 소스.
+    const verdict    = item.product.riskLevel;
     const badgeColor = BADGE_COLOR[verdict];
     const badgeLabel = t(`scanUi.${verdict === 'safe' ? 'good' : verdict === 'caution' ? 'poor' : 'bad'}`);
     const isLast = index === sorted.length - 1;
