@@ -50,3 +50,4 @@ build-*.aab
 CLIR.apk
 CLIR.apk.zip
 *.ipa
+build-output/
