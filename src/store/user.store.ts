@@ -8,6 +8,7 @@ import {
   updateMember,
   deleteMember,
 } from '../services/user.service';
+import { setActiveProfileId } from '../lib/api';
 import { languageStorage } from '../lib/storage';
 import i18n from '../i18n';
 import { useScanStore } from './scan.store';
@@ -103,9 +104,12 @@ export const useUserStore = create<UserStore>((set, get) => ({
       language: effectiveLanguage,
     };
 
+    // 로그인/복원 시 활성 프로필은 항상 메인으로 초기화 (X-Active-Profile-Id 헤더 해제).
+    setActiveProfileId(null);
     set(state => ({
       currentUser: normalized,
       activeProfile: normalized,
+      enabledProfileIds: [],
       profileVersion: state.profileVersion + 1,
     }));
 
@@ -116,25 +120,27 @@ export const useUserStore = create<UserStore>((set, get) => ({
   logout: () => {
     // Supabase 세션 + 로컬 토큰 정리 (실패해도 스토어는 반드시 초기화)
     void authSignOut();
+    setActiveProfileId(null);   // X-Active-Profile-Id 헤더 해제
     set(state => ({
       currentUser: { ...EMPTY_USER, language: state.currentUser.language },
       activeProfile: EMPTY_PROFILE,
+      enabledProfileIds: [],
     }));
   },
 
   toggleProfileEnabled: (profileId: string) => {
-    // 멀티 프로필 적용 토글은 활성 알러지·식이 조합을 바꾸는 의미 → 캐시 무효화 필요.
-    // BE 가 멀티 프로필 합산을 지원하지 않더라도 FE 가 다음 진입 시 재조회·재판정하도록
-    // history/favorites 를 stale 마킹 + profileVersion++ 로 화면 useFocusEffect 트리거.
-    set(state => {
-      const ids = state.enabledProfileIds;
-      return {
-        enabledProfileIds: ids.includes(profileId)
-          ? ids.filter(id => id !== profileId)
-          : [...ids, profileId],
-        profileVersion: state.profileVersion + 1,
-      };
-    });
+    // BE 는 X-Active-Profile-Id 헤더로 "단일 활성 프로필 전환"을 지원한다.
+    // 멤버 토글 = 그 멤버로 전환(헤더 set), 다시 누르면 메인 복귀(헤더 clear).
+    // 헤더가 모든 판정 엔드포인트(analysis/scan-history/products/favorites/search)에
+    // 주입되므로 스캔·List·History 가 전부 활성 프로필 기준으로 재판정된다.
+    const isActive = get().enabledProfileIds.includes(profileId);
+    const nextActiveId = isActive ? null : profileId;
+    setActiveProfileId(nextActiveId);              // X-Active-Profile-Id 헤더 갱신
+    set(state => ({
+      enabledProfileIds: nextActiveId ? [nextActiveId] : [],   // 단일 활성 (BE 는 단일 프로필)
+      profileVersion: state.profileVersion + 1,
+    }));
+    // 프로필 전환 = 이전 프로필 기준 캐시 무효화 → 다음 진입 시 재조회·재판정.
     useScanStore.getState().clearHistory();
     useListStore.getState().markFavoritesDirty();
   },
@@ -265,6 +271,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
   deleteMultiProfile: async (profileId) => {
     await deleteMember(profileId);
     const wasEnabled = get().enabledProfileIds.includes(profileId);
+    if (wasEnabled) setActiveProfileId(null);   // 활성 멤버 삭제 → 메인 복귀 (헤더 해제)
     set(state => ({
       currentUser: {
         ...state.currentUser,
