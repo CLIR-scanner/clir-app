@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal,
+  ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal, Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -196,9 +196,9 @@ function StepAllergyReaction({ selected, onSelect, onNext }: {
   );
 }
 
-function StepAllergyIngredients({ selected, onChange, onNext, isFinal }: {
+function StepAllergyIngredients({ selected, onChange, onNext, isFinal, saving }: {
   selected: Set<string>; onChange: (v: Set<string>) => void;
-  onNext: () => void; isFinal: boolean;
+  onNext: () => void; isFinal: boolean; saving: boolean;
 }) {
   const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
@@ -224,7 +224,7 @@ function StepAllergyIngredients({ selected, onChange, onNext, isFinal }: {
     <StepLayout
       title={t('multiProfileAdd.stepAllergyIngrTitle')}
       subtitle={t('multiProfileAdd.stepAllergyIngrSubtitle')}
-      footer={<ContinueBtn label={isFinal ? t('common.save') : t('common.continue')} onPress={onNext} />}
+      footer={<ContinueBtn label={isFinal ? t('common.save') : t('common.continue')} disabled={isFinal && saving} onPress={onNext} />}
     >
       <View style={s.options}>
         {Array.from(selected).map(cat => (
@@ -366,8 +366,8 @@ function StepVegeConfirm({ label, onNext }: { label: string; onNext: () => void 
   );
 }
 
-function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
-  items: string[]; onChange: (v: string[]) => void; dietKey: string; onSave: () => void;
+function StepVegetarianIngredients({ items, onChange, dietKey, onSave, saving }: {
+  items: string[]; onChange: (v: string[]) => void; dietKey: string; onSave: () => void; saving: boolean;
 }) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
@@ -397,7 +397,7 @@ function StepVegetarianIngredients({ items, onChange, dietKey, onSave }: {
               {isEditing ? t('common.done') : t('common.editList')}
             </Text>
           </TouchableOpacity>
-          <ContinueBtn label={t('common.save')} onPress={onSave} />
+          <ContinueBtn label={t('common.save')} disabled={saving} onPress={onSave} />
         </View>
       }
     >
@@ -478,6 +478,7 @@ export default function MultiProfileAddScreen() {
   const [vegetarianType, setVegetarianType] = useState<VegetarianType | null>(null);
   const [veganStrictness, setVeganStrictness] = useState<VeganStrictness | null>(null);
   const [avoidedItems, setAvoidedItems] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const PREV_STEP: Record<Step, Step | null> = {
     name: null, diet: 'name',
@@ -495,7 +496,8 @@ export default function MultiProfileAddScreen() {
     else navigation.goBack();
   }
 
-  function handleSave() {
+  async function handleSave() {
+    if (saving) return;
     const dietaryRestrictions: string[] = [];
     if (vegetarianType) dietaryRestrictions.push(vegetarianType);
     if (veganStrictness) dietaryRestrictions.push(veganStrictness);
@@ -518,13 +520,20 @@ export default function MultiProfileAddScreen() {
 
     // ⚠️ avoidedItems (식이 회피 카테고리 라벨) 는 의도적으로 allergyProfile 에
     // 합치지 않는다. 자세한 이유: SurveyVegetarianIngredientsScreen 동일 주석.
-    addMultiProfile({
-      name: name.trim(),
-      allergyProfile: [...allergenNames],
-      dietaryRestrictions,
-      sensitivityLevel: severity === 'severe' || veganStrictness === 'strict' ? 'strict' : 'normal',
-    });
-    navigation.goBack();
+    setSaving(true);
+    try {
+      await addMultiProfile({
+        name: name.trim(),
+        allergyProfile: [...allergenNames],
+        dietaryRestrictions,
+        sensitivityLevel: severity === 'severe' || veganStrictness === 'strict' ? 'strict' : 'normal',
+      });
+      navigation.goBack();
+    } catch {
+      Alert.alert(t('common.errorTitle'), t('common.errorMessage'));
+    } finally {
+      setSaving(false);
+    }
   }
 
   function renderStep() {
@@ -546,8 +555,9 @@ export default function MultiProfileAddScreen() {
         return (
           <StepAllergyIngredients
             selected={allergyItems} onChange={setAllergyItems}
-            onNext={() => { if (dietaryType === 'both') setStep('vegetarian_type'); else handleSave(); }}
+            onNext={() => { if (dietaryType === 'both') setStep('vegetarian_type'); else void handleSave(); }}
             isFinal={dietaryType === 'allergy'}
+            saving={saving}
           />
         );
       case 'vegetarian_type':
@@ -585,7 +595,8 @@ export default function MultiProfileAddScreen() {
         return (
           <StepVegetarianIngredients
             items={avoidedItems} onChange={setAvoidedItems}
-            dietKey={veganStrictness ?? vegetarianType ?? ''} onSave={handleSave}
+            dietKey={veganStrictness ?? vegetarianType ?? ''} onSave={() => void handleSave()}
+            saving={saving}
           />
         );
     }

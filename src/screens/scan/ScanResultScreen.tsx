@@ -16,7 +16,7 @@ import { ScanStackParamList, Product, AnalysisResult } from '../../types';
 import { Colors } from '../../constants/colors';
 import { ApiError } from '../../lib/api';
 import { makeLocalId } from '../../lib/localId';
-import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives, isLocalOcrProductId } from '../../services/scan.service';
+import { scanBarcode, analyzeProduct, saveScanHistory, getAlternatives, isLocalOcrProductId, overlayMemberAllergens } from '../../services/scan.service';
 import { addFavorite, getFavorites } from '../../services/list.service';
 import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
@@ -92,11 +92,12 @@ export default function ScanResultScreen({ navigation, route }: Props) {
             .flatMap(p => p.allergyProfile),
         ),
       ];
-      const result = await analyzeProduct({
+      let result = await analyzeProduct({
         productId: prod.id,
         ingredientIds,
         ...(additionalAllergenIds.length > 0 && { additionalAllergenIds }),
       });
+      result = overlayMemberAllergens(result, prod.ingredients, additionalAllergenIds);
 
       // store-first: 로컬에 먼저 추가 → BE 죽어도 History 탭 표시. server item 으로 후속 replace.
       // 프로필 변경 후 재실행(skipHistorySave=true) 시엔 이력 중복 저장 안 함.

@@ -520,9 +520,11 @@ export interface UserStore {
   /** store 의 currentUser.displayName 을 낙관적으로 갱신한다. */
   updateUserDisplayName: (displayName: string | null) => void;
   setLanguage: (language: string) => void;
-  addMultiProfile: (profile: Omit<Profile, 'id'>) => void;
-  updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => void;
-  deleteMultiProfile: (profileId: string) => void;
+  addMultiProfile: (profile: Omit<Profile, 'id'>) => Promise<Profile>;
+  updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => Promise<void>;
+  deleteMultiProfile: (profileId: string) => Promise<void>;
+  /** BE /profiles/members 목록을 불러와 currentUser.multiProfiles 갱신. */
+  loadMultiProfiles: () => Promise<void>;
   /** 멀티 프로필 추가 설문 진행 중 여부 (FE 전용) */
   multiProfileMode: boolean;
   multiProfileName: string;

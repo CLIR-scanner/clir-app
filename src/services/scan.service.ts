@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { Product, Ingredient, OCRResult, AnalysisResult, ScanHistory, RiskLevel } from '../types';
 import { apiFetch, apiFormFetch } from '../lib/api';
 import { makeRiskIngredient, makeMayContainIngredient } from './allergen.service';
+import i18n from '../i18n';
 
 // ─── 내부 API 응답 타입 ───────────────────────────────────────────────────────
 
@@ -156,6 +157,36 @@ export async function analyzeProduct(params: {
     method: 'POST',
     body: JSON.stringify(apiParams),
   });
+}
+
+/**
+ * 멤버(멀티) 프로필 오버레이 재판정. BE /analysis 는 메인 프로필 기준으로만 판정하므로
+ * (additionalAllergenIds 미지원), 활성 멤버 프로필의 알러지 성분이 제품에 직접 포함되면
+ * FE 에서 danger 로 격상한다. (trace/may-contain·민감도 정밀 판정은 BE 지원 필요 — 직접 매칭만.)
+ */
+export function overlayMemberAllergens(
+  result: AnalysisResult,
+  ingredients: Ingredient[],
+  extraAllergenIds: string[],
+): AnalysisResult {
+  if (extraAllergenIds.length === 0) return result;
+  const extra = new Set(extraAllergenIds);
+  const already = new Set(result.triggeredBy.map(t => t.id));
+  const hits = ingredients.filter(i => extra.has(i.id) && !already.has(i.id));
+  if (hits.length === 0) return result;
+  return {
+    ...result,
+    isSafe: false,
+    verdict: 'danger',
+    triggeredBy: [
+      ...result.triggeredBy,
+      ...hits.map(i => ({
+        id: i.id, name: i.name, nameKo: i.nameKo,
+        reason: i18n.t('scanUi.memberAllergenReason'),
+        riskLevel: 'danger' as const,
+      })),
+    ],
+  };
 }
 
 /**

@@ -285,6 +285,7 @@ const en = {
   },
 
   scanUi: {
+    memberAllergenReason: 'Contains an allergen registered to another profile.',
     title:              'Scan',
     history:            'History',
     historyPill:        'Your Scan History',

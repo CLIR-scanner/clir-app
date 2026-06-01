@@ -290,6 +290,7 @@ const ko = {
   },
 
   scanUi: {
+    memberAllergenReason: '다른 프로필에 등록된 알레르기 성분이 포함되어 있습니다.',
     title:              '스캔',
     history:            '이력',
     historyPill:        '내 스캔 이력',

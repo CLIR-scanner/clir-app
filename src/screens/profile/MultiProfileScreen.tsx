@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Modal, TextInput, TouchableWithoutFeedback,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -81,6 +81,11 @@ export default function MultiProfileScreen() {
   const enabledProfileIds    = useUserStore(s => s.enabledProfileIds);
   const toggleProfileEnabled = useUserStore(s => s.toggleProfileEnabled);
   const setMultiProfileMode  = useUserStore(s => s.setMultiProfileMode);
+  const loadMultiProfiles    = useUserStore(s => s.loadMultiProfiles);
+
+  useFocusEffect(
+    useCallback(() => { void loadMultiProfiles(); }, [loadMultiProfiles]),
+  );
 
   const [showNameModal, setShowNameModal] = useState(false);
   const [profileName,   setProfileName]   = useState('');

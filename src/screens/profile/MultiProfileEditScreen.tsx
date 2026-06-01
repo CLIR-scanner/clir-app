@@ -257,11 +257,11 @@ export default function MultiProfileEditScreen() {
         updateActiveProfile({ allergyProfile: newAllergy, dietaryRestrictions: newDiet, sensitivityLevel: sensitivity });
         if (trimmedName !== currentUser.name) updateUserName(trimmedName);
       } else {
-        updateMultiProfile(profileId, { name: trimmedName, profileImage: photoUri, allergyProfile: newAllergy, dietaryRestrictions: newDiet, sensitivityLevel: sensitivity });
+        await updateMultiProfile(profileId, { name: trimmedName, profileImage: photoUri, allergyProfile: newAllergy, dietaryRestrictions: newDiet, sensitivityLevel: sensitivity });
       }
       navigation.goBack();
     } catch {
-      Alert.alert(t('common.error'), t('profileUi.saveFailed'));
+      Alert.alert(t('common.errorTitle'), t('common.errorMessage'));
     } finally {
       setSaving(false);
     }

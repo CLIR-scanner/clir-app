@@ -1,7 +1,13 @@
 import { create } from 'zustand';
-import { UserStore, User, Profile } from '../types';
+import { UserStore, User, Profile, MemberProfile, MemberProfileInput, MemberProfileUpdate } from '../types';
 import { signOut as authSignOut, submitSurvey, restoreSession } from '../services/auth.service';
-import { updateLanguage as apiUpdateLanguage } from '../services/user.service';
+import {
+  updateLanguage as apiUpdateLanguage,
+  listMembers,
+  createMember,
+  updateMember,
+  deleteMember,
+} from '../services/user.service';
 import { languageStorage } from '../lib/storage';
 import i18n from '../i18n';
 import { useScanStore } from './scan.store';
@@ -23,6 +29,21 @@ const EMPTY_USER: User = {
   multiProfiles: [],
   consentFlags: { imageRetention: false, corrections: false },
 };
+
+function memberToProfile(m: MemberProfile): Profile {
+  return {
+    id: m.id, name: m.name, profileImage: m.profileImage,
+    allergyProfile: m.allergyProfile, dietaryRestrictions: m.dietaryRestrictions,
+    sensitivityLevel: m.sensitivityLevel,
+  };
+}
+function profileToMemberInput(p: Omit<Profile, 'id'>): MemberProfileInput {
+  return {
+    name: p.name, profileImage: p.profileImage,
+    allergyProfile: p.allergyProfile, dietaryRestrictions: p.dietaryRestrictions,
+    sensitivityLevel: p.sensitivityLevel,
+  };
+}
 
 /**
  * MainNavigator(바텀 네비게이션) 노출 조건 = 로그인 완료 + 설문 완료.
@@ -87,6 +108,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
       activeProfile: normalized,
       profileVersion: state.profileVersion + 1,
     }));
+
+    // BE 멤버 프로필 목록 동기화 (fire-and-forget).
+    void get().loadMultiProfiles();
   },
 
   logout: () => {
@@ -201,28 +225,46 @@ export const useUserStore = create<UserStore>((set, get) => ({
     });
   },
 
-  addMultiProfile: (profile: Omit<Profile, 'id'>) => {
-    const newProfile: Profile = { ...profile, id: Date.now().toString() };
+  loadMultiProfiles: async () => {
+    if (!get().currentUser.id) return;
+    try {
+      const members = await listMembers();
+      set(state => ({
+        currentUser: { ...state.currentUser, multiProfiles: members.map(memberToProfile) },
+      }));
+    } catch (err) {
+      if (__DEV__) console.warn('[user.store] loadMultiProfiles 실패:', err);
+    }
+  },
+
+  addMultiProfile: async (profile) => {
+    const created = await createMember(profileToMemberInput(profile));
+    const next = memberToProfile(created);
+    set(state => ({
+      currentUser: { ...state.currentUser, multiProfiles: [...state.currentUser.multiProfiles, next] },
+    }));
+    return next;
+  },
+
+  updateMultiProfile: async (profileId, updates) => {
+    const updated = await updateMember(profileId, updates as MemberProfileUpdate);
+    const next = memberToProfile(updated);
     set(state => ({
       currentUser: {
         ...state.currentUser,
-        multiProfiles: [...state.currentUser.multiProfiles, newProfile],
+        multiProfiles: state.currentUser.multiProfiles.map(p => (p.id === profileId ? next : p)),
       },
     }));
+    if (get().enabledProfileIds.includes(profileId)) {
+      set(state => ({ profileVersion: state.profileVersion + 1 }));
+      useScanStore.getState().clearHistory();
+      useListStore.getState().markFavoritesDirty();
+    }
   },
 
-  updateMultiProfile: (profileId: string, updates: Partial<Omit<Profile, 'id'>>) => {
-    set(state => ({
-      currentUser: {
-        ...state.currentUser,
-        multiProfiles: state.currentUser.multiProfiles.map(p =>
-          p.id === profileId ? { ...p, ...updates } : p,
-        ),
-      },
-    }));
-  },
-
-  deleteMultiProfile: (profileId: string) => {
+  deleteMultiProfile: async (profileId) => {
+    await deleteMember(profileId);
+    const wasEnabled = get().enabledProfileIds.includes(profileId);
     set(state => ({
       currentUser: {
         ...state.currentUser,
@@ -230,6 +272,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
       },
       enabledProfileIds: state.enabledProfileIds.filter(id => id !== profileId),
     }));
+    if (wasEnabled) {
+      set(state => ({ profileVersion: state.profileVersion + 1 }));
+      useScanStore.getState().clearHistory();
+      useListStore.getState().markFavoritesDirty();
+    }
   },
 
   setMultiProfileMode: (active: boolean, name = '') => {

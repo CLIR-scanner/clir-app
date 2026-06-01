@@ -148,6 +148,7 @@ const es = {
     severeDisclaimer: '** Para alergias graves, verifica todos los ingredientes antes de consumir.',
   },
   scanUi: {
+    memberAllergenReason: 'Contiene un alérgeno registrado en otro perfil.',
     title: 'Escanear', history: 'Historial', historyPill: 'Tu historial de escaneos',
     historyLoadError: 'No se pudo cargar el historial.', historyEmpty: 'Aún no hay productos escaneados.',
     cameraPermission: 'Se requiere acceso a la cámara', grantPermission: 'Dar permiso',
