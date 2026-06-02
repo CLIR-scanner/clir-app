@@ -4,7 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path, G, Defs, ClipPath, Rect } from 'react-native-svg';
-import { AuthStackParamList } from '../../types';
+import { AuthStackParamList, User } from '../../types';
 import * as AuthService from '../../services/auth.service';
 import { useUserStore } from '../../store/user.store';
 import { TERMS_VERSION } from '../../constants/legal-version';
@@ -63,6 +63,22 @@ export default function AuthHomeScreen() {
   const setUser = useUserStore(s => s.setUser);
   const [loading, setLoading] = useState(false);
 
+  // 로그인/게스트 진입 공통 후처리 — 최초면 설문(SurveyLanding)으로, 아니면 메인 진입.
+  function finishSignIn(user: User, isFirstLogin: boolean) {
+    if (isFirstLogin) {
+      setUser({ ...user, hasCompletedSurvey: false });
+      navigation.reset({ index: 0, routes: [{ name: 'SurveyLanding', params: {} }] });
+    } else {
+      setUser(user);
+    }
+    // 약관 동의 audit trail — BE 의 terms_version 이 현재 TERMS_VERSION 과 다르면
+    // 가입 직후 또는 약관 변경 후 첫 로그인 직후 자동 갱신. fire-and-forget —
+    // 실패해도 사용자 흐름 막지 않음 (durable 계층은 BE DB, 다음 로그인 재시도).
+    if (user.termsVersion !== TERMS_VERSION) {
+      AuthService.acceptTerms(TERMS_VERSION).catch(() => { /* swallow */ });
+    }
+  }
+
   async function runSocialSignIn(provider: 'google' | 'apple') {
     if (loading) return;
     setLoading(true);
@@ -71,18 +87,7 @@ export default function AuthHomeScreen() {
         provider === 'google'
           ? await AuthService.signInWithGoogle()
           : await AuthService.signInWithApple();
-      if (isFirstLogin) {
-        setUser({ ...user, hasCompletedSurvey: false });
-        navigation.reset({ index: 0, routes: [{ name: 'SurveyLanding', params: {} }] });
-      } else {
-        setUser(user);
-      }
-      // 약관 동의 audit trail — BE 의 terms_version 이 현재 TERMS_VERSION 과 다르면
-      // 가입 직후 또는 약관 변경 후 첫 로그인 직후 자동 갱신. fire-and-forget —
-      // 실패해도 사용자 흐름 막지 않음 (durable 계층은 BE DB, 다음 로그인 재시도).
-      if (user.termsVersion !== TERMS_VERSION) {
-        AuthService.acceptTerms(TERMS_VERSION).catch(() => { /* swallow */ });
-      }
+      finishSignIn(user, isFirstLogin);
     } catch (e) {
       const msg = (e as Error).message ?? '';
       console.log(`[oauth:${provider}] caught:`, msg);
@@ -90,6 +95,22 @@ export default function AuthHomeScreen() {
       const isCancel = typeof (e as { code?: string }).code === 'string'
         && (e as { code?: string }).code === 'ERR_REQUEST_CANCELED';
       if (!isCancel) Alert.alert(t('auth.loginFailed'), msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 게스트(익명) 진입 — 등록 없이 스캔/개인화 사용. Apple Guideline 5.1.1(v) 대응.
+  async function runGuestSignIn() {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { user, isFirstLogin } = await AuthService.signInAnonymously();
+      finishSignIn(user, isFirstLogin);
+    } catch (e) {
+      const msg = (e as Error).message ?? '';
+      console.log('[guest] caught:', msg);
+      Alert.alert(t('auth.loginFailed'), msg);
     } finally {
       setLoading(false);
     }
@@ -107,18 +128,31 @@ export default function AuthHomeScreen() {
     void runSocialSignIn(provider);
   }
 
-  // 약관 동의 완료 후 TermsAgreement 가 pendingProvider 와 함께 복귀시키면
-  // 곧바로 해당 provider 로그인 창으로 연결. (1회성 — 처리 후 파라미터 소거)
+  // 게스트 진입점 — 소셜과 동일하게 약관 게이트를 거친다 (모든 진입 경로 약관 일관성).
+  async function startGuest() {
+    if (loading) return;
+    const accepted = await termsStorage.read();
+    if (accepted !== TERMS_VERSION) {
+      navigation.navigate('TermsAgreement', { pendingProvider: 'guest' });
+      return;
+    }
+    void runGuestSignIn();
+  }
+
+  // 약관 동의 완료 후 TermsAgreement 가 pendingProvider 와 함께 복귀시키면 곧바로
+  // 해당 진입(OAuth provider 또는 게스트)으로 연결. (1회성 — 처리 후 파라미터 소거)
   const pendingProvider = route.params?.pendingProvider;
   useEffect(() => {
     if (!pendingProvider) return;
     navigation.setParams({ pendingProvider: undefined });
-    void runSocialSignIn(pendingProvider);
+    if (pendingProvider === 'guest') void runGuestSignIn();
+    else void runSocialSignIn(pendingProvider);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingProvider]);
 
   function handleGoogle() { void startSignIn('google'); }
   function handleApple() { void startSignIn('apple'); }
+  function handleGuest() { void startGuest(); }
 
   return (
     <View style={styles.container}>
@@ -182,6 +216,19 @@ export default function AuthHomeScreen() {
           )}
         </View>
 
+        {/* 게스트 진입 — 회원가입 없이 스캔 사용 (App Store 5.1.1(v)). */}
+        <TouchableOpacity
+          style={styles.guestButton}
+          onPress={handleGuest}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel={t('auth.continueAsGuest')}
+        >
+          <Text style={[styles.guestText, loading && styles.guestTextDisabled]}>
+            {t('auth.continueAsGuest')}
+          </Text>
+        </TouchableOpacity>
+
         <Text style={styles.terms}>
           {t('auth.termsPrefix')}{'\n'}
           <Text style={styles.termsLink} onPress={() => openLegal('terms')}>
@@ -221,6 +268,22 @@ const styles = StyleSheet.create({
   buttons: {
     gap: 6,
     marginBottom: 8,
+  },
+
+  // ── Guest (anonymous) entry — text link ────────────────────────────────────
+  guestButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  guestText: {
+    fontSize: 14,
+    color: S.primary,
+    fontFamily: 'Pretendard-Regular',
+    textDecorationLine: 'underline',
+  },
+  guestTextDisabled: {
+    opacity: 0.4,
   },
 
   // ── Google GSI Material Button ─────────────────────────────────────────────

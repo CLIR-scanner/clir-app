@@ -31,6 +31,7 @@ const es = {
   auth: {
     tagline: 'Worry less, eat clir',
     continueWithGoogle: 'Continuar con Google', continueWithApple: 'Continuar con Apple',
+    continueAsGuest: 'Continuar como invitado',
     appleComingSoon: 'Inicio de sesión con Apple próximamente.', loginFailed: 'No se pudo iniciar sesión. Inténtalo de nuevo.',
     termsPrefix: 'Al pulsar "Continuar" aceptas nuestros ', termsService: 'Términos de servicio', termsAnd: ' y ', termsPrivacy: 'Política de privacidad',
     signIn: 'Iniciar sesión', createAccount: 'Crear nueva cuenta',

@@ -73,6 +73,7 @@ const en = {
     tagline:              'Worry less, eat clir',
     continueWithGoogle:   'Continue with Google',
     continueWithApple:    'Continue with Apple',
+    continueAsGuest:      'Continue as guest',
     appleComingSoon:      'Apple Sign-In coming soon',
     loginFailed:          'Login failed. Please try again.',
     termsPrefix:          'By pressing "Continue with..." you agree to our ',

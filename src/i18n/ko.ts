@@ -73,6 +73,7 @@ const ko = {
     tagline:            'Worry less, eat clir',
     continueWithGoogle: 'Google로 계속하기',
     continueWithApple:  'Apple로 계속하기',
+    continueAsGuest:    '게스트로 계속하기',
     appleComingSoon:    'Apple 로그인은 곧 제공됩니다.',
     loginFailed:        '로그인에 실패했습니다. 다시 시도해주세요.',
     termsPrefix:        '"계속하기"를 누르면 ',
