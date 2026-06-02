@@ -172,6 +172,32 @@ export async function signInWithApple(): Promise<AuthResult> {
   return { token: accessToken, user: me.user, isFirstLogin: !me.hasCompletedSurvey };
 }
 
+// ─── Anonymous (guest) ───────────────────────────────────────────────────────
+// 등록 없이 즉시 스캔/개인화 사용 — Apple Guideline 5.1.1(v) 대응.
+// Supabase signInAnonymously() 로 실제 user_id 를 가진 익명 세션을 발급받는다.
+// 이후 모든 계정 기반 엔드포인트(analysis/scan-history/favorites/profiles)가
+// 일반 유저와 동일하게 동작한다. email 만 없으며 BE 가 nullable 로 허용한다.
+// (추후 동일 디바이스에서 소셜 로그인 시 linkIdentity 로 계정 승급 가능 — 후속 작업.)
+//
+// 전제: Supabase Dashboard → Authentication → Anonymous sign-ins 토글 ON.
+// 꺼져 있으면 signInAnonymously() 가 422 (anonymous_provider_disabled) 로 실패한다.
+export async function signInAnonymously(): Promise<AuthResult> {
+  const { data, error } = await supabase.auth.signInAnonymously();
+  if (error || !data?.session) {
+    throw new Error(error?.message ?? '게스트 로그인에 실패했습니다.');
+  }
+
+  const accessToken = data.session.access_token;
+  const refreshToken = data.session.refresh_token;
+  setAuthToken(accessToken);
+  // 익명 세션도 refresh_token 을 저장 — cold start 시 소셜 로그인과 동일하게 자동 복원.
+  await sessionStore.write({ access: accessToken, refresh: refreshToken });
+
+  const me = await fetchMe();
+  Sentry.setUser({ id: me.user.id });
+  return { token: accessToken, user: me.user, isFirstLogin: !me.hasCompletedSurvey };
+}
+
 // ─── Profile ───────────────────────────────────────────────────────────────
 
 type MeResponse = {
