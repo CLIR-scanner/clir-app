@@ -17,6 +17,7 @@ export default function SettingsDeleteScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const logout = useUserStore(s => s.logout);
+  const isGuest = useUserStore(s => s.currentUser.isAnonymous);
   const [submitting, setSubmitting] = useState(false);
 
   function handleConfirm() {
@@ -73,7 +74,9 @@ export default function SettingsDeleteScreen() {
           <Text style={styles.bullet}>• Any member profiles you have created</Text>
         </View>
         <Text style={styles.warningBody}>
-          This action cannot be undone. If you only want to take a break, you can sign out instead.
+          {isGuest
+            ? 'This action cannot be undone. You are using a guest account, so this data lives only on this device — there is no email or password to recover it.'
+            : 'This action cannot be undone. If you only want to take a break, you can sign out instead.'}
         </Text>
 
         <TouchableOpacity

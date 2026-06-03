@@ -210,6 +210,8 @@ export interface User extends Profile {
   multiProfiles: Profile[];
   consentFlags: ConsentFlags;
   hasCompletedSurvey?: boolean;
+  /** 익명(게스트) 계정 여부 — BE /auth/me 의 is_anonymous. 커뮤니티 작성 게이팅·게스트 경고에 사용. */
+  isAnonymous?: boolean;
   /** 약관 동의 시각 (ISO8601). null = 미동의 또는 legacy. BE profiles.terms_accepted_at 동기. */
   termsAcceptedAt?: string | null;
   /** 동의한 약관 버전. TERMS_VERSION 상수와 다르면 가입 직후 acceptTerms() 자동 호출. */
