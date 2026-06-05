@@ -17,6 +17,7 @@ import { getIngredient, getProductById, isLocalOcrProductId } from '../../servic
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import MedicalSourcesNote from '../../components/common/MedicalSourcesNote';
+import { openExternalUrl } from '../../lib/open-url';
 import FadeInImage from '../../components/common/FadeInImage';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
@@ -388,7 +389,7 @@ export default function FavoriteProductDetailScreen({ navigation, route }: Props
                   <View style={styles.modalSources}>
                     <Text style={styles.modalSourcesTitle}>{t('product.references')}</Text>
                     {detailIngredient.sources.map(s => (
-                      <TouchableOpacity key={s.url} onPress={() => Linking.openURL(s.url)} activeOpacity={0.7}>
+                      <TouchableOpacity key={s.url} onPress={() => { void openExternalUrl(s.url); }} activeOpacity={0.7}>
                         <Text style={styles.modalSourceLink}>↗ {s.title}</Text>
                       </TouchableOpacity>
                     ))}
