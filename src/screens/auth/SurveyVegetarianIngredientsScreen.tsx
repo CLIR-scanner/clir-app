@@ -135,7 +135,8 @@ export default function SurveyVegetarianIngredientsScreen() {
         sensitivityLevel,
       });
       const { user } = await AuthService.fetchMe();
-      setUser({ ...user, language: currentLanguage });
+      // 설문 완료 확정 — hasCompletedSurvey 강제(이유: SurveyAllergyConfirmScreen 참고).
+      setUser({ ...user, language: currentLanguage, hasCompletedSurvey: true });
     } catch (e) {
       Alert.alert(t('common.error'), (e as Error).message);
     } finally {

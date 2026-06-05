@@ -138,7 +138,11 @@ export default function SurveyAllergyConfirmScreen() {
         sensitivityLevel: 'normal',
       });
       const { user } = await AuthService.fetchMe();
-      setUser({ ...user, language: currentLanguage });
+      // 설문을 끝까지 마쳤으므로 완료로 확정한다. BE /auth/me 는 hasCompletedSurvey 를
+      // allergy/diet 보유 여부로 추론하는데, 선택이 비거나 sanitize 로 비워지면 false 가
+      // 되어 selectIsLoggedIn 이 false → 메인 전환이 안 되고 "Continue 무반응"이 된다.
+      // SurveyLandingScreen.handleSkip 과 동일하게 플래그를 강제해 항상 메인으로 진입.
+      setUser({ ...user, language: currentLanguage, hasCompletedSurvey: true });
     } catch (e) {
       Alert.alert(t('common.error'), (e as Error).message);
     } finally {

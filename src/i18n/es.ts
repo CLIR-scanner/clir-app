@@ -152,7 +152,7 @@ const es = {
     memberAllergenReason: 'Contiene un alérgeno registrado en otro perfil.',
     title: 'Escanear', history: 'Historial', historyPill: 'Tu historial de escaneos',
     historyLoadError: 'No se pudo cargar el historial.', historyEmpty: 'Aún no hay productos escaneados.',
-    cameraPermission: 'Se requiere acceso a la cámara', grantPermission: 'Dar permiso',
+    cameraPermission: 'Se requiere acceso a la cámara', grantPermission: 'Continuar',
     cameraDescBarcode: 'CLIR necesita acceso a la cámara para escanear códigos e ingredientes.',
     cameraDescOcr: 'CLIR necesita acceso a la cámara para fotografiar etiquetas de ingredientes.', retake: 'Repetir',
     analyzing: 'Analizando...', tryAgain: 'Intentar de nuevo', barcode: 'CÓDIGO', ocr: 'OCR', barcodeGuideInstruction: 'Centra el código de barras\ny mantén estable', ocrGuideInstruction: 'Mantén el contenido claro, enfocado\ny visible dentro del marco.',
@@ -164,6 +164,9 @@ const es = {
     clearerPhoto: 'Toma una foto más clara y luminosa de la etiqueta.', analyzeFailed: 'No pudimos analizar esta etiqueta. Inténtalo de nuevo.',
     good: 'Bueno', poor: 'Precaución', bad: 'Riesgo', goodBang: 'Bueno!', poorBang: 'Precaución!', badBang: 'Riesgo!',
     medicalDisclaimer: 'Solo de referencia. No es un consejo ni diagnóstico médico.',
+    sourcesHeading: 'Fuentes y referencias',
+    sourceFda: 'Base de etiquetado de alérgenos — FDA de EE. UU.',
+    sourceOff: 'Datos de productos e ingredientes — Open Food Facts',
   },
   favoriteUi: { add: 'Añadir a favoritos', favorited: 'Favorito' },
   profileUi: {

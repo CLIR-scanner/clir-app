@@ -298,7 +298,7 @@ const ko = {
     historyLoadError:   '이력을 불러오지 못했습니다.',
     historyEmpty:       '아직 스캔한 제품이 없습니다.',
     cameraPermission:   '카메라 접근 권한이 필요합니다',
-    grantPermission:    '권한 허용',
+    grantPermission:    '계속',
     cameraDescBarcode:  'CLIR가 바코드와 성분표를 스캔하려면 카메라 접근 권한이 필요합니다.',
     cameraDescOcr:      'CLIR가 성분표를 촬영하려면 카메라 접근 권한이 필요합니다.',
     retake:             '다시 촬영',
@@ -326,6 +326,9 @@ const ko = {
     poorBang:           '주의!',
     badBang:            '위험!',
     medicalDisclaimer:  '분석 결과는 참고용이며 의학적 진단이나 조언이 아닙니다.',
+    sourcesHeading:     '출처 및 참고자료',
+    sourceFda:          '알레르기원 표시 기준 — 미국 FDA 주요 식품 알레르기원',
+    sourceOff:          '제품·성분 데이터 — Open Food Facts',
   },
   favoriteUi: {
     add:       '즐겨찾기 추가',
