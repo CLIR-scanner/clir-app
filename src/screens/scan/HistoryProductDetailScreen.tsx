@@ -18,6 +18,7 @@ import { getIngredient, getAlternatives, getProductById, isLocalOcrProductId } f
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
 import MedicalSourcesNote from '../../components/common/MedicalSourcesNote';
+import { openExternalUrl } from '../../lib/open-url';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import { getIngredientDescription, getIngredientDisplayName } from '../../lib/display-names';
@@ -444,7 +445,7 @@ export default function HistoryProductDetailScreen({ navigation, route }: Props)
                   <View style={styles.modalSources}>
                     <Text style={styles.modalSourcesTitle}>{t('product.references')}</Text>
                     {detailIngredient.sources.map(s => (
-                      <TouchableOpacity key={s.url} onPress={() => Linking.openURL(s.url)} activeOpacity={0.7}>
+                      <TouchableOpacity key={s.url} onPress={() => { void openExternalUrl(s.url); }} activeOpacity={0.7}>
                         <Text style={styles.modalSourceLink}>↗ {s.title}</Text>
                       </TouchableOpacity>
                     ))}

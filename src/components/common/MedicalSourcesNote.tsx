@@ -4,8 +4,9 @@
 // 각 화면에 이미 면책 문구(disclaimer)가 있으므로 이 컴포넌트는 "출처 링크"만 담당한다.
 
 import React from 'react';
-import { View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { openExternalUrl } from '../../lib/open-url';
 
 const SOURCES: { key: string; url: string }[] = [
   { key: 'scanUi.sourceFda', url: 'https://www.fda.gov/food/food-labeling-nutrition/food-allergies' },
@@ -22,7 +23,7 @@ export default function MedicalSourcesNote() {
       {SOURCES.map(s => (
         <TouchableOpacity
           key={s.url}
-          onPress={() => { void Linking.openURL(s.url); }}
+          onPress={() => { void openExternalUrl(s.url); }}
           activeOpacity={0.7}
           accessibilityRole="link"
           accessibilityLabel={t(s.key)}
