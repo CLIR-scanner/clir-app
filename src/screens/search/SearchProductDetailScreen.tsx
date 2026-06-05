@@ -16,6 +16,7 @@ import { SearchStackParamList, Product, Ingredient } from '../../types';
 import { getIngredient, getProductById } from '../../services/scan.service';
 import { addFavorite, removeFavorite, getFavorites } from '../../services/list.service';
 import SevereDisclaimerBox from '../../components/common/SevereDisclaimerBox';
+import MedicalSourcesNote from '../../components/common/MedicalSourcesNote';
 import FadeInImage from '../../components/common/FadeInImage';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
@@ -226,6 +227,7 @@ export default function SearchProductDetailScreen({ navigation, route }: Props) 
 
         {/* Severe-allergy disclaimer (공통 컴포넌트 — 맨 위 통일) */}
         <SevereDisclaimerBox />
+        <MedicalSourcesNote />
 
         {/* 3-A. All Ingredients (Good only) */}
         {!showRisk && allIngredients.length > 0 && (

@@ -22,6 +22,7 @@ import { useScanStore } from '../../store/scan.store';
 import { useListStore } from '../../store/list.store';
 import { useUserStore } from '../../store/user.store';
 import FadeInImage from '../../components/common/FadeInImage';
+import MedicalSourcesNote from '../../components/common/MedicalSourcesNote';
 
 type Props = NativeStackScreenProps<ScanStackParamList, 'ScanResult'>;
 
@@ -325,8 +326,9 @@ export default function ScanResultScreen({ navigation, route }: Props) {
             <Text style={styles.sheetCloseText}>✕</Text>
           </TouchableOpacity>
 
-          {/* Medical disclaimer (App Store Guideline 1.4.1) */}
+          {/* Medical disclaimer + 출처 표기 (App Store Guideline 1.4.1) */}
           <Text style={styles.disclaimer}>{t('scanUi.medicalDisclaimer')}</Text>
+          <MedicalSourcesNote />
 
           {/* Product row */}
           <View style={styles.productRow}>

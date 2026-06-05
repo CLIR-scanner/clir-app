@@ -293,7 +293,7 @@ const en = {
     historyLoadError:   'Failed to load scan history.',
     historyEmpty:       'No scanned products yet.',
     cameraPermission:   'Camera Access Required',
-    grantPermission:    'Grant Permission',
+    grantPermission:    'Continue',
     cameraDescBarcode:  'CLIR needs camera access to scan barcodes and ingredient labels.',
     cameraDescOcr:      'CLIR needs camera access to photograph ingredient labels.',
     retake:             'Retake',
@@ -321,6 +321,9 @@ const en = {
     poorBang:           'Poor!',
     badBang:            'Bad!',
     medicalDisclaimer:  'For reference only. Not medical advice or a diagnosis.',
+    sourcesHeading:     'Sources & References',
+    sourceFda:          'Allergen labeling basis — U.S. FDA Major Food Allergens',
+    sourceOff:          'Product & ingredient data — Open Food Facts',
   },
   favoriteUi: {
     add:       'Add to Favorites',
