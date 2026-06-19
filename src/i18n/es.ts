@@ -36,6 +36,7 @@ const es = {
     termsPrefix: 'Al pulsar "Continuar" aceptas nuestros ', termsService: 'Términos de servicio', termsAnd: ' y ', termsPrivacy: 'Política de privacidad',
     signIn: 'Iniciar sesión', createAccount: 'Crear nueva cuenta',
     signOut: 'Cerrar sesión', signOutConfirm: '¿Seguro que quieres cerrar sesión?',
+    signOutGuestWarning: 'Usas una cuenta de invitado, que no se puede recuperar. Al cerrar sesión se borran de forma permanente los escaneos, elementos guardados y el perfil de este dispositivo, sin posibilidad de recuperarlos.',
     deleteAccount: 'Eliminar cuenta',
     deleteAccountTitle: '¿Eliminar tu cuenta?',
     deleteAccountWarning: 'Esto eliminará permanentemente tu cuenta, historial de escaneos, elementos guardados y perfiles de miembros. Esta acción no se puede deshacer.',

@@ -150,6 +150,12 @@ export default function QACreateScreen({ navigation }: Props) {
 
   async function handleSubmit() {
     if (!canSubmit) return;
+    // 게스트(익명) 차단 — BE 가 커뮤니티 작성을 403(GUEST_FORBIDDEN)으로 막으므로,
+    // 호출 전에 안내하고 중단(원시 에러 노출 방지). 비파괴 — 로그아웃 강요하지 않음.
+    if (useUserStore.getState().currentUser.isAnonymous) {
+      Alert.alert('로그인이 필요해요', '커뮤니티 글쓰기는 정식 로그인(Google/Apple) 후 이용할 수 있어요. 게스트 계정은 참여가 제한됩니다.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await createQAQuestion({

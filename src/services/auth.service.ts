@@ -211,6 +211,7 @@ type MeResponse = {
   sensitivityLevel: 'strict' | 'normal';
   language?: string;
   hasCompletedSurvey: boolean;
+  isAnonymous?: boolean;
   termsAcceptedAt?: string | null;
   termsVersion?: string | null;
 };
@@ -230,6 +231,7 @@ export async function fetchMe(): Promise<{ user: User; hasCompletedSurvey: boole
     multiProfiles: [],
     consentFlags: { imageRetention: false, corrections: false },
     hasCompletedSurvey: res.hasCompletedSurvey,
+    isAnonymous: res.isAnonymous ?? false,
     termsAcceptedAt: res.termsAcceptedAt ?? null,
     termsVersion: res.termsVersion ?? null,
   };

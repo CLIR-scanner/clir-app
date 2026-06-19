@@ -98,6 +98,7 @@ const en = {
     },
     signOut:              'Sign out',
     signOutConfirm:       'Are you sure you want to sign out?',
+    signOutGuestWarning:  "You're using a guest account, which can't be recovered. Signing out permanently erases the scans, saved items, and profile on this device — there's no way to get them back.",
     deleteAccount:        'Delete account',
     deleteAccountTitle:   'Delete your account?',
     deleteAccountWarning: 'This will permanently delete your account, scan history, saved items, and any member profiles. This action cannot be undone.',

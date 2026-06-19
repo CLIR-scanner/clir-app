@@ -121,10 +121,16 @@ export default function ProfileScreen() {
   }
 
 function handleLogout() {
-    Alert.alert(t('auth.signOut'), t('auth.signOutConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('auth.signOut'), style: 'destructive', onPress: logout },
-    ]);
+    // 게스트(익명)는 복구 수단이 없어 로그아웃 = 데이터 영구 손실. 강한 경고로 구분.
+    const isGuest = useUserStore.getState().currentUser.isAnonymous;
+    Alert.alert(
+      t('auth.signOut'),
+      isGuest ? t('auth.signOutGuestWarning') : t('auth.signOutConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('auth.signOut'), style: 'destructive', onPress: logout },
+      ],
+    );
   }
 
   // ── 계정 삭제 (typing confirmation) ──────────────────────────────────────

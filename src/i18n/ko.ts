@@ -100,6 +100,7 @@ const ko = {
     createAccount:      '새 계정 만들기',
     signOut:            '로그아웃',
     signOutConfirm:     '정말 로그아웃 하시겠어요?',
+    signOutGuestWarning: '게스트 계정은 복구할 수 없어요. 로그아웃하면 이 기기의 스캔·즐겨찾기·프로필이 영구 삭제되고 다시 불러올 수 없어요.',
     deleteAccount:        '계정 삭제',
     deleteAccountTitle:   '계정을 삭제하시겠어요?',
     deleteAccountWarning: '계정·스캔 이력·즐겨찾기·멤버 프로필이 모두 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
